@@ -58,21 +58,44 @@ export async function listTicketCategories() {
   return clone(ticketCategories);
 }
 
+/** Catégories d'aide, avec un compteur calculé sur la base réelle d'articles. */
 export async function listHelpCategories() {
   await delay(150);
-  return clone(helpCategories);
+  return helpCategories.map((category) => ({
+    ...clone(category),
+    count: helpArticles.filter((article) => article.category === category.id).length,
+  }));
 }
 
-export async function searchHelpArticles(query = '') {
-  await delay();
+/**
+ * Recherche d'articles par texte et/ou catégorie.
+ * Accepte une chaîne (recherche simple) ou un objet { query, category }.
+ */
+export async function searchHelpArticles(criteria = '') {
+  await delay(200);
+  const { query = '', category = null } =
+    typeof criteria === 'string' ? { query: criteria } : criteria;
+
   const q = normalize(query);
-  if (!q) return clone(helpArticles);
-  return helpArticles.filter(
-    (article) =>
-      normalize(article.title).includes(q) ||
-      normalize(article.excerpt).includes(q) ||
-      normalize(article.body).includes(q),
-  );
+  return helpArticles
+    .filter((article) => (category ? article.category === category : true))
+    .filter((article) =>
+      q
+        ? normalize(`${article.title} ${article.excerpt} ${article.body}`).includes(q)
+        : true,
+    )
+    .map(clone);
+}
+
+/** Articles liés à un article donné, résolus depuis leurs identifiants. */
+export async function listRelatedArticles(articleId) {
+  await delay(120);
+  const source = helpArticles.find((article) => article.id === articleId);
+  if (!source) return [];
+  return (source.related ?? [])
+    .map((id) => helpArticles.find((article) => article.id === id))
+    .filter(Boolean)
+    .map(clone);
 }
 
 export async function getHelpArticle(id) {

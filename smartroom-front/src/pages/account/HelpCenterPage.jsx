@@ -1,39 +1,79 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CalendarPlus, KeyRound, LifeBuoy, Monitor, Plus, Search, User, XCircle } from 'lucide-react';
-import { createTicket, getTicket, listHelpCategories, listTickets, listTicketCategories, searchHelpArticles } from '../../api/tickets';
+import { LifeBuoy, Plus } from 'lucide-react';
+import {
+  createTicket,
+  getTicket,
+  listHelpCategories,
+  listRelatedArticles,
+  listTickets,
+  listTicketCategories,
+  searchHelpArticles,
+} from '../../api/tickets';
 import { useAsync } from '../../hooks/useAsync';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useToast } from '../../hooks/useToast';
-import { fmtRelative } from '../../utils/dates';
+import { plural } from '../../utils/format';
 import { Button } from '../../components/ui/Button';
 import { Card, CardHeader } from '../../components/ui/Card';
-import { AsyncBoundary, EmptyState, Skeleton } from '../../components/ui/States';
-import { StaggerList } from '../../components/ui/StaggerList';
+import { Chip } from '../../components/ui/Badge';
+import { AsyncBoundary, EmptyState, Skeleton, Spinner } from '../../components/ui/States';
 import { PageHeader } from '../../components/layout/PageHeader';
-import { TicketTable } from '../../components/support/TicketTable';
+import { HelpSearch } from '../../components/support/HelpSearch';
+import { HelpCategories } from '../../components/support/HelpCategories';
+import { HelpArticleList } from '../../components/support/HelpArticleList';
+import { MyTicketsCard } from '../../components/support/MyTicketsCard';
 import { NewTicketModal, TicketThreadModal } from '../../components/support/TicketModals';
-
-const CATEGORY_ICONS = { CalendarPlus, KeyRound, XCircle, Monitor, User };
 
 /** U-22 — Centre d'aide : recherche d'articles, catégories et suivi des tickets. */
 export default function HelpCenterPage() {
   const toast = useToast();
   const [params, setParams] = useSearchParams();
   const [query, setQuery] = useState('');
+  const [category, setCategory] = useState(null);
+  const [openArticle, setOpenArticle] = useState(null);
   const [openTicket, setOpenTicket] = useState(null);
   const [newTicket, setNewTicket] = useState(null);
 
+  // La frappe reste fluide : seule la valeur stabilisée déclenche la recherche.
+  const debouncedQuery = useDebouncedValue(query, 250);
+
   useEffect(() => {
     document.title = 'Centre d’aide — SmartRoom Manager';
-    const id = params.get('ticket');
-    if (id) getTicket(id).then(setOpenTicket).catch(() => setOpenTicket(null));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const ticketParam = params.get('ticket');
+  const articleParam = params.get('article');
+
+  useEffect(() => {
+    if (ticketParam) getTicket(ticketParam).then(setOpenTicket).catch(() => setOpenTicket(null));
+  }, [ticketParam]);
+
+  // Lien profond depuis la recherche globale : /app/aide?article=ha-11.
+  // La dépendance au paramètre couvre aussi l'arrivée sur une page déjà montée.
+  useEffect(() => {
+    if (articleParam) setOpenArticle(articleParam);
+  }, [articleParam]);
 
   const categories = useAsync(listHelpCategories, []);
   const ticketCategories = useAsync(listTicketCategories, []);
-  const articles = useAsync(() => searchHelpArticles(query), [query]);
   const tickets = useAsync(listTickets, []);
+  const articles = useAsync(
+    () => searchHelpArticles({ query: debouncedQuery, category }),
+    [debouncedQuery, category],
+  );
+  const related = useAsync(
+    () => (openArticle ? listRelatedArticles(openArticle) : Promise.resolve([])),
+    [openArticle],
+  );
+
+  const openArticleById = (id) => {
+    setOpenArticle(id);
+    document.getElementById(`article-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  const activeCategory = (categories.data ?? []).find((item) => item.id === category);
+  const searching = query !== debouncedQuery || articles.isLoading;
 
   const submitTicket = async () => {
     try {
@@ -50,123 +90,93 @@ export default function HelpCenterPage() {
     <div className="flex flex-col gap-5">
       <PageHeader title="Centre d’aide" />
 
-      <Card className="px-4 py-8 text-center">
-        <h2 className="text-xl font-semibold text-content">Comment pouvons-nous vous aider ?</h2>
-        <div className="relative mx-auto mt-4 max-w-lg">
-          <label htmlFor="recherche-aide" className="sr-only">
-            Rechercher un article d’aide
-          </label>
-          <Search
-            size={16}
-            aria-hidden="true"
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-content-faint"
-          />
-          <input
-            id="recherche-aide"
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Rechercher des articles, des guides ou des questions fréquentes…"
-            className="h-11 w-full rounded-xl border border-line bg-surface-raised pl-10 pr-3 text-sm text-content placeholder:text-content-faint focus:border-accent focus:outline-none"
-          />
-        </div>
-      </Card>
+      <HelpSearch value={query} onChange={setQuery} />
 
-      {query.length === 0 && (
-        <section>
-          <h2 className="text-sm font-semibold text-content">Catégories d’aide</h2>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {(categories.data ?? []).map((category) => {
-              const Icon = CATEGORY_ICONS[category.icon] ?? LifeBuoy;
-              return (
-                <button
-                  key={category.id}
-                  type="button"
-                  onClick={() => setQuery(category.label.split(' ')[0])}
-                  className="flex items-center gap-3 rounded-xl border border-line bg-surface p-4 text-left transition hover:border-line-strong"
-                >
-                  <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-surface-raised">
-                    <Icon size={16} aria-hidden="true" className="text-accent" />
-                  </span>
-                  <span>
-                    <span className="block text-sm text-content">{category.label}</span>
-                    <span className="block text-xs text-content-muted">{category.count} articles</span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      )}
+      <section>
+        <h2 className="mb-3 text-sm font-semibold text-content">Catégories d’aide</h2>
+        <HelpCategories
+          categories={categories.data ?? []}
+          active={category}
+          onSelect={(next) => {
+            setCategory(next);
+            setOpenArticle(null);
+          }}
+          isLoading={categories.isLoading}
+        />
+      </section>
 
-      {query.length > 0 && (
-        <Card>
-          <CardHeader title={`Résultats pour « ${query} »`} />
+      <Card>
+        <CardHeader
+          title={activeCategory ? activeCategory.label : 'Tous les articles'}
+          subtitle={
+            articles.isSuccess ? plural((articles.data ?? []).length, 'article') : 'Chargement…'
+          }
+          action={
+            <div className="flex items-center gap-2">
+              {searching && <Spinner label="Recherche…" className="text-xs" />}
+              {(category || query) && (
+                <Chip
+                  label={category ? activeCategory?.label ?? '' : `« ${query} »`}
+                  onRemove={() => {
+                    setCategory(null);
+                    setQuery('');
+                  }}
+                />
+              )}
+            </div>
+          }
+        />
+
+        <div className="px-4 pb-4">
           <AsyncBoundary
             status={articles.status}
             error={articles.error}
             onRetry={articles.reload}
             isEmpty={articles.isSuccess && (articles.data ?? []).length === 0}
-            skeleton={<Skeleton className="m-4 h-24" />}
+            skeleton={
+              <div className="flex flex-col gap-2">
+                {Array.from({ length: 4 }, (_, index) => (
+                  <Skeleton key={index} className="h-14 w-full" />
+                ))}
+              </div>
+            }
             empty={
               <EmptyState
                 icon={LifeBuoy}
-                title="Aucun article trouvé"
-                description="Reformulez votre recherche ou ouvrez une demande d’assistance."
+                title="Aucun article ne répond à cette recherche"
+                description="Reformulez avec un mot plus simple, ou ouvrez une demande d’assistance."
                 action={
-                  <Button size="sm" onClick={() => setNewTicket({ subject: query, category: 'compte', body: '' })}>
+                  <Button
+                    size="sm"
+                    onClick={() =>
+                      setNewTicket({ subject: query || '', category: 'compte', body: '' })
+                    }
+                  >
                     Ouvrir une demande
                   </Button>
                 }
               />
             }
           >
-            <StaggerList className="flex flex-col gap-2 px-4 pb-4">
-              {(articles.data ?? []).map((article) => (
-                <details key={article.id} className="rounded-xl border border-line bg-surface-raised px-3 py-2.5">
-                  <summary className="cursor-pointer text-sm text-content">{article.title}</summary>
-                  <p className="mt-2 text-xs leading-relaxed text-content-muted">{article.body}</p>
-                  <p className="mt-2 font-mono text-[10px] text-content-faint">
-                    Mis à jour {fmtRelative(article.updatedAt)}
-                  </p>
-                </details>
-              ))}
-            </StaggerList>
+            <HelpArticleList
+              articles={articles.data ?? []}
+              openId={openArticle}
+              onToggle={setOpenArticle}
+              related={related.data ?? []}
+              onOpenRelated={openArticleById}
+            />
           </AsyncBoundary>
-        </Card>
-      )}
-
-      <Card>
-        <CardHeader
-          title="Mes demandes"
-          subtitle="Suivez l’état de vos tickets de support récents."
-          action={
-            <Button
-              size="sm"
-              icon={Plus}
-              onClick={() => setNewTicket({ subject: '', category: 'acces', body: '' })}
-            >
-              Nouvelle demande d’aide
-            </Button>
-          }
-        />
-        <AsyncBoundary
-          status={tickets.status}
-          error={tickets.error}
-          onRetry={tickets.reload}
-          isEmpty={tickets.isSuccess && (tickets.data ?? []).length === 0}
-          skeleton={<Skeleton className="m-4 h-24" />}
-          empty={<EmptyState icon={LifeBuoy} title="Aucune demande en cours" />}
-        >
-          <TicketTable
-            tickets={tickets.data ?? []}
-            onOpen={(ticket) => {
-              setOpenTicket(ticket);
-              setParams({ ticket: ticket.id });
-            }}
-          />
-        </AsyncBoundary>
+        </div>
       </Card>
+
+      <MyTicketsCard
+        tickets={tickets}
+        onOpen={(ticket) => {
+          setOpenTicket(ticket);
+          setParams({ ticket: ticket.id });
+        }}
+        onCreate={() => setNewTicket({ subject: '', category: 'acces', body: '' })}
+      />
 
       <TicketThreadModal
         ticket={openTicket}

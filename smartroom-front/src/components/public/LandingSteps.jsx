@@ -1,5 +1,3 @@
-import { ArrowRight } from 'lucide-react';
-import { Button } from '../ui/Button';
 
 const STEPS = [
   {
@@ -41,18 +39,6 @@ export function LandingSteps() {
           ))}
         </ol>
 
-        <div className="mt-10 rounded-xl border border-line bg-surface px-6 py-10 text-center">
-          <h2 className="text-2xl font-semibold tracking-tight text-content">
-            Prêt à optimiser vos espaces ?
-          </h2>
-          <p className="mx-auto mt-2 max-w-md text-sm text-content-muted">
-            Connectez-vous avec votre compte de l’école et réservez votre première salle en moins
-            d’une minute.
-          </p>
-          <Button to="/connexion" size="lg" className="mt-6" iconRight={ArrowRight}>
-            Se connecter
-          </Button>
-        </div>
       </div>
     </section>
   );

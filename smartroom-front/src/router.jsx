@@ -42,7 +42,10 @@ function RequireAuth({ children }) {
   const location = useLocation();
 
   if (!isAuthenticated) {
-    return <Navigate to="/connexion" replace state={{ from: location.pathname }} />;
+    // La chaîne de requête fait partie de la destination : sans elle, un lien
+    // profond comme /app/aide?article=ha-11 perdrait son article après connexion.
+    const from = `${location.pathname}${location.search}`;
+    return <Navigate to="/connexion" replace state={{ from }} />;
   }
   if (needsOnboarding && location.pathname !== '/bienvenue') {
     return <Navigate to="/bienvenue" replace />;

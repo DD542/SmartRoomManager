@@ -6,6 +6,7 @@ const LINKS = [
   { href: '#fonctionnalites', label: 'Fonctionnalités' },
   { href: '#fonctionnement', label: 'Comment ça marche' },
   { href: '#faq', label: 'FAQ' },
+  { href: '#tarifs', label: 'Tarifs' },
 ];
 
 /** Cadre des pages publiques : en-tête de site, contenu, pied de page. */
