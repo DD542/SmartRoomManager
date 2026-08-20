@@ -1,0 +1,15 @@
+# Dépendances et sorties de build
+node_modules/
+dist/
+.vite/
+
+# Environnement Python
+.venv/
+__pycache__/
+*.pyc
+
+# Outils et système
+.idea/
+.DS_Store
+Thumbs.db
+*.log

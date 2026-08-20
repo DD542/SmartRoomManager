@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
+    <title>Votre réservation commence bientôt — SmartRoom Manager</title>
+  </head>
+  <!--
+    U-27 — Gabarit d'e-mail de rappel.
+    Envoyé par la tâche planifiée FastAPI selon preferences.reminder_delay_min.
+    Variables attendues : user_first_name, reminder_delay_min, room_name,
+    building_name, floor, start_time, end_time, access_code, directions (liste),
+    checkin_url, edit_url, unsubscribe_url, base_url.
+  -->
+  <body style="margin:0; padding:0; background:#101623; font-family:Inter,'Segoe UI',Arial,sans-serif;">
+    <div style="display:none; max-height:0; overflow:hidden; opacity:0;">
+      {{ room_name }} dans {{ reminder_delay_min }} minutes — code {{ access_code }}
+    </div>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#101623; padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px; max-width:100%; background:#1A2231; border:1px solid #2C3850; border-radius:12px; overflow:hidden;">
+            <tr>
+              <td style="height:4px; background:#FCC63F; font-size:0; line-height:0;">&nbsp;</td>
+            </tr>
+
+            <tr>
+              <td style="padding:18px 24px; border-bottom:1px solid #2C3850;">
+                <table role="presentation" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding-right:10px;">
+                      <div style="width:26px; height:26px; border-radius:8px; background:rgba(91,155,255,0.15); border:1px solid rgba(91,155,255,0.4); text-align:center; line-height:26px; color:#5B9BFF; font-size:14px; font-weight:600;">S</div>
+                    </td>
+                    <td style="color:#F7FAFF; font-size:15px; font-weight:600;">SmartRoom Manager</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:28px 24px 8px;">
+                <div style="width:36px; height:36px; border-radius:18px; background:rgba(252,198,63,0.12); border:1px solid rgba(252,198,63,0.4); text-align:center; line-height:36px; color:#FCC63F; font-size:17px;">&#9200;</div>
+                <h1 style="margin:16px 0 6px; color:#F7FAFF; font-size:20px; font-weight:600;">
+                  Votre réservation commence dans {{ reminder_delay_min }} minutes
+                </h1>
+                <p style="margin:0; color:#B4C0D4; font-size:13px; line-height:20px;">
+                  Bonjour {{ user_first_name }}, ceci est un rappel automatique pour votre prochaine
+                  réunion. Pensez à valider votre présence sur place, sans quoi la salle sera libérée.
+                </p>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:20px 24px 4px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#222C3E; border:1px solid #2C3850; border-radius:12px;">
+                  <tr>
+                    <td style="padding:14px; width:50%; vertical-align:top;">
+                      <p style="margin:0 0 4px; color:#B4C0D4; font-size:11px; text-transform:uppercase; letter-spacing:1px;">Salle</p>
+                      <p style="margin:0; color:#F7FAFF; font-size:14px; font-weight:600;">{{ room_name }}</p>
+                    </td>
+                    <td style="padding:14px; width:50%; vertical-align:top;">
+                      <p style="margin:0 0 4px; color:#B4C0D4; font-size:11px; text-transform:uppercase; letter-spacing:1px;">Horaire</p>
+                      <p style="margin:0; color:#F7FAFF; font-size:14px; font-family:ui-monospace,Consolas,monospace;">{{ start_time }} - {{ end_time }}</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" style="padding:14px; border-top:1px solid #2C3850;">
+                      <p style="margin:0 0 4px; color:#B4C0D4; font-size:11px; text-transform:uppercase; letter-spacing:1px;">Localisation</p>
+                      <p style="margin:0; color:#F7FAFF; font-size:13px;">{{ building_name }} — {{ floor }} étage</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" style="padding:14px; border-top:1px solid #2C3850;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="color:#B4C0D4; font-size:12px;">Code d’accès équipement</td>
+                          <td align="right">
+                            <span style="display:inline-block; background:#101623; border:1px solid #2C3850; border-radius:8px; padding:6px 12px; color:#F7FAFF; font-size:15px; letter-spacing:3px; font-family:ui-monospace,Consolas,monospace;">{{ access_code }}</span>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:18px 24px 0;">
+                <a href="{{ checkin_url }}" style="display:block; background:#5B9BFF; color:#FFFFFF; text-decoration:none; text-align:center; padding:12px 16px; border-radius:12px; font-size:14px; font-weight:500;">
+                  Confirmer ma présence
+                </a>
+                <a href="{{ edit_url }}" style="display:block; margin-top:8px; background:#222C3E; border:1px solid #2C3850; color:#F7FAFF; text-decoration:none; text-align:center; padding:11px 16px; border-radius:12px; font-size:13px;">
+                  Modifier ou annuler
+                </a>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:22px 24px 8px;">
+                <p style="margin:0 0 10px; color:#F7FAFF; font-size:14px; font-weight:600;">Comment s’y rendre</p>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  {% for step in directions %}
+                  <tr>
+                    <td width="26" style="padding:4px 0; vertical-align:top;">
+                      <div style="width:20px; height:20px; border-radius:6px; background:#222C3E; border:1px solid #2C3850; text-align:center; line-height:20px; color:#B4C0D4; font-size:11px; font-family:ui-monospace,Consolas,monospace;">{{ loop.index }}</div>
+                    </td>
+                    <td style="padding:4px 0; color:#B4C0D4; font-size:13px;">{{ step }}</td>
+                  </tr>
+                  {% endfor %}
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:20px 24px 16px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:rgba(252,198,63,0.10); border:1px solid rgba(252,198,63,0.4); border-radius:10px;">
+                  <tr>
+                    <td style="padding:10px 14px; color:#FCC63F; font-size:12px;">
+                      Sans validation de présence dans les 10 minutes suivant le début, le créneau est
+                      libéré et la salle redevient réservable.
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:16px 24px; border-top:1px solid #2C3850; text-align:center;">
+                <p style="margin:0 0 6px; color:#8A97AC; font-size:11px;">
+                  <a href="{{ base_url }}/mentions-legales" style="color:#B4C0D4; text-decoration:none;">Mentions légales</a> &nbsp;•&nbsp;
+                  <a href="{{ base_url }}/confidentialite" style="color:#B4C0D4; text-decoration:none;">Politique de confidentialité</a> &nbsp;•&nbsp;
+                  <a href="{{ unsubscribe_url }}" style="color:#B4C0D4; text-decoration:none;">Se désinscrire</a>
+                </p>
+                <p style="margin:0; color:#8A97AC; font-size:11px;">© 2026 SmartRoom Manager — Projet académique ECE Paris.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

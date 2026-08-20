@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
+    <title>Réservation confirmée — SmartRoom Manager</title>
+  </head>
+  <!--
+    U-27 — Gabarit d'e-mail de confirmation.
+    Rendu par Jinja2 côté FastAPI : POST /api/bookings déclenche l'envoi.
+    Variables attendues : user_first_name, booking_title, room_name, building_name,
+    floor, date_long, start_time, end_time, attendees, access_code, badge_required,
+    booking_url, unsubscribe_url.
+    Contraintes e-mail respectées : tableaux, styles en ligne, largeur 600px,
+    aucune image distante, aucun script.
+  -->
+  <body style="margin:0; padding:0; background:#101623; font-family:Inter,'Segoe UI',Arial,sans-serif;">
+    <div style="display:none; max-height:0; overflow:hidden; opacity:0;">
+      Votre salle est réservée. Code d’accès : {{ access_code }}
+    </div>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#101623; padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px; max-width:100%; background:#1A2231; border:1px solid #2C3850; border-radius:12px; overflow:hidden;">
+            <tr>
+              <td style="height:4px; background:#5B9BFF; font-size:0; line-height:0;">&nbsp;</td>
+            </tr>
+
+            <tr>
+              <td style="padding:18px 24px; border-bottom:1px solid #2C3850;">
+                <table role="presentation" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding-right:10px;">
+                      <div style="width:26px; height:26px; border-radius:8px; background:rgba(91,155,255,0.15); border:1px solid rgba(91,155,255,0.4); text-align:center; line-height:26px; color:#5B9BFF; font-size:14px; font-weight:600;">S</div>
+                    </td>
+                    <td style="color:#F7FAFF; font-size:15px; font-weight:600;">SmartRoom Manager</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:28px 24px 8px;">
+                <div style="width:40px; height:40px; border-radius:20px; background:rgba(61,219,166,0.12); border:1px solid rgba(61,219,166,0.4); text-align:center; line-height:40px; color:#3DDBA6; font-size:20px;">&#10003;</div>
+                <h1 style="margin:16px 0 6px; color:#F7FAFF; font-size:20px; font-weight:600;">Réservation confirmée</h1>
+                <p style="margin:0; color:#B4C0D4; font-size:13px; line-height:20px;">
+                  Bonjour {{ user_first_name }}, votre salle est réservée. Voici les détails de votre réunion.
+                </p>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:20px 24px 4px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#222C3E; border:1px solid #2C3850; border-radius:12px;">
+                  <tr>
+                    <td style="padding:12px 14px; color:#B4C0D4; font-size:12px;">Objet</td>
+                    <td style="padding:12px 14px; color:#F7FAFF; font-size:13px; text-align:right; font-weight:600;">{{ booking_title }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:12px 14px; border-top:1px solid #2C3850; color:#B4C0D4; font-size:12px;">Salle</td>
+                    <td style="padding:12px 14px; border-top:1px solid #2C3850; color:#F7FAFF; font-size:13px; text-align:right;">{{ room_name }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:12px 14px; border-top:1px solid #2C3850; color:#B4C0D4; font-size:12px;">Date</td>
+                    <td style="padding:12px 14px; border-top:1px solid #2C3850; color:#F7FAFF; font-size:13px; text-align:right;">{{ date_long }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:12px 14px; border-top:1px solid #2C3850; color:#B4C0D4; font-size:12px;">Horaire</td>
+                    <td style="padding:12px 14px; border-top:1px solid #2C3850; color:#F7FAFF; font-size:13px; text-align:right; font-family:ui-monospace,Consolas,monospace;">{{ start_time }} - {{ end_time }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:12px 14px; border-top:1px solid #2C3850; color:#B4C0D4; font-size:12px;">Lieu</td>
+                    <td style="padding:12px 14px; border-top:1px solid #2C3850; color:#F7FAFF; font-size:13px; text-align:right;">{{ building_name }} — {{ floor }} étage</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:12px 14px; border-top:1px solid #2C3850; color:#B4C0D4; font-size:12px;">Participants</td>
+                    <td style="padding:12px 14px; border-top:1px solid #2C3850; color:#F7FAFF; font-size:13px; text-align:right;">{{ attendees }} personnes</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:16px 24px 4px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#101623; border:1px solid #2C3850; border-radius:12px;">
+                  <tr>
+                    <td align="center" style="padding:18px 14px;">
+                      <p style="margin:0 0 8px; color:#B4C0D4; font-size:11px; text-transform:uppercase; letter-spacing:1px;">Code d’accès</p>
+                      <p style="margin:0; color:#F7FAFF; font-size:26px; letter-spacing:6px; font-family:ui-monospace,Consolas,monospace;">{{ access_code }}</p>
+                      <p style="margin:8px 0 0; color:#B4C0D4; font-size:11px;">À saisir sur l’écran à l’entrée de la salle.</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            {% if badge_required %}
+            <tr>
+              <td style="padding:12px 24px 0;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:rgba(252,198,63,0.10); border:1px solid rgba(252,198,63,0.4); border-radius:10px;">
+                  <tr>
+                    <td style="padding:10px 14px; color:#FCC63F; font-size:12px;">
+                      Badge requis : cette salle exige un badge d’accès actif en plus du code.
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            {% endif %}
+
+            <tr>
+              <td style="padding:20px 24px 24px;">
+                <a href="{{ booking_url }}" style="display:block; background:#5B9BFF; color:#FFFFFF; text-decoration:none; text-align:center; padding:12px 16px; border-radius:12px; font-size:14px; font-weight:500;">
+                  Voir ma réservation
+                </a>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:16px 24px; border-top:1px solid #2C3850; text-align:center;">
+                <p style="margin:0 0 6px; color:#8A97AC; font-size:11px;">
+                  <a href="{{ base_url }}/mentions-legales" style="color:#B4C0D4; text-decoration:none;">Mentions légales</a> &nbsp;•&nbsp;
+                  <a href="{{ base_url }}/confidentialite" style="color:#B4C0D4; text-decoration:none;">Politique de confidentialité</a> &nbsp;•&nbsp;
+                  <a href="{{ unsubscribe_url }}" style="color:#B4C0D4; text-decoration:none;">Se désinscrire</a>
+                </p>
+                <p style="margin:0; color:#8A97AC; font-size:11px;">© 2026 SmartRoom Manager — Projet académique ECE Paris.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
