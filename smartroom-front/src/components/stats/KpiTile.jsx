@@ -8,12 +8,17 @@ import { Skeleton } from '../ui/States';
  */
 export function KpiTile({ icon: Icon, value, unit, label, trend, tone = 'default', className }) {
   const Arrow = trend?.direction === 'down' ? TrendingDown : TrendingUp;
+  // La flèche suit toujours le sens réel de la variation ; la couleur suit son
+  // interprétation. Les deux divergent quand baisser est une bonne nouvelle
+  // (taux de no-show), d'où le `tone` facultatif porté par la tendance.
+  const TONES = { good: 'text-success', bad: 'text-danger', neutral: 'text-content-muted' };
   const trendTone =
-    trend?.direction === 'down'
+    TONES[trend?.tone] ??
+    (trend?.direction === 'down'
       ? 'text-danger'
       : trend?.direction === 'flat'
         ? 'text-content-muted'
-        : 'text-success';
+        : 'text-success');
 
   return (
     <div className={cn('flex items-center gap-3 rounded-xl border border-line bg-surface p-4', className)}>

@@ -13,31 +13,13 @@ import { useState } from 'react';
 import { cn } from '../../utils/cn';
 import { fmtPercent } from '../../utils/format';
 import { Card, CardHeader } from '../ui/Card';
-
-// Recharts colore le texte des graduations par `fill`, pas par `stroke` :
-// sans cela, les axes restent au gris #666 par défaut, illisible sur fond sombre.
-const AXIS = { fill: '#B4C0D4', fontSize: 11, fontFamily: 'ui-monospace, monospace' };
-
-// Palette de séries : des teintes franches, distinguables aussi en niveaux de gris
-// (bleu clair, vert, jaune, violet, corail).
-const SLICES = ['#5B9BFF', '#3DDBA6', '#FCC63F', '#C084FC', '#FF8080'];
-
-const tooltipStyle = {
-  background: '#222C3E',
-  border: '1px solid #3B4A66',
-  borderRadius: 10,
-  boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
-  fontSize: 12,
-  padding: '6px 10px',
-  color: '#F7FAFF',
-};
-
-const tooltipLabelStyle = { color: '#B4C0D4', fontSize: 11, marginBottom: 2 };
-const tooltipItemStyle = {
-  color: '#F7FAFF',
-  fontFamily: 'ui-monospace, monospace',
-  padding: 0,
-};
+import {
+  AXIS,
+  SLICES,
+  tooltipItemStyle,
+  tooltipLabelStyle,
+  tooltipStyle,
+} from '../charts/theme';
 
 /** U-24 — heures réservées par mois. */
 export function HoursBarChart({ data = [] }) {

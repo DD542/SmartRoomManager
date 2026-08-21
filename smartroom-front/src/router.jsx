@@ -36,6 +36,28 @@ import GlobalSearchPage from './pages/system/GlobalSearchPage';
 import NotFoundPage from './pages/system/NotFoundPage';
 import ForbiddenPage from './pages/system/ForbiddenPage';
 
+import AdminLayout from './layouts/AdminLayout';
+import { useAdminSession } from './hooks/useAdminSession';
+import { usePermission } from './hooks/usePermission';
+import { PermissionDenied } from './components/admin/PermissionGate';
+import AdminLoginPage from './pages/admin/AdminLoginPage';
+import OccupancyDashboardPage from './pages/admin/dashboard/OccupancyDashboardPage';
+import ReportsPage from './pages/admin/reports/ReportsPage';
+import AllBookingsPage from './pages/admin/bookings/AllBookingsPage';
+import ConflictQueuePage from './pages/admin/bookings/ConflictQueuePage';
+import RoomsPage from './pages/admin/rooms/RoomsPage';
+import RoomEditPage from './pages/admin/rooms/RoomEditPage';
+import EquipmentPage from './pages/admin/rooms/EquipmentPage';
+import PlansPage from './pages/admin/rooms/PlansPage';
+import SchedulesPage from './pages/admin/rules/SchedulesPage';
+import BookingRulesPage from './pages/admin/rules/BookingRulesPage';
+import UsersPage from './pages/admin/people/UsersPage';
+import RolesPage from './pages/admin/people/RolesPage';
+import TicketsPage from './pages/admin/support/TicketsPage';
+import KnowledgePage from './pages/admin/support/KnowledgePage';
+import EmailTemplatesPage from './pages/admin/support/EmailTemplatesPage';
+import AuditLogPage from './pages/admin/audit/AuditLogPage';
+
 /** Garde d'authentification : mémorise l'URL demandée pour y revenir après connexion. */
 function RequireAuth({ children }) {
   const { isAuthenticated, needsOnboarding } = useAuth();
@@ -51,6 +73,28 @@ function RequireAuth({ children }) {
     return <Navigate to="/bienvenue" replace />;
   }
   return children;
+}
+
+
+/** Garde de l'espace d'administration : session distincte de celle de /app. */
+function RequireAdmin({ children }) {
+  const { isAuthenticated } = useAdminSession();
+  const location = useLocation();
+
+  if (!isAuthenticated) {
+    const from = `${location.pathname}${location.search}`;
+    return <Navigate to="/admin/connexion" replace state={{ from }} />;
+  }
+  return children;
+}
+
+/**
+ * Garde de permission. L'écran refusé est expliqué plutôt que redirigé en
+ * silence : l'administrateur doit savoir quelle permission lui manque.
+ */
+function RequirePermission({ permission, children }) {
+  const { peut } = usePermission();
+  return peut(permission) ? children : <PermissionDenied permission={permission} />;
 }
 
 export const router = createBrowserRouter([
@@ -116,6 +160,139 @@ export const router = createBrowserRouter([
       { path: 'aide', element: <HelpCenterPage /> },
       { path: 'statistiques', element: <StatsPage /> },
       { path: 'recherche', element: <GlobalSearchPage /> },
+    ],
+  },
+  { path: '/admin/connexion', element: <AdminLoginPage /> },
+  {
+    path: '/admin',
+    element: (
+      <RequireAdmin>
+        <AdminLayout />
+      </RequireAdmin>
+    ),
+    children: [
+      { index: true, element: <OccupancyDashboardPage /> },
+      {
+        path: 'rapports',
+        element: (
+          <RequirePermission permission="data.export">
+            <ReportsPage />
+          </RequirePermission>
+        ),
+      },
+      { path: 'reservations', element: <AllBookingsPage /> },
+      {
+        path: 'conflits',
+        element: (
+          <RequirePermission permission="conflicts.arbitrate">
+            <ConflictQueuePage />
+          </RequirePermission>
+        ),
+      },
+      {
+        path: 'salles',
+        element: (
+          <RequirePermission permission="rooms.manage">
+            <RoomsPage />
+          </RequirePermission>
+        ),
+      },
+      {
+        path: 'salles/:id',
+        element: (
+          <RequirePermission permission="rooms.manage">
+            <RoomEditPage />
+          </RequirePermission>
+        ),
+      },
+      {
+        path: 'equipements',
+        element: (
+          <RequirePermission permission="rooms.manage">
+            <EquipmentPage />
+          </RequirePermission>
+        ),
+      },
+      {
+        path: 'plans',
+        element: (
+          <RequirePermission permission="rooms.manage">
+            <PlansPage />
+          </RequirePermission>
+        ),
+      },
+      {
+        path: 'ouvertures',
+        element: (
+          <RequirePermission permission="rules.configure">
+            <SchedulesPage />
+          </RequirePermission>
+        ),
+      },
+      {
+        path: 'regles',
+        element: (
+          <RequirePermission permission="rules.configure">
+            <BookingRulesPage />
+          </RequirePermission>
+        ),
+      },
+      {
+        path: 'utilisateurs',
+        element: (
+          <RequirePermission permission="users.manage">
+            <UsersPage />
+          </RequirePermission>
+        ),
+      },
+      {
+        path: 'roles',
+        element: (
+          <RequirePermission permission="system.configure">
+            <RolesPage />
+          </RequirePermission>
+        ),
+      },
+      {
+        path: 'tickets',
+        element: (
+          <RequirePermission permission="support.handle">
+            <TicketsPage />
+          </RequirePermission>
+        ),
+      },
+      {
+        path: 'tickets/:id',
+        element: (
+          <RequirePermission permission="support.handle">
+            <TicketsPage />
+          </RequirePermission>
+        ),
+      },
+      {
+        path: 'connaissances',
+        element: (
+          <RequirePermission permission="support.handle">
+            <KnowledgePage />
+          </RequirePermission>
+        ),
+      },
+      {
+        path: 'modeles',
+        element: (
+          <RequirePermission permission="system.configure">
+            <EmailTemplatesPage />
+          </RequirePermission>
+        ),
+      },
+      {
+        path: 'audit',
+        element: (
+          <RequirePermission permission="system.configure">
+            <AuditLogPage />
+          </RequirePermission>
+        ),
+      },
     ],
   },
   { path: '/403', element: <ForbiddenPage /> },

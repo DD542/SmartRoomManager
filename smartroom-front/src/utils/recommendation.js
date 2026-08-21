@@ -1,4 +1,4 @@
-import { fmtPercent } from './format';
+import { fmtPercent, normalize } from './format';
 
 /**
  * Moteur de recommandation.
@@ -105,8 +105,13 @@ function buildJustification(breakdown, need) {
   if (phrases.length === 0) return `Compromis : ${weak.label.toLowerCase()} ${weak.detail}.`;
 
   const base = phrases.join(', ');
+  // « réserve : bâtiment, autre bâtiment » : quand le détail reprend déjà le
+  // critère, le rappeler devant produit une répétition.
+  const redondant = normalize(weak.detail).includes(normalize(weak.label));
   const reserve =
-    weak.points / weak.max < 0.4 ? ` — réserve : ${weak.label.toLowerCase()}, ${weak.detail}.` : '.';
+    weak.points / weak.max < 0.4
+      ? ` — réserve : ${redondant ? weak.detail : `${weak.label.toLowerCase()}, ${weak.detail}`}.`
+      : '.';
   return base.charAt(0).toUpperCase() + base.slice(1) + reserve;
 }
 

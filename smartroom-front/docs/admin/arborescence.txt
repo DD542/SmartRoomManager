@@ -1,0 +1,72 @@
+Ajouts au projet existant — espace administration intégré au même front.
+Rien n'est déplacé : le design system, les moteurs métier et src/api/ sont réutilisés.
+
+src/
+├─ types.admin.js                        # JSDoc des entités propres à l'administration
+│
+├─ api/admin/                            # Une ressource par fichier, endpoint FastAPI en tête
+│  ├─ session.js                         # POST /api/admin/auth/login, GET /api/admin/me
+│  ├─ bookings.js                        # toutes réservations, création admin, blocage
+│  ├─ conflicts.js                       # file des conflits, demandes d'accès, validations
+│  ├─ rooms.js                           # CRUD salles, actions groupées
+│  ├─ equipment.js                       # catalogue des équipements
+│  ├─ plans.js                           # placement des salles sur les plans d'étage
+│  ├─ schedules.js                       # horaires d'ouverture, fermetures exceptionnelles
+│  ├─ rules.js                           # règles de réservation globales et par salle
+│  ├─ users.js                           # comptes, métriques, suspension
+│  ├─ admins.js                          # administrateurs, permissions, invitations
+│  ├─ tickets.js                         # tickets back-office, réponses types
+│  ├─ knowledge.js                       # articles publiés/brouillons, scénarios chatbot
+│  ├─ templates.js                       # modèles d'e-mails, envoi de test
+│  ├─ audit.js                           # journal d'audit
+│  └─ reports.js                         # agrégats et exports
+│
+├─ mocks/admin/
+│  ├─ admins.js                          # 3 comptes + 1 invitation en attente
+│  ├─ auditLog.js                        # 128 entrées, dont 5 détaillées avec diff
+│  ├─ emailTemplates.js                  # confirmation, rappel, annulation, conflit
+│  ├─ closures.js                        # grille hebdomadaire + 4 fermetures
+│  └─ responseTemplates.js               # réponses types du support
+│
+├─ layouts/
+│  └─ AdminLayout.jsx                    # sidebar admin + topbar + garde de permission
+│
+├─ hooks/
+│  ├─ useAdminSession.jsx                # session administrateur et permissions
+│  ├─ usePermission.js                   # a(permission) -> booléen, pour masquer/désactiver
+│  └─ useDataTable.js                    # tri, filtres, pagination, sélection multiple
+│
+├─ components/admin/
+│  ├─ AdminSidebar.jsx  AdminTopbar.jsx  PermissionGate.jsx
+│  ├─ DataTable.jsx  FilterBar.jsx  BulkActionBar.jsx  DetailPanel.jsx  SaveBar.jsx
+│  ├─ dashboard/  KpiRow.jsx  OccupancyTrend.jsx  HourHeatmap.jsx  AlertList.jsx
+│  ├─ bookings/   BookingFilters.jsx  AdminBookingModal.jsx  SourceBadge.jsx
+│  ├─ conflicts/  ConflictQueue.jsx  ConflictArbitration.jsx  ClaimantCard.jsx
+│  ├─ rooms/      RoomForm.jsx  RoomPreviewCard.jsx  EquipmentForm.jsx  PlanEditor.jsx
+│  ├─ rules/      YearOverview.jsx  WeeklyGrid.jsx  ClosureForm.jsx  RuleImpact.jsx
+│  ├─ people/     UserDetail.jsx  PermissionMatrix.jsx  InviteForm.jsx
+│  ├─ support/    TicketQueue.jsx  TicketThread.jsx  RequesterAside.jsx  TemplateEditor.jsx
+│  └─ audit/      AuditTable.jsx  AuditDetail.jsx  ValueDiff.jsx
+│
+└─ pages/admin/
+   ├─ AdminLoginPage.jsx                 # A-00
+   ├─ dashboard/OccupancyDashboardPage.jsx   # A-01
+   ├─ reports/ReportsPage.jsx                # A-02
+   ├─ bookings/AllBookingsPage.jsx           # A-03  (+ modale de création A-03b)
+   ├─ bookings/ConflictQueuePage.jsx         # A-04
+   ├─ rooms/RoomsPage.jsx                    # A-05
+   ├─ rooms/RoomEditPage.jsx                 # A-06
+   ├─ rooms/EquipmentPage.jsx                # A-07
+   ├─ rooms/PlansPage.jsx                    # A-08
+   ├─ rules/SchedulesPage.jsx                # A-09
+   ├─ rules/BookingRulesPage.jsx             # A-10
+   ├─ people/UsersPage.jsx                   # A-11
+   ├─ people/RolesPage.jsx                   # A-12
+   ├─ support/TicketsPage.jsx                # A-13
+   ├─ support/KnowledgePage.jsx              # A-14
+   ├─ support/EmailTemplatesPage.jsx         # A-15
+   └─ audit/AuditLogPage.jsx                 # A-16
+
+Réutilisé sans modification : components/ui/*, utils/{conflicts,recommendation,openingRules,
+recurrence,dates,format}.js, api/{rooms,bookings,availability,buildings,equipment}.js.
+Étendu : mocks/users.js (métriques), mocks/rooms.js (référent de salle).

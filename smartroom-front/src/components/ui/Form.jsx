@@ -151,12 +151,19 @@ export function Checkbox({ label, description, checked, onChange, id, className,
   );
 }
 
-export function Switch({ label, description, checked, onChange, id, icon: Icon }) {
+/**
+ * `hideLabel` masque le libellé à l'écran sans le retirer aux lecteurs
+ * d'écran : utile quand le contexte de la ligne le rend déjà évident.
+ */
+export function Switch({ label, description, checked, onChange, id, icon: Icon, hideLabel = false }) {
   const autoId = useId();
   const inputId = id ?? autoId;
   return (
     <div className="flex items-center justify-between gap-4">
-      <label htmlFor={inputId} className="flex cursor-pointer items-start gap-3">
+      <label
+        htmlFor={inputId}
+        className={cn('flex cursor-pointer items-start gap-3', hideLabel && 'sr-only')}
+      >
         {Icon && <Icon size={16} aria-hidden="true" className="mt-0.5 text-content-muted" />}
         <span>
           <span className="block text-sm text-content">{label}</span>

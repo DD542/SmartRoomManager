@@ -39,6 +39,12 @@ export const TICKET_STATUS_LABEL = {
   resolu: 'Résolu',
 };
 
+export const USER_ROLE_LABEL = {
+  etudiant: 'Étudiant',
+  enseignant: 'Enseignant',
+  gestionnaire: 'Gestionnaire',
+};
+
 export const PARTICIPANT_STATUS_LABEL = {
   accepte: 'Accepté',
   en_attente: 'En attente',

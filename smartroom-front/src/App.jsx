@@ -1,18 +1,24 @@
 import { RouterProvider } from 'react-router-dom';
 import { router } from './router';
 import { AuthProvider } from './hooks/useAuth';
+import { AdminSessionProvider } from './hooks/useAdminSession';
 import { ToastProvider } from './hooks/useToast';
 
 /**
  * Fournisseurs globaux montés au-dessus du routeur.
+ *
+ * Les deux sessions coexistent sans se confondre : `AuthProvider` porte celle de
+ * l'espace utilisateur, `AdminSessionProvider` celle de l'administration.
  * Aucun état n'est persisté : tout vit en mémoire React, conformément au cahier.
  */
 export default function App() {
   return (
     <AuthProvider>
-      <ToastProvider>
-        <RouterProvider router={router} />
-      </ToastProvider>
+      <AdminSessionProvider>
+        <ToastProvider>
+          <RouterProvider router={router} />
+        </ToastProvider>
+      </AdminSessionProvider>
     </AuthProvider>
   );
 }
