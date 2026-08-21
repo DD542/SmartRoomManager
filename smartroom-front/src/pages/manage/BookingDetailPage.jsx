@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { History, MapPin, Pencil, QrCode, Route, XCircle } from 'lucide-react';
+import { CheckCircle2, History, MapPin, Pencil, Route, XCircle } from 'lucide-react';
 import { getBooking } from '../../api/bookings';
 import { getPlanDocument } from '../../api/buildings';
 import { useAsync } from '../../hooks/useAsync';
@@ -141,7 +141,7 @@ export default function BookingDetailPage() {
                       Modifier la réservation
                     </Button>
                     {toDate(data.start) <= new Date(Date.now() + 864e5) && (
-                      <Button variant="secondary" icon={QrCode} to={`/app/check-in/${data.id}`}>
+                      <Button variant="secondary" icon={CheckCircle2} to={`/app/check-in/${data.id}`}>
                         Valider ma présence
                       </Button>
                     )}

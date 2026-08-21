@@ -16,7 +16,9 @@ export function Tabs({ tabs = [], value, onChange, className, label = 'Onglets' 
       role="tablist"
       aria-label={label}
       onKeyDown={onKeyDown}
-      className={cn('flex gap-1 overflow-x-auto border-b border-line', className)}
+      // Les onglets passent à la ligne plutôt que de défiler : un onglet hors
+      // du cadre n'est ni visible ni atteignable au premier coup d'œil.
+      className={cn('flex flex-wrap gap-x-1 border-b border-line', className)}
     >
       {tabs.map((tab) => {
         const active = tab.id === value;

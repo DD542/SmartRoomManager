@@ -1,4 +1,5 @@
 import { ChevronDown } from 'lucide-react';
+import { Reveal } from './Reveal';
 
 const QUESTIONS = [
   {
@@ -23,13 +24,15 @@ const QUESTIONS = [
 export function LandingFaq() {
   return (
     <section id="faq" className="scroll-mt-16">
-      <div className="mx-auto w-full max-w-3xl px-4 py-14">
-        <h2 className="text-2xl font-semibold tracking-tight text-content">Questions fréquentes</h2>
+      <div className="mx-auto w-full max-w-3xl px-4 py-16 sm:py-20">
+        <Reveal as="h2" className="text-2xl font-semibold tracking-tight text-content sm:text-3xl">
+          Questions fréquentes
+        </Reveal>
 
         <div className="mt-6 flex flex-col gap-2">
-          {QUESTIONS.map((item) => (
+          {QUESTIONS.map((item, index) => (
+            <Reveal key={item.q} delay={index * 70}>
             <details
-              key={item.q}
               className="group rounded-xl border border-line bg-surface px-4 py-3 transition open:border-line-strong"
             >
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium text-content">
@@ -42,6 +45,7 @@ export function LandingFaq() {
               </summary>
               <p className="mt-3 text-xs leading-relaxed text-content-muted">{item.a}</p>
             </details>
+            </Reveal>
           ))}
         </div>
       </div>

@@ -63,7 +63,12 @@ export default function ProfilePage() {
       />
 
       <div className="grid gap-4 lg:grid-cols-[200px_1fr]">
-        <nav aria-label="Sections du profil" className="flex gap-1 overflow-x-auto lg:flex-col">
+        {/* Deux colonnes sur mobile, quatre sur tablette, liste verticale sur
+            grand écran : les quatre sections tiennent toujours sans défilement. */}
+        <nav
+          aria-label="Sections du profil"
+          className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-1 lg:gap-1"
+        >
           {SECTIONS.map((item) => (
             <button
               key={item.id}
@@ -71,7 +76,7 @@ export default function ProfilePage() {
               aria-current={section === item.id ? 'true' : undefined}
               onClick={() => setSection(item.id)}
               className={cn(
-                'flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-sm transition',
+                'flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm transition lg:justify-start',
                 section === item.id
                   ? 'border-accent/50 bg-accent-soft text-content'
                   : 'border-transparent text-content-muted hover:bg-surface-raised hover:text-content',

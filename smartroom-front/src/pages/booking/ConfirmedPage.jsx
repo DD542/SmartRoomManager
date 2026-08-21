@@ -2,12 +2,14 @@ import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { CalendarPlus, CheckCircle2, Map } from 'lucide-react';
 import { getBooking } from '../../api/bookings';
+import { getPlanDocument } from '../../api/buildings';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { fmtDateLong, fmtTime } from '../../utils/dates';
 import { downloadIcs } from '../../utils/ics';
-import { AccessCode, QrTile } from '../../components/ui/AccessCode';
+import { AccessCode } from '../../components/ui/AccessCode';
+import { PlanPreview } from '../../components/rooms/PlanPreview';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { AsyncBoundary, Skeleton } from '../../components/ui/States';
@@ -22,6 +24,10 @@ export default function ConfirmedPage() {
   const { user } = useAuth();
   const toast = useToast();
   const booking = useAsync(() => getBooking(id), [id]);
+  const planDocument = useAsync(
+    () => (booking.data?.roomId ? getPlanDocument(booking.data.roomId) : Promise.resolve(null)),
+    [booking.data?.roomId],
+  );
 
   useEffect(() => {
     document.title = 'Réservation confirmée — SmartRoom Manager';
@@ -64,12 +70,20 @@ export default function ConfirmedPage() {
               </div>
             </dl>
 
-            <div className="mt-4 flex items-center justify-center gap-3">
-              <div className="rounded-xl border border-line bg-surface-raised px-4 py-3">
-                <p className="text-xs text-content-muted">Code d’accès</p>
-                <AccessCode code={booking.data.accessCode} size="sm" className="mt-1" />
-              </div>
-              <QrTile code={booking.data.accessCode ?? ''} size={84} />
+            <div className="mt-4 rounded-xl border border-line bg-surface-raised px-4 py-3">
+              <p className="text-xs text-content-muted">Code d’accès</p>
+              <AccessCode code={booking.data.accessCode} size="sm" className="mt-1 justify-center" />
+            </div>
+
+            <div className="mt-3 text-left">
+              <p className="mb-2 text-xs uppercase tracking-wide text-content-muted">
+                Plan de localisation
+              </p>
+              <PlanPreview
+                document={planDocument.data}
+                isLoading={planDocument.isLoading}
+                actionLabel="Ouvrir le plan"
+              />
             </div>
 
             <div className="mt-6 flex flex-col gap-2">
@@ -84,7 +98,7 @@ export default function ConfirmedPage() {
                 Ajouter à mon agenda
               </Button>
               <Button variant="secondary" fullWidth icon={Map} to="/app/plan">
-                Voir l’itinéraire
+                Voir le plan interactif
               </Button>
               <Button variant="ghost" size="sm" to="/app">
                 Retour à l’accueil

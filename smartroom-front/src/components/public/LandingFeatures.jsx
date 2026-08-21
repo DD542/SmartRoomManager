@@ -1,6 +1,6 @@
 import { AlertTriangle, BarChart3, CalendarDays, SlidersHorizontal, Sparkles } from 'lucide-react';
 import { Card } from '../ui/Card';
-import { StaggerList } from '../ui/StaggerList';
+import { Reveal } from './Reveal';
 
 const MAIN = {
   icon: SlidersHorizontal,
@@ -42,46 +42,52 @@ const FEATURES = [
 /** P-01 — ancre #fonctionnalites, reprise des fonctionnalités imposées par le sujet. */
 export function LandingFeatures() {
   return (
-    <section id="fonctionnalites" className="scroll-mt-16 border-b border-line">
-      <div className="mx-auto w-full max-w-6xl px-4 py-14">
-        <h2 className="text-2xl font-semibold tracking-tight text-content sm:text-3xl">
+    <section id="fonctionnalites" className="scroll-mt-16">
+      <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:py-20">
+        <Reveal as="h2" className="text-2xl font-semibold tracking-tight text-content sm:text-3xl">
           Un système complet
-        </h2>
-        <p className="mt-2 max-w-xl text-sm text-content-muted">
+        </Reveal>
+        <Reveal as="p" delay={80} className="mt-2 max-w-xl text-sm text-content-muted">
           Conçu pour éliminer la friction dans la réservation d’espaces partagés.
-        </p>
+        </Reveal>
 
         {/* Première rangée : la fonction principale, large, et la détection de conflits. */}
         <div className="mt-8 grid gap-3 lg:grid-cols-3">
-          <Card className="p-6 lg:col-span-2">
+          <Reveal className="lg:col-span-2">
+            <Card className="group h-full p-6 transition duration-300 hover:-translate-y-1 hover:border-line-strong">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-accent/40 bg-accent-soft">
               <MAIN.icon size={17} aria-hidden="true" className="text-accent" />
             </span>
             <h3 className="mt-4 text-base font-semibold text-content">{MAIN.title}</h3>
-            <p className="mt-3 max-w-xl text-xs leading-relaxed text-content-muted">{MAIN.body}</p>
-          </Card>
+              <p className="mt-3 max-w-xl text-xs leading-relaxed text-content-muted">{MAIN.body}</p>
+            </Card>
+          </Reveal>
 
-          <Card className="p-6">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-surface-raised">
+          <Reveal delay={120}>
+            <Card className="group h-full p-6 transition duration-300 hover:-translate-y-1 hover:border-line-strong">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-surface-raised transition-transform duration-300 group-hover:scale-110">
               <CONFLICT.icon size={17} aria-hidden="true" className="text-warning" />
             </span>
-            <h3 className="mt-4 text-sm font-semibold text-content">{CONFLICT.title}</h3>
-            <p className="mt-2 text-xs leading-relaxed text-content-muted">{CONFLICT.body}</p>
-          </Card>
+              <h3 className="mt-4 text-sm font-semibold text-content">{CONFLICT.title}</h3>
+              <p className="mt-2 text-xs leading-relaxed text-content-muted">{CONFLICT.body}</p>
+            </Card>
+          </Reveal>
         </div>
 
         {/* Seconde rangée : trois fonctions de même niveau. */}
-        <StaggerList className="mt-3 grid gap-3 md:grid-cols-3">
-          {FEATURES.map((feature) => (
-            <Card key={feature.title} className="h-full p-5">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-surface-raised">
-                <feature.icon size={15} aria-hidden="true" className="text-content-muted" />
-              </span>
-              <h3 className="mt-3 text-sm font-semibold text-content">{feature.title}</h3>
-              <p className="mt-2 text-xs leading-relaxed text-content-muted">{feature.body}</p>
-            </Card>
+        <div className="mt-3 grid gap-3 md:grid-cols-3">
+          {FEATURES.map((feature, index) => (
+            <Reveal key={feature.title} delay={index * 90} className="h-full">
+              <Card className="group h-full p-5 transition duration-300 hover:-translate-y-1 hover:border-line-strong">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-surface-raised transition-transform duration-300 group-hover:scale-110">
+                  <feature.icon size={15} aria-hidden="true" className="text-content-muted transition-colors duration-300 group-hover:text-accent" />
+                </span>
+                <h3 className="mt-3 text-sm font-semibold text-content">{feature.title}</h3>
+                <p className="mt-2 text-xs leading-relaxed text-content-muted">{feature.body}</p>
+              </Card>
+            </Reveal>
           ))}
-        </StaggerList>
+        </div>
       </div>
     </section>
   );

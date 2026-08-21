@@ -4,6 +4,7 @@ import { getPublicStats } from '../../api/stats';
 import { Button } from '../ui/Button';
 import { Skeleton } from '../ui/States';
 import { AppPreview } from './AppPreview';
+import { Reveal } from './Reveal';
 
 function StatBand({ stats, isLoading }) {
   // Les valeurs viennent du catalogue réel ; seuls les libellés sont ceux de la maquette.
@@ -29,7 +30,7 @@ function StatBand({ stats, isLoading }) {
   }
 
   return (
-    <dl className="mt-10 grid grid-cols-3 gap-6 border-t border-line pt-6">
+    <dl className="mt-10 grid grid-cols-3 gap-6">
       {items.map((item) => (
         // flex-col-reverse : la valeur s'affiche au-dessus, l'ordre du DOM reste terme puis définition.
         <div key={item.label} className="flex flex-col-reverse gap-1">
@@ -46,39 +47,50 @@ export function LandingHero() {
   const { data: stats, isLoading } = useAsync(getPublicStats, []);
 
   return (
-    <section className="border-b border-line">
+    <section>
       <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-14 md:grid-cols-[1.05fr_1fr] md:items-center md:py-20">
         <div>
-          <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide text-content-muted">
+          <Reveal
+            as="p"
+            className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide text-content-muted"
+          >
             <Zap size={12} aria-hidden="true" className="text-accent" />
             Réservation intelligente de salles
-          </p>
+          </Reveal>
 
           <h1 className="mt-5 text-4xl font-semibold leading-[1.1] tracking-tight md:text-5xl">
-            <span className="block text-content">Trouvez la bonne salle.</span>
-            <span className="block text-accent">Au bon moment.</span>
-            <span className="block text-content">Sans conflit.</span>
+            <Reveal as="span" delay={80} className="block text-content">
+              Trouvez la bonne salle.
+            </Reveal>
+            <Reveal as="span" delay={180} className="block text-accent">
+              Au bon moment.
+            </Reveal>
+            <Reveal as="span" delay={280} className="block text-content">
+              Sans conflit.
+            </Reveal>
           </h1>
 
-          <p className="mt-5 max-w-lg text-sm leading-relaxed text-content-muted">
+          <Reveal as="p" delay={380} className="mt-5 max-w-lg text-sm leading-relaxed text-content-muted">
             Notre algorithme d’analyse croise vos besoins d’équipement, de capacité et les emplois du
             temps pour vous recommander la salle adaptée instantanément, et détecte les conflits
             avant qu’ils n’arrivent.
-          </p>
+          </Reveal>
 
-          <div className="mt-7 flex flex-wrap gap-3">
+          <Reveal delay={460} className="mt-7 flex flex-wrap gap-3">
             <Button to="/connexion" size="lg" iconRight={ArrowRight}>
               Se connecter
             </Button>
             <Button href="#fonctionnalites" variant="secondary" size="lg">
               Découvrir les fonctionnalités
             </Button>
-          </div>
+          </Reveal>
 
           <StatBand stats={stats} isLoading={isLoading} />
         </div>
 
-        <AppPreview />
+        <Reveal delay={220}>
+          <AppPreview />
+        </Reveal>
       </div>
     </section>
   );

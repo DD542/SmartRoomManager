@@ -1,14 +1,58 @@
 import { ChevronRight } from 'lucide-react';
+import { useIsMobile } from '../../hooks/useMediaQuery';
 import { fmtRelative } from '../../utils/dates';
 import { TICKET_STATUS_LABEL } from '../../utils/format';
 import { Badge } from '../ui/Badge';
 import { Table } from '../ui/Table';
+import { StaggerList } from '../ui/StaggerList';
 
 const TONE = { ouvert: 'warning', en_cours: 'accent', resolu: 'success' };
-const CATEGORY = { acces: 'Accès', equipement: 'Équipement', maintenance: 'Maintenance', compte: 'Compte' };
+const CATEGORY = {
+  acces: 'Accès',
+  equipement: 'Équipement',
+  maintenance: 'Maintenance',
+  compte: 'Compte',
+};
 
-/** U-22 — tableau « Mes demandes », avec ouverture du fil de discussion. */
+/**
+ * U-22 — « Mes demandes ».
+ * Tableau sur grand écran, cartes empilées sous 768px : le tableau imposerait
+ * un défilement horizontal, où la colonne d'action finit hors du cadre.
+ */
 export function TicketTable({ tickets = [], onOpen }) {
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return (
+      <StaggerList className="flex flex-col gap-2 p-3">
+        {tickets.map((ticket) => (
+          <button
+            key={ticket.id}
+            type="button"
+            onClick={() => onOpen(ticket)}
+            className="flex w-full items-center gap-3 rounded-xl border border-line bg-surface-raised p-3 text-left transition hover:border-line-strong"
+          >
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm text-content">{ticket.subject}</span>
+              <span className="mt-0.5 block font-mono text-xs text-content-muted">
+                #{ticket.id} · {CATEGORY[ticket.category]}
+              </span>
+              <span className="mt-1.5 flex flex-wrap items-center gap-2">
+                <Badge tone={TONE[ticket.status] ?? 'default'} dot>
+                  {TICKET_STATUS_LABEL[ticket.status]}
+                </Badge>
+                <span className="font-mono text-xs text-content-faint">
+                  {fmtRelative(ticket.updatedAt)}
+                </span>
+              </span>
+            </span>
+            <ChevronRight size={16} aria-hidden="true" className="shrink-0 text-content-muted" />
+          </button>
+        ))}
+      </StaggerList>
+    );
+  }
+
   const columns = [
     {
       key: 'subject',
@@ -58,5 +102,7 @@ export function TicketTable({ tickets = [], onOpen }) {
     },
   ];
 
-  return <Table columns={columns} rows={tickets} caption="Mes demandes d’assistance" onRowClick={onOpen} />;
+  return (
+    <Table columns={columns} rows={tickets} caption="Mes demandes d’assistance" onRowClick={onOpen} />
+  );
 }

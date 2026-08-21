@@ -3,13 +3,12 @@ import { LandingHero } from '../../components/public/LandingHero';
 import { LandingProblems } from '../../components/public/LandingProblems';
 import { LandingFeatures } from '../../components/public/LandingFeatures';
 import { LandingSteps } from '../../components/public/LandingSteps';
-import { LandingPricing } from '../../components/public/LandingPricing';
 import { LandingFaq } from '../../components/public/LandingFaq';
 import { LandingCta } from '../../components/public/LandingCta';
 
 /**
  * P-01 — Landing page publique.
- * Assemble les six sections ; chacune reste autonome et testable isolément.
+ * Assemble les cinq sections ; chacune reste autonome et testable isolément.
  */
 export default function LandingPage() {
   useEffect(() => {
@@ -22,7 +21,6 @@ export default function LandingPage() {
       <LandingProblems />
       <LandingFeatures />
       <LandingSteps />
-      <LandingPricing />
       <LandingFaq />
       <LandingCta />
     </>

@@ -6,7 +6,6 @@ const LINKS = [
   { href: '#fonctionnalites', label: 'Fonctionnalités' },
   { href: '#fonctionnement', label: 'Comment ça marche' },
   { href: '#faq', label: 'FAQ' },
-  { href: '#tarifs', label: 'Tarifs' },
 ];
 
 /** Cadre des pages publiques : en-tête de site, contenu, pied de page. */
@@ -17,7 +16,7 @@ export default function PublicLayout() {
         Aller au contenu principal
       </a>
 
-      <header className="sticky top-0 z-40 border-b border-line bg-ink/95 backdrop-blur">
+      <header className="sticky top-0 z-40 bg-ink/90 backdrop-blur">
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-4 px-4">
           <Link to="/" className="flex items-center gap-2 text-sm font-semibold text-content">
             <DoorOpen size={18} aria-hidden="true" className="text-accent" />
@@ -44,7 +43,7 @@ export default function PublicLayout() {
         <Outlet />
       </main>
 
-      <footer className="border-t border-line bg-surface">
+      <footer className="bg-surface">
         <div className="mx-auto grid w-full max-w-6xl gap-6 px-4 py-8 text-xs text-content-muted sm:grid-cols-2 md:grid-cols-4">
           <div>
             <p className="text-sm font-semibold text-content">SmartRoom Manager</p>
@@ -81,7 +80,7 @@ export default function PublicLayout() {
             </ul>
           </div>
         </div>
-        <p className="border-t border-line px-4 py-4 text-center text-xs text-content-faint">
+        <p className="px-4 pb-6 text-center text-xs text-content-faint">
           © 2026 SmartRoom Manager — Projet académique ECE Paris.
         </p>
       </footer>

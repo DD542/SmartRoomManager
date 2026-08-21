@@ -1,11 +1,12 @@
 import { Button } from '../ui/Button';
+import { Reveal } from './Reveal';
 
 /** P-01 — bandeau d'appel à l'action, juste avant le pied de page. */
 export function LandingCta() {
   return (
-    <section className="border-b border-line">
-      <div className="mx-auto w-full max-w-6xl px-4 py-14">
-        <div className="rounded-xl border border-line bg-surface px-6 py-12 text-center">
+    <section>
+      <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:py-20">
+        <Reveal className="rounded-xl border border-line bg-surface px-6 py-12 text-center transition-colors duration-300 hover:border-accent/40">
           <h2 className="text-2xl font-semibold tracking-tight text-content sm:text-3xl">
             Prêt à optimiser vos espaces ?
           </h2>
@@ -16,7 +17,7 @@ export function LandingCta() {
           <Button to="/connexion" size="lg" className="mt-6">
             Se connecter
           </Button>
-        </div>
+        </Reveal>
       </div>
     </section>
   );

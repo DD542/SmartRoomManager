@@ -46,40 +46,6 @@ export function AccessCode({ code, masked = false, size = 'lg', className }) {
   );
 }
 
-/**
- * Vignette QR déterministe dérivée du code : rendu local, sans bibliothèque.
- * Elle sert de repère visuel à l'écran, le back fournira un vrai QR encodé.
- */
-export function QrTile({ code = '', size = 96, className }) {
-  const cells = 11;
-  const seed = [...String(code)].reduce((acc, char) => acc * 31 + char.charCodeAt(0), 7);
-  const filled = (x, y) => {
-    const value = Math.abs(Math.sin(seed * (x + 1) * (y + 2))) * 10000;
-    return Math.floor(value) % 3 !== 0;
-  };
-  const isFinder = (x, y) =>
-    (x < 3 && y < 3) || (x > cells - 4 && y < 3) || (x < 3 && y > cells - 4);
-
-  return (
-    <div
-      className={cn('rounded-lg bg-white p-2', className)}
-      style={{ width: size, height: size }}
-      role="img"
-      aria-label={`QR code du code d'accès ${code}`}
-    >
-      <svg viewBox={`0 0 ${cells} ${cells}`} className="h-full w-full" aria-hidden="true">
-        {Array.from({ length: cells }).map((_, y) =>
-          Array.from({ length: cells }).map((__, x) =>
-            isFinder(x, y) || filled(x, y) ? (
-              <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill="#101623" />
-            ) : null,
-          ),
-        )}
-      </svg>
-    </div>
-  );
-}
-
 /** Encart complet « Code d'accès » du détail de réservation. */
 export function AccessCodePanel({ code, badgeRequired = false, children, className }) {
   return (
@@ -92,7 +58,6 @@ export function AccessCodePanel({ code, badgeRequired = false, children, classNa
         <p className="mt-0.5 text-xs text-content-muted">Utilisez ce code sur le terminal de la salle</p>
       </div>
       <AccessCode code={code} />
-      <QrTile code={code} />
       {badgeRequired && (
         <p className="w-full rounded-lg border border-warning/40 bg-warning-soft px-3 py-2 text-xs font-medium uppercase tracking-wide text-warning">
           Badge requis

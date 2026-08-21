@@ -1,3 +1,4 @@
+import { Reveal } from './Reveal';
 
 const STEPS = [
   {
@@ -25,17 +26,23 @@ const STEPS = [
 /** P-01 — ancre #fonctionnement : le tunnel de réservation en quatre étapes. */
 export function LandingSteps() {
   return (
-    <section id="fonctionnement" className="scroll-mt-16 border-b border-line">
-      <div className="mx-auto w-full max-w-6xl px-4 py-14">
-        <h2 className="text-2xl font-semibold tracking-tight text-content">Comment ça marche</h2>
+    <section id="fonctionnement" className="scroll-mt-16">
+      <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:py-20">
+        <Reveal as="h2" className="text-2xl font-semibold tracking-tight text-content sm:text-3xl">
+          Comment ça marche
+        </Reveal>
 
         <ol className="mt-8 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-          {STEPS.map((step) => (
-            <li key={step.number} className="rounded-xl border border-line bg-surface p-5">
-              <span className="font-mono text-xs text-accent">{step.number}</span>
-              <h3 className="mt-3 text-sm font-semibold text-content">{step.title}</h3>
-              <p className="mt-2 text-xs leading-relaxed text-content-muted">{step.body}</p>
-            </li>
+          {STEPS.map((step, index) => (
+            <Reveal as="li" key={step.number} delay={index * 90}>
+              <span className="group block h-full rounded-xl border border-line bg-surface p-5 transition duration-300 hover:-translate-y-1 hover:border-line-strong">
+                <span className="inline-block font-mono text-xs text-accent transition-transform duration-300 group-hover:scale-125">
+                  {step.number}
+                </span>
+                <span className="mt-3 block text-sm font-semibold text-content">{step.title}</span>
+                <span className="mt-2 block text-xs leading-relaxed text-content-muted">{step.body}</span>
+              </span>
+            </Reveal>
           ))}
         </ol>
 

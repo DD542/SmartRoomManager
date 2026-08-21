@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { CheckCircle2, Clock, QrCode, X } from 'lucide-react';
+import { CheckCircle2, Clock, X } from 'lucide-react';
 import { getBooking } from '../../api/bookings';
 import { checkIn, declareLate, getCheckInWindow } from '../../api/checkin';
 import { useAsync } from '../../hooks/useAsync';
@@ -189,14 +189,6 @@ export default function CheckInPage() {
                     onClick={validate}
                   >
                     Valider mon arrivée
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    fullWidth
-                    icon={QrCode}
-                    onClick={() => toast.info('Scanner indisponible', 'Le lecteur QR arrive avec l’application mobile.')}
-                  >
-                    Scanner le QR de la porte
                   </Button>
                 </div>
 
