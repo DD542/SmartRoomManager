@@ -8,6 +8,10 @@ dist/
 __pycache__/
 *.pyc
 
+# Secrets : seul .env.example est versionné
+.env
+.env.local
+
 # Outils et système
 .idea/
 .DS_Store
