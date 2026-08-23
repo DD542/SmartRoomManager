@@ -18,7 +18,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.api.errors import register_exception_handlers
-from app.api.router import api_router
+from app.api.v1.router import v1_router
 from app.core.config import get_settings
 from app.db.session import get_session
 from app.tasks.maintenance import boucle
@@ -59,7 +59,7 @@ app.add_middleware(
 )
 
 register_exception_handlers(app)
-app.include_router(api_router)
+app.include_router(v1_router)
 
 
 @app.get("/health", tags=["technique"])

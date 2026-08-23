@@ -20,15 +20,15 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.db.session import SessionLocal
-from app.schemas.reservations import MaintenanceReport
-from app.services.booking import close_finished_bookings, release_no_shows
+from app.api.v1.schemas import MaintenanceOut
+from app.services.booking_service import close_finished_bookings, release_no_shows
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
 FUSEAU = ZoneInfo(settings.timezone)
 
 
-def passer(session: Session, maintenant: datetime | None = None) -> MaintenanceReport:
+def passer(session: Session, maintenant: datetime | None = None) -> MaintenanceOut:
     """Un passage complet, dans une seule transaction.
 
     L'ordre compte : on libère avant de clôturer, sinon une réservation dont la
@@ -41,7 +41,7 @@ def passer(session: Session, maintenant: datetime | None = None) -> MaintenanceR
     closes = close_finished_bookings(session, maintenant)
     session.commit()
 
-    return MaintenanceReport(released=len(liberees), closed=closes, ran_at=maintenant)
+    return MaintenanceOut(released=len(liberees), closed=closes, ran_at=maintenant)
 
 
 async def boucle(intervalle: int | None = None) -> None:
@@ -73,7 +73,7 @@ async def boucle(intervalle: int | None = None) -> None:
             )
 
 
-def _passer_isole() -> MaintenanceReport:
+def _passer_isole() -> MaintenanceOut:
     """Session dédiée : la tâche ne partage rien avec les requêtes en vol."""
     with SessionLocal() as session:
         return passer(session)
