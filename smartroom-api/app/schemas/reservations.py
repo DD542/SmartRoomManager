@@ -429,3 +429,76 @@ class AccessRequestRead(TimestampedRead):
 class AccessRequestDetailRead(AccessRequestRead):
     claimants: list[ClaimantRead] = Field(default_factory=list)
     alternatives: list[RoomSuggestion] = Field(default_factory=list)
+
+
+# --------------------------------------------------------------------------- #
+# Enveloppes produites par les routes
+# --------------------------------------------------------------------------- #
+
+
+class AccessCodeIssued(ReadModel):
+    """Code d'accès en clair. Il ne transite qu'ici, une seule fois."""
+
+    code: str
+    hint: str
+    expires_at: datetime
+
+
+class BookingCreatedRead(ReadModel):
+    """Réponse de création : la réservation, et le code si la salle en exige un."""
+
+    booking: BookingDetailRead
+    access_code: AccessCodeIssued | None = None
+
+
+class CheckInRequest(ApiModel):
+    code: Annotated[str, Field(min_length=1, max_length=20)]
+
+
+class SlotCheckRequest(ApiModel):
+    """Interrogation du moteur de disponibilité, sans rien écrire."""
+
+    slot: TimeRange
+    attendee_count: Annotated[int, Field(ge=1, le=500)] = 1
+    #: Renseigné lors d'un déplacement : la réservation ne se conflictue pas
+    #: avec sa propre position actuelle.
+    ignore_booking_id: uuid.UUID | None = None
+
+
+class AvailabilitySearch(ApiModel):
+    """Recherche de salles libres sur un créneau (U-03)."""
+
+    slot: TimeRange
+    attendee_count: Annotated[int, Field(ge=1, le=500)] = 1
+    building_id: uuid.UUID | None = None
+    equipment_ids: list[uuid.UUID] = Field(default_factory=list)
+    #: Renvoie aussi les salles écartées, pour expliquer pourquoi elles le sont.
+    include_ineligible: bool = False
+
+
+class SeriesOccurrenceRead(ReadModel):
+    starts_at: datetime
+    ends_at: datetime
+    accepted: bool
+    reason: str | None = None
+
+
+class SeriesPreviewRead(ReadModel):
+    occurrences: list[SeriesOccurrenceRead]
+    accepted_count: int
+    rejected_count: int
+
+
+class SeriesCreatedRead(ReadModel):
+    rule: RecurrenceRuleRead
+    bookings: list[BookingRead]
+    #: Dates écartées : la série passe quand même, l'utilisateur voit ce qui manque.
+    skipped: list[SeriesOccurrenceRead] = Field(default_factory=list)
+
+
+class MaintenanceReport(ReadModel):
+    """Bilan d'un passage de la tâche de maintenance."""
+
+    released: int
+    closed: int
+    ran_at: datetime

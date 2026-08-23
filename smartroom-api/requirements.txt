@@ -16,3 +16,4 @@ passlib==1.7.4
 # bcrypt est épinglé sous 4.1 : passlib 1.7.4 lit `bcrypt.__about__`, retiré
 # dans les versions supérieures, ce qui provoque un avertissement au démarrage.
 bcrypt==4.0.1
+PyJWT==2.10.1

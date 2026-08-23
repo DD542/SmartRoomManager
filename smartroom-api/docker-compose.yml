@@ -67,6 +67,9 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-smartroom}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-smartroom}
       TIMEZONE: ${TIMEZONE:-Europe/Paris}
+      JWT_SECRET: ${JWT_SECRET:-changez-moi-en-production}
+      MAINTENANCE_INTERVAL_SECONDS: ${MAINTENANCE_INTERVAL_SECONDS:-300}
+      CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:5173"]}
     ports:
       - "8000:8000"
     volumes:

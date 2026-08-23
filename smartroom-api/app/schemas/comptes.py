@@ -218,3 +218,11 @@ class TokenResponse(ReadModel):
     user: UserRead
     #: Renseigné seulement pour une session d'administration.
     admin: AdminAccountRead | None = None
+
+
+class SessionRead(ReadModel):
+    """Session courante rejouée depuis le jeton, sans réémission."""
+
+    user: UserRead
+    admin: AdminAccountRead | None = None
+    permissions: list[str] = Field(default_factory=list)
