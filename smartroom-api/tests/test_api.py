@@ -563,3 +563,98 @@ def test_salle_archivee_absente_du_parc(client, session, compte, salle):
     entetes = connecter(client, compte.email)
     liste = client.get("/api/rooms", headers=entetes).json()
     assert str(salle.id) not in {item["id"] for item in liste}
+
+
+# --------------------------------------------------------------------------- #
+# Recommandation
+# --------------------------------------------------------------------------- #
+
+
+def besoin(salle, jour: date | None = None, heure: int = 10, **extra) -> dict:
+    corps = {"attendee_count": 4, "limit": 10} | extra
+    if jour is not None:
+        plage = creneau(jour, heure, 0, 60)
+        corps["slot"] = {
+            "starts_at": plage.lower.isoformat(),
+            "ends_at": plage.upper.isoformat(),
+        }
+    return corps
+
+
+def test_classement_expose_le_detail_du_score(client, compte, salle):
+    entetes = connecter(client, compte.email)
+    reponse = client.post("/api/recommendations", headers=entetes, json=besoin(salle))
+
+    assert reponse.status_code == 200
+    proposition = next(item for item in reponse.json() if item["room"]["id"] == str(salle.id))
+    assert 0 <= proposition["score"] <= 100
+    # Quatre critères, chacun avec ses points et son détail affichable.
+    assert {item["key"] for item in proposition["breakdown"]} == {
+        "capacity",
+        "equipment",
+        "building",
+        "occupancy",
+    }
+    assert proposition["justification"].endswith(".")
+
+
+def test_salle_prise_est_classee_mais_marquee(
+    client, compte, salle, jour_ouvre, ouverture, poser
+):
+    poser(creneau(jour_ouvre, 10, 0, 60), "Atelier")
+    entetes = connecter(client, compte.email)
+
+    reponse = client.post(
+        "/api/recommendations", headers=entetes, json=besoin(salle, jour_ouvre)
+    )
+    proposition = next(item for item in reponse.json() if item["room"]["id"] == str(salle.id))
+
+    assert proposition["eligible"] is False
+    assert "Atelier" in proposition["justification"]
+
+
+def test_meilleure_salle_ou_rien(client, compte, salle, jour_ouvre, ouverture):
+    entetes = connecter(client, compte.email)
+
+    trouvee = client.post(
+        "/api/recommendations/best", headers=entetes, json=besoin(salle, jour_ouvre)
+    )
+    assert trouvee.status_code == 200
+    assert trouvee.json()["eligible"] is True
+
+    # Mille personnes : « aucune » est une réponse, pas une erreur.
+    aucune = client.post(
+        "/api/recommendations/best",
+        headers=entetes,
+        json=besoin(salle, jour_ouvre, attendee_count=500),
+    )
+    assert aucune.status_code == 200
+    assert aucune.json() is None
+
+
+def test_alternatives_exigent_un_creneau(client, compte, salle):
+    entetes = connecter(client, compte.email)
+    reponse = client.post(
+        f"/api/recommendations/alternatives/{salle.id}", headers=entetes, json=besoin(salle)
+    )
+    assert reponse.status_code == 422
+    assert reponse.json()["error"]["code"] == "creneau_requis"
+
+
+def test_alternatives_ne_proposent_pas_la_salle_visee(
+    client, compte, salle, jour_ouvre, ouverture, poser
+):
+    poser(creneau(jour_ouvre, 10, 0, 60))
+    entetes = connecter(client, compte.email)
+
+    reponse = client.post(
+        f"/api/recommendations/alternatives/{salle.id}",
+        headers=entetes,
+        json=besoin(salle, jour_ouvre),
+    )
+    assert reponse.status_code == 200
+    assert str(salle.id) not in {item["room"]["id"] for item in reponse.json()}
+
+
+def test_recommandation_exige_une_session(client, salle):
+    assert client.post("/api/recommendations", json=besoin(salle)).status_code == 401

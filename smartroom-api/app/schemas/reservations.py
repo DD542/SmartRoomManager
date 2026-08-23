@@ -175,6 +175,20 @@ class SlotCheckRead(ReadModel):
     closure_error: str | None = None
 
 
+class ScoreCriterion(ReadModel):
+    """Un critère du score, avec ses points et le détail qui l'explique.
+
+    Le détail est du texte affichable : c'est lui qui rend le score lisible à
+    l'écran, plutôt qu'un nombre sans justification.
+    """
+
+    key: Annotated[str, Field(pattern=r"^(capacity|equipment|building|occupancy)$")]
+    label: str
+    points: int
+    max_points: int
+    detail: str
+
+
 class RoomSuggestion(ReadModel):
     """Proposition du moteur de recommandation, score sur 100."""
 
@@ -182,6 +196,9 @@ class RoomSuggestion(ReadModel):
     score: Annotated[int, Field(ge=0, le=100)]
     justification: str
     eligible: bool
+    breakdown: list[ScoreCriterion] = Field(default_factory=list)
+    #: Taux d'occupation moyen des trente derniers jours, en pourcentage.
+    occupancy_percent: int = 0
 
 
 # --------------------------------------------------------------------------- #
@@ -502,3 +519,21 @@ class MaintenanceReport(ReadModel):
     released: int
     closed: int
     ran_at: datetime
+
+
+class RecommendationNeed(ApiModel):
+    """Besoin exprimé par l'utilisateur, base du classement.
+
+    Le créneau est facultatif : le tableau de bord et le chatbot demandent « une
+    salle pour huit personnes » sans date, et reçoivent un classement fondé sur
+    la capacité, le matériel et l'occupation passée.
+    """
+
+    slot: TimeRange | None = None
+    attendee_count: Annotated[int | None, Field(ge=1, le=500)] = None
+    equipment_ids: list[uuid.UUID] = Field(default_factory=list)
+    building_id: uuid.UUID | None = None
+    accessible: bool = False
+    #: Les salles en maintenance restent classées mais marquées inéligibles.
+    include_maintenance: bool = False
+    limit: Annotated[int, Field(ge=1, le=50)] = 5

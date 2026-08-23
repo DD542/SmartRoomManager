@@ -158,6 +158,10 @@ SELECT bk.id AS booking_id,
 --   équipements 30 — proportion des équipements demandés réellement présents
 --   bâtiment 15 — bâtiment de préférence de l'utilisateur
 --   occupation 20 — plus la salle est libre sur la période, mieux elle est notée
+--
+-- Formule identique à app/services/recommendation.py, qui fait foi : les deux
+-- doivent noter une même salle pareil, sans quoi la démonstration SQL dirait
+-- autre chose que l'application.
 -- -----------------------------------------------------------------------------
 WITH candidates AS (
     SELECT r.id, r.name, r.capacity, f.building_id
@@ -188,8 +192,9 @@ SELECT c.id,
        c.capacity,
        ROUND(
            -- Capacité : 35 points si l'effectif remplit la salle, décroissant
-           -- linéairement avec le surdimensionnement.
-           35 * GREATEST(0, 1 - (c.capacity - :effectif)::numeric / GREATEST(c.capacity, 1))
+           -- avec le surdimensionnement. Le facteur 1,15 tolère un léger écart :
+           -- douze places pour dix personnes reste un bon ajustement.
+           35 * LEAST(1, (:effectif::numeric / GREATEST(c.capacity, 1)) * 1.15)
            -- Équipements : proportion réellement présente.
          + 30 * CASE
                     WHEN cardinality(CAST(:equipements AS uuid[])) = 0 THEN 1
