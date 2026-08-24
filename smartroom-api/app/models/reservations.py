@@ -427,6 +427,7 @@ class BookingRule(TimestampMixin, Base):
         ),
         CheckConstraint("buffer_min BETWEEN 0 AND 120", name="buffer"),
         CheckConstraint("max_advance_days BETWEEN 1 AND 365", name="advance"),
+        CheckConstraint("min_advance_min BETWEEN 0 AND 1440", name="min_advance"),
         CheckConstraint(
             "cancel_deadline_min BETWEEN 0 AND 10080", name="cancel_deadline"
         ),
@@ -469,6 +470,11 @@ class BookingRule(TimestampMixin, Base):
     max_duration_min: Mapped[int] = mapped_column(SmallInteger, server_default=text("240"), default=240)
     buffer_min: Mapped[int] = mapped_column(SmallInteger, server_default=text("15"), default=15)
     max_advance_days: Mapped[int] = mapped_column(SmallInteger, server_default=text("60"), default=60)
+    #: Délai minimal avant le début du créneau. Sans lui, une réservation
+    #: posée pour « dans deux minutes » passerait toutes les autres règles.
+    min_advance_min: Mapped[int] = mapped_column(
+        SmallInteger, server_default=text("15"), default=15
+    )
     cancel_deadline_min: Mapped[int] = mapped_column(SmallInteger, server_default=text("60"), default=60)
     checkin_window_min: Mapped[int] = mapped_column(SmallInteger, server_default=text("10"), default=10)
     weekly_quota_hours: Mapped[int] = mapped_column(SmallInteger, server_default=text("12"), default=12)

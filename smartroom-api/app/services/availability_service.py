@@ -221,13 +221,12 @@ def load_rules(session: Session, salle: Room) -> RuleSet:
     if regle is None:
         return RuleSet.defaults()
 
-    defauts = RuleSet.defaults()
     return RuleSet(
         min_duration=timedelta(minutes=regle.min_duration_min),
         max_duration=timedelta(minutes=regle.max_duration_min),
         buffer=timedelta(minutes=regle.buffer_min),
         max_advance=timedelta(days=regle.max_advance_days),
-        min_advance=defauts.min_advance,
+        min_advance=timedelta(minutes=regle.min_advance_min),
         max_active_bookings=regle.max_active_bookings,
         cancel_deadline=timedelta(minutes=regle.cancel_deadline_min),
         checkin_window=timedelta(minutes=regle.checkin_window_min),

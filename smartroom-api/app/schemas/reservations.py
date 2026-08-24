@@ -149,40 +149,10 @@ class BookingSearchParams(ApiModel):
     query: Annotated[str | None, Field(max_length=120)] = None
 
 
-# --------------------------------------------------------------------------- #
-# Vérification de créneau — réponse du moteur de disponibilité
-# --------------------------------------------------------------------------- #
-
-
-class ConflictRead(ReadModel):
-    """Un conflit détecté. `kind` distingue le recouvrement du battement."""
-
-    booking_id: uuid.UUID
-    kind: Annotated[str, Field(pattern=r"^(total|partiel|adjacent)$")]
-    overlap_minutes: int
-    gap_minutes: int
-    blocking: bool
-    message: str
-
-
-class SlotCheckRead(ReadModel):
-    available: bool
-    #: Un chevauchement ne se force jamais ; règles et capacité, si.
-    blocking: bool
-    conflicts: list[ConflictRead] = Field(default_factory=list)
-    rule_errors: list[str] = Field(default_factory=list)
-    capacity_error: str | None = None
-    closure_error: str | None = None
-
-
 class ScoreCriterion(ReadModel):
-    """Un critère du score, avec ses points et le détail qui l'explique.
+    """Un critère du score, avec ses points et le détail qui l'explique."""
 
-    Le détail est du texte affichable : c'est lui qui rend le score lisible à
-    l'écran, plutôt qu'un nombre sans justification.
-    """
-
-    key: Annotated[str, Field(pattern=r"^(capacity|equipment|building|occupancy)$")]
+    key: str
     label: str
     points: int
     max_points: int
@@ -190,15 +160,17 @@ class ScoreCriterion(ReadModel):
 
 
 class RoomSuggestion(ReadModel):
-    """Proposition du moteur de recommandation, score sur 100."""
+    """Proposition du moteur de recommandation, score sur 100.
+
+    Portée par le dossier d'une demande d'accès : l'administration doit voir
+    quelles salles proposer sans quitter l'écran d'arbitrage.
+    """
 
     room: RoomRead
     score: Annotated[int, Field(ge=0, le=100)]
     justification: str
     eligible: bool
     breakdown: list[ScoreCriterion] = Field(default_factory=list)
-    #: Taux d'occupation moyen des trente derniers jours, en pourcentage.
-    occupancy_percent: int = 0
 
 
 # --------------------------------------------------------------------------- #
@@ -446,94 +418,3 @@ class AccessRequestRead(TimestampedRead):
 class AccessRequestDetailRead(AccessRequestRead):
     claimants: list[ClaimantRead] = Field(default_factory=list)
     alternatives: list[RoomSuggestion] = Field(default_factory=list)
-
-
-# --------------------------------------------------------------------------- #
-# Enveloppes produites par les routes
-# --------------------------------------------------------------------------- #
-
-
-class AccessCodeIssued(ReadModel):
-    """Code d'accès en clair. Il ne transite qu'ici, une seule fois."""
-
-    code: str
-    hint: str
-    expires_at: datetime
-
-
-class BookingCreatedRead(ReadModel):
-    """Réponse de création : la réservation, et le code si la salle en exige un."""
-
-    booking: BookingDetailRead
-    access_code: AccessCodeIssued | None = None
-
-
-class CheckInRequest(ApiModel):
-    code: Annotated[str, Field(min_length=1, max_length=20)]
-
-
-class SlotCheckRequest(ApiModel):
-    """Interrogation du moteur de disponibilité, sans rien écrire."""
-
-    slot: TimeRange
-    attendee_count: Annotated[int, Field(ge=1, le=500)] = 1
-    #: Renseigné lors d'un déplacement : la réservation ne se conflictue pas
-    #: avec sa propre position actuelle.
-    ignore_booking_id: uuid.UUID | None = None
-
-
-class AvailabilitySearch(ApiModel):
-    """Recherche de salles libres sur un créneau (U-03)."""
-
-    slot: TimeRange
-    attendee_count: Annotated[int, Field(ge=1, le=500)] = 1
-    building_id: uuid.UUID | None = None
-    equipment_ids: list[uuid.UUID] = Field(default_factory=list)
-    #: Renvoie aussi les salles écartées, pour expliquer pourquoi elles le sont.
-    include_ineligible: bool = False
-
-
-class SeriesOccurrenceRead(ReadModel):
-    starts_at: datetime
-    ends_at: datetime
-    accepted: bool
-    reason: str | None = None
-
-
-class SeriesPreviewRead(ReadModel):
-    occurrences: list[SeriesOccurrenceRead]
-    accepted_count: int
-    rejected_count: int
-
-
-class SeriesCreatedRead(ReadModel):
-    rule: RecurrenceRuleRead
-    bookings: list[BookingRead]
-    #: Dates écartées : la série passe quand même, l'utilisateur voit ce qui manque.
-    skipped: list[SeriesOccurrenceRead] = Field(default_factory=list)
-
-
-class MaintenanceReport(ReadModel):
-    """Bilan d'un passage de la tâche de maintenance."""
-
-    released: int
-    closed: int
-    ran_at: datetime
-
-
-class RecommendationNeed(ApiModel):
-    """Besoin exprimé par l'utilisateur, base du classement.
-
-    Le créneau est facultatif : le tableau de bord et le chatbot demandent « une
-    salle pour huit personnes » sans date, et reçoivent un classement fondé sur
-    la capacité, le matériel et l'occupation passée.
-    """
-
-    slot: TimeRange | None = None
-    attendee_count: Annotated[int | None, Field(ge=1, le=500)] = None
-    equipment_ids: list[uuid.UUID] = Field(default_factory=list)
-    building_id: uuid.UUID | None = None
-    accessible: bool = False
-    #: Les salles en maintenance restent classées mais marquées inéligibles.
-    include_maintenance: bool = False
-    limit: Annotated[int, Field(ge=1, le=50)] = 5
