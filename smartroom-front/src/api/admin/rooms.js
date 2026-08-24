@@ -10,7 +10,7 @@
 //   DELETE /api/v1/rooms/{id}/photos/{photo_id} retrait d'un visuel
 
 import * as adapt from '../adapters';
-import { ApiError, abortable, del, get, items, patch, post } from '../client';
+import { ApiError, abortable, del, get, items, patch, post, put } from '../client';
 
 /** Salle enrichie du décompte de réservations affiché dans la liste. */
 async function decorer(salle, { signal } = {}) {
@@ -155,22 +155,28 @@ export async function removeRoomPhoto(id, index) {
 }
 
 /**
- * Visuel de couverture.
+ * Ordre des visuels.
  *
- * La position n'est pas modifiable une fois la photo déposée : la réordonner
- * demanderait une route de tri que l'API n'expose pas. La couverture est donc
- * la première photo déposée, et changer d'avis passe par un retrait.
+ * La liste envoyée est complète : réordonner à partir d'un sous-ensemble
+ * laisserait les photos absentes sur des positions arbitraires, et la salle
+ * perdrait silencieusement des visuels.
  */
+export async function reorderRoomPhotos(id, photoIds) {
+  await put(`/rooms/${id}/photos/order`, { photo_ids: [...photoIds] });
+  return getManagedRoom(id);
+}
+
+/** Le premier visuel est celui des cartes et des listes : il se choisit. */
 export async function setCoverPhoto(id, index) {
   const photos = await get(`/rooms/${id}/photos`);
-  if (!photos[index]) throw new ApiError('Visuel introuvable.', 404, 'introuvable');
+  const choisi = photos[index];
+  if (!choisi) throw new ApiError('Visuel introuvable.', 404, 'introuvable');
   if (index === 0) return getManagedRoom(id);
 
-  throw new ApiError(
-    'La couverture est le premier visuel déposé. Retirez ceux qui le précèdent pour la changer.',
-    422,
-    'ordre_non_modifiable',
-  );
+  return reorderRoomPhotos(id, [
+    choisi.id,
+    ...photos.filter((_, position) => position !== index).map((item) => item.id),
+  ]);
 }
 
 /**

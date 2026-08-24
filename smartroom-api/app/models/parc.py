@@ -312,7 +312,17 @@ class RoomEquipment(TimestampMixin, Base):
 class RoomPhoto(TimestampMixin, Base):
     __tablename__ = "room_photos"
     __table_args__ = (
-        UniqueConstraint("room_id", "position", name="uq_room_photos_position"),
+        # Différée : réordonner permute deux positions, et un contrôle ligne à
+        # ligne refuserait l'état intermédiaire d'un `UPDATE` dont l'état final
+        # est pourtant valide. La plage 0-5 ne laisse aucune position libre où
+        # garer une ligne le temps de la permutation.
+        UniqueConstraint(
+            "room_id",
+            "position",
+            name="uq_room_photos_position",
+            deferrable=True,
+            initially="DEFERRED",
+        ),
         CheckConstraint("position BETWEEN 0 AND 5", name="position"),
         Index("idx_room_photos_room_id", "room_id", "position"),
     )

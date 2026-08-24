@@ -65,6 +65,17 @@ class FloorOut(ReadModel):
     room_count: int = 0
 
 
+class PhotoOrderIn(ApiModel):
+    """Ordre voulu des photos, la première servant de couverture.
+
+    Liste complète : réordonner à partir d'un sous-ensemble laisserait les
+    photos absentes sur des positions arbitraires, et la salle perdrait
+    silencieusement des visuels.
+    """
+
+    photo_ids: Annotated[list[uuid.UUID], Field(min_length=1, max_length=6)]
+
+
 class UploadIn(ApiModel):
     """Fichier déposé, encodé en base64 dans le corps JSON.
 

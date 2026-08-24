@@ -696,11 +696,17 @@ def add_photo(
             "Six photos au maximum par salle.", code="trop_de_photos"
         )
 
+    # Le premier rang libre, et non le suivant du dernier : après une
+    # suppression, les positions deviennent trouées, et `max + 1` dépasserait la
+    # plage 0-5 alors que la salle porte moins de six photos.
+    occupees = {item.position for item in existantes}
+    rang = next(place for place in range(6) if place not in occupees)
+
     photo = RoomPhoto(
         room_id=room_id,
         file_url=storage.enregistrer("photos", contenu, extension),
         alt_text=(alt_text or None),
-        position=max((item.position for item in existantes), default=-1) + 1,
+        position=rang,
     )
     session.add(photo)
     session.flush()
@@ -713,6 +719,53 @@ def add_photo(
         after=audit_service.snapshot(photo, CHAMPS_PHOTO),
     )
     return photo
+
+
+def reorder_photos(
+    session: Session, room_id: uuid.UUID, photo_ids: list[uuid.UUID]
+) -> list[RoomPhoto]:
+    """Réordonne les photos d'une salle. La première devient la couverture.
+
+    La liste doit être complète : réordonner à partir d'un sous-ensemble
+    laisserait les photos absentes sur des positions arbitraires, et la salle
+    perdrait silencieusement des visuels de son catalogue. Un identifiant
+    étranger à la salle est refusé de même — il désignerait la photo d'une
+    autre salle, que rien ici n'autorise à déplacer.
+
+    L'écriture s'appuie sur l'unicité différée de `uq_room_photos_position` :
+    les positions sont permutées en une passe, et le contrôle a lieu à la
+    validation, sur l'état final.
+    """
+    existantes = list_photos(session, room_id)
+    connues = {photo.id: photo for photo in existantes}
+
+    if len(photo_ids) != len(set(photo_ids)):
+        raise RuleViolationError(
+            "La même photo est citée deux fois.", code="doublon"
+        )
+    if set(photo_ids) != set(connues):
+        raise RuleViolationError(
+            "L'ordre doit citer toutes les photos de la salle, et elles seules.",
+            code="ordre_incomplet",
+        )
+
+    avant = [str(photo.id) for photo in existantes]
+    for rang, photo_id in enumerate(photo_ids):
+        connues[photo_id].position = rang
+    session.flush()
+
+    apres = [str(item) for item in photo_ids]
+    if avant != apres:
+        audit_service.record(
+            session,
+            action=AuditAction.MODIFICATION,
+            target_type="room",
+            target_label=get_room(session, room_id).name,
+            target_id=room_id,
+            before={"photos": avant},
+            after={"photos": apres},
+        )
+    return list_photos(session, room_id)
 
 
 def delete_photo(session: Session, room_id: uuid.UUID, photo_id: uuid.UUID) -> None:

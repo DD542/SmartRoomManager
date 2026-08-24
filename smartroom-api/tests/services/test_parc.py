@@ -374,6 +374,142 @@ class TestTeleversement:
         )
         assert seconde.json()["position"] == 1
 
+    def test_ordre_des_photos_permute_les_positions(
+        self, client, session, administrateur, salle, tmp_path, monkeypatch
+    ):
+        """Permuter deux positions viole l'unicité ligne à ligne : la contrainte
+        est différée, et l'état final est le seul contrôlé."""
+        monkeypatch.setattr("app.core.storage.racine", lambda: tmp_path, raising=True)
+        accorder(session, administrateur, ROOMS_MANAGE)
+        entetes = connecter(client, administrateur.user.email, admin=True)
+
+        posees = [
+            client.post(
+                f"/api/v1/rooms/{salle.id}/photos", headers=entetes, json=self._png()
+            ).json()
+            for _ in range(3)
+        ]
+        assert [item["position"] for item in posees] == [0, 1, 2]
+
+        inverse = [posees[2]["id"], posees[0]["id"], posees[1]["id"]]
+        reponse = client.put(
+            f"/api/v1/rooms/{salle.id}/photos/order",
+            headers=entetes,
+            json={"photo_ids": inverse},
+        )
+        assert reponse.status_code == 200, reponse.text
+        assert [item["id"] for item in reponse.json()] == inverse
+        assert [item["position"] for item in reponse.json()] == [0, 1, 2]
+
+        # La couverture suit l'ordre : c'est elle qu'affichent les résultats.
+        fiche = client.get(f"/api/v1/rooms/{salle.id}", headers=entetes).json()
+        assert fiche["photos"][0]["id"] == posees[2]["id"]
+
+    def test_une_place_liberee_est_reprise(
+        self, client, session, administrateur, salle, tmp_path, monkeypatch
+    ):
+        """Après une suppression les positions sont trouées : reprendre le rang
+        suivant du dernier dépasserait la plage 0-5 sur une salle qui porte
+        pourtant moins de six photos."""
+        monkeypatch.setattr("app.core.storage.racine", lambda: tmp_path, raising=True)
+        accorder(session, administrateur, ROOMS_MANAGE)
+        entetes = connecter(client, administrateur.user.email, admin=True)
+
+        posees = [
+            client.post(
+                f"/api/v1/rooms/{salle.id}/photos", headers=entetes, json=self._png()
+            ).json()
+            for _ in range(6)
+        ]
+        assert [item["position"] for item in posees] == [0, 1, 2, 3, 4, 5]
+
+        assert client.delete(
+            f"/api/v1/rooms/{salle.id}/photos/{posees[0]['id']}", headers=entetes
+        ).status_code == 204
+
+        remplacante = client.post(
+            f"/api/v1/rooms/{salle.id}/photos", headers=entetes, json=self._png()
+        )
+        assert remplacante.status_code == 201, remplacante.text
+        assert remplacante.json()["position"] == 0
+
+    def test_ordre_partiel_refuse(
+        self, client, session, administrateur, salle, tmp_path, monkeypatch
+    ):
+        """Un sous-ensemble laisserait les photos absentes sur des positions
+        arbitraires, et la salle perdrait des visuels sans le dire."""
+        monkeypatch.setattr("app.core.storage.racine", lambda: tmp_path, raising=True)
+        accorder(session, administrateur, ROOMS_MANAGE)
+        entetes = connecter(client, administrateur.user.email, admin=True)
+
+        posees = [
+            client.post(
+                f"/api/v1/rooms/{salle.id}/photos", headers=entetes, json=self._png()
+            ).json()
+            for _ in range(2)
+        ]
+
+        reponse = client.put(
+            f"/api/v1/rooms/{salle.id}/photos/order",
+            headers=entetes,
+            json={"photo_ids": [posees[0]["id"]]},
+        )
+        assert reponse.status_code == 422
+        assert reponse.json()["error"]["code"] == "ordre_incomplet"
+
+    def test_photo_etrangere_refusee(
+        self, client, session, administrateur, salle, creer_salle, tmp_path, monkeypatch
+    ):
+        monkeypatch.setattr("app.core.storage.racine", lambda: tmp_path, raising=True)
+        accorder(session, administrateur, ROOMS_MANAGE)
+        entetes = connecter(client, administrateur.user.email, admin=True)
+
+        mienne = client.post(
+            f"/api/v1/rooms/{salle.id}/photos", headers=entetes, json=self._png()
+        ).json()
+        autre = creer_salle("Voisine")
+        sienne = client.post(
+            f"/api/v1/rooms/{autre.id}/photos", headers=entetes, json=self._png()
+        ).json()
+
+        reponse = client.put(
+            f"/api/v1/rooms/{salle.id}/photos/order",
+            headers=entetes,
+            json={"photo_ids": [mienne["id"], sienne["id"]]},
+        )
+        assert reponse.status_code == 422
+        assert reponse.json()["error"]["code"] == "ordre_incomplet"
+
+    def test_doublon_dans_l_ordre_refuse(
+        self, client, session, administrateur, salle, tmp_path, monkeypatch
+    ):
+        monkeypatch.setattr("app.core.storage.racine", lambda: tmp_path, raising=True)
+        accorder(session, administrateur, ROOMS_MANAGE)
+        entetes = connecter(client, administrateur.user.email, admin=True)
+
+        photo = client.post(
+            f"/api/v1/rooms/{salle.id}/photos", headers=entetes, json=self._png()
+        ).json()
+
+        reponse = client.put(
+            f"/api/v1/rooms/{salle.id}/photos/order",
+            headers=entetes,
+            json={"photo_ids": [photo["id"], photo["id"]]},
+        )
+        assert reponse.status_code == 422
+        assert reponse.json()["error"]["code"] == "doublon"
+
+    def test_reordonner_sans_permission_refuse(
+        self, client, administrateur, salle
+    ):
+        entetes = connecter(client, administrateur.user.email, admin=True)
+        reponse = client.put(
+            f"/api/v1/rooms/{salle.id}/photos/order",
+            headers=entetes,
+            json={"photo_ids": [str(salle.id)]},
+        )
+        assert reponse.status_code == 403
+
     def test_pdf_refuse_comme_photo(
         self, client, session, administrateur, salle, tmp_path, monkeypatch
     ):

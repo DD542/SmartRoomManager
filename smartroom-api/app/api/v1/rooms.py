@@ -25,6 +25,7 @@ from app.api.v1.schemas import (
     RoomIn,
     RoomOut,
     RoomPatchIn,
+    PhotoOrderIn,
     RoomPhotoOut,
     UploadIn,
 )
@@ -204,6 +205,27 @@ def add_photo(
     )
     session.commit()
     return RoomPhotoOut.model_validate(photo)
+
+
+@router.put(
+    "/{room_id}/photos/order",
+    response_model=list[RoomPhotoOut],
+    summary="Réordonner les photos",
+    description=(
+        "La première de la liste devient la couverture des résultats de "
+        "recherche. L'ordre doit citer toutes les photos de la salle, et elles "
+        "seules : réordonner à partir d'un sous-ensemble laisserait les photos "
+        "absentes sur des positions arbitraires, et la salle perdrait "
+        "silencieusement des visuels."
+    ),
+    responses={422: {"description": "Ordre incomplet, ou photo étrangère à la salle."}},
+)
+def reorder_photos(
+    room_id: uuid.UUID, payload: PhotoOrderIn, session: SessionDep, _admin=Ecriture
+) -> list[RoomPhotoOut]:
+    photos = service.reorder_photos(session, room_id, payload.photo_ids)
+    session.commit()
+    return [RoomPhotoOut.model_validate(item) for item in photos]
 
 
 @router.delete(
