@@ -11,7 +11,7 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from slowapi.middleware import SlowAPIMiddleware
@@ -23,12 +23,17 @@ from app.api.errors import register_exception_handlers
 from app.api.v1.router import v1_router
 from app.core.config import get_settings
 from app.core.limiter import limiter
+from app.core.logging import configurer as configurer_journal
 from app.core.storage import racine as racine_media
 from app.db.session import get_session
 from app.tasks.scheduler import build_scheduler
 
-logger = logging.getLogger(__name__)
 settings = get_settings()
+
+# Avant tout le reste : une erreur de démarrage doit sortir au bon format,
+# sinon la première ligne du journal de production est déjà illisible.
+configurer_journal(niveau=settings.log_level, json_actif=settings.log_json)
+logger = logging.getLogger(__name__)
 
 DESCRIPTION = """
 API du **Système de réservation intelligente des salles**.
@@ -123,19 +128,49 @@ app.mount(settings.media_url, StaticFiles(directory=racine_media()), name="media
 @app.get(
     "/health",
     tags=["technique"],
-    summary="Contrôle de santé",
-    description="Répond 200 si la base est jointe et la migration appliquée.",
+    summary="Le processus est-il vivant ?",
+    description=(
+        "Sonde de vivacité. Ne touche pas la base : l'orchestrateur s'en sert "
+        "pour décider de **redémarrer** le conteneur, et une base momentanément "
+        "indisponible ferait tuer une application parfaitement saine — puis la "
+        "suivante, en boucle, pendant que la base se rétablit."
+    ),
 )
-def health(session: Session = Depends(get_session)) -> dict[str, object]:
-    version = session.execute(
-        text("SELECT version_num FROM alembic_version LIMIT 1")
-    ).scalar_one_or_none()
-    tables = session.execute(
-        text(
-            "SELECT count(*) FROM information_schema.tables "
-            "WHERE table_schema = 'public' AND table_type = 'BASE TABLE'"
-        )
-    ).scalar_one()
+def health() -> dict[str, str]:
+    return {"status": "ok", "environment": settings.environment}
+
+
+@app.get(
+    "/health/ready",
+    tags=["technique"],
+    summary="Le service peut-il répondre ?",
+    description=(
+        "Sonde de disponibilité. Vérifie la base et la migration appliquée : "
+        "l'orchestrateur s'en sert pour décider de **router du trafic**. Un "
+        "503 retire l'instance de la rotation sans la tuer."
+    ),
+    responses={503: {"description": "Base injoignable ou schéma non migré."}},
+)
+def readiness(response: Response, session: Session = Depends(get_session)) -> dict[str, object]:
+    try:
+        version = session.execute(
+            text("SELECT version_num FROM alembic_version LIMIT 1")
+        ).scalar_one_or_none()
+        tables = session.execute(
+            text(
+                "SELECT count(*) FROM information_schema.tables "
+                "WHERE table_schema = 'public' AND table_type = 'BASE TABLE'"
+            )
+        ).scalar_one()
+    except Exception:
+        logger.warning("Sonde de disponibilité en échec.", exc_info=True)
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        return {"status": "indisponible", "raison": "base_injoignable"}
+
+    if version is None:
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        return {"status": "indisponible", "raison": "schema_non_migre"}
+
     return {
         "status": "ok",
         "environment": settings.environment,

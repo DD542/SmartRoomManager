@@ -1,0 +1,134 @@
+# =============================================================================
+# SmartRoom Manager — pile de développement.
+#
+#   docker compose up -d              tout démarrer
+#   docker compose up -d db           la base seule, pour lancer les tests
+#   docker compose exec api python -m scripts.seed --reset
+#   docker compose logs -f api
+#
+# Ici tout est fait pour le confort : rechargement à chaud, code monté depuis
+# l'hôte, ports exposés, journaux lisibles. La production est décrite dans
+# `docker-compose.prod.yml`, et les deux fichiers ne se ressemblent pas — ce
+# qui est délibéré : un compose unique piloté par des variables finit par ne
+# convenir ni à l'un ni à l'autre.
+# =============================================================================
+
+name: smartroom
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: smartroom-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-smartroom}
+      POSTGRES_USER: ${POSTGRES_USER:-smartroom}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-smartroom}
+      # Encodage et collation figés : une base créée avec la collation de
+      # l'hôte trierait « École » différemment d'une machine à l'autre.
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+      TZ: ${TIMEZONE:-Europe/Paris}
+      PGTZ: ${TIMEZONE:-Europe/Paris}
+    command:
+      - "postgres"
+      - "-c"
+      - "log_min_duration_statement=500"
+      - "-c"
+      - "shared_preload_libraries=pg_stat_statements"
+      - "-c"
+      - "timezone=Europe/Paris"
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      # `pg_isready` répond avant la fin de l'initialisation : la requête
+      # garantit que la base accepte réellement du SQL.
+      test: ["CMD-SHELL", "psql -U $${POSTGRES_USER} -d $${POSTGRES_DB} -c 'SELECT 1' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  api:
+    build:
+      context: ./smartroom-api
+      dockerfile: Dockerfile
+    container_name: smartroom-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: local
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-smartroom}
+      POSTGRES_USER: ${POSTGRES_USER:-smartroom}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-smartroom}
+      TIMEZONE: ${TIMEZONE:-Europe/Paris}
+      JWT_SECRET: ${JWT_SECRET:-secret-de-developpement-suffisamment-long-pour-passer}
+      REFRESH_COOKIE_SECURE: "false"
+      MAIL_ENABLED: "false"
+      CORS_ORIGINS: '["http://localhost:5180","http://127.0.0.1:5180"]'
+      # Texte lisible plutôt que JSON : un développeur lit son terminal, il ne
+      # l'interroge pas.
+      LOG_JSON: "false"
+      LOG_LEVEL: DEBUG
+      MEDIA_ROOT: /app/media
+    ports:
+      - "8000:8000"
+    volumes:
+      # Code monté depuis l'hôte : le rechargement à chaud voit les
+      # modifications sans reconstruire l'image.
+      - ./smartroom-api:/app
+      # Volume nommé par-dessus : sans lui, le montage précédent masquerait le
+      # répertoire des téléversements créé dans l'image.
+      - media_dev:/app/media
+    command:
+      - uvicorn
+      - app.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --reload
+
+  front:
+    image: node:20-alpine
+    container_name: smartroom-front
+    restart: unless-stopped
+    working_dir: /app
+    depends_on:
+      - api
+    environment:
+      # Vite doit écouter sur toutes les interfaces pour être joignable depuis
+      # l'hôte ; par défaut il n'écoute que la boucle locale du conteneur.
+      VITE_HOST: "0.0.0.0"
+    ports:
+      - "5180:5180"
+    volumes:
+      - ./smartroom-front:/app
+      # `node_modules` reste dans le conteneur : les binaires natifs compilés
+      # pour Alpine ne fonctionneraient pas sur l'hôte, et inversement.
+      - node_modules_dev:/app/node_modules
+    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0"
+
+  # Boîte aux lettres de développement : les courriels partent ici et ne
+  # quittent jamais la machine. `MAIL_ENABLED=false` les écrit dans le journal ;
+  # passer à `true` avec ce service permet de voir le rendu réel.
+  courriel:
+    image: axllent/mailpit:latest
+    container_name: smartroom-courriel
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
+volumes:
+  postgres_data:
+    name: smartroom_postgres_data
+  media_dev:
+    name: smartroom_media_dev
+  node_modules_dev:
+    name: smartroom_node_modules_dev

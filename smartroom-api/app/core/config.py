@@ -101,6 +101,13 @@ class Settings(BaseSettings):
     #: Préfixe public correspondant, monté en statique par l'application.
     media_url: str = "/media"
 
+    # ---------------------------------------------------------- journalisation
+
+    log_level: str = "INFO"
+    #: JSON en production, texte lisible en local. Un développeur lit son
+    #: terminal ; un exploitant interroge son journal.
+    log_json: bool = True
+
     # ------------------------------------------------------------ agrégations
 
     #: Durée de validité des agrégats de tableau de bord, en secondes. Cinq
@@ -129,12 +136,50 @@ class Settings(BaseSettings):
         return self.environment == "local"
 
     @model_validator(mode="after")
-    def _secret_obligatoire_hors_local(self) -> Settings:
-        """Un secret par défaut en production rendrait tout jeton falsifiable."""
-        if self.environment != "local" and self.jwt_secret.get_secret_value().startswith(
-            "changez-moi"
-        ):
-            raise ValueError("JWT_SECRET doit être défini hors de l'environnement local.")
+    def _configuration_utilisable(self) -> Settings:
+        """Refuse de démarrer plutôt que d'échouer plus tard.
+
+        Une configuration incomplète qui laisse l'application démarrer produit
+        une panne à la première requête, en production, devant un utilisateur.
+        Mieux vaut un conteneur qui ne démarre pas et un message explicite dans
+        le journal de déploiement.
+
+        Ces contrôles ne s'appliquent qu'hors de l'environnement local : le
+        poste de développement doit rester utilisable sans cérémonie.
+        """
+        if self.is_local:
+            return self
+
+        manques: list[str] = []
+
+        if self.jwt_secret.get_secret_value().startswith("changez-moi"):
+            manques.append(
+                "JWT_SECRET porte encore la valeur d'usine : tout jeton serait falsifiable."
+            )
+        if len(self.jwt_secret.get_secret_value()) < 32:
+            manques.append("JWT_SECRET doit compter au moins 32 caractères.")
+        if self.postgres_password in {"smartroom", "postgres", ""}:
+            manques.append("POSTGRES_PASSWORD porte une valeur par défaut.")
+        if not self.refresh_cookie_secure:
+            manques.append(
+                "REFRESH_COOKIE_SECURE doit valoir true : sans HTTPS le cookie "
+                "de session voyagerait en clair."
+            )
+        if not self.cors_origins:
+            manques.append("CORS_ORIGINS doit lister l'origine du front.")
+        if any("localhost" in origine for origine in self.cors_origins):
+            manques.append(
+                "CORS_ORIGINS contient une origine locale, sans effet en production."
+            )
+        if self.mail_enabled and self.smtp_host in {"localhost", ""}:
+            manques.append("SMTP_HOST doit désigner un relais joignable.")
+
+        if manques:
+            details = ("\n  - ").join(manques)
+            raise ValueError(
+                f"Configuration inutilisable pour l'environnement « {self.environment} » :"
+                f"\n  - {details}"
+            )
         return self
 
     @model_validator(mode="after")

@@ -1,0 +1,176 @@
+# =============================================================================
+# SmartRoom Manager — pile de production.
+#
+#   cp .env.example .env && $EDITOR .env
+#   docker compose -f docker-compose.prod.yml up -d --build
+#   docker compose -f docker-compose.prod.yml logs -f api
+#
+# Différences assumées avec le développement :
+#   - aucun code monté depuis l'hôte : ce qui tourne est ce qui a été construit ;
+#   - aucun port de base exposé : PostgreSQL n'est joignable que du réseau interne ;
+#   - un seul port public, celui du proxy, qui termine TLS ;
+#   - aucune valeur par défaut sur les secrets : le démarrage échoue s'ils
+#     manquent, plutôt que de tourner avec la valeur d'usine.
+#
+# La syntaxe `${VARIABLE:?message}` refuse de démarrer si la variable est vide.
+# C'est le seul garde-fou qui agit avant même que l'image ne soit lancée.
+# =============================================================================
+
+name: smartroom-prod
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB est requis}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER est requis}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD est requis}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+      TZ: ${TIMEZONE:-Europe/Paris}
+      PGTZ: ${TIMEZONE:-Europe/Paris}
+    command:
+      - "postgres"
+      - "-c"
+      - "log_min_duration_statement=1000"
+      - "-c"
+      - "shared_preload_libraries=pg_stat_statements"
+      - "-c"
+      - "timezone=Europe/Paris"
+      # Journalisation des connexions : une tentative d'accès direct à la base
+      # doit laisser une trace, même si le réseau interne la rend improbable.
+      - "-c"
+      - "log_connections=on"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sauvegardes:/sauvegardes
+    # Aucun `ports:` — la base n'est joignable que par le réseau interne du
+    # compose. L'exposer, même sur 127.0.0.1, offrirait une porte de plus.
+    networks:
+      - interne
+    healthcheck:
+      test: ["CMD-SHELL", "psql -U $${POSTGRES_USER} -d $${POSTGRES_DB} -c 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+  api:
+    build:
+      context: ./smartroom-api
+      dockerfile: Dockerfile
+    image: smartroom/api:${VERSION:-latest}
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:?ENVIRONMENT est requis, par exemple production}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TIMEZONE: ${TIMEZONE:-Europe/Paris}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET est requis, 32 caractères au moins}
+      ACCESS_TTL_MINUTES: ${ACCESS_TTL_MINUTES:-15}
+      REFRESH_TTL_DAYS: ${REFRESH_TTL_DAYS:-30}
+      # Derrière TLS : le cookie ne doit jamais voyager en clair.
+      REFRESH_COOKIE_SECURE: "true"
+      CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS doit lister l origine publique}
+      RATE_LIMIT_LOGIN: ${RATE_LIMIT_LOGIN:-5/minute}
+      RATE_LIMIT_RESET: ${RATE_LIMIT_RESET:-3/hour}
+      MAIL_ENABLED: ${MAIL_ENABLED:-true}
+      SMTP_HOST: ${SMTP_HOST:?SMTP_HOST est requis}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@smartroom.ece.fr}
+      MAINTENANCE_INTERVAL_SECONDS: ${MAINTENANCE_INTERVAL_SECONDS:-300}
+      LOG_JSON: "true"
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      MEDIA_ROOT: /app/media
+    volumes:
+      # Volume nommé et non répertoire du dépôt : un redéploiement reconstruit
+      # l'image, et les plans déposés par l'administration disparaîtraient avec
+      # l'ancienne couche.
+      - media:/app/media
+    networks:
+      - interne
+      - public
+    # Aucun `ports:` : le proxy est le seul point d'entrée.
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  front:
+    build:
+      context: ./smartroom-front
+      dockerfile: Dockerfile
+    image: smartroom/front:${VERSION:-latest}
+    restart: always
+    networks:
+      - public
+    security_opt:
+      - no-new-privileges:true
+    # Les fichiers servis sont figés dans l'image : rien à écrire.
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+      - /var/run
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  proxy:
+    image: caddy:2-alpine
+    restart: always
+    depends_on:
+      - api
+      - front
+    environment:
+      PUBLIC_DOMAIN: ${PUBLIC_DOMAIN:?PUBLIC_DOMAIN est requis}
+      ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL est requis pour les certificats}
+      REDIRECT_FROM: ${REDIRECT_FROM:-invalid.local}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Les certificats survivent au redéploiement : sans ce volume, chaque
+      # `up` en redemanderait, et Let's Encrypt limite le nombre de demandes
+      # par domaine et par semaine.
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - public
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  # La base n'est jointe qu'à ce réseau : le proxy et le front ne peuvent pas
+  # l'atteindre, même en cas de compromission.
+  interne:
+    internal: true
+  public:
+
+volumes:
+  postgres_data:
+  media:
+  caddy_data:
+  caddy_config:

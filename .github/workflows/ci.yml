@@ -1,0 +1,253 @@
+# =============================================================================
+# Intégration continue.
+#
+# Quatre travaux, dans cet ordre de coût croissant : le domaine (une seconde,
+# sans base), l'intégration (une base réelle), le front, puis la construction
+# des images. Les trois premiers sont indépendants et tournent en parallèle ;
+# le quatrième n'a de sens que si les autres passent.
+#
+# Le principe qui gouverne ce fichier : **les seuils de couverture font échouer
+# la chaîne**. Une couverture publiée mais non contraignante se dégrade en
+# quelques semaines sans que personne ne le remarque.
+# =============================================================================
+
+name: Intégration continue
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  # Une nouvelle poussée annule la précédente sur la même branche : inutile de
+  # payer deux fois pour un état de code déjà dépassé.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "20"
+
+jobs:
+  domaine:
+    name: Domaine — 100 % des branches
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: smartroom-api/requirements*.txt
+
+      - name: Installer les dépendances
+        working-directory: smartroom-api
+        run: pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Vérifier le style
+        working-directory: smartroom-api
+        run: |
+          pip install ruff==0.14.0
+          ruff check app tests scripts
+          ruff format --check app tests scripts
+
+      - name: Tests du domaine
+        working-directory: smartroom-api
+        # Aucune base : c'est ce qui rend ce travail utilisable comme garde
+        # rapide, avant même de payer le démarrage de PostgreSQL.
+        run: pytest tests/domain --cov-config=.coveragerc --cov=app.domain
+
+  integration:
+    name: Services et API — 85 %
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: smartroom
+          POSTGRES_USER: smartroom
+          POSTGRES_PASSWORD: smartroom
+          # Même collation qu'en production : un tri différent ferait échouer
+          # ici des tests qui passent ailleurs, ou l'inverse.
+          POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+          TZ: Europe/Paris
+          PGTZ: Europe/Paris
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U smartroom"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    env:
+      # Fournie, donc `tests/conftest.py` n'ouvre pas de conteneur : le service
+      # ci-dessus tient déjà ce rôle, et en démarrer un second doublerait le
+      # temps d'exécution.
+      TEST_DATABASE_URL: postgresql+psycopg://smartroom:smartroom@localhost:5432/smartroom
+      JWT_SECRET: secret-d-integration-continue-suffisamment-long
+      ENVIRONMENT: local
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: smartroom-api/requirements*.txt
+
+      - name: Installer les dépendances
+        working-directory: smartroom-api
+        run: pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Vérifier que le modèle et les migrations coïncident
+        working-directory: smartroom-api
+        # `alembic check` détecte un modèle modifié sans migration. Sans ce
+        # contrôle, l'écart ne se verrait qu'au déploiement suivant.
+        run: |
+          alembic upgrade head
+          alembic check
+
+      - name: Tests d'intégration
+        working-directory: smartroom-api
+        run: |
+          pytest tests/services \
+            --cov-config=.coveragerc.integration \
+            --cov=app.services --cov=app.api \
+            --cov-report=xml
+
+      - name: Conserver le rapport de couverture
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: couverture-back
+          path: smartroom-api/coverage.xml
+          retention-days: 7
+
+  front:
+    name: Front — 80 %
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: smartroom-front/package-lock.json
+
+      - name: Installer les dépendances
+        working-directory: smartroom-front
+        # `npm ci` : exactement ce que décrit le fichier de verrouillage.
+        run: npm ci
+
+      - name: Tests et couverture
+        working-directory: smartroom-front
+        run: npm run test:coverage
+
+      - name: Construire le paquet
+        working-directory: smartroom-front
+        # La construction fait partie des contrôles : une erreur d'import que
+        # les tests ne traversent pas se voit ici.
+        run: npm run build
+
+  bout_en_bout:
+    name: Parcours complet
+    runs-on: ubuntu-latest
+    needs: [integration, front]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Démarrer la pile
+        run: |
+          cp .env.example .env
+          docker compose up -d --build db api
+          # La sonde de disponibilité, et non celle de vivacité : c'est elle
+          # qui garantit que la migration est passée.
+          for tentative in $(seq 1 60); do
+            if curl -sf http://localhost:8000/health/ready >/dev/null; then break; fi
+            sleep 2
+          done
+          curl -sf http://localhost:8000/health/ready
+
+      - name: Peupler le jeu de démonstration
+        run: docker compose exec -T api python -m scripts.seed --reset
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: smartroom-front/package-lock.json
+
+      - name: Installer le front et le navigateur
+        working-directory: smartroom-front
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Servir le front et lancer le parcours
+        working-directory: smartroom-front
+        env:
+          # Le limiteur est relevé pour cette campagne : chaque test ouvre sa
+          # propre session, et la rotation des jetons interdit d'en conserver
+          # une entre les tests. Le limiteur garde son test dédié côté back.
+          E2E_BASE_URL: http://localhost:5180
+        run: |
+          npm run dev -- --host 0.0.0.0 --port 5180 &
+          for tentative in $(seq 1 30); do
+            if curl -sf http://localhost:5180/ >/dev/null; then break; fi
+            sleep 2
+          done
+          npx playwright test
+
+      - name: Conserver les traces d'échec
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: traces-bout-en-bout
+          path: |
+            smartroom-front/playwright-report/
+            smartroom-front/test-results/
+          retention-days: 7
+
+      - name: Journaux de la pile en cas d'échec
+        if: failure()
+        run: docker compose logs --no-color
+
+  images:
+    name: Construction des images
+    runs-on: ubuntu-latest
+    needs: [domaine, integration, front]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Image de l'API
+        uses: docker/build-push-action@v6
+        with:
+          context: ./smartroom-api
+          push: false
+          tags: smartroom/api:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Image du front
+        uses: docker/build-push-action@v6
+        with:
+          context: ./smartroom-front
+          push: false
+          tags: smartroom/front:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Vérifier que l'API ne tourne pas en root
+        run: |
+          docker build -t verification ./smartroom-api
+          utilisateur=$(docker run --rm --entrypoint sh verification -c 'id -un')
+          echo "Utilisateur du conteneur : ${utilisateur}"
+          test "$utilisateur" != "root"

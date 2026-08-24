@@ -1,0 +1,77 @@
+# =============================================================================
+# Proxy inverse et terminaison TLS.
+#
+# Caddy plutôt que nginx à cet endroit : il obtient et renouvelle seul les
+# certificats Let's Encrypt, sans tâche planifiée ni script de renouvellement à
+# surveiller. Sur un projet où personne ne veille le samedi, un certificat qui
+# se renouvelle tout seul vaut mieux qu'un fichier de configuration plus connu.
+#
+# Une seule origine pour le navigateur : le front et l'API partagent le domaine.
+# C'est ce qui permet au cookie de rafraîchissement de rester `SameSite=lax`
+# plutôt que `none` — un cookie inter-site est accepté par moins de
+# navigateurs et exposé à davantage de scénarios.
+# =============================================================================
+
+{
+	email {$ACME_EMAIL}
+	# Les journaux du proxy rejoignent ceux de l'application, en JSON.
+	log {
+		format json
+	}
+}
+
+{$PUBLIC_DOMAIN} {
+	encode zstd gzip
+
+	# --- En-têtes de sécurité, posés en un seul endroit ---------------------
+	header {
+		# Un an, sous-domaines compris : la première visite en HTTP est la
+		# seule fenêtre d'interception qui subsiste.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# `unsafe-inline` sur les styles : Tailwind pose des styles calculés à
+		# l'exécution. Les scripts, eux, n'y ont pas droit — c'est la moitié
+		# qui compte contre l'injection.
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		# La version du serveur n'apprend rien d'utile à un visiteur légitime.
+		-Server
+	}
+
+	# --- API ---------------------------------------------------------------
+	handle /api/* {
+		reverse_proxy api:8000 {
+			health_uri /health/ready
+			health_interval 10s
+			health_timeout 5s
+		}
+	}
+
+	# --- Fichiers téléversés ------------------------------------------------
+	# Servis par l'application : ils vivent sur un volume dont elle seule
+	# connaît l'organisation.
+	handle /media/* {
+		reverse_proxy api:8000
+	}
+
+	# --- Sondes -------------------------------------------------------------
+	# Exposées pour la supervision externe. Elles ne révèlent qu'un état, et le
+	# détail du schéma n'a rien de secret.
+	handle /health* {
+		reverse_proxy api:8000
+	}
+
+	# --- Front --------------------------------------------------------------
+	handle {
+		reverse_proxy front:8080
+	}
+}
+
+# Redirection du domaine nu vers le domaine canonique, si les deux existent.
+# Sans elle, deux origines coexisteraient et le cookie de session ne suivrait
+# que l'une des deux.
+{$REDIRECT_FROM:invalid.local} {
+	redir https://{$PUBLIC_DOMAIN}{uri} permanent
+}
