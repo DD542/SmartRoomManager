@@ -63,13 +63,43 @@ class BookingOut(ReadModel):
     cancelled_at: datetime | None
     cancel_reason: str | None
 
+    #: Dénormalisés parce que toute liste de réservations les affiche : sans
+    #: eux, l'écran ferait une requête par ligne pour nommer la salle.
+    room_name: str | None = None
+    building_name: str | None = None
+    floor_label: str | None = None
+    owner_name: str | None = None
+    #: Forme masquée « A-**** ». Le code en clair ne quitte le serveur qu'une
+    #: fois, à la création, et n'est stocké que haché.
+    access_code_hint: str | None = None
+
     @classmethod
     def of(cls, reservation) -> BookingOut:
+        salle = reservation.room
+        proprietaire = reservation.owner
+        actif = next(
+            (item for item in reservation.access_codes if item.revoked_at is None), None
+        )
         return cls(
             id=reservation.id,
             room_id=reservation.room_id,
             owner_id=reservation.owner_id,
             title=reservation.title,
+            room_name=salle.name if salle is not None else None,
+            building_name=(
+                salle.floor.building.name
+                if salle is not None and salle.floor is not None
+                else None
+            ),
+            floor_label=(
+                salle.floor.label if salle is not None and salle.floor is not None else None
+            ),
+            owner_name=(
+                f"{proprietaire.first_name} {proprietaire.last_name}"
+                if proprietaire is not None
+                else None
+            ),
+            access_code_hint=actif.code_hint if actif is not None else None,
             slot=SlotOut.of(
                 TimeSlot(start=reservation.time_range.lower, end=reservation.time_range.upper)
             ),
@@ -80,6 +110,48 @@ class BookingOut(ReadModel):
             checked_in_at=reservation.checked_in_at,
             cancelled_at=reservation.cancelled_at,
             cancel_reason=reservation.cancel_reason,
+        )
+
+
+class BookingEventOut(ReadModel):
+    """Un fait de la frise. Le libellé est figé au moment du fait : il reste
+    lisible même si la règle qui l'a produit a changé depuis."""
+
+    id: uuid.UUID
+    event_type: str
+    label: str
+    occurred_at: datetime
+    actor_label: str | None = None
+
+
+class BookingDetailOut(BookingOut):
+    """Détail d'une réservation, frise comprise.
+
+    La frise n'accompagne pas les listes : cent réservations affichées en
+    tireraient cent historiques dont aucun n'est lu.
+    """
+
+    events: list[BookingEventOut] = Field(default_factory=list)
+
+    @classmethod
+    def of(cls, reservation) -> BookingDetailOut:
+        base = BookingOut.of(reservation).model_dump()
+        return cls(
+            **base,
+            events=[
+                BookingEventOut(
+                    id=item.id,
+                    event_type=item.event_type.value,
+                    label=item.label,
+                    occurred_at=item.occurred_at,
+                    actor_label=(
+                        f"{item.actor.first_name} {item.actor.last_name}"
+                        if getattr(item, "actor", None) is not None
+                        else None
+                    ),
+                )
+                for item in reservation.events
+            ],
         )
 
 

@@ -16,11 +16,15 @@ import {
 import { fr } from 'date-fns/locale';
 
 /**
- * Horloge de référence de la maquette : jeudi 26 mars 2026, 11 h 45.
- * Aucun écran ne lit l'horloge système, afin que les états relatifs
- * (« Dans 2 h 15 », « il y a 5 min », « À venir ») restent stables.
+ * Horloge de référence des écrans.
+ *
+ * Elle était figée au 26 mars 2026 tant que les données venaient d'un jeu
+ * simulé : les états relatifs — « dans 2 h 15 », « à venir » — devaient rester
+ * stables d'une exécution à l'autre. Les réservations viennent désormais de la
+ * base, avec de vraies dates ; une horloge arrêtée afficherait « dans 3 649 h »
+ * pour une réunion de demain.
  */
-export const NOW = new Date('2026-03-26T11:45:00');
+export const NOW = new Date();
 
 export const WEEK_DAYS = [
   { value: 1, short: 'L', label: 'Lundi' },

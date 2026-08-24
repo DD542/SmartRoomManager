@@ -22,3 +22,7 @@ Thumbs.db
 .coverage
 .coverage.*
 htmlcov/
+
+# Fichiers téléversés : plans d'étage et photos de salles. En production,
+# `media_root` désigne un volume monté, jamais le dépôt.
+smartroom-api/media/

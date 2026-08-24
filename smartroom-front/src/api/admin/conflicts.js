@@ -1,190 +1,163 @@
 // src/api/admin/conflicts.js
-// Endpoints FastAPI cibles :
-//   GET  /api/admin/queue?tab=            file des conflits et demandes
-//   GET  /api/admin/queue/{id}            détail d'un élément
-//   POST /api/admin/queue/{id}/arbitrate  décision de l'administrateur
+// Endpoints réels :
+//   GET  /api/v1/admin/access-requests                    file d'arbitrage
+//   GET  /api/v1/access-requests/{id}                     détail d'une demande
+//   POST /api/v1/admin/access-requests/{id}/decide        décision
+//   POST /api/v1/recommendations/rooms/{id}/alternatives  salles de repli
+//   GET  /api/v1/availability/calendar                    occupants du créneau
+//
+// La file est celle des demandes d'accès. Il n'existe pas de « conflit » à
+// arbitrer en tant qu'entité : la contrainte `ex_bookings_no_overlap` rend deux
+// réservations qui se chevauchent impossibles. Ce qui remonte ici est donc
+// toujours une *demande* portant sur un créneau refusé — ce que l'écran traite.
 
-import { roomById, rooms } from '../../mocks/rooms';
-import { userById } from '../../mocks/users';
-import { NOW, toDate } from '../../utils/dates';
-import { rankRooms } from '../../utils/recommendation';
-import { ApiError, clone, createStore, delay } from '../client';
-import { bookingStore } from '../bookings';
+import * as adapt from '../adapters';
+import { ApiError, abortable, get, items, post } from '../client';
 
 /**
- * File d'arbitrage. Les éléments sont dérivés des réservations réelles quand
- * c'est possible : le conflit Vinci du 26/03 est celui que l'espace utilisateur
- * rencontre à l'étape 3 du tunnel.
+ * Onglets de l'écran, rapportés au type de dérogation demandé.
+ *
+ * `conflit_reservation` désigne un créneau déjà pris ; les autres types
+ * décrivent une règle enfreinte, pas un tiers lésé.
  */
-const seed = [
-  {
-    id: '#CONF-8492',
-    type: 'conflit_double',
-    urgency: 'haute',
-    createdAt: '2026-03-26T11:35:00',
-    roomId: 'r-vinci',
-    title: 'Salle Vinci — Conflit de réservation',
-    status: 'ouvert',
-    claimants: [
-      {
-        userId: 'u-01',
-        name: 'Dylan Menga Wanda',
-        role: 'B3 Data & IA',
-        start: '2026-03-26T14:00:00',
-        end: '2026-03-26T15:30:00',
-        createdAt: '2026-03-25T16:42:00',
-        monthlyBookings: 6,
-        remainingQuotaH: 14,
-      },
-      {
-        userId: 'u-07',
-        name: 'Amadou Diallo',
-        role: 'Pédagogie',
-        start: '2026-03-26T14:00:00',
-        end: '2026-03-26T15:00:00',
-        createdAt: '2026-03-26T11:30:00',
-        monthlyBookings: 12,
-        remainingQuotaH: 2,
-      },
-    ],
-  },
-  {
-    id: '#CONF-8493',
-    type: 'conflit_materiel',
-    urgency: 'moyenne',
-    createdAt: '2026-03-26T10:45:00',
-    roomId: 'r-curie',
-    title: 'Salle Curie — Équipement indisponible',
-    status: 'ouvert',
-    detail: 'Projecteur 4K requis par J. Dupont, déjà assigné sur le même créneau.',
-    claimants: [],
-  },
-  {
-    id: '#ACC-2201',
-    type: 'demande_acces',
-    urgency: 'moyenne',
-    createdAt: '2026-03-25T09:10:00',
-    roomId: 'r-alpha',
-    title: 'Conseil Alpha — Accès hors jour de visite',
-    status: 'ouvert',
-    detail: 'Comité exceptionnel demandé un mardi, salle ouverte le jeudi uniquement.',
-    claimants: [],
-  },
-  {
-    id: '#ACC-2202',
-    type: 'demande_acces',
-    urgency: 'basse',
-    createdAt: '2026-03-24T15:20:00',
-    roomId: 'r-pascal',
-    title: 'Salle Pascal — Accès un mercredi',
-    status: 'ouvert',
-    detail: 'Salle ouverte lundi, mardi et jeudi.',
-    claimants: [],
-  },
-  {
-    id: '#VAL-1104',
-    type: 'validation',
-    urgency: 'basse',
-    createdAt: '2026-03-24T11:00:00',
-    roomId: 'r-curie',
-    title: 'Atelier de 20 personnes — validation de capacité',
-    status: 'ouvert',
-    detail: 'Effectif au maximum de la salle, validation demandée par la règle interne.',
-    claimants: [],
-  },
-];
-
-const store = createStore(seed);
-
-// Exposé au tableau de bord : les compteurs de conflits doivent suivre les
-// arbitrages rendus, pas une constante écrite dans le rapport.
-export const queueStore = store;
-
 const ONGLETS = {
   tous: () => true,
-  conflits: (item) => item.type.startsWith('conflit'),
-  demandes: (item) => item.type === 'demande_acces',
-  validations: (item) => item.type === 'validation',
+  conflits: (item) => item.accessType === 'conflit_reservation',
+  demandes: (item) =>
+    item.accessType === 'hors_jour_ouverture' || item.accessType === 'hors_horaire',
+  validations: (item) =>
+    item.accessType === 'depassement_capacite'
+    || item.accessType === 'equipement_indisponible',
+};
+
+const URGENCE = {
+  conflit_reservation: 'haute',
+  depassement_capacite: 'moyenne',
+  equipement_indisponible: 'moyenne',
+  hors_jour_ouverture: 'moyenne',
+  hors_horaire: 'basse',
+};
+
+const TITRES = {
+  conflit_reservation: 'Conflit de réservation',
+  depassement_capacite: 'Dépassement de capacité',
+  equipement_indisponible: 'Équipement indisponible',
+  hors_jour_ouverture: 'Accès hors jour d’ouverture',
+  hors_horaire: 'Accès hors horaire',
 };
 
 const ORDRE = { haute: 0, moyenne: 1, basse: 2 };
 
+const element = (demande) => ({
+  ...demande,
+  type: demande.accessType,
+  urgency: URGENCE[demande.accessType] ?? 'basse',
+  title: `${demande.roomName} — ${TITRES[demande.accessType] ?? 'Demande d’accès'}`,
+  detail: demande.reason,
+  createdAt: demande.createdAt,
+  room: { id: demande.roomId, name: demande.roomName },
+});
+
+async function fileOuverte(signal) {
+  const page = await get('/admin/access-requests', {
+    params: { request_status: 'ouvert', size: 100 },
+    signal: signal ?? abortable('admin:queue'),
+  });
+  return items(page).map(adapt.accessRequest).map(element);
+}
+
 export async function listQueue(tab = 'tous') {
-  await delay();
-  return store
-    .filter((item) => item.status === 'ouvert')
+  const lignes = await fileOuverte();
+  return lignes
     .filter(ONGLETS[tab] ?? ONGLETS.tous)
-    .map((item) => ({ ...item, room: clone(roomById[item.roomId]) ?? null }))
-    .sort((a, b) => ORDRE[a.urgency] - ORDRE[b.urgency] || toDate(b.createdAt) - toDate(a.createdAt));
+    .sort(
+      (a, b) =>
+        ORDRE[a.urgency] - ORDRE[b.urgency] || new Date(b.createdAt) - new Date(a.createdAt),
+    );
 }
 
 export async function countQueue() {
-  await delay(120);
-  const ouverts = store.filter((item) => item.status === 'ouvert');
+  const lignes = await fileOuverte();
   return {
-    tous: ouverts.length,
-    conflits: ouverts.filter(ONGLETS.conflits).length,
-    demandes: ouverts.filter(ONGLETS.demandes).length,
-    validations: ouverts.filter(ONGLETS.validations).length,
+    tous: lignes.length,
+    conflits: lignes.filter(ONGLETS.conflits).length,
+    demandes: lignes.filter(ONGLETS.demandes).length,
+    validations: lignes.filter(ONGLETS.validations).length,
   };
 }
 
 /**
- * Détail d'un élément, enrichi des salles alternatives calculées par le moteur
- * de recommandation pour le demandeur qui serait débouté.
+ * Détail d'un élément, enrichi des salles de repli calculées par le moteur.
+ *
+ * Les alternatives sont demandées même sans prétendant identifié : une demande
+ * hors règle se règle aussi en orientant vers une salle déjà ouverte, et
+ * l'onglet « alternative » serait sinon une impasse.
  */
-export async function getQueueItem(id) {
-  await delay();
-  const item = store.find((entry) => entry.id === id);
-  if (!item) throw new ApiError('Élément introuvable.', 404, 'introuvable');
+export async function getQueueItem(id, { signal } = {}) {
+  const demande = element(adapt.accessRequest(await get(`/access-requests/${id}`, { signal })));
 
-  const perdant = item.claimants[1] ?? item.claimants[0] ?? null;
-
-  // Les alternatives sont calculées même sans demandeur identifié : une demande
-  // d'accès hors règle se règle aussi en orientant vers une salle déjà ouverte,
-  // et l'onglet « alternative » serait sinon une impasse.
-  const alternatives = rankRooms(
-    rooms.filter((room) => room.id !== item.roomId && room.status !== 'maintenance'),
-    {
-      attendees: roomById[item.roomId]?.capacity ?? 8,
-      equipmentIds: [],
-      buildingId: roomById[item.roomId]?.buildingId,
-    },
-  )
-    .filter((entry) => entry.eligible)
-    .slice(0, 3);
+  const [alternatives, occupants] = await Promise.all([
+    post(`/recommendations/rooms/${demande.roomId}/alternatives`, {
+      slot: adapt.slotIn(demande.start, demande.end),
+      attendees: 1,
+    })
+      .then((data) => data.map(adapt.alternative))
+      .catch(() => []),
+    get('/availability/calendar', {
+      params: {
+        from_date: demande.start.toISOString(),
+        to_date: demande.end.toISOString(),
+        room_ids: [demande.roomId],
+      },
+      signal,
+    })
+      .then((data) => data.events.map(adapt.calendarEvent))
+      .catch(() => []),
+  ]);
 
   return {
-    ...item,
-    room: clone(roomById[item.roomId]) ?? null,
-    occupants: bookingStore.filter(
-      (booking) => booking.roomId === item.roomId && booking.status !== 'annulee',
-    ),
+    ...demande,
     alternatives,
-    targetUser: perdant ? clone(userById[perdant.userId]) ?? null : null,
+    occupants,
+    claimants: [
+      {
+        userId: demande.requesterId,
+        name: demande.requesterName,
+        start: demande.start,
+        end: demande.end,
+        createdAt: demande.createdAt,
+      },
+    ],
+    targetUser: { id: demande.requesterId, firstName: demande.requesterName, lastName: '' },
   };
 }
 
 /**
- * Arbitrage : `maintien` conserve la réservation du premier demandeur,
- * `alternative` réoriente le second, `refus` annule la demande contestée.
+ * Arbitrage.
+ *
+ * `maintien` refuse la demande et laisse la réservation en place, `alternative`
+ * réoriente vers une autre salle, `refus` écarte la demande. Accorder crée la
+ * réservation dans la foulée : accorder sans réserver laisserait le demandeur
+ * devant un créneau toujours refusé.
  */
+const DECISIONS = {
+  maintien: 'refuse',
+  refus: 'refuse',
+  alternative: 'reoriente',
+  accord: 'accorde',
+};
+
 export async function arbitrate(id, { decision, comment, alternativeRoomId }) {
-  await delay();
-  const item = store.find((entry) => entry.id === id);
-  if (!item) throw new ApiError('Élément introuvable.', 404, 'introuvable');
-  if (!['maintien', 'alternative', 'refus'].includes(decision)) {
-    throw new ApiError('Décision inconnue.', 422, 'decision_invalide');
-  }
-  if (decision === 'alternative' && !alternativeRoomId) {
+  const tranchee = DECISIONS[decision];
+  if (!tranchee) throw new ApiError('Décision inconnue.', 422, 'decision_invalide');
+  if (tranchee === 'reoriente' && !alternativeRoomId) {
     throw new ApiError('Sélectionnez la salle proposée.', 422, 'alternative_requise');
   }
 
-  return store.update(id, {
-    status: decision === 'refus' ? 'refuse' : 'arbitre',
-    decision,
-    comment: comment?.trim() ?? '',
-    alternativeRoomId: alternativeRoomId ?? null,
-    resolvedAt: NOW.toISOString(),
+  const data = await post(`/admin/access-requests/${id}/decide`, {
+    decision: tranchee,
+    comment: comment ?? null,
+    alternative_room_id: alternativeRoomId ?? null,
   });
+  return element(adapt.accessRequest(data));
 }

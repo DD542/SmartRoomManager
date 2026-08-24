@@ -1,121 +1,129 @@
 // src/api/admin/tickets.js
-// Endpoints FastAPI cibles :
-//   GET   /api/admin/tickets?status=       file de traitement
-//   GET   /api/admin/tickets/{id}          fil, demandeur et réservation liée
-//   POST  /api/admin/tickets/{id}/reply    réponse publique ou note interne
-//   PATCH /api/admin/tickets/{id}/status   changement d'état
-//   GET   /api/admin/response-templates    réponses types
+// Endpoints réels :
+//   GET   /api/v1/admin/tickets                    file, les plus anciens d'abord
+//   GET   /api/v1/tickets/{id}                     détail, notes internes comprises
+//   POST  /api/v1/tickets/{id}/messages            répondre
+//   PATCH /api/v1/admin/tickets/{id}/status        changer le statut
+//   PATCH /api/v1/admin/tickets/{id}/assignee      attribuer
+//   GET   /api/v1/admin/response-templates         réponses types
+//   GET   /api/v1/admin/users/{id}                 fiche du demandeur
 
-import { responseTemplates } from '../../mocks/admin/responseTemplates';
-import { tickets as seedTickets } from '../../mocks/tickets';
-import { roomById } from '../../mocks/rooms';
-import { userById } from '../../mocks/users';
-import { NOW, toDate } from '../../utils/dates';
-import { ApiError, clone, createStore, delay } from '../client';
-import { bookingStore } from '../bookings';
-
-/** Le back-office ajoute au ticket son demandeur et ses notes internes. */
-const store = createStore(
-  seedTickets.map((ticket) => ({
-    ...ticket,
-    requesterId: 'u-01',
-    assignee: 'Support Niveau 1',
-    messages: ticket.messages.map((message) => ({ ...message, internal: false })),
-  })),
-);
+import * as adapt from '../adapters';
+import { ApiError, abortable, get, items, patch, post } from '../client';
 
 const ONGLETS = {
-  ouverts: (ticket) => ticket.status === 'ouvert',
-  en_cours: (ticket) => ticket.status === 'en_cours',
-  resolus: (ticket) => ticket.status === 'resolu',
-  tous: () => true,
+  ouverts: 'ouvert',
+  en_cours: 'en_cours',
+  resolus: 'resolu',
+  tous: undefined,
 };
 
+async function file(statut, signal) {
+  const page = await get('/admin/tickets', {
+    params: { status: statut, size: 100 },
+    signal: signal ?? abortable('admin:tickets'),
+  });
+  return { lignes: items(page).map(adapt.ticket), total: page.total ?? 0 };
+}
+
 export async function listAdminTickets(tab = 'ouverts') {
-  await delay();
-  return store
-    .filter(ONGLETS[tab] ?? ONGLETS.tous)
-    .map((ticket) => ({
-      ...ticket,
-      requester: resumeDemandeur(ticket.requesterId),
-      roomName: ticket.roomId ? roomById[ticket.roomId]?.name ?? null : null,
-    }))
-    .sort((a, b) => toDate(b.updatedAt) - toDate(a.updatedAt));
+  const { lignes } = await file(ONGLETS[tab] ?? ONGLETS.tous);
+  return lignes.map((ticket) => ({
+    ...ticket,
+    updatedAt: ticket.createdAt,
+    requester: {
+      id: ticket.requesterId,
+      name: ticket.requesterName,
+      email: null,
+      status: 'Actif',
+    },
+  }));
 }
 
+/**
+ * Compteurs des onglets.
+ *
+ * Quatre appels d'une ligne chacun plutôt qu'un chargement complet suivi d'un
+ * décompte local : la file peut compter des centaines de tickets, et les
+ * pastilles n'ont besoin que du total que la pagination rend déjà.
+ */
 export async function countTickets() {
-  await delay(120);
-  const all = store.all();
+  const [ouverts, enCours, resolus, tous] = await Promise.all([
+    file('ouvert'),
+    file('en_cours'),
+    file('resolu'),
+    file(undefined),
+  ]);
   return {
-    ouverts: all.filter(ONGLETS.ouverts).length,
-    en_cours: all.filter(ONGLETS.en_cours).length,
-    resolus: all.filter(ONGLETS.resolus).length,
-    tous: all.length,
-  };
-}
-
-function resumeDemandeur(userId) {
-  const user = userById[userId];
-  if (!user) return null;
-  return {
-    id: user.id,
-    name: `${user.firstName} ${user.lastName}`,
-    email: user.email,
-    phone: user.phone,
-    promotion: user.promotion,
-    status: 'Actif',
+    ouverts: ouverts.total,
+    en_cours: enCours.total,
+    resolus: resolus.total,
+    tous: tous.total,
   };
 }
 
 /**
- * Détail d'un ticket, avec la réservation concernée : c'est elle qui rend
- * possibles les actions rapides du rail droit.
+ * Détail d'un ticket.
+ *
+ * La réservation liée accompagne la fiche : c'est elle qui rend possibles les
+ * actions rapides du rail droit — annuler, déplacer, renvoyer le code d'accès.
  */
-export async function getAdminTicket(id) {
-  await delay();
-  const ticket = store.find((item) => item.id === String(id));
-  if (!ticket) throw new ApiError('Ticket introuvable.', 404, 'introuvable');
+export async function getAdminTicket(id, { signal } = {}) {
+  const ticket = adapt.ticket(await get(`/tickets/${id}`, { signal }));
 
-  const liee = ticket.roomId
-    ? bookingStore
-        .filter((booking) => booking.roomId === ticket.roomId && booking.ownerId === ticket.requesterId)
-        .sort((a, b) => toDate(b.start) - toDate(a.start))[0] ?? null
-    : null;
+  const [demandeur, liee] = await Promise.all([
+    get(`/admin/users/${ticket.requesterId}`, { signal })
+      .then((data) => ({
+        id: data.id,
+        name: `${data.first_name} ${data.last_name}`,
+        email: data.email,
+        phone: data.phone,
+        promotion: data.promotion,
+        status: data.status === 'actif' ? 'Actif' : 'Suspendu',
+      }))
+      .catch(() => null),
+    ticket.bookingId
+      ? get(`/bookings/${ticket.bookingId}`, { signal }).then(adapt.booking).catch(() => null)
+      : Promise.resolve(null),
+  ]);
 
-  return {
-    ...ticket,
-    requester: resumeDemandeur(ticket.requesterId),
-    linkedBooking: liee ? { ...liee, room: clone(roomById[liee.roomId]) } : null,
-  };
+  return { ...ticket, updatedAt: ticket.createdAt, requester: demandeur, linkedBooking: liee };
 }
 
+/**
+ * Réponse sur un ticket.
+ *
+ * Une note interne est visible du support et jamais du demandeur : le filtre
+ * est appliqué à la lecture côté serveur, pas masqué à l'affichage.
+ */
 export async function replyToAdminTicket(id, { body, internal = false, resolve = false }) {
-  await delay();
   if (!body?.trim()) throw new ApiError('La réponse est vide.', 422, 'reponse_vide');
 
-  const updated = store.update(id, (ticket) => ({
-    status: resolve ? 'resolu' : ticket.status === 'ouvert' ? 'en_cours' : ticket.status,
-    updatedAt: NOW.toISOString(),
-    messages: [
-      ...ticket.messages,
-      { author: 'support', at: NOW.toISOString(), body: body.trim(), internal },
-    ],
-  }));
-  if (!updated) throw new ApiError('Ticket introuvable.', 404, 'introuvable');
-  return updated;
+  await post(`/tickets/${id}/messages`, { body: body.trim(), is_internal: internal });
+  if (resolve) return setTicketStatus(id, 'resolu');
+  return getAdminTicket(id);
 }
 
 export async function setTicketStatus(id, status) {
-  await delay(200);
-  if (!['ouvert', 'en_cours', 'resolu'].includes(status)) {
+  if (!['ouvert', 'en_cours', 'resolu', 'ferme'].includes(status)) {
     throw new ApiError('Statut inconnu.', 422, 'statut_invalide');
   }
-  const updated = store.update(id, { status, updatedAt: NOW.toISOString() });
-  if (!updated) throw new ApiError('Ticket introuvable.', 404, 'introuvable');
-  return updated;
+  const data = await patch(`/admin/tickets/${id}/status`, { status });
+  return { ...adapt.ticket(data), updatedAt: new Date().toISOString() };
 }
 
-export async function listResponseTemplates() {
-  await delay(150);
-  return clone(responseTemplates);
+export async function assignTicket(id, adminUserId) {
+  const data = await patch(`/admin/tickets/${id}/assignee`, { admin_user_id: adminUserId });
+  return adapt.ticket(data);
+}
+
+export async function listResponseTemplates({ signal } = {}) {
+  const data = await get('/admin/response-templates', { signal });
+  return data.map((item) => ({
+    id: item.id,
+    code: item.code,
+    category: item.category,
+    label: item.label,
+    body: item.body,
+  }));
 }

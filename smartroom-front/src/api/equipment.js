@@ -1,11 +1,10 @@
 // src/api/equipment.js
-// Endpoint FastAPI cible :
-//   GET /api/equipment   référentiel des équipements réservables
+// Endpoint réel :
+//   GET /api/v1/equipments   référentiel, avec le nombre de salles équipées
 
-import { equipment } from '../mocks/equipment';
-import { clone, delay } from './client';
+import * as adapt from './adapters';
+import { collect } from './client';
 
-export async function listEquipment() {
-  await delay(150);
-  return clone(equipment);
+export async function listEquipment({ signal } = {}) {
+  return (await collect('/equipments', { signal })).map(adapt.equipment);
 }

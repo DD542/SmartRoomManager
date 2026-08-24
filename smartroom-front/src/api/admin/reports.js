@@ -1,104 +1,79 @@
 // src/api/admin/reports.js
-// Endpoints FastAPI cibles :
-//   GET  /api/admin/reports/overview?days=          tableau de bord d'occupation
-//   GET  /api/admin/reports?from=&to=&buildings=&granularity=
-//   POST /api/admin/reports/export                  génération de l'export
+// Endpoints réels :
+//   GET /api/v1/admin/stats/overview     sept indicateurs, une requête
+//   GET /api/v1/admin/stats/occupancy    série temporelle, granularité au choix
+//   GET /api/v1/admin/stats/rooms        classement des salles
+//   GET /api/v1/admin/stats/peak-hours   densité par jour ouvré et par heure
+//   GET /api/v1/admin/stats/export       export CSV de l'occupation
+//   GET /api/v1/admin/access-requests    file d'arbitrage, pour les alertes
+//
+// Aucun agrégat n'est recalculé ici : ils viennent de vues et de requêtes SQL,
+// et les refaire en JavaScript sur un échantillon rapatrié donnerait des
+// chiffres différents de ceux qu'affiche le reste de l'application.
 
-import { getDay, getMonth } from 'date-fns';
-import { buildings } from '../../mocks/buildings';
-import { roomById, rooms } from '../../mocks/rooms';
-import {
-  NOW,
-  addDays,
-  durationMin,
-  fmtDayMonth,
-  isSameDay,
-  startOfDay,
-  toDate,
-  toDateInput,
-} from '../../utils/dates';
-import { ApiError, clone, delay } from '../client';
-import { bookingStore } from '../bookings';
-import { queueStore } from './conflicts';
+import { addDays, toDateInput } from '../../utils/dates';
+import * as adapt from '../adapters';
+import { ApiError, abortable, get, getText } from '../client';
 
-const actives = () => bookingStore.filter((booking) => booking.status !== 'annulee');
+const jour = (valeur) => toDateInput(valeur);
 
-const heuresDe = (liste) => liste.reduce((total, b) => total + durationMin(b.start, b.end), 0) / 60;
-
-/** Amplitude d'ouverture retenue pour ramener les heures réservées en taux. */
-const AMPLITUDE_H = 12;
-
-/**
- * Tableau de bord A-01 : quatre indicateurs comparés à la période précédente,
- * courbe d'occupation, alertes et densité horaire.
- */
+/** Tableau de bord de l'administration. */
 export async function getOverview(days = 7) {
-  await delay();
-  const debut = addDays(NOW, -days);
-  const debutPrecedent = addDays(NOW, -days * 2);
+  const signal = abortable('admin:overview');
+  const aujourdhui = new Date();
+  const debut = addDays(aujourdhui, -(days - 1));
 
-  const dans = (from, to) =>
-    actives().filter((booking) => toDate(booking.start) >= from && toDate(booking.start) < to);
+  const [courant, precedent, tendance, salles, file] = await Promise.all([
+    get('/admin/stats/overview', { params: { days }, signal }),
+    get('/admin/stats/overview', { params: { days: days * 2 }, signal }),
+    get('/admin/stats/occupancy', {
+      params: { first_day: jour(debut), last_day: jour(aujourdhui), granularity: 'jour' },
+      signal,
+    }),
+    get('/admin/stats/rooms', { params: { limit: 50 }, signal }),
+    get('/admin/access-requests', { params: { request_status: 'ouvert', size: 1 }, signal })
+      .then((page) => page.total ?? 0)
+      .catch(() => 0),
+  ]);
 
-  // La fenêtre s'arrête à la fin de la journée en cours : « sur 7 jours » ne
-  // doit pas embarquer les réservations de demain matin.
-  const periode = dans(debut, addDays(startOfDay(NOW), 1));
-  const precedente = dans(debutPrecedent, debut);
-
-  const ouvrables = rooms.filter((room) => room.status !== 'maintenance');
-  const occupationMoyenne =
-    ouvrables.reduce((total, room) => total + room.occupancyRate, 0) / (ouvrables.length || 1);
-
-  const noShow = tauxNoShow(periode);
-  const ouverts = queueStore.filter((item) => item.status === 'ouvert');
+  // La fenêtre double couvre la période courante *et* la précédente : leur
+  // différence donne la précédente seule, sans second appel décalé.
+  const precedentSeul = {
+    bookings: precedent.bookings - courant.bookings,
+    noShows: precedent.no_shows - courant.no_shows,
+  };
+  const tauxNoShow = (reservations, absences) =>
+    reservations > 0 ? absences / reservations : 0;
 
   return {
     days,
     kpis: {
-      occupancyRate: occupationMoyenne,
-      periodBookings: periode.length,
-      pendingConflicts: ouverts.length,
-      resolvedConflicts: queueStore.filter((item) => item.status !== 'ouvert').length,
-      noShowRate: noShow,
+      occupancyRate: courant.occupancy_percent / 100,
+      periodBookings: courant.bookings,
+      pendingConflicts: file,
+      resolvedConflicts: courant.cancellations,
+      noShowRate: tauxNoShow(courant.bookings, courant.no_shows),
     },
-    // Variations calculées face à la même durée juste avant : sans cela, la
-    // flèche de tendance des tuiles serait décorative.
     deltas: {
-      periodBookings: periode.length - precedente.length,
-      noShowRate: noShow - tauxNoShow(precedente),
+      periodBookings: courant.bookings - precedentSeul.bookings,
+      noShowRate:
+        tauxNoShow(courant.bookings, courant.no_shows)
+        - tauxNoShow(precedentSeul.bookings, precedentSeul.noShows),
     },
-    trend: tendance(days, ouvrables.length),
-    alerts: alertes(ouverts.length),
-    heatmap: heatmap(),
+    trend: tendance.map((point, index) => ({
+      label: index === tendance.length - 1 ? 'Auj.' : point.period,
+      date: point.period,
+      occupation: point.occupancy_percent,
+      bookings: point.bookings,
+      hours: point.hours,
+    })),
+    alerts: alertes(file, salles, courant),
+    heatmap: await heatmap(signal),
   };
 }
 
-/** Part des réservations passées dont la présence n'a jamais été validée. */
-function tauxNoShow(liste) {
-  const passees = liste.filter((booking) => toDate(booking.end) < NOW);
-  if (passees.length === 0) return 0;
-  return 1 - passees.filter((booking) => booking.checkedIn).length / passees.length;
-}
-
-/** Courbe jour par jour : taux d'occupation, volume et heures réservées. */
-function tendance(days, sallesOuvrables) {
-  return Array.from({ length: days }, (_, index) => {
-    const jour = addDays(NOW, -(days - 1 - index));
-    const duJour = actives().filter((booking) => isSameDay(toDate(booking.start), jour));
-    const heures = heuresDe(duJour);
-    const capacite = Math.max(1, sallesOuvrables * AMPLITUDE_H);
-    return {
-      label: index === days - 1 ? "Auj." : fmtDayMonth(jour),
-      date: jour.toISOString(),
-      occupation: Math.round(Math.min(100, (heures / capacite) * 100)),
-      bookings: duJour.length,
-      hours: Math.round(heures * 10) / 10,
-    };
-  });
-}
-
 /** Alertes dérivées de l'état réel du parc, jamais écrites en dur. */
-function alertes(conflitsOuverts = 0) {
+function alertes(conflitsOuverts, salles, apercu) {
   const liste = [];
 
   if (conflitsOuverts > 0) {
@@ -109,96 +84,100 @@ function alertes(conflitsOuverts = 0) {
       action: { label: 'Traiter', to: '/admin/conflits', permission: 'conflicts.arbitrate' },
     });
   }
-
-  for (const room of rooms) {
-    if (room.status === 'maintenance') {
-      liste.push({
-        id: `maint-${room.id}`,
-        tone: 'warning',
-        message: `${room.name} en maintenance`,
-        action: { label: 'Détails', to: `/admin/salles/${room.id}`, permission: 'rooms.manage' },
-      });
-    }
-    if (room.occupancyRate < 0.3 && room.status === 'disponible') {
-      liste.push({
-        id: `sous-${room.id}`,
-        tone: 'info',
-        message: `${room.name} sous-utilisée : ${Math.round(room.occupancyRate * 100)} % en moyenne`,
-        action: { label: 'Voir', to: `/admin/salles/${room.id}`, permission: 'rooms.manage' },
-      });
-    }
+  if (apercu.rooms_in_maintenance > 0) {
+    liste.push({
+      id: 'maintenance',
+      tone: 'warning',
+      message: `${apercu.rooms_in_maintenance} salle(s) en maintenance`,
+      action: { label: 'Voir', to: '/admin/salles', permission: 'rooms.manage' },
+    });
   }
+  if (apercu.open_tickets > 0) {
+    liste.push({
+      id: 'tickets',
+      tone: 'info',
+      message: `${apercu.open_tickets} ticket(s) ouvert(s)`,
+      action: { label: 'Traiter', to: '/admin/tickets', permission: 'support.handle' },
+    });
+  }
+
+  salles
+    .filter((salle) => salle.occupancy_percent < 30)
+    .slice(0, 2)
+    .forEach((salle) =>
+      liste.push({
+        id: `sous-${salle.room_id}`,
+        tone: 'info',
+        message: `${salle.room_name} sous-utilisée : ${salle.occupancy_percent} % en moyenne`,
+        action: {
+          label: 'Voir',
+          to: `/admin/salles/${salle.room_id}`,
+          permission: 'rooms.manage',
+        },
+      }),
+    );
+
   return liste.slice(0, 5);
 }
 
 /** Densité d'occupation par jour ouvré et par heure. */
-function heatmap() {
+async function heatmap(signal) {
+  const points = await get('/admin/stats/peak-hours', { signal });
   const heures = Array.from({ length: 12 }, (_, index) => 8 + index);
   const jours = [1, 2, 3, 4, 5];
-  const cellules = [];
 
-  for (const jour of jours) {
-    for (const heure of heures) {
-      const compte = actives().filter((booking) => {
-        const debut = toDate(booking.start);
-        return getDay(debut) === jour && debut.getHours() === heure;
-      }).length;
-      cellules.push({ day: jour, hour: heure, value: compte });
-    }
-  }
+  const parCle = new Map(points.map((item) => [`${item.weekday}-${item.hour}`, item.bookings]));
+  const cellules = jours.flatMap((j) =>
+    heures.map((h) => ({ day: j, hour: h, value: parCle.get(`${j}-${h}`) ?? 0 })),
+  );
   const max = Math.max(1, ...cellules.map((cell) => cell.value));
-  return { hours: heures, days: jours, cells: cellules.map((c) => ({ ...c, ratio: c.value / max })) };
+
+  return {
+    hours: heures,
+    days: jours,
+    cells: cellules.map((cell) => ({ ...cell, ratio: cell.value / max })),
+  };
 }
 
-/** Rapports A-02 : agrégats par salle, par bâtiment et par période. */
+/** Rapport d'occupation détaillé, filtrable par période et par bâtiment. */
 export async function getReport({ from, to, buildingIds = [], granularity = 'mois' } = {}) {
-  await delay();
-  const debut = from ? startOfDay(toDate(from)) : addDays(NOW, -30);
-  // La borne haute couvre le jour entier : sinon une date de fin fixée à
-  // aujourd'hui exclurait toutes les réservations… d'aujourd'hui.
-  const fin = to ? addDays(startOfDay(toDate(to)), 1) : NOW;
+  const signal = abortable('admin:report');
+  const debut = from ? new Date(from) : addDays(new Date(), -30);
+  const fin = to ? new Date(to) : new Date();
+  const bornes = { first_day: jour(debut), last_day: jour(fin) };
 
-  const periode = actives().filter(
-    (booking) => toDate(booking.start) >= debut && toDate(booking.start) < fin,
-  );
-  const retenues = periode.filter((booking) =>
-    buildingIds.length === 0
-      ? true
-      : buildingIds.includes(roomById[booking.roomId]?.buildingId),
-  );
+  const [salles, periodes, batiments] = await Promise.all([
+    get('/admin/stats/rooms', { params: { ...bornes, limit: 200 }, signal }),
+    get('/admin/stats/occupancy', { params: { ...bornes, granularity }, signal }),
+    get('/buildings', { signal }).then((data) => data.map(adapt.building)),
+  ]);
 
-  const parSalle = rooms
-    .filter((room) => (buildingIds.length === 0 ? true : buildingIds.includes(room.buildingId)))
-    .map((room) => {
-      const siennes = retenues.filter((booking) => booking.roomId === room.id);
-      const passees = siennes.filter((booking) => toDate(booking.end) < NOW);
-      const absences = passees.filter((booking) => !booking.checkedIn).length;
-      return {
-        roomId: room.id,
-        room: room.name,
-        building: buildings.find((b) => b.id === room.buildingId)?.name ?? '',
-        bookings: siennes.length,
-        hours: Math.round(heuresDe(siennes)),
-        occupancy: room.occupancyRate,
-        noShow: passees.length === 0 ? 0 : absences / passees.length,
-      };
-    })
+  const nomsRetenus = new Set(
+    batiments.filter((item) => buildingIds.includes(item.id)).map((item) => item.name),
+  );
+  const retenus = buildingIds.length
+    ? salles.filter((salle) => nomsRetenus.has(salle.building_name))
+    : salles;
+
+  const byRoom = retenus
+    .map((salle) => ({
+      roomId: salle.room_id,
+      room: salle.room_name,
+      building: salle.building_name,
+      bookings: salle.bookings,
+      hours: Math.round(salle.hours),
+      occupancy: salle.occupancy_percent / 100,
+      noShow: salle.bookings > 0 ? salle.no_shows / salle.bookings : 0,
+    }))
     .sort((a, b) => b.bookings - a.bookings);
 
-  const parPeriode =
-    granularity === 'jour'
-      ? grouper(retenues, (booking) => isoJour(booking.start), (cle) => fmtDayMonth(toDate(cle)))
-      : grouper(retenues, (booking) => isoJour(booking.start).slice(0, 7), (cle) =>
-          MOIS[getMonth(toDate(`${cle}-01`))],
-        );
-
-  // Les heures des bâtiments et du total sont sommées à partir des heures déjà
-  // arrondies par salle : sans cela, trois arrondis indépendants affichent un
-  // total inférieur à la somme de ses parts, et le rapport se contredit.
-  const parBatiment = buildings
+  // Les heures des bâtiments sont sommées depuis les heures déjà arrondies par
+  // salle : sans cela, deux arrondis indépendants donnent un total qui
+  // contredit la somme de ses parts, et le rapport se contredit lui-même.
+  const byBuilding = batiments
     .filter((batiment) => (buildingIds.length === 0 ? true : buildingIds.includes(batiment.id)))
     .map((batiment) => {
-      const siennes = parSalle.filter((salle) => roomById[salle.roomId]?.buildingId === batiment.id);
+      const siennes = byRoom.filter((salle) => salle.building === batiment.name);
       return {
         id: batiment.id,
         label: batiment.name,
@@ -208,45 +187,25 @@ export async function getReport({ from, to, buildingIds = [], granularity = 'moi
     })
     .filter((entree) => entree.bookings > 0);
 
+  const absences = retenus.reduce((total, salle) => total + salle.no_shows, 0);
+  const total = byRoom.reduce((somme, salle) => somme + salle.bookings, 0);
+
   return {
     from: debut,
     to: fin,
     granularity,
-    byRoom: parSalle,
-    byPeriod: parPeriode,
-    byBuilding: parBatiment,
+    byRoom,
+    byPeriod: periodes.map((point) => ({ label: point.period, hours: Math.round(point.hours) })),
+    byBuilding,
     totals: {
-      bookings: retenues.length,
-      hours: parSalle.reduce((total, salle) => total + salle.hours, 0),
-      rooms: parSalle.length,
-      usedRooms: parSalle.filter((salle) => salle.bookings > 0).length,
-      noShow: tauxNoShow(retenues),
+      bookings: total,
+      hours: byRoom.reduce((somme, salle) => somme + salle.hours, 0),
+      rooms: byRoom.length,
+      usedRooms: byRoom.filter((salle) => salle.bookings > 0).length,
+      noShow: total > 0 ? absences / total : 0,
     },
   };
 }
-
-const MOIS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
-
-/**
- * Regroupe des réservations par tranche de temps.
- *
- * La clé est toujours une date ISO tronquée, jamais le libellé affiché : trier
- * « 01/04 » et « 26/03 » comme du texte remettrait avril avant mars.
- */
-function grouper(liste, cle, libelle) {
-  const carte = liste.reduce((acc, booking) => {
-    const k = cle(booking);
-    acc[k] = (acc[k] ?? 0) + durationMin(booking.start, booking.end) / 60;
-    return acc;
-  }, {});
-
-  return Object.entries(carte)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([k, hours]) => ({ label: libelle(k), hours: Math.round(hours) }));
-}
-
-/** Jour local au format ISO, sans passer par UTC qui décalerait la date. */
-const isoJour = (value) => toDateInput(toDate(value));
 
 export const COLONNES_EXPORT = [
   { id: 'room', label: 'Salle / Espace', default: true },
@@ -258,27 +217,52 @@ export const COLONNES_EXPORT = [
   { id: 'organisers', label: 'Détails organisateurs', default: false },
 ];
 
+/**
+ * Export du rapport.
+ *
+ * Le CSV est produit par le serveur, en SQL : le régénérer côté écran depuis
+ * des agrégats déjà arrondis donnerait un fichier différent du tableau affiché.
+ * Les autres formats ne sont pas servis — un PDF demanderait un moteur de rendu
+ * hors de la liste de dépendances arrêtée.
+ */
 export async function exportReport({ format = 'csv', columns = [], ...filters } = {}) {
-  if (!['csv', 'pdf', 'excel'].includes(format)) {
-    throw new ApiError('Format d’export inconnu.', 422, 'format_invalide');
+  if (format !== 'csv') {
+    throw new ApiError(
+      'Seul l’export CSV est disponible : il s’ouvre dans un tableur.',
+      422,
+      'format_indisponible',
+    );
   }
-  // Un export sans colonne produirait un fichier vide : autant le refuser ici.
   if (columns.length === 0) {
     throw new ApiError('Sélectionnez au moins une colonne à exporter.', 422, 'colonnes_requises');
   }
 
-  await delay(700);
-  const rapport = await getReport(filters);
-  const extension = { csv: 'csv', pdf: 'pdf', excel: 'xlsx' }[format];
-  const lignes = rapport.byRoom.filter((salle) => salle.bookings > 0);
+  const debut = filters.from ? new Date(filters.from) : addDays(new Date(), -30);
+  const fin = filters.to ? new Date(filters.to) : new Date();
+
+  const csv = await getText('/admin/stats/export', {
+    params: { first_day: jour(debut), last_day: jour(fin) },
+  });
+  const nom = `rapport-occupation-${jour(new Date())}.csv`;
+  telecharger(csv, nom);
 
   return {
-    filename: `rapport-occupation-${toDateInput(NOW)}.${extension}`,
+    filename: nom,
     format,
     columns: columns.filter((id) => COLONNES_EXPORT.some((colonne) => colonne.id === id)),
-    rows: lignes.length,
-    generatedAt: NOW.toISOString(),
+    rows: Math.max(0, csv.trim().split('\n').length - 1),
+    generatedAt: new Date().toISOString(),
   };
 }
 
-export const colonnesExport = () => clone(COLONNES_EXPORT);
+/** Remise du fichier au navigateur, sans dépendance de téléchargement. */
+export function telecharger(contenu, nom) {
+  const url = URL.createObjectURL(new Blob([contenu], { type: 'text/csv;charset=utf-8' }));
+  const lien = document.createElement('a');
+  lien.href = url;
+  lien.download = nom;
+  lien.click();
+  URL.revokeObjectURL(url);
+}
+
+export const colonnesExport = () => COLONNES_EXPORT.map((item) => ({ ...item }));

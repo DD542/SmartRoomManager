@@ -13,6 +13,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -22,6 +23,7 @@ from app.api.errors import register_exception_handlers
 from app.api.v1.router import v1_router
 from app.core.config import get_settings
 from app.core.limiter import limiter
+from app.core.storage import racine as racine_media
 from app.db.session import get_session
 from app.tasks.scheduler import build_scheduler
 
@@ -110,6 +112,12 @@ app.add_middleware(RequestContextMiddleware)
 
 register_exception_handlers(app)
 app.include_router(v1_router)
+
+# Les fichiers téléversés sont servis par l'application elle-même : le parc tient
+# dans quelques mégaoctets, et un service de stockage séparé sortirait de la
+# liste de dépendances arrêtée. En production, `media_root` doit désigner un
+# volume monté, sinon un redéploiement effacerait les plans déposés.
+app.mount(settings.media_url, StaticFiles(directory=racine_media()), name="media")
 
 
 @app.get(

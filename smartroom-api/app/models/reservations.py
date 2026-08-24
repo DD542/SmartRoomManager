@@ -281,7 +281,7 @@ class Booking(TimestampMixin, SoftDeleteMixin, Base):
         lazy="select",
     )
     access_codes: Mapped[list["BookingAccessCode"]] = relationship(
-        back_populates="booking", cascade="all, delete-orphan", passive_deletes=True, lazy="select"
+        back_populates="booking", cascade="all, delete-orphan", passive_deletes=True, lazy="selectin"
     )
     access_requests: Mapped[list["AccessRequest"]] = relationship(back_populates="booking")
     tickets: Mapped[list["Ticket"]] = relationship(back_populates="booking")

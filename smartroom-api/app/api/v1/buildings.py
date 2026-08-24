@@ -19,8 +19,10 @@ from app.api.v1.schemas import (
     FloorPlanOut,
     PlacementIn,
     RoomPlacementOut,
+    UploadIn,
 )
 from app.api.v1.serializers import batiment_sortie, etage_sortie
+from app.core import storage
 from app.services import parc_service as service
 
 router = APIRouter(tags=["parc"])
@@ -69,6 +71,45 @@ def list_floors(
 )
 def get_plan(floor_id: uuid.UUID, session: SessionDep, _: CurrentPrincipal) -> FloorPlanOut:
     return FloorPlanOut.model_validate(service.get_floor_plan(session, floor_id))
+
+
+@router.put(
+    "/floors/{floor_id}/plan",
+    response_model=FloorPlanOut,
+    summary="Déposer le plan d'un étage",
+    description=(
+        "Remplace le plan existant. Image ou PDF, 5 Mo au maximum : le fichier "
+        "est servi par l'application, et accepter un type arbitraire "
+        "reviendrait à héberger n'importe quel exécutable sur son domaine. Le "
+        "plan précédent est effacé du disque. Le contenu voyage encodé en "
+        "base64 dans le corps JSON, le multipart demandant une dépendance de "
+        "plus."
+    ),
+    responses={422: {"description": "Format refusé, fichier vide ou trop lourd."}},
+)
+def upload_plan(
+    floor_id: uuid.UUID, payload: UploadIn, session: SessionDep, _admin=Ecriture
+) -> FloorPlanOut:
+    plan = service.replace_floor_plan(
+        session,
+        floor_id,
+        contenu=payload.content,
+        content_type=payload.content_type,
+        file_name=payload.file_name,
+        admin_id=_admin.user_id,
+    )
+    session.commit()
+    return FloorPlanOut.model_validate(plan)
+
+
+@router.delete(
+    "/floors/{floor_id}/plan",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Retirer le plan d'un étage",
+)
+def delete_plan(floor_id: uuid.UUID, session: SessionDep, _admin=Ecriture) -> None:
+    service.delete_floor_plan(session, floor_id)
+    session.commit()
 
 
 @router.patch(

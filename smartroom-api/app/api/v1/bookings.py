@@ -28,6 +28,7 @@ from app.api.v1.schemas import (
     BookingOut,
     BookingPatchIn,
     CancelIn,
+    BookingDetailOut,
     CheckInIn,
     InvitationRespondIn,
     OccurrenceOut,
@@ -89,13 +90,22 @@ def list_mine(
     return Page.build([BookingOut.of(item) for item in reservations], total, params)
 
 
-@router.get("/{booking_id}", response_model=BookingOut, summary="Détail")
+@router.get(
+    "/{booking_id}",
+    response_model=BookingDetailOut,
+    summary="Détail",
+    description=(
+        "La frise des faits accompagne le détail, mais pas les listes : cent "
+        "réservations affichées en tireraient cent historiques dont aucun "
+        "n'est lu."
+    ),
+)
 def get_booking(
     booking_id: uuid.UUID, session: SessionDep, principal: CurrentPrincipal
-) -> BookingOut:
+) -> BookingDetailOut:
     reservation = _charger(session, booking_id)
     assert_owner_or_admin(principal, reservation.owner_id)
-    return BookingOut.of(reservation)
+    return BookingDetailOut.of(reservation)
 
 
 @router.post(

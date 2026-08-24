@@ -22,6 +22,7 @@ from app.api.v1 import (
     rules,
     stats,
     support,
+    users,
 )
 
 v1_router = APIRouter(prefix="/api/v1")
@@ -36,5 +37,6 @@ v1_router.include_router(access_requests.router)
 v1_router.include_router(rules.router)
 v1_router.include_router(support.router)
 v1_router.include_router(notifications.router)
+v1_router.include_router(users.router)
 v1_router.include_router(stats.router)
 v1_router.include_router(admin.router)

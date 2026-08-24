@@ -176,6 +176,25 @@ def list_openings(
     ]
 
 
+@router.get(
+    "/rooms/{room_id}/opening-hours",
+    response_model=list[OpeningWindowOut],
+    summary="Horaires appliqués à une salle",
+    description=(
+        "L'amplitude effectivement retenue, la plus spécifique d'abord : salle, "
+        "puis bâtiment, puis globale. La fiche salle en tire son « ouvert de 8 h "
+        "à 20 h » et ses jours d'accès, sans avoir à rejouer la résolution."
+    ),
+)
+def openings_for_room(
+    room_id: uuid.UUID, session: SessionDep, _: CurrentPrincipal
+) -> list[OpeningWindowOut]:
+    return [
+        OpeningWindowOut.model_validate(item)
+        for item in service.resolve_openings_for_room(session, room_id)
+    ]
+
+
 @router.put(
     "/opening-hours/{scope}",
     response_model=list[OpeningWindowOut],

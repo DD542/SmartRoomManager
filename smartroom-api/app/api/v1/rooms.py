@@ -26,6 +26,7 @@ from app.api.v1.schemas import (
     RoomOut,
     RoomPatchIn,
     RoomPhotoOut,
+    UploadIn,
 )
 from app.api.v1.serializers import batiment_sortie, equipement_sortie, etage_sortie, salle_sortie
 from app.core.pagination import Page
@@ -70,7 +71,10 @@ def list_rooms(
         status=room_status,
         query=q,
     )
-    return Page.build([salle_sortie(item) for item in salles], total, params)
+    occupation = service.occupancy_map(session, [item.id for item in salles])
+    return Page.build(
+        [salle_sortie(item, occupation.get(item.id, 0)) for item in salles], total, params
+    )
 
 
 @router.get(
@@ -97,7 +101,8 @@ def room_filters(session: SessionDep, _: CurrentPrincipal) -> RoomFiltersOut:
 
 @router.get("/{room_id}", response_model=RoomOut, summary="Fiche d'une salle")
 def get_room(room_id: uuid.UUID, session: SessionDep, _: CurrentPrincipal) -> RoomOut:
-    return salle_sortie(service.get_room(session, room_id))
+    salle = service.get_room(session, room_id)
+    return salle_sortie(salle, service.occupancy_map(session, [salle.id]).get(salle.id, 0))
 
 
 @router.post(
@@ -172,6 +177,33 @@ def list_photos(
     room_id: uuid.UUID, session: SessionDep, _: CurrentPrincipal
 ) -> list[RoomPhotoOut]:
     return [RoomPhotoOut.model_validate(item) for item in service.list_photos(session, room_id)]
+
+
+@router.post(
+    "/{room_id}/photos",
+    response_model=RoomPhotoOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Ajouter une photo",
+    description=(
+        "Image seule, 5 Mo au maximum, six par salle. La position est attribuée "
+        "à la suite : la première photo sert de couverture aux résultats de "
+        "recherche, et laisser le client choisir un rang libre l'obligerait à "
+        "connaître un état qu'il vient de lire."
+    ),
+    responses={422: {"description": "Format refusé, fichier trop lourd, ou salle pleine."}},
+)
+def add_photo(
+    room_id: uuid.UUID, payload: UploadIn, session: SessionDep, _admin=Ecriture
+) -> RoomPhotoOut:
+    photo = service.add_photo(
+        session,
+        room_id,
+        contenu=payload.content,
+        content_type=payload.content_type,
+        alt_text=payload.alt_text,
+    )
+    session.commit()
+    return RoomPhotoOut.model_validate(photo)
 
 
 @router.delete(

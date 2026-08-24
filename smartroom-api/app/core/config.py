@@ -92,6 +92,15 @@ class Settings(BaseSettings):
     #: aucune boîte réelle ne reçoit les données du jeu de démonstration.
     mail_enabled: bool = False
 
+    # ------------------------------------------------------------- fichiers
+
+    #: Répertoire des fichiers téléversés — plans d'étage, photos de salles.
+    #: Un volume monté en production ; sans cela, un redéploiement effacerait
+    #: les plans déposés par l'administration.
+    media_root: str = "media"
+    #: Préfixe public correspondant, monté en statique par l'application.
+    media_url: str = "/media"
+
     # ------------------------------------------------------------ agrégations
 
     #: Durée de validité des agrégats de tableau de bord, en secondes. Cinq

@@ -408,6 +408,31 @@ class TestRegles:
         assert len(restants) == 5
         assert all(item.opens_at == heure(9, 0) for item in restants)
 
+    def test_horaires_resolus_pour_une_salle(
+        self, client, session, administrateur, salle, compte
+    ):
+        """La fiche salle lit l'amplitude résolue, pas les lignes brutes : sans
+        cela, elle afficherait les horaires du campus pour une salle qui a les
+        siens."""
+        accorder(session, administrateur, RULES_CONFIGURE)
+        entetes = connecter(client, administrateur.user.email, admin=True)
+        client.put(
+            "/api/v1/opening-hours/salle",
+            headers=entetes,
+            params={"room_id": str(salle.id)},
+            json=[
+                {"weekday": jour, "opens_at": "09:00:00", "closes_at": "18:00:00"}
+                for jour in range(1, 6)
+            ],
+        )
+
+        corps = client.get(
+            f"/api/v1/rooms/{salle.id}/opening-hours",
+            headers=connecter(client, compte.email),
+        ).json()
+        assert {item["weekday"] for item in corps} == {1, 2, 3, 4, 5}
+        assert all(item["scope"] == "salle" for item in corps)
+
     def test_jour_duplique_refuse(self, client, session, administrateur, salle):
         accorder(session, administrateur, RULES_CONFIGURE)
         entetes = connecter(client, administrateur.user.email, admin=True)

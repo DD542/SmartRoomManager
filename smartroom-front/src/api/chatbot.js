@@ -1,66 +1,67 @@
 // src/api/chatbot.js
-// Endpoint FastAPI cible :
-//   POST /api/chatbot/messages   { text, context } -> { reply, room?, quickReplies }
+// Endpoint réel :
+//   POST /api/v1/chatbot/messages   rapproche le message d'une intention déclarée
+//
+// Les intentions et leurs mots-clés vivent en base : les modifier ne demande
+// pas de redéploiement, et l'assistant ne fabrique aucune réponse. En deçà du
+// seuil de confiance il le dit et propose un ticket — sur un système de
+// réservation, une réponse inventée ferait plus de dégâts qu'un renvoi.
 
-import { chatFallback, chatGreeting, chatIntents } from '../mocks/chatScripts';
-import { rooms } from '../mocks/rooms';
-import { buildings } from '../mocks/buildings';
-import { bestRoom } from '../utils/recommendation';
-import { normalize } from '../utils/format';
-import { clone, delay } from './client';
+import { post } from './client';
+import { recommendBest } from './recommendations';
 
-/** Extrait un effectif d'une phrase : « une salle de 6 personnes ». */
-function extractAttendees(text) {
-  const match = normalize(text).match(/(\d+)\s*(personnes?|pers|places?)/);
-  return match ? Number(match[1]) : null;
-}
-
-function matchIntent(text) {
-  const normalized = normalize(text);
-  let best = null;
-  let bestScore = 0;
-  for (const intent of chatIntents) {
-    const score = intent.keywords.filter((keyword) => normalized.includes(normalize(keyword))).length;
-    if (score > bestScore) {
-      best = intent;
-      bestScore = score;
-    }
-  }
-  return bestScore > 0 ? best : null;
-}
+const ACCUEIL = {
+  reply:
+    'Bonjour. Je peux vous aider à trouver une salle, comprendre une règle de réservation ou ouvrir un ticket.',
+  quickReplies: [
+    'Trouver une salle pour 4 personnes',
+    'Comment annuler une réservation ?',
+    'Je n’arrive pas à valider ma présence',
+  ],
+  intent: 'accueil',
+  room: null,
+};
 
 export async function greet() {
-  await delay(200);
-  return clone(chatGreeting);
+  return { ...ACCUEIL, quickReplies: [...ACCUEIL.quickReplies] };
 }
 
 export async function sendMessage(text, context = {}) {
-  await delay();
-  const intent = matchIntent(text);
-  if (!intent) return { ...clone(chatFallback), intent: 'inconnu' };
+  const data = await post('/chatbot/messages', { message: text });
 
-  if (!intent.withRoomCard) {
-    return { reply: intent.reply, quickReplies: clone(intent.quickReplies), intent: intent.id, room: null };
+  const reponse = {
+    reply: data.answer,
+    intent: data.intent_code ?? 'inconnu',
+    intentLabel: data.intent_label,
+    quickReplies: data.quick_replies ?? [],
+    escalates: data.escalates_to_ticket,
+    articleId: data.faq_article_id,
+    confidence: data.confidence,
+    room: null,
+  };
+
+  // Une intention de recherche mérite une carte de salle : répondre « utilisez
+  // la recherche » à qui demande une salle pour quatre personnes reviendrait à
+  // renvoyer la question.
+  if (reponse.intent && reponse.intent.startsWith('recherche')) {
+    const suggestion = await recommendBest({
+      attendees: extraireEffectif(text) ?? context.attendees ?? 4,
+      buildingId: context.buildingId,
+    }).catch(() => null);
+
+    if (suggestion) {
+      reponse.room = {
+        ...suggestion.room,
+        justification: suggestion.justification,
+        score: suggestion.score,
+      };
+    }
   }
 
-  const attendees = extractAttendees(text) ?? context.attendees ?? 4;
-  const suggestion = bestRoom(
-    rooms.filter((room) => room.status !== 'maintenance'),
-    { attendees, equipmentIds: [], buildingId: context.buildingId },
-  );
-
-  return {
-    reply: intent.reply,
-    intent: intent.id,
-    quickReplies: clone(intent.quickReplies),
-    room: suggestion
-      ? {
-          ...clone(suggestion.room),
-          building: clone(buildings.find((b) => b.id === suggestion.room.buildingId)) ?? null,
-          justification: suggestion.justification,
-          score: suggestion.score,
-        }
-      : null,
-    attendees,
-  };
+  return reponse;
 }
+
+const extraireEffectif = (texte) => {
+  const trouve = /(\d{1,3})\s*(personnes?|pers\.?|places?)/i.exec(String(texte));
+  return trouve ? Number(trouve[1]) : null;
+};

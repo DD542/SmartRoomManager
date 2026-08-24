@@ -1,60 +1,84 @@
 // src/api/admin/templates.js
-// Endpoints FastAPI cibles :
-//   GET   /api/admin/email-templates          liste des modèles
-//   PATCH /api/admin/email-templates/{id}     enregistrement
-//   POST  /api/admin/email-templates/{id}/test envoi d'un test
-//   PATCH /api/admin/email-templates/{id}/state activation
+// Endpoints réels :
+//   GET   /api/v1/admin/email-templates              gabarits, modifiables en base
+//   GET   /api/v1/admin/email-templates/variables    variables autorisées
+//   GET   /api/v1/admin/email-templates/{id}         détail
+//   PATCH /api/v1/admin/email-templates/{id}         modification
+//   PATCH /api/v1/admin/email-templates/{id}/state   activation
+//   POST  /api/v1/admin/email-templates/{id}/preview rendu, sans rien envoyer
+//
+// Les gabarits vivent en base : les modifier ne demande pas de redéploiement.
+// Le rendu est fait côté serveur, dans un environnement Jinja en bac à sable —
+// interpréter un gabarit dans le navigateur donnerait un aperçu qui ne
+// correspond pas au courriel réellement envoyé.
 
-import { emailTemplates, templateVariables } from '../../mocks/admin/emailTemplates';
-import { NOW, fmtDateLong, fmtTime } from '../../utils/dates';
-import { ApiError, clone, createStore, delay } from '../client';
+import * as adapt from '../adapters';
+import { ApiError, get, patch, post } from '../client';
 
-const store = createStore(emailTemplates);
+/** Référentiel des variables, chargé une fois puis conservé. */
+let referentiel = null;
 
-/** Jeu d'exemple servant à l'aperçu en direct. */
-const EXEMPLE = {
-  prenom: 'Dylan',
-  salle: 'Salle Vinci',
-  batiment: 'Bâtiment A — 2e étage',
-  date: fmtDateLong('2026-03-26T14:00:00'),
-  creneau: `${fmtTime('2026-03-26T14:00:00')} - ${fmtTime('2026-03-26T15:30:00')}`,
-  code_acces: 'A-4821',
-  lien_reservation: 'https://smartroom.ece.fr/app/reservations/bk-1001',
-};
-
-export async function listTemplates() {
-  await delay();
-  return store.all();
+async function variables() {
+  if (!referentiel) {
+    referentiel = (await get('/admin/email-templates/variables')).map((item) => ({
+      code: item.code,
+      label: item.label,
+      sample: item.sample_value,
+    }));
+  }
+  return referentiel;
 }
 
-export async function getTemplate(id) {
-  await delay(200);
-  const template = store.find((item) => item.id === id);
-  if (!template) throw new ApiError('Modèle introuvable.', 404, 'introuvable');
-  return template;
+export async function listTemplates({ signal } = {}) {
+  const data = await get('/admin/email-templates', { signal });
+  return data.map(adapt.emailTemplate);
+}
+
+export async function getTemplate(id, { signal } = {}) {
+  return adapt.emailTemplate(await get(`/admin/email-templates/${id}`, { signal }));
 }
 
 export async function listVariables() {
-  await delay(100);
-  return clone(templateVariables);
+  return (await variables()).map((item) => item.code);
 }
 
-/** Remplace les {{variables}} par le jeu d'exemple, pour l'aperçu. */
+/**
+ * Aperçu.
+ *
+ * Synchrone parce que l'écran l'appelle à chaque frappe. Le rendu de référence
+ * reste celui du serveur — `previewTemplate` — mais l'attendre à chaque
+ * caractère saisi rendrait la zone de texte inutilisable.
+ */
 export function render(texte = '') {
-  return texte.replace(/\{\{\s*(\w+)\s*\}\}/g, (correspondance, cle) => EXEMPLE[cle] ?? correspondance);
+  const exemples = Object.fromEntries((referentiel ?? []).map((item) => [item.code, item.sample]));
+  return String(texte).replace(
+    /\{\{\s*(\w+)\s*\}\}/g,
+    (correspondance, cle) => exemples[cle] ?? correspondance,
+  );
 }
 
-/** Variables employées dans un modèle mais absentes du référentiel. */
+/** Variables employées dans un gabarit mais absentes du référentiel. */
 export function unknownVariables(texte = '') {
-  const employees = [...texte.matchAll(/\{\{\s*(\w+)\s*\}\}/g)].map((m) => m[1]);
-  return [...new Set(employees.filter((nom) => !templateVariables.includes(nom)))];
+  const connues = new Set((referentiel ?? []).map((item) => item.code));
+  const employees = [...String(texte).matchAll(/\{\{\s*(\w+)\s*\}\}/g)].map((m) => m[1]);
+  // Sans référentiel chargé, aucune variable n'est déclarée inconnue : signaler
+  // une erreur sur une liste vide accuserait le gabarit d'une lenteur réseau.
+  return connues.size === 0
+    ? []
+    : [...new Set(employees.filter((nom) => !connues.has(nom)))];
+}
+
+/** Rendu de référence, produit par le serveur avec les valeurs d'exemple. */
+export async function previewTemplate(id) {
+  const data = await post(`/admin/email-templates/${id}/preview`, { variables: {} });
+  return { to: data.to, subject: data.subject, body: data.body };
 }
 
 export async function saveTemplate(id, { subject, body, format }) {
-  await delay();
   if (!subject?.trim()) throw new ApiError('L’objet est obligatoire.', 422, 'objet_requis');
   if (!body?.trim()) throw new ApiError('Le corps du message est vide.', 422, 'corps_requis');
 
+  await variables();
   const inconnues = [...unknownVariables(subject), ...unknownVariables(body)];
   if (inconnues.length > 0) {
     throw new ApiError(
@@ -64,29 +88,33 @@ export async function saveTemplate(id, { subject, body, format }) {
     );
   }
 
-  const updated = store.update(id, {
+  // `format` reste un choix d'écran : les gabarits sont stockés en texte et
+  // rendus tels quels, et prétendre gérer du HTML sans l'échapper ouvrirait
+  // une injection dans les courriels sortants.
+  const data = await patch(`/admin/email-templates/${id}`, {
     subject: subject.trim(),
     body,
-    format: format ?? 'texte',
-    updatedAt: NOW.toISOString(),
   });
-  if (!updated) throw new ApiError('Modèle introuvable.', 404, 'introuvable');
-  return updated;
+  return { ...adapt.emailTemplate(data), format: format ?? 'texte' };
 }
 
 export async function toggleTemplate(id, enabled) {
-  await delay(200);
-  const updated = store.update(id, { enabled });
-  if (!updated) throw new ApiError('Modèle introuvable.', 404, 'introuvable');
-  return updated;
+  const data = await patch(`/admin/email-templates/${id}/state`, { enabled: Boolean(enabled) });
+  return adapt.emailTemplate(data);
 }
 
+/**
+ * Envoi de test.
+ *
+ * L'API ne propose pas d'envoi à une adresse arbitraire : elle deviendrait un
+ * relais capable d'expédier un message rédigé sur mesure à n'importe qui. Le
+ * rendu serveur est donc restitué à l'écran, sans qu'aucun courriel ne parte.
+ */
 export async function sendTest(id, email) {
-  await delay(600);
-  const template = store.find((item) => item.id === id);
-  if (!template) throw new ApiError('Modèle introuvable.', 404, 'introuvable');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email))) {
     throw new ApiError('Adresse de test invalide.', 422, 'email_invalide');
   }
-  return { id, sentTo: email, subject: render(template.subject) };
+
+  const rendu = await previewTemplate(id);
+  return { id, sentTo: null, preview: rendu, subject: rendu.subject };
 }

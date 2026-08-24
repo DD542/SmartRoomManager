@@ -1,42 +1,50 @@
 // src/api/notifications.js
-// Endpoints FastAPI cibles :
-//   GET   /api/notifications?category=       fil de l'utilisateur
-//   PATCH /api/notifications/{id}            marquer lue
-//   POST  /api/notifications/read-all        tout marquer comme lu
+// Endpoints réels :
+//   GET   /api/v1/notifications                fil du compte connecté
+//   GET   /api/v1/notifications/unread-count   pastille de la barre supérieure
+//   PATCH /api/v1/notifications/{id}           marquer lue
+//   POST  /api/v1/notifications/read-all       tout marquer comme lu
 
-import { notificationTabs, notifications as seed } from '../mocks/notifications';
-import { toDate } from '../utils/dates';
-import { clone, createStore, delay, notFound } from './client';
+import * as adapt from './adapters';
+import { abortable, collect, get, patch, post } from './client';
 
-const store = createStore(seed);
+const ONGLETS = [
+  { id: 'toutes', label: 'Toutes' },
+  { id: 'reservation', label: 'Réservations' },
+  { id: 'rappel', label: 'Rappels' },
+  { id: 'aide', label: 'Aide' },
+];
 
-export async function listNotifications(category = 'toutes') {
-  await delay();
-  return store
-    .all()
-    .filter((n) => (category === 'toutes' ? true : n.category === category))
-    .sort((a, b) => toDate(b.at) - toDate(a.at));
+export async function listNotifications(category = 'toutes', { signal } = {}) {
+  const lignes = (await collect('/notifications', {
+    signal: signal ?? abortable('notifications:list'),
+  })).map(adapt.notification);
+
+  return category === 'toutes'
+    ? lignes
+    : lignes.filter((item) => item.category === category);
 }
 
-export async function countUnread() {
-  await delay(120);
-  return store.filter((n) => !n.read).length;
+/**
+ * Pastille de la barre supérieure.
+ *
+ * Un `COUNT` côté serveur plutôt que la longueur d'une liste chargée : la
+ * pastille n'a besoin que du nombre, et le fil peut compter des centaines de
+ * lignes.
+ */
+export async function countUnread({ signal } = {}) {
+  return get('/notifications/unread-count', { signal });
 }
 
 export async function markAsRead(id) {
-  await delay(150);
-  const updated = store.update(id, { read: true });
-  if (!updated) throw notFound('Notification');
-  return updated;
+  return adapt.notification(await patch(`/notifications/${id}`, { read: true }));
 }
 
 export async function markAllAsRead() {
-  await delay();
-  store.all().forEach((n) => store.update(n.id, { read: true }));
-  return store.all();
+  await post('/notifications/read-all');
+  return listNotifications();
 }
 
 export async function listTabs() {
-  await delay(100);
-  return clone(notificationTabs);
+  return ONGLETS.map((item) => ({ ...item }));
 }

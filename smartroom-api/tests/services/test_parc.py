@@ -260,6 +260,143 @@ class TestEquipements:
         assert session.get(Equipment, video.id) is None
 
 
+class TestOccupation:
+    def test_la_fiche_porte_son_taux_d_occupation(self, client, compte, salle):
+        """Les cartes du catalogue l'affichent : sans lui, chaque salle
+        obligerait l'écran à un second appel, ou à inventer un chiffre."""
+        entetes = connecter(client, compte.email)
+
+        corps = client.get(f"/api/v1/rooms/{salle.id}", headers=entetes).json()
+        assert corps["occupancy_percent"] == 0
+
+        liste = client.get("/api/v1/rooms", headers=entetes).json()
+        assert all("occupancy_percent" in item for item in liste["items"])
+
+
+class TestTeleversement:
+    """Plans d'étage et photos de salle : le seul endroit où l'API reçoit un fichier."""
+
+    @staticmethod
+    def _png(taille: int = 64) -> dict:
+        import base64
+
+        # Un PNG minimal valide, complété pour atteindre la taille voulue : le
+        # contrôle porte sur le type déclaré et le poids, pas sur le décodage.
+        entete = bytes.fromhex("89504e470d0a1a0a")
+        contenu = entete + b"0" * max(0, taille - len(entete))
+        return {
+            "file_name": "plan.png",
+            "content_type": "image/png",
+            "content": base64.b64encode(contenu).decode(),
+        }
+
+    def test_depot_puis_remplacement_du_plan(
+        self, client, session, administrateur, etage, tmp_path, monkeypatch
+    ):
+        monkeypatch.setattr(
+            "app.core.storage.racine", lambda: tmp_path, raising=True
+        )
+        accorder(session, administrateur, ROOMS_MANAGE)
+        entetes = connecter(client, administrateur.user.email, admin=True)
+
+        premier = client.put(
+            f"/api/v1/floors/{etage.id}/plan", headers=entetes, json=self._png()
+        )
+        assert premier.status_code == 200, premier.text
+        assert premier.json()["kind"] == "image"
+
+        second = client.put(
+            f"/api/v1/floors/{etage.id}/plan", headers=entetes, json=self._png(128)
+        )
+        assert second.status_code == 200
+        # Un seul plan par étage : le second remplace le premier au lieu de
+        # s'ajouter, et le fichier remplacé disparaît du disque.
+        assert second.json()["id"] == premier.json()["id"]
+        assert second.json()["file_size_bytes"] == 128
+        assert len(list((tmp_path / "plans").iterdir())) == 1
+
+        assert client.get(
+            f"/api/v1/floors/{etage.id}/plan", headers=entetes
+        ).json()["file_url"] == second.json()["file_url"]
+
+        assert client.delete(
+            f"/api/v1/floors/{etage.id}/plan", headers=entetes
+        ).status_code == 204
+        assert list((tmp_path / "plans").iterdir()) == []
+
+    def test_format_refuse(self, client, session, administrateur, etage, tmp_path, monkeypatch):
+        """Accepter un type arbitraire reviendrait à héberger n'importe quel
+        exécutable sur le domaine de l'application."""
+        monkeypatch.setattr("app.core.storage.racine", lambda: tmp_path, raising=True)
+        accorder(session, administrateur, ROOMS_MANAGE)
+        entetes = connecter(client, administrateur.user.email, admin=True)
+
+        reponse = client.put(
+            f"/api/v1/floors/{etage.id}/plan",
+            headers=entetes,
+            json={**self._png(), "content_type": "application/x-msdownload"},
+        )
+        assert reponse.status_code == 422
+        assert reponse.json()["error"]["code"] == "format_invalide"
+
+    def test_fichier_trop_lourd_refuse(
+        self, client, session, administrateur, etage, tmp_path, monkeypatch
+    ):
+        monkeypatch.setattr("app.core.storage.racine", lambda: tmp_path, raising=True)
+        accorder(session, administrateur, ROOMS_MANAGE)
+        entetes = connecter(client, administrateur.user.email, admin=True)
+
+        reponse = client.put(
+            f"/api/v1/floors/{etage.id}/plan",
+            headers=entetes,
+            json=self._png(5 * 1024 * 1024 + 1),
+        )
+        assert reponse.status_code == 422
+        assert reponse.json()["error"]["code"] == "trop_lourd"
+
+    def test_photos_ajoutees_a_la_suite(
+        self, client, session, administrateur, salle, tmp_path, monkeypatch
+    ):
+        monkeypatch.setattr("app.core.storage.racine", lambda: tmp_path, raising=True)
+        accorder(session, administrateur, ROOMS_MANAGE)
+        entetes = connecter(client, administrateur.user.email, admin=True)
+
+        premiere = client.post(
+            f"/api/v1/rooms/{salle.id}/photos",
+            headers=entetes,
+            json={**self._png(), "alt_text": "Vue depuis la porte"},
+        )
+        assert premiere.status_code == 201, premiere.text
+        assert premiere.json()["position"] == 0
+
+        seconde = client.post(
+            f"/api/v1/rooms/{salle.id}/photos", headers=entetes, json=self._png()
+        )
+        assert seconde.json()["position"] == 1
+
+    def test_pdf_refuse_comme_photo(
+        self, client, session, administrateur, salle, tmp_path, monkeypatch
+    ):
+        monkeypatch.setattr("app.core.storage.racine", lambda: tmp_path, raising=True)
+        accorder(session, administrateur, ROOMS_MANAGE)
+        entetes = connecter(client, administrateur.user.email, admin=True)
+
+        reponse = client.post(
+            f"/api/v1/rooms/{salle.id}/photos",
+            headers=entetes,
+            json={**self._png(), "content_type": "application/pdf"},
+        )
+        assert reponse.status_code == 422
+        assert reponse.json()["error"]["code"] == "format_invalide"
+
+    def test_televersement_sans_permission_refuse(self, client, administrateur, etage):
+        entetes = connecter(client, administrateur.user.email, admin=True)
+        reponse = client.put(
+            f"/api/v1/floors/{etage.id}/plan", headers=entetes, json=self._png()
+        )
+        assert reponse.status_code == 403
+
+
 class TestPlan:
     def test_placement_hors_du_plan_refuse(self, client, session, administrateur, salle, etage):
         accorder(session, administrateur, ROOMS_MANAGE)

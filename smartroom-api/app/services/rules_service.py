@@ -99,6 +99,34 @@ def resolve_rule_for_room(session: Session, room_id: uuid.UUID) -> BookingRule |
     return None
 
 
+def resolve_openings_for_room(session: Session, room_id: uuid.UUID) -> list[OpeningHour]:
+    """Horaires effectivement appliqués à une salle, portée la plus fine d'abord.
+
+    La résolution reproduit celle du moteur : par portée entière, la première qui
+    déclare une ouverture l'emporte. Les jours fermés de cette portée sont rendus
+    eux aussi, sans quoi l'écran afficherait une semaine amputée au lieu d'un
+    dimanche explicitement fermé.
+    """
+    from app.services.availability_service import charger_salle
+
+    salle = charger_salle(session, room_id)
+    for portee, condition in (
+        (RuleScope.SALLE, OpeningHour.room_id == salle.id),
+        (RuleScope.BATIMENT, OpeningHour.building_id == salle.floor.building_id),
+        (RuleScope.GLOBAL, OpeningHour.id.is_not(None)),
+    ):
+        lignes = list(
+            session.scalars(
+                select(OpeningHour)
+                .where(OpeningHour.scope == portee, condition)
+                .order_by(OpeningHour.weekday)
+            )
+        )
+        if any(item.is_open for item in lignes):
+            return lignes
+    return []
+
+
 def upsert_rule(
     session: Session,
     payload: Any,

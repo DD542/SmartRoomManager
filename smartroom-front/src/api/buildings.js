@@ -1,124 +1,194 @@
 // src/api/buildings.js
-// Endpoints FastAPI cibles :
-//   GET    /api/buildings                        liste des bâtiments et de leurs étages
-//   GET    /api/buildings/{id}/plan?floor=       plan d'étage et salles positionnées
-//   GET    /api/plans/{planId}/document          plan téléversé (image ou PDF)
-//   POST   /api/plans/{planId}/document          dépôt du plan par un gestionnaire
-//   DELETE /api/plans/{planId}/document          retrait du plan
+// Endpoints réels :
+//   GET    /api/v1/buildings                   bâtiments et leurs décomptes
+//   GET    /api/v1/buildings/{id}/floors       étages, du sous-sol au sommet
+//   GET    /api/v1/floors/{id}/plan            document déposé
+//   PUT    /api/v1/floors/{id}/plan            dépôt, base64 dans le corps JSON
+//   DELETE /api/v1/floors/{id}/plan            retrait
+//   GET    /api/v1/rooms?floor_id=             salles placées sur l'étage
+//
+// Un « plan » côté écran est un étage côté modèle : `planId` vaut `floorId`.
+// Regrouper les plans par bâtiment aurait mélangé le rez-de-chaussée et le
+// troisième dans une même image.
 
-import { buildings } from '../mocks/buildings';
-import { floorPlans, planDocuments, planLegend } from '../mocks/floorPlan';
-import { roomById } from '../mocks/rooms';
-import { equipmentById } from '../mocks/equipment';
-import { NOW } from '../utils/dates';
-import { ApiError, clone, delay, notFound } from './client';
+import * as adapt from './adapters';
+import { ApiError, collect, del, get, items, put } from './client';
 
-export async function listBuildings() {
-  await delay(150);
-  return clone(buildings);
+export async function listBuildings({ signal } = {}) {
+  return (await get('/buildings', { signal })).map(adapt.building);
 }
 
-export async function getBuilding(id) {
-  await delay(150);
-  const building = buildings.find((b) => b.id === id);
-  if (!building) throw notFound('Bâtiment');
-  return clone(building);
+export async function getBuilding(id, { signal } = {}) {
+  return adapt.building(await get(`/buildings/${id}`, { signal }));
 }
 
-/** Plans disponibles, pour le sélecteur de bâtiment de U-18. */
-export async function listFloorPlans() {
-  await delay(150);
-  return floorPlans.map(({ id, buildingId, label, sublabel }) => ({
-    id,
-    buildingId,
-    label,
-    sublabel,
-  }));
+export async function listFloors(buildingId, { signal } = {}) {
+  return (await get(`/buildings/${buildingId}/floors`, { signal })).map(adapt.floor);
 }
 
-export async function getFloorPlan(planId) {
-  await delay();
-  const plan = floorPlans.find((p) => p.id === planId) ?? floorPlans[0];
-  if (!plan) throw notFound('Plan');
+/** Plans disponibles : un par étage, libellés par leur bâtiment. */
+export async function listFloorPlans({ signal } = {}) {
+  const batiments = await listBuildings({ signal });
+  const parBatiment = await Promise.all(
+    batiments.map((batiment) => listFloors(batiment.id, { signal })),
+  );
+
+  return batiments.flatMap((batiment, index) =>
+    parBatiment[index].map((etage) => ({
+      id: etage.id,
+      buildingId: batiment.id,
+      label: `${batiment.name} — ${etage.label}`,
+      sublabel: [batiment.address, `${etage.roomCount} salles`].filter(Boolean).join(' — '),
+    })),
+  );
+}
+
+/** Légende du schéma. Fixe : elle décrit un code couleur, pas une donnée. */
+const LEGENDE = [
+  { key: 'libre', label: 'Libre', tone: 'success' },
+  { key: 'occupee', label: 'Occupée', tone: 'muted' },
+  { key: 'mienne', label: 'Votre salle', tone: 'accent' },
+];
+
+/**
+ * Étage et salles positionnées.
+ *
+ * Les couloirs et les repères du schéma décoratif ne sont pas modélisés : le
+ * plan déposé par l'administration fait foi, et le schéma se limite aux
+ * rectangles de salles, dont les coordonnées, elles, sont stockées.
+ */
+export async function getFloorPlan(planId, { signal } = {}) {
+  if (!planId) throw new ApiError('Aucun plan sélectionné.', 404, 'introuvable');
+
+  const [salles, plan] = await Promise.all([
+    get('/rooms', { params: { floor_id: planId, size: 100 }, signal }),
+    get(`/floors/${planId}/plan`, { signal }).catch(() => null),
+  ]);
+
+  const placees = items(salles).map(adapt.room);
+  const [premiere] = placees;
+
   return {
-    ...clone(plan),
-    legend: clone(planLegend),
-    rooms: plan.roomIds
-      .map((id) => roomById[id])
-      .filter(Boolean)
-      .map((room) => ({
-        ...clone(room),
-        equipment: room.equipmentIds.map((eq) => clone(equipmentById[eq])).filter(Boolean),
-      })),
+    id: planId,
+    buildingId: premiere?.buildingId ?? null,
+    label: premiere ? `${premiere.buildingName} — ${premiere.floor}` : 'Plan',
+    sublabel: `${placees.length} salles`,
+    corridors: [],
+    entrance: null,
+    landmarks: [],
+    legend: LEGENDE,
+    rooms: placees,
+    document: plan ? document_(plan) : null,
   };
 }
 
-/** Identifiant du plan d'étage couvrant une salle donnée. */
+/**
+ * Identifiant du plan couvrant une salle.
+ *
+ * Synchrone parce que les écrans l'appellent pendant leur rendu, alors que
+ * l'information est désormais distante : elle est lue dans le cache que
+ * l'adaptateur de salle alimente à chaque fiche chargée. Les écrans concernés
+ * ont tous chargé la salle auparavant.
+ */
 export function planIdForRoom(roomId) {
-  return floorPlans.find((plan) => plan.roomIds.includes(roomId))?.id ?? null;
+  return adapt.floorOfRoom.get(roomId) ?? null;
 }
 
-// Magasin des documents déposés : en mémoire, comme le reste des écritures.
-const documents = { ...planDocuments };
+const document_ = (data) => ({
+  id: data.id,
+  type: data.kind,
+  name: data.file_name,
+  url: data.file_url,
+  sizeKo: Math.max(1, Math.round(data.file_size_bytes / 1024)),
+  updatedAt: data.uploaded_at,
+  uploadedBy: 'Administration',
+});
 
-const TYPES_ACCEPTES = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp', 'application/pdf'];
 export const TAILLE_MAX_MO = 5;
 
-/** Document déposé pour un plan donné : image ou PDF, ou null. */
-export async function getPlanDocumentForPlan(planId) {
-  await delay(200);
-  return planId ? (clone(documents[planId]) ?? null) : null;
+const TYPES_ACCEPTES = [
+  'image/png',
+  'image/jpeg',
+  'image/svg+xml',
+  'image/webp',
+  'application/pdf',
+];
+
+export async function getPlanDocumentForPlan(planId, { signal } = {}) {
+  if (!planId) return null;
+  const plan = await get(`/floors/${planId}/plan`, { signal }).catch(() => null);
+  return plan ? document_(plan) : null;
+}
+
+/** Plan couvrant la salle, ou null si l'administration n'en a pas déposé. */
+export async function getPlanDocument(roomId, options = {}) {
+  return getPlanDocumentForPlan(planIdForRoom(roomId), options);
 }
 
 /**
- * Plan téléversé couvrant la salle : image ou PDF, ou null si l'administration
- * n'en a pas encore déposé.
- */
-export async function getPlanDocument(roomId) {
-  return getPlanDocumentForPlan(planIdForRoom(roomId));
-}
-
-/**
- * Dépôt d'un plan par un gestionnaire. Le mock crée une URL d'objet locale ;
- * le back renverra l'URL du fichier stocké après validation du type et du poids.
+ * Dépôt d'un plan.
+ *
+ * Le fichier part encodé en base64 dans le corps JSON : le multipart aurait
+ * demandé une dépendance de plus côté serveur, et le surcoût d'un tiers reste
+ * supportable sous un plafond de 5 Mo. Le type et le poids sont revérifiés
+ * côté serveur — ce contrôle-ci n'existe que pour répondre sans aller-retour.
  */
 export async function uploadPlanDocument(planId, file) {
-  await delay(600);
   if (!file) throw new ApiError('Aucun fichier sélectionné.', 422, 'fichier_manquant');
   if (!TYPES_ACCEPTES.includes(file.type)) {
-    throw new ApiError('Format refusé : déposez une image (PNG, JPG, SVG, WebP) ou un PDF.', 422, 'format_invalide');
+    throw new ApiError(
+      'Format refusé : déposez une image (PNG, JPG, SVG, WebP) ou un PDF.',
+      422,
+      'format_invalide',
+    );
   }
   if (file.size > TAILLE_MAX_MO * 1024 * 1024) {
     throw new ApiError(`Fichier trop lourd : ${TAILLE_MAX_MO} Mo maximum.`, 422, 'trop_lourd');
   }
 
-  const document = {
-    id: `doc-${planId}`,
-    type: file.type === 'application/pdf' ? 'pdf' : 'image',
-    name: file.name,
-    url: URL.createObjectURL(file),
-    sizeKo: Math.max(1, Math.round(file.size / 1024)),
-    updatedAt: NOW.toISOString(),
-    uploadedBy: 'Vous',
-  };
-  documents[planId] = document;
-  return clone(document);
+  const data = await put(`/floors/${planId}/plan`, {
+    file_name: file.name,
+    content_type: file.type,
+    content: await base64(file),
+  });
+  return document_(data);
+}
+
+/** Contenu du fichier en base64, sans le préfixe `data:` de FileReader. */
+function base64(file) {
+  return new Promise((resolve, reject) => {
+    const lecteur = new FileReader();
+    lecteur.onerror = () => reject(new ApiError('Fichier illisible.', 422, 'fichier_illisible'));
+    lecteur.onload = () => resolve(String(lecteur.result).split(',')[1] ?? '');
+    lecteur.readAsDataURL(file);
+  });
 }
 
 export async function deletePlanDocument(planId) {
-  await delay(300);
-  delete documents[planId];
+  await del(`/floors/${planId}/plan`);
   return { planId, deleted: true };
 }
 
-/** Itinéraire depuis l'entrée, affiché en U-18 et dans l'e-mail de rappel. */
-export async function getDirections(roomId) {
-  await delay(200);
-  const room = roomById[roomId];
-  if (!room) throw notFound('Salle');
-  const building = buildings.find((b) => b.id === room.buildingId);
+/**
+ * Itinéraire depuis l'entrée.
+ *
+ * Composé du bâtiment, de son adresse et de l'étage plutôt que stocké : une
+ * liste d'étapes saisie à la main se périmerait au premier réaménagement, sans
+ * que personne ne s'en aperçoive.
+ */
+export async function getDirections(roomId, { signal } = {}) {
+  const salle = adapt.room(await get(`/rooms/${roomId}`, { signal }));
   return {
     roomId,
-    steps: [...(building?.directions ?? []), `${room.name} — ${room.floor}`],
+    steps: [
+      salle.buildingName ? `Entrée — ${salle.buildingName}` : 'Entrée principale',
+      salle.floor ? `Rejoindre le ${salle.floor}` : null,
+      `${salle.name}${salle.badgeRequired ? ' — badge requis' : ''}`,
+    ].filter(Boolean),
   };
+}
+
+/** Parc complet d'un bâtiment, pour les écrans d'administration. */
+export async function allRoomsOfBuilding(buildingId, { signal } = {}) {
+  return (await collect('/rooms', { params: { building_id: buildingId }, signal })).map(adapt.room);
 }

@@ -1,16 +1,52 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import * as sessionApi from '../api/admin/session';
+import { onSessionExpired } from '../api/client';
 
 const AdminSessionContext = createContext(null);
 
 /**
- * Session d'administration, distincte de la session utilisateur : se connecter
- * à /app ne donne aucun droit sur /admin, et inversement. Comme pour l'espace
- * utilisateur, rien n'est stocké dans le navigateur.
+ * Session d'administration.
+ *
+ * Elle repose sur les mêmes identifiants que l'espace utilisateur mais sur un
+ * jeton distinct : celui émis par `/auth/admin/login` porte `scope=admin`, et
+ * un compte sans droits reçoit le même refus qu'un mot de passe faux — sans
+ * quoi la route dirait qui est administrateur.
+ *
+ * Le jeton et le cookie de rafraîchissement étant uniques par navigateur, une
+ * connexion à l'administration remplace la session utilisateur du même onglet.
+ *
+ * Les permissions ne sont pas déduites du jeton : elles sont relues à chaque
+ * reprise, et c'est le seul endroit où une révocation se constate avant la
+ * reconnexion.
  */
 export function AdminSessionProvider({ children }) {
   const [admin, setAdmin] = useState(null);
-  const [status, setStatus] = useState('deconnecte');
+  const [status, setStatus] = useState('reprise');
+
+  const expire = useRef(() => {});
+  expire.current = () => {
+    setAdmin(null);
+    setStatus('deconnecte');
+  };
+
+  useEffect(() => onSessionExpired(() => expire.current()), []);
+
+  useEffect(() => {
+    let vivant = true;
+    sessionApi
+      .restoreAdmin()
+      .then((compte) => {
+        if (!vivant) return;
+        setAdmin(compte);
+        setStatus(compte ? 'connecte' : 'deconnecte');
+      })
+      .catch(() => {
+        if (vivant) setStatus('deconnecte');
+      });
+    return () => {
+      vivant = false;
+    };
+  }, []);
 
   const login = useCallback(async (credentials) => {
     setStatus('connexion');
@@ -25,26 +61,36 @@ export function AdminSessionProvider({ children }) {
     }
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     setAdmin(null);
     setStatus('deconnecte');
+    await sessionApi.logoutAdmin();
   }, []);
 
   const setPermissions = useCallback((permissions) => {
-    setAdmin((current) => (current ? { ...current, permissions } : current));
+    setAdmin((courant) => (courant ? { ...courant, permissions } : courant));
+  }, []);
+
+  /** Relit la session : une permission retirée disparaît sans reconnexion. */
+  const refresh = useCallback(async () => {
+    const compte = await sessionApi.getAdminSession();
+    setAdmin(compte);
+    return compte;
   }, []);
 
   const value = useMemo(
     () => ({
       admin,
       status,
+      isRestoring: status === 'reprise',
       isAuthenticated: Boolean(admin),
       permissions: admin?.permissions ?? [],
       login,
       logout,
       setPermissions,
+      refresh,
     }),
-    [admin, status, login, logout, setPermissions],
+    [admin, status, login, logout, setPermissions, refresh],
   );
 
   return <AdminSessionContext.Provider value={value}>{children}</AdminSessionContext.Provider>;

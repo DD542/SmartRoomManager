@@ -1,147 +1,137 @@
 // src/api/stats.js
-// Endpoints FastAPI cibles :
-//   GET /api/stats/me?period=mois|trimestre|annee   agrégats personnels
-//   GET /api/stats/me/export                         export PDF du rapport
-//   GET /api/stats/public                            chiffres de la page d'accueil
+// Endpoints réels :
+//   GET /api/v1/stats/me            agrégats personnels, une requête
+//   GET /api/v1/stats/me/export     export CSV de mes réservations
+//   GET /api/v1/stats/public        chiffres de la page d'accueil
+//   GET /api/v1/bookings            base des répartitions par mois, salle, tranche
 
 import { getMonth, getYear } from 'date-fns';
-import { buildings } from '../mocks/buildings';
-import { rooms, roomById } from '../mocks/rooms';
-import { currentUserId } from '../mocks/users';
-import { NOW, durationMin, toDate } from '../utils/dates';
-import { delay } from './client';
-import { bookingStore } from './bookings';
+import { durationMin, toDate } from '../utils/dates';
+import * as adapt from './adapters';
+import { abortable, collect, get, getText } from './client';
 
-const MONTH_LABELS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+const MOIS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
 
-const SLOT_BUCKETS = [
+const TRANCHES = [
   { id: '08-10', label: '08:00 - 10:00', from: 8, to: 10 },
   { id: '10-12', label: '10:00 - 12:00', from: 10, to: 12 },
   { id: '14-16', label: '14:00 - 16:00', from: 14, to: 16 },
   { id: '16-18', label: '16:00 - 18:00', from: 16, to: 18 },
 ];
 
-function periodFilter(period) {
-  const currentMonth = getMonth(NOW);
-  const currentYear = getYear(NOW);
-  const quarterStart = Math.floor(currentMonth / 3) * 3;
-
-  return (booking) => {
-    const date = toDate(booking.start);
-    if (getYear(date) !== currentYear) return false;
-    if (period === 'mois') return getMonth(date) === currentMonth;
-    if (period === 'trimestre') return getMonth(date) >= quarterStart && getMonth(date) <= quarterStart + 2;
-    return true;
-  };
-}
+const FENETRE_JOURS = { mois: 31, trimestre: 92, annee: 365 };
 
 /**
- * Agrégats de l'écran U-24. Tout est calculé à partir des réservations réelles
- * du magasin : créer ou annuler une réservation déplace immédiatement les chiffres.
+ * Chiffres personnels.
+ *
+ * Les indicateurs viennent du serveur, qui les agrège en une requête. Les
+ * répartitions — par mois, par salle, par tranche — sont calculées ici depuis
+ * mes propres réservations : elles portent sur quelques dizaines de lignes déjà
+ * chargées, et trois endpoints d'agrégation de plus ne serviraient qu'un écran.
  */
-export async function getMyStats(period = 'trimestre', ownerId = currentUserId) {
-  await delay();
-  const mine = bookingStore.filter((b) => b.ownerId === ownerId).filter(periodFilter(period));
-  const active = mine.filter((b) => b.status !== 'annulee');
+export async function getMyStats(period = 'trimestre', _ownerId, { signal } = {}) {
+  const jours = FENETRE_JOURS[period] ?? 92;
+  const depuis = new Date(Date.now() - jours * 86_400_000);
 
-  const totalMinutes = active.reduce((sum, b) => sum + durationMin(b.start, b.end), 0);
-  const cancelled = mine.filter((b) => b.status === 'annulee').length;
-  const past = active.filter((b) => toDate(b.end) < NOW);
-  const attendance = past.length === 0 ? 1 : past.filter((b) => b.checkedIn).length / past.length;
+  const [chiffres, lignes] = await Promise.all([
+    get('/stats/me', { params: { days: jours }, signal: signal ?? abortable('stats:me') }),
+    collect('/bookings', { params: { from_date: depuis.toISOString() }, signal }),
+  ]);
 
-  const byMonth = MONTH_LABELS.map((label, index) => ({
+  const reservations = lignes.map(adapt.booking).filter((item) => item.status !== 'annulee');
+  const anneeCourante = getYear(new Date());
+
+  const byMonth = MOIS.map((label, index) => ({
     label,
     hours: Math.round(
-      active
-        .filter((b) => getMonth(toDate(b.start)) === index)
-        .reduce((sum, b) => sum + durationMin(b.start, b.end), 0) / 60,
+      reservations
+        .filter(
+          (item) => getYear(item.start) === anneeCourante && getMonth(item.start) === index,
+        )
+        .reduce((somme, item) => somme + durationMin(item.start, item.end), 0) / 60,
     ),
-  })).filter((_, index) => index <= getMonth(NOW));
+  })).filter((_, index) => index <= getMonth(new Date()));
 
-  const roomCounts = active.reduce(
-    (acc, b) => ({ ...acc, [b.roomId]: (acc[b.roomId] ?? 0) + 1 }),
-    {},
-  );
-  const byRoom = Object.entries(roomCounts)
-    .map(([roomId, count]) => ({
-      roomId,
-      name: roomById[roomId]?.name ?? roomId,
-      count,
-      share: count / (active.length || 1),
-    }))
+  const parSalle = new Map();
+  reservations.forEach((item) => {
+    const cle = item.roomId;
+    const courant = parSalle.get(cle) ?? { roomId: cle, name: item.roomName ?? cle, count: 0 };
+    courant.count += 1;
+    parSalle.set(cle, courant);
+  });
+  const byRoom = [...parSalle.values()]
+    .map((item) => ({ ...item, share: item.count / (reservations.length || 1) }))
     .sort((a, b) => b.count - a.count);
 
-  const bySlot = SLOT_BUCKETS.map((bucket) => {
-    const count = active.filter((b) => {
-      const hour = toDate(b.start).getHours();
-      return hour >= bucket.from && hour < bucket.to;
+  const bySlot = TRANCHES.map((tranche) => {
+    const count = reservations.filter((item) => {
+      const heure = item.start.getHours();
+      return heure >= tranche.from && heure < tranche.to;
     }).length;
-    return { ...bucket, count, share: count / (active.length || 1) };
+    return { ...tranche, count, share: count / (reservations.length || 1) };
   });
 
   return {
     period,
     kpis: {
-      bookings: active.length,
-      hours: Math.round(totalMinutes / 60),
-      cancelled,
-      attendance,
+      bookings: chiffres.active_bookings,
+      hours: Math.round(chiffres.booked_hours),
+      cancelled: chiffres.cancelled_bookings,
+      attendance: chiffres.attendance_rate,
     },
     byMonth,
     byRoom,
     bySlot,
-    observation: buildObservation(byRoom, bySlot),
+    observation: observation(byRoom, bySlot),
   };
 }
 
 /**
- * L'observation est dérivée des agrégats, jamais écrite en dur — et elle
- * n'affirme une tendance que si un créneau ou une salle se détache réellement.
+ * Phrase d'observation.
+ *
+ * Construite depuis les répartitions plutôt que figée : une remarque écrite en
+ * dur cesserait d'être vraie dès la première réservation ajoutée.
  */
-function buildObservation(byRoom, bySlot) {
-  const slots = [...bySlot].sort((a, b) => b.count - a.count);
-  const [topSlot, secondSlot] = slots;
-  const [topRoom, secondRoom] = byRoom;
+function observation(byRoom, bySlot) {
+  const salle = byRoom[0];
+  const tranche = [...bySlot].sort((a, b) => b.count - a.count)[0];
+  if (!salle || !tranche?.count) return 'Pas encore assez de réservations pour dégager une tendance.';
 
-  if (!topRoom || !topSlot || topSlot.count === 0) {
-    return 'Pas encore assez de réservations sur la période pour dégager une tendance.';
-  }
-
-  const slotStandsOut = topSlot.count > (secondSlot?.count ?? 0);
-  const roomStandsOut = topRoom.count > (secondRoom?.count ?? 0);
-
-  if (slotStandsOut && roomStandsOut) {
-    return `Vos réservations se concentrent sur le créneau ${topSlot.label}, avec une préférence marquée pour la ${topRoom.name}.`;
-  }
-  if (slotStandsOut) {
-    return `Vous réservez surtout sur le créneau ${topSlot.label}, sans salle privilégiée pour l’instant.`;
-  }
-  if (roomStandsOut) {
-    return `La ${topRoom.name} concentre vos réservations, réparties sur l’ensemble de la journée.`;
-  }
-  return `Votre usage reste réparti : ${byRoom.length} salles et ${slots.filter((slot) => slot.count > 0).length} créneaux différents sur la période.`;
+  return `Vous réservez surtout ${salle.name} (${Math.round(salle.share * 100)} % de vos créneaux), principalement entre ${tranche.label}.`;
 }
 
-/**
- * Chiffres publics de la landing (P-01). Ils sont dérivés du catalogue réel :
- * aucun nombre décoratif écrit en dur dans la page.
- */
-export async function getPublicStats() {
-  await delay();
-  const openRooms = rooms.filter((room) => room.status !== 'maintenance');
-  const averageOccupancy =
-    openRooms.reduce((sum, room) => sum + room.occupancyRate, 0) / (openRooms.length || 1);
-
+/** Chiffres de la page d'accueil : aucun n'est personnel. */
+export async function getPublicStats({ signal } = {}) {
+  const data = await get('/stats/public', { signal });
   return {
-    rooms: rooms.length,
-    buildings: buildings.length,
+    rooms: data.rooms,
+    buildings: data.buildings,
+    seats: data.seats,
+    bookings: data.bookings_last_30_days,
+    // La contrainte d'exclusion rend le chevauchement impossible en base : le
+    // chiffre est zéro par construction, pas par mesure.
     doubleBookings: 0,
-    averageOccupancy,
   };
 }
 
-/** Export PDF : le back renverra un flux, la maquette confirme la demande. */
+/**
+ * Export de mes réservations.
+ *
+ * CSV et non PDF : le serveur formate le fichier en SQL, et fabriquer un PDF
+ * demanderait une dépendance de rendu pour un contenu qui reste tabulaire.
+ */
 export async function exportStats(period) {
-  await delay(600);
-  return { period, ready: true, filename: `statistiques-${period}.pdf` };
+  const csv = await getText('/stats/me/export');
+  const nom = `mes-reservations-${period}.csv`;
+  telecharger(csv, nom);
+  return { period, ready: true, filename: nom };
+}
+
+function telecharger(contenu, nom) {
+  const url = URL.createObjectURL(new Blob([contenu], { type: 'text/csv;charset=utf-8' }));
+  const lien = document.createElement('a');
+  lien.href = url;
+  lien.download = nom;
+  lien.click();
+  URL.revokeObjectURL(url);
 }

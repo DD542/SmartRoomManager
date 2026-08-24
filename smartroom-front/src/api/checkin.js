@@ -1,66 +1,54 @@
 // src/api/checkin.js
-// Endpoints FastAPI cibles :
-//   GET  /api/bookings/{id}/checkin     fenêtre de validation restante
-//   POST /api/bookings/{id}/checkin     { code } -> présence validée
-//   POST /api/bookings/{id}/late        signale un retard, prolonge la fenêtre
+// Endpoints réels :
+//   POST /api/v1/bookings/{id}/check-in   { code } -> présence validée
+//   POST /api/v1/bookings/{id}/late       le créneau reste réservé malgré le retard
+//
+// La fenêtre elle-même n'est pas une route : elle se déduit du début du créneau
+// et de `checkinWindowMin`, deux valeurs déjà chargées par l'écran. Un appel de
+// plus n'apporterait qu'une horloge serveur, que le décompte local suit déjà.
 
 import { differenceInMinutes } from 'date-fns';
-import { NOW, toDate } from '../utils/dates';
-import { ApiError, delay, notFound } from './client';
-import { bookingStore } from './bookings';
-
-/** Fenêtre de validation : 10 min avant le début, 10 min après. */
-const WINDOW_MIN = 10;
+import * as adapt from './adapters';
+import { post } from './client';
+import { getBooking } from './bookings';
+import { getRoomRules } from './rooms';
 
 export async function getCheckInWindow(bookingId) {
-  await delay(150);
-  const booking = bookingStore.find((b) => b.id === bookingId);
-  if (!booking) throw notFound('Réservation');
+  const reservation = await getBooking(bookingId);
+  const regles = await getRoomRules(reservation.roomId);
+  const fenetre = regles.checkinWindowMin ?? 10;
 
-  const sinceStart = differenceInMinutes(NOW, toDate(booking.start));
-  // Avant l'ouverture de la fenêtre, le compteur reste plein ; une fois ouverte,
-  // il décompte les minutes restantes sans jamais dépasser la durée de fenêtre.
-  const remainingMin = Math.max(0, Math.min(WINDOW_MIN, WINDOW_MIN - sinceStart));
-  const opensInMin = Math.max(0, -sinceStart - WINDOW_MIN);
+  const depuisDebut = differenceInMinutes(new Date(), reservation.start);
+  // Avant l'ouverture, le compteur reste plein ; une fois ouverte, il décompte
+  // les minutes restantes sans jamais dépasser la durée de fenêtre.
+  const restantes = Math.max(0, Math.min(fenetre, fenetre - depuisDebut));
 
   return {
     bookingId,
-    open: sinceStart >= -WINDOW_MIN && remainingMin > 0,
-    opensInMin,
-    windowMin: WINDOW_MIN,
-    remainingMin,
-    checkedIn: booking.checkedIn,
+    open: depuisDebut >= -fenetre && restantes > 0,
+    opensInMin: Math.max(0, -depuisDebut - fenetre),
+    windowMin: fenetre,
+    remainingMin: restantes,
+    checkedIn: Boolean(reservation.checkedInAt),
     autoReleaseWarning:
       'La salle sera automatiquement libérée si vous ne validez pas votre présence dans le temps imparti.',
   };
 }
 
 export async function checkIn(bookingId, code) {
-  await delay();
-  const booking = bookingStore.find((b) => b.id === bookingId);
-  if (!booking) throw notFound('Réservation');
-  if (booking.status !== 'confirmee') {
-    throw new ApiError("Cette réservation n'est pas active.", 409, 'inactive');
-  }
-  if (String(code).replace(/\s|-/g, '').toUpperCase() !==
-      String(booking.accessCode).replace(/\s|-/g, '').toUpperCase()) {
-    throw new ApiError('Code incorrect. Vérifiez l’écran de la salle.', 422, 'code_invalide');
-  }
-
-  const updated = bookingStore.update(bookingId, (item) => ({
-    checkedIn: true,
-    history: [
-      ...item.history,
-      { type: 'checkin', at: NOW.toISOString(), label: 'Présence validée sur place' },
-    ],
-  }));
-  return updated;
+  const data = await post(`/bookings/${bookingId}/check-in`, {
+    code: String(code ?? '').replace(/\s|-/g, '').toUpperCase(),
+  });
+  return adapt.booking(data);
 }
 
-/** « Je suis en retard » : prolonge la fenêtre de 10 minutes. */
+/**
+ * « Je suis en retard » : le créneau reste réservé au-delà de la fenêtre.
+ *
+ * La marque vaut validation de présence — sans cela, la tâche de libération
+ * rendrait la salle à quelqu'un qui arrive avec dix minutes de retard.
+ */
 export async function declareLate(bookingId) {
-  await delay();
-  const booking = bookingStore.find((b) => b.id === bookingId);
-  if (!booking) throw notFound('Réservation');
-  return { bookingId, extendedByMin: WINDOW_MIN };
+  const data = await post(`/bookings/${bookingId}/late`);
+  return { bookingId, extendedByMin: 0, booking: adapt.booking(data) };
 }

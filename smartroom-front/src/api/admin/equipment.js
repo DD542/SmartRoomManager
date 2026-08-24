@@ -1,88 +1,100 @@
 // src/api/admin/equipment.js
-// Endpoints FastAPI cibles :
-//   GET   /api/admin/equipment          catalogue avec le nombre de salles équipées
-//   POST  /api/admin/equipment          création
-//   PATCH /api/admin/equipment/{id}     modification, dont l'icône et le filtrage
+// Endpoints réels :
+//   GET    /api/v1/equipments          référentiel, avec le nombre de salles équipées
+//   POST   /api/v1/equipments          création
+//   PATCH  /api/v1/equipments/{id}     modification
+//   DELETE /api/v1/equipments/{id}     retrait, refusé si des salles l'utilisent
+//   GET    /api/v1/rooms?equipment_ids= salles équipées, pour la fiche
 
-import { equipment as seedEquipment } from '../../mocks/equipment';
 import { EQUIPMENT_ICONS } from '../../components/rooms/equipmentIcons';
-import { ApiError, clone, createStore, delay, nextId } from '../client';
-import { roomStore } from './rooms';
+import * as adapt from '../adapters';
+import { ApiError, abortable, collect, del, get, items, patch, post } from '../client';
 
-/** Le référentiel s'enrichit d'un descriptif et d'un indicateur de filtrage. */
-const store = createStore(
-  seedEquipment.map((item) => ({
-    ...item,
-    description: '',
-    filterable: ['eq-visio', 'eq-screen4k', 'eq-whiteboard', 'eq-projector'].includes(item.id),
-  })),
-);
+const CATEGORIES = [
+  { id: 'audiovisuel', label: 'Audiovisuel' },
+  { id: 'mobilier', label: 'Mobilier' },
+  { id: 'amenagement', label: 'Aménagement' },
+];
 
-const equipees = (equipmentId) =>
-  roomStore.filter((room) => room.equipmentIds.includes(equipmentId));
-
-export async function listEquipmentCatalog() {
-  await delay();
-  return store.all().map((item) => ({
-    ...item,
-    roomCount: equipees(item.id).length,
-  }));
+export async function listEquipmentCatalog({ signal } = {}) {
+  const lignes = await collect('/equipments', {
+    signal: signal ?? abortable('admin:equipments'),
+  });
+  return lignes.map((item) => ({ ...adapt.equipment(item), roomCount: item.room_count }));
 }
 
-export async function getEquipmentDetail(id) {
-  await delay(200);
-  const item = store.find((entry) => entry.id === id);
+/** Fiche d'un équipement, avec les salles qui en disposent. */
+export async function getEquipmentDetail(id, { signal } = {}) {
+  const [catalogue, salles] = await Promise.all([
+    listEquipmentCatalog({ signal }),
+    get('/rooms', { params: { equipment_ids: [id], size: 100 }, signal }),
+  ]);
+
+  const item = catalogue.find((entree) => entree.id === id);
   if (!item) throw new ApiError('Équipement introuvable.', 404, 'introuvable');
+
   return {
     ...item,
-    rooms: equipees(id).map((room) => ({ id: room.id, name: room.name, status: room.status })),
+    rooms: items(salles).map((salle) => ({
+      id: salle.id,
+      name: salle.name,
+      status: salle.status,
+    })),
   };
 }
 
-/** Icônes proposées par le sélecteur, tirées de la table déjà utilisée par l'app. */
+/** Icônes proposées par le sélecteur, tirées de la table utilisée par l'app. */
 export async function listIcons() {
-  await delay(100);
   return Object.keys(EQUIPMENT_ICONS);
 }
 
+/**
+ * Le code sert de clé stable et n'est pas modifiable après création : il est
+ * référencé par les filtres et les règles, et le changer casserait ces liens.
+ */
+const codeDepuis = (libelle) =>
+  String(libelle)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 40);
+
 export async function saveEquipment(payload) {
-  await delay();
   if (!payload.label?.trim()) {
     throw new ApiError('Le nom de l’équipement est obligatoire.', 422, 'nom_requis');
   }
 
-  if (payload.id) {
-    const updated = store.update(payload.id, {
-      label: payload.label.trim(),
-      category: payload.category,
-      icon: payload.icon,
-      description: payload.description ?? '',
-      filterable: Boolean(payload.filterable),
-    });
-    if (!updated) throw new ApiError('Équipement introuvable.', 404, 'introuvable');
-    return updated;
-  }
-
-  return store.insert({
-    id: nextId('eq'),
+  const commun = {
     label: payload.label.trim(),
-    category: payload.category ?? 'av',
+    category: payload.category ?? 'audiovisuel',
     icon: payload.icon ?? 'Monitor',
-    description: payload.description ?? '',
-    filterable: Boolean(payload.filterable),
-  });
+    description: payload.description || null,
+    is_filterable: Boolean(payload.filterable ?? true),
+  };
+
+  const data = payload.id
+    ? await patch(`/equipments/${payload.id}`, commun)
+    : await post('/equipments', { ...commun, code: codeDepuis(payload.label) });
+
+  return { ...adapt.equipment(data), roomCount: data.room_count };
 }
 
 export async function toggleFilterable(id, filterable) {
-  await delay(200);
-  const updated = store.update(id, { filterable });
-  if (!updated) throw new ApiError('Équipement introuvable.', 404, 'introuvable');
-  return updated;
+  const data = await patch(`/equipments/${id}`, { is_filterable: Boolean(filterable) });
+  return { ...adapt.equipment(data), roomCount: data.room_count };
 }
 
-export const equipmentCategories = () =>
-  clone([
-    { id: 'av', label: 'Audiovisuel' },
-    { id: 'mobilier', label: 'Mobilier' },
-    { id: 'confort', label: 'Aménagement' },
-  ]);
+/**
+ * Retrait d'un équipement.
+ *
+ * Refusé par l'API tant qu'une salle le déclare : le supprimer sous les pieds
+ * des salles équipées rendrait leur fiche fausse sans prévenir personne.
+ */
+export async function deleteEquipment(id) {
+  await del(`/equipments/${id}`);
+  return { id, deleted: true };
+}
+
+export const equipmentCategories = () => CATEGORIES.map((item) => ({ ...item }));

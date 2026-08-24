@@ -820,21 +820,24 @@ def creer_support(
                 )
             )
 
+    # Les codes sont ceux que le planificateur va chercher : « tpl-rappel »
+    # aurait été ignoré en silence, et le rappel de trente minutes ne serait
+    # jamais parti sans qu'aucune erreur ne le signale.
     for code, nom, declencheur, objet, corps in [
-        ("tpl-confirmation", "Confirmation de réservation",
+        ("reservation_confirmation", "Confirmation de réservation",
          "Déclenché lors de la création d'une réservation",
          "Votre réservation {{salle}} est confirmée",
          "Bonjour {{prenom}},\n\nVotre réservation pour la salle {{salle}} ({{batiment}}) est "
          "confirmée pour le {{date}} sur le créneau {{creneau}}.\n\n"
          "Votre code d'accès temporaire est : {{code_acces}}\n\n"
          "Pour gérer votre réservation : {{lien_reservation}}\n\nL'équipe Support."),
-        ("tpl-rappel", "Rappel avant réunion",
+        ("reservation_rappel", "Rappel avant réunion",
          "Déclenché selon le délai de rappel choisi par l'utilisateur",
          "Votre réservation {{salle}} commence bientôt",
          "Bonjour {{prenom}},\n\nVotre réunion en salle {{salle}} commence à {{creneau}}. "
          "Pensez à valider votre présence sur place.\n\nCode d'accès : {{code_acces}}\n\n"
          "L'équipe Support."),
-        ("tpl-annulation", "Annulation de réservation",
+        ("reservation_annulation", "Annulation de réservation",
          "Déclenché lors de l'annulation d'une réservation",
          "Votre réservation {{salle}} du {{date}} est annulée",
          "Bonjour {{prenom}},\n\nVotre réservation en salle {{salle}} prévue le {{date}} "

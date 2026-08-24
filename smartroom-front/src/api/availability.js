@@ -1,101 +1,158 @@
 // src/api/availability.js
-// Endpoints FastAPI cibles :
-//   GET /api/rooms/{id}/availability?date=            créneaux d'une journée
-//   GET /api/rooms/{id}/availability?from=&to=        réservations d'une plage
-//   GET /api/rooms/{id}/rules                         règles d'ouverture
+// Endpoints réels :
+//   GET  /api/v1/rooms/{id}/booking-rules            contraintes appliquées
+//   GET  /api/v1/rooms/{id}/opening-hours            amplitude appliquée
+//   GET  /api/v1/availability/rooms/{id}/free-slots  trous réservables
+//   GET  /api/v1/availability/calendar               réservations d'une plage
+//   POST /api/v1/availability/search                 recherche multicritère
 
-import { roomById } from '../mocks/rooms';
-import { isSameDay, mergeDateAndTime, timeSlots, toDate } from '../utils/dates';
-import { detectConflicts } from '../utils/conflicts';
-import { isVisitDay, validateSlot } from '../utils/openingRules';
-import { clone, delay, notFound } from './client';
-import { bookingStore } from './bookings';
+import { addDays, isSameDay, mergeDateAndTime, timeSlots, toDate } from '../utils/dates';
+import * as adapt from './adapters';
+import { abortable, get, post } from './client';
+import { getRoomRules } from './rooms';
 
-const activeBookings = (roomId) =>
-  bookingStore.filter((b) => b.roomId === roomId && b.status !== 'annulee');
-
-/** Règles d'ouverture d'une salle, affichées en U-04 et U-17. */
-export async function getRules(roomId) {
-  await delay(150);
-  const room = roomById[roomId];
-  if (!room) throw notFound('Salle');
-  return clone(room.rules);
-}
+const jour = (date) => toDate(date).toISOString().slice(0, 10);
 
 /**
- * Créneaux d'une journée, pas de 30 min, avec l'état de chacun.
- * `state` vaut 'libre' | 'occupe' | 'ferme'.
+ * Règles d'une salle : contraintes de réservation et amplitude d'ouverture.
+ *
+ * Deux appels parce que le back tient deux référentiels distincts ; ils partent
+ * ensemble et la couture est faite par l'adaptateur.
+ */
+export const getRules = (roomId, options) => getRoomRules(roomId, options);
+
+/**
+ * Grille d'une journée, pas de 30 min, avec l'état de chaque case.
+ *
+ * `state` vaut 'libre' | 'occupe' | 'ferme'. Les trous libres viennent du
+ * moteur — battement déduit, fermetures appliquées — et non d'une soustraction
+ * refaite ici : deux calculs de disponibilité finiraient par diverger.
  */
 export async function getDayAvailability(roomId, date) {
-  await delay();
-  const room = roomById[roomId];
-  if (!room) throw notFound('Salle');
-
   const day = toDate(date);
-  const closed = !isVisitDay(day, room.rules);
-  const bookings = activeBookings(roomId).filter((b) => isSameDay(toDate(b.start), day));
+  const [regles, libres, reservations] = await Promise.all([
+    getRules(roomId, { signal: abortable(`avail:rules:${roomId}`) }),
+    get(`/availability/rooms/${roomId}/free-slots`, {
+      params: { first_day: jour(day), last_day: jour(day) },
+      signal: abortable(`avail:free:${roomId}`),
+    }),
+    listeReservations(roomId, day, addDays(day, 1)),
+  ]);
 
-  const slots = timeSlots(room.rules.openTime, room.rules.closeTime, 30)
+  const trous = libres.slots.map(adapt.slotOut);
+  const closed = trous.length === 0 && !regles.visitDays.includes(day.getDay());
+  const bookings = reservations.filter((item) => isSameDay(item.start, day));
+
+  const slots = timeSlots(regles.openTime, regles.closeTime, 30)
     .slice(0, -1)
     .map((time, index, all) => {
       const start = mergeDateAndTime(day, time);
-      const end = mergeDateAndTime(day, all[index + 1] ?? room.rules.closeTime);
-      const taken = bookings.find(
-        (b) => toDate(b.start) < end && start < toDate(b.end),
-      );
+      const end = mergeDateAndTime(day, all[index + 1] ?? regles.closeTime);
+      const pris = bookings.find((item) => item.start < end && start < item.end);
+      const libre = trous.some((trou) => trou.start <= start && end <= trou.end);
       return {
         time,
         start,
         end,
-        state: closed ? 'ferme' : taken ? 'occupe' : 'libre',
-        booking: taken ? { id: taken.id, title: taken.title } : null,
+        state: pris ? 'occupe' : libre ? 'libre' : 'ferme',
+        booking: pris ? { id: pris.id, title: pris.title } : null,
       };
     });
 
-  return { roomId, date: day, closed, rules: clone(room.rules), bookings, slots };
+  return { roomId, date: day, closed, rules: regles, bookings, slots };
 }
 
 /**
- * Réservations d'une plage quelconque : la vue du calendrier (jour, semaine,
- * mois ou année) pilote les bornes, l'API ne connaît que `from` et `to`.
+ * Réservations d'une plage quelconque : la vue du calendrier — jour, semaine,
+ * mois — pilote les bornes, et seules les lignes visibles sont chargées.
  */
 export async function getAvailabilityRange(roomId, from, to) {
-  await delay();
-  const room = roomById[roomId];
-  if (!room) throw notFound('Salle');
-
-  const bookings = activeBookings(roomId).filter(
-    (booking) => toDate(booking.end) >= toDate(from) && toDate(booking.start) <= toDate(to),
-  );
+  const [regles, bookings] = await Promise.all([
+    getRules(roomId, { signal: abortable(`avail:rules:${roomId}`) }),
+    listeReservations(roomId, from, to),
+  ]);
 
   return {
     roomId,
     from: toDate(from),
     to: toDate(to),
-    rules: clone(room.rules),
-    hours: timeSlots(room.rules.openTime, room.rules.closeTime, 60).slice(0, -1),
+    rules: regles,
+    hours: timeSlots(regles.openTime, regles.closeTime, 60).slice(0, -1),
     bookings,
   };
 }
 
-/** Prochain créneau libre d'une salle, affiché sur la fiche salle (U-17). */
-export async function getNextFreeSlot(roomId, from) {
-  await delay(200);
-  const room = roomById[roomId];
-  if (!room) throw notFound('Salle');
+async function listeReservations(roomId, from, to) {
+  const data = await get('/availability/calendar', {
+    params: {
+      from_date: toDate(from).toISOString(),
+      to_date: toDate(to).toISOString(),
+      room_ids: [roomId],
+    },
+    signal: abortable(`avail:cal:${roomId}`),
+  });
+  return data.events.map((item) => ({
+    id: item.id,
+    roomId: item.room_id,
+    title: item.title,
+    start: new Date(item.start),
+    end: new Date(item.end),
+    status: item.status,
+    isMine: item.is_mine,
+    isBlocking: item.is_blocking,
+  }));
+}
 
-  const day = toDate(from);
-  const candidates = timeSlots(room.rules.openTime, room.rules.closeTime, 30).slice(0, -2);
-  for (const time of candidates) {
-    const start = mergeDateAndTime(day, time);
-    if (start < day) continue;
-    const end = new Date(start.getTime() + 60 * 60000);
-    const rules = validateSlot({ start, end }, room.rules);
-    if (!rules.ok) continue;
-    const conflicts = detectConflicts({ roomId, start, end }, activeBookings(roomId), {
-      bufferMin: room.rules.bufferMin,
-    });
-    if (conflicts.length === 0) return { start, end };
-  }
-  return null;
+/**
+ * Prochain créneau libre, affiché sur la fiche salle.
+ *
+ * Cherche sur sept jours : au-delà, « prochain créneau dans onze jours » ne
+ * répond plus à la question posée.
+ */
+export async function getNextFreeSlot(roomId, from) {
+  const debut = toDate(from);
+  const data = await get(`/availability/rooms/${roomId}/free-slots`, {
+    params: { first_day: jour(debut), last_day: jour(addDays(debut, 6)) },
+    signal: abortable(`avail:next:${roomId}`),
+  });
+
+  const suivant = data.slots.map(adapt.slotOut).find((item) => item.end > debut);
+  if (!suivant) return null;
+
+  const start = suivant.start > debut ? suivant.start : debut;
+  const fin = new Date(start.getTime() + 3_600_000);
+  return { start, end: fin < suivant.end ? fin : suivant.end };
+}
+
+/**
+ * Recherche multicritère.
+ *
+ * Les salles occupées sur le créneau restent dans la réponse, marquées
+ * `eligible: false` : leur absence pure et simple laisserait l'utilisateur
+ * croire que la salle qu'il visait n'existe pas.
+ */
+export async function searchRooms({
+  start,
+  end,
+  attendees = 1,
+  buildingId,
+  equipmentIds = [],
+  accessibleOnly = false,
+  strictEquipment = true,
+  limit = 20,
+} = {}) {
+  const data = await post(
+    '/availability/search',
+    {
+      slot: start && end ? adapt.slotIn(start, end) : null,
+      attendees,
+      building_id: buildingId ?? null,
+      equipment_ids: equipmentIds,
+      accessible_only: accessibleOnly,
+      equipment_strict: strictEquipment,
+      limit,
+    },
+    { signal: abortable('avail:search') },
+  );
+  return data.map(adapt.suggestion);
 }

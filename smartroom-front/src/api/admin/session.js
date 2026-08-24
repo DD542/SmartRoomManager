@@ -1,40 +1,67 @@
 // src/api/admin/session.js
-// Endpoints FastAPI cibles :
-//   POST /api/admin/auth/login   { email, password } -> { admin, token }
-//   GET  /api/admin/me           session courante et permissions
-//   GET  /api/admin/permissions   référentiel des permissions
+// Endpoints réels :
+//   POST /api/v1/auth/admin/login   mêmes identifiants, jeton `scope=admin`
+//   POST /api/v1/auth/refresh       reprise de session
+//   GET  /api/v1/auth/me            session courante et permissions
+//   GET  /api/v1/admin/permissions  référentiel groupé des permissions
+//
+// Le jeton d'accès et le cookie de rafraîchissement sont uniques par
+// navigateur : ouvrir une session d'administration remplace la session
+// utilisateur dans le même onglet. Faire coexister les deux demanderait deux
+// cookies et deux emplacements de jeton, pour un cas — être connecté aux deux
+// espaces en même temps — qui n'a pas d'usage réel.
 
-import { adminCredentials, admins, permissionGroups } from '../../mocks/admin/admins';
-import { ApiError, clone, delay } from '../client';
+import * as adapt from '../adapters';
+import { get, post, restoreSession, setAccessToken } from '../client';
 
-/**
- * Connexion à l'espace d'administration. Distincte de celle de l'espace
- * utilisateur : un compte étudiant ne peut pas s'y authentifier, et toute
- * tentative est journalisée côté serveur.
- */
 export async function loginAdmin({ email, password }) {
-  await delay();
-  const normalise = String(email).trim().toLowerCase();
-  const compte = admins.find((admin) => admin.email.toLowerCase() === normalise);
-  const identifiants = adminCredentials.find(
-    (item) => item.email.toLowerCase() === normalise && item.password === password,
-  );
+  const payload = await post('/auth/admin/login', { email, password });
+  setAccessToken(payload.access_token);
 
-  if (!compte) {
-    throw new ApiError('Aucun compte administrateur pour cette adresse.', 404, 'inconnu');
+  // Le jeton ne porte pas la matrice de permissions : elle est relue en base à
+  // chaque appel de `/auth/me`. La faire voyager dans le jeton la figerait
+  // jusqu'à l'expiration, et une révocation resterait sans effet pendant ce
+  // temps-là.
+  return { admin: await getAdminSession() };
+}
+
+/** Reprend la session d'administration si le cookie tient encore. */
+export async function restoreAdmin() {
+  const payload = await restoreSession();
+  if (!payload) return null;
+  if (payload.scope !== 'admin') {
+    // Le cookie porte une session utilisateur : ce n'est pas une session
+    // d'administration, et la traiter comme telle donnerait un écran vide de
+    // droits plutôt qu'un renvoi vers la connexion.
+    return null;
   }
-  if (!identifiants) throw new ApiError('Mot de passe incorrect.', 401, 'identifiants');
-
-  return { admin: clone(compte), token: 'jeton-admin-de-demonstration' };
+  return getAdminSession();
 }
 
-export async function getAdminSession(adminId) {
-  await delay(150);
-  const compte = admins.find((admin) => admin.id === adminId);
-  return compte ? clone(compte) : null;
+export async function getAdminSession() {
+  const payload = await get('/auth/me');
+  return adapt.admin(payload);
 }
 
-export async function listPermissionGroups() {
-  await delay(120);
-  return clone(permissionGroups);
+export async function logoutAdmin() {
+  try {
+    await post('/auth/logout');
+  } finally {
+    setAccessToken(null);
+  }
+}
+
+/** Référentiel des permissions, groupé pour la matrice de l'écran des rôles. */
+export async function listPermissionGroups({ signal } = {}) {
+  const data = await get('/admin/permissions', { signal });
+  return data.map((groupe) => ({
+    id: groupe.id,
+    code: groupe.code,
+    label: groupe.label,
+    permissions: groupe.permissions.map((item) => ({
+      id: item.id,
+      code: item.code,
+      label: item.label,
+    })),
+  }));
 }

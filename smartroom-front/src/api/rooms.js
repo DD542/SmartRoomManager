@@ -1,77 +1,153 @@
 // src/api/rooms.js
-// Endpoints FastAPI cibles :
-//   GET /api/rooms?capacity=&building=&equipment=&floor=&available=   liste filtrée
-//   GET /api/rooms/{id}                                               détail
-//   GET /api/rooms/{id}/occupancy                                     taux d'occupation
+// Endpoints réels :
+//   GET /api/v1/rooms                       parc filtré et paginé
+//   GET /api/v1/rooms/filters               valeurs proposées par les filtres
+//   GET /api/v1/rooms/{id}                  fiche complète
+//   GET /api/v1/rooms/{id}/booking-rules    règles effectivement appliquées
+//   GET /api/v1/availability/rooms/{id}/free-slots
+//   GET /api/v1/admin/stats/rooms           occupation observée
 
-import { rooms as seed, roomById } from '../mocks/rooms';
-import { equipmentById } from '../mocks/equipment';
-import { buildings } from '../mocks/buildings';
-import { NOW, toDate } from '../utils/dates';
-import { normalize } from '../utils/format';
-import { clone, delay, notFound } from './client';
-import { bookingStore } from './bookings';
+import * as adapt from './adapters';
+import { abortable, collect, get, items } from './client';
 
-/** Statut instantané : la maintenance prime, sinon on regarde les réservations. */
-function liveStatus(room, at = NOW) {
-  if (room.status === 'maintenance') return 'maintenance';
-  const busy = bookingStore
-    .filter((b) => b.roomId === room.id && b.status === 'confirmee')
-    .some((b) => toDate(b.start) <= at && at < toDate(b.end));
-  return busy ? 'occupee' : 'disponible';
+/**
+ * Parc filtré.
+ *
+ * `available` était un filtre du temps des données simulées : la disponibilité
+ * dépend d'un créneau, pas d'une salle. Les écrans qui la demandent passent par
+ * `availability.searchRooms`, qui interroge le moteur.
+ */
+export async function listRooms({
+  capacity,
+  building,
+  floor,
+  equipment = [],
+  accessibleOnly = false,
+  status,
+  query,
+  signal,
+} = {}) {
+  const page = await get('/rooms', {
+    params: {
+      min_capacity: capacity,
+      building_id: building,
+      floor_id: floor,
+      equipment_ids: equipment,
+      accessible_only: accessibleOnly || undefined,
+      status,
+      q: query,
+      size: 100,
+    },
+    signal: signal ?? abortable('rooms:list'),
+  });
+  return items(page).map(adapt.room);
 }
 
-const decorate = (room) => ({
-  ...room,
-  status: liveStatus(room),
-  building: buildings.find((b) => b.id === room.buildingId) ?? null,
-  equipment: room.equipmentIds.map((id) => equipmentById[id]).filter(Boolean),
-});
-
-export async function listRooms(filters = {}) {
-  await delay();
-  const { capacity, building, buildings: buildingIds, equipment = [], floors = [], accessible, query, availableNow } =
-    filters;
-
-  return seed
-    .filter((room) => {
-      if (capacity && room.capacity < capacity) return false;
-      if (building && room.buildingId !== building) return false;
-      if (buildingIds?.length && !buildingIds.includes(room.buildingId)) return false;
-      if (floors.length && !floors.includes(room.floor)) return false;
-      if (accessible && !room.accessible) return false;
-      if (equipment.length && !equipment.every((id) => room.equipmentIds.includes(id))) return false;
-      if (query && !normalize(room.name).includes(normalize(query))) return false;
-      if (availableNow && liveStatus(room) !== 'disponible') return false;
-      return true;
-    })
-    .map(decorate);
+/**
+ * Fiche complète : la salle, son bâtiment et les règles qui s'y appliquent.
+ *
+ * Trois appels parallèles plutôt qu'un : la salle, le bâtiment et les règles
+ * sont trois ressources distinctes côté serveur, et les fusionner dans une
+ * réponse unique obligerait tous les autres appelants à charger ce dont ils
+ * n'ont pas besoin. L'écran, lui, veut un seul objet — la couture est faite ici.
+ */
+export async function getRoom(roomId, { signal } = {}) {
+  const salle = adapt.room(await get(`/rooms/${roomId}`, { signal }));
+  const [batiment, regles] = await Promise.all([
+    get(`/buildings/${salle.buildingId}`, { signal }).then(adapt.building),
+    getRoomRules(roomId, { signal }),
+  ]);
+  return { ...salle, building: batiment, rules: regles };
 }
 
-export async function getRoom(id) {
-  await delay();
-  const room = roomById[id];
-  if (!room) throw notFound('Salle');
-  return decorate(clone(room));
+/** Valeurs proposées par les filtres, mesurées sur le parc réel. */
+export async function getRoomFilters({ signal } = {}) {
+  const data = await get('/rooms/filters', { signal });
+  return {
+    buildings: data.buildings.map(adapt.building),
+    floors: data.floors.map(adapt.floor),
+    equipment: data.equipments.map(adapt.equipment),
+    statuses: data.statuses,
+    capacityMin: data.capacity_min,
+    capacityMax: data.capacity_max,
+  };
 }
 
-/** Occupation hebdomadaire, en pourcentage, pour la barre des cartes de salle. */
-export async function getOccupancy(id) {
-  await delay(200);
-  const room = roomById[id];
-  if (!room) throw notFound('Salle');
-  return { roomId: id, rate: room.occupancyRate };
+/**
+ * Règles applicables à une salle.
+ *
+ * Deux référentiels côté serveur — contraintes de réservation et amplitude
+ * d'ouverture — recousus en un seul objet, celui dont parlent les écrans.
+ */
+export async function getRoomRules(roomId, { signal } = {}) {
+  const [contraintes, horaires] = await Promise.all([
+    get(`/rooms/${roomId}/booking-rules`, { signal }),
+    get(`/rooms/${roomId}/opening-hours`, { signal }),
+  ]);
+  return adapt.roomRules(contraintes, horaires.map(adapt.openingWindow));
 }
 
-/** Salles favorites du dashboard : les plus réservées par l'utilisateur. */
-export async function listFavoriteRooms(ownerId) {
-  await delay();
-  const counts = bookingStore
-    .filter((b) => b.ownerId === ownerId && b.status !== 'annulee')
-    .reduce((acc, b) => ({ ...acc, [b.roomId]: (acc[b.roomId] ?? 0) + 1 }), {});
+/**
+ * Créneaux libres d'une salle sur une période.
+ *
+ * Le battement et les fermetures sont déjà déduits côté serveur : ce que
+ * l'écran affiche est réservable tel quel, pas « probablement libre ».
+ */
+export async function getRoomAvailability(roomId, { from, to, signal } = {}) {
+  const data = await get(`/availability/rooms/${roomId}/free-slots`, {
+    params: {
+      first_day: from,
+      last_day: to ?? from,
+    },
+    signal: signal ?? abortable(`rooms:slots:${roomId}`),
+  });
+  return {
+    roomId: data.room_id,
+    from: data.first_day,
+    to: data.last_day,
+    slots: data.slots.map(adapt.slotOut),
+  };
+}
 
-  return Object.entries(counts)
+/** Occupation observée d'une salle, sur les trente derniers jours. */
+export async function getRoomOccupancy(roomId, { signal } = {}) {
+  const lignes = await get('/admin/stats/rooms', { params: { limit: 200 }, signal });
+  const vise = lignes.find((item) => item.room_id === roomId);
+  return vise
+    ? {
+        roomId,
+        occupancyRate: vise.occupancy_percent / 100,
+        hours: vise.hours,
+        bookings: vise.bookings,
+        noShows: vise.no_shows,
+      }
+    : { roomId, occupancyRate: 0, hours: 0, bookings: 0, noShows: 0 };
+}
+
+/** Parc complet, pour les écrans qui ont besoin de tout le catalogue. */
+export async function allRooms({ signal } = {}) {
+  return (await collect('/rooms', { signal })).map(adapt.room);
+}
+
+/**
+ * Salles les plus réservées par le compte connecté.
+ *
+ * Déduites de mes réservations plutôt que d'une liste de favoris à cocher : un
+ * favori explicite se périme dès que les habitudes changent, alors que l'usage
+ * réel, lui, est toujours à jour.
+ */
+export async function listFavoriteRooms(_ownerId, { limit = 2, signal } = {}) {
+  const lignes = await collect('/bookings', { params: { size: 100 }, signal });
+
+  const comptes = new Map();
+  lignes
+    .filter((item) => item.status !== 'annulee')
+    .forEach((item) => comptes.set(item.room_id, (comptes.get(item.room_id) ?? 0) + 1));
+
+  const meilleures = [...comptes.entries()]
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 2)
-    .map(([roomId]) => decorate(clone(roomById[roomId])));
+    .slice(0, limit)
+    .map(([roomId]) => roomId);
+
+  return Promise.all(meilleures.map((roomId) => getRoom(roomId, { signal })));
 }

@@ -11,14 +11,16 @@ from __future__ import annotations
 import re
 import unicodedata
 import uuid
+from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import Select, delete, func, select
+from sqlalchemy import Select, delete, func, select, text
 from sqlalchemy.orm import Session, selectinload
 
+from app.core import storage
 from app.core.errors import NotFoundError, RuleViolationError
 from app.core.pagination import PageParams, paginate
-from app.db.enums import AuditAction, BookingStatus, RoomStatus
+from app.db.enums import AuditAction, BookingStatus, PlanDocumentKind, RoomStatus
 from app.models import (
     Booking,
     Building,
@@ -47,6 +49,8 @@ CHAMPS_SALLE = (
 )
 CHAMPS_EQUIPEMENT = ("code", "label", "category", "icon", "description", "is_filterable")
 CHAMPS_BATIMENT = ("code", "name", "address", "sort_order")
+CHAMPS_PLAN = ("kind", "file_url", "file_name", "file_size_bytes")
+CHAMPS_PHOTO = ("file_url", "alt_text", "position")
 
 TRI_SALLES: dict[str, Any] = {
     "name": Room.name,
@@ -138,6 +142,74 @@ def get_floor_plan(session: Session, floor_id: uuid.UUID) -> FloorPlan:
     if plan is None:
         raise NotFoundError("Aucun plan pour cet étage.")
     return plan
+
+
+def replace_floor_plan(
+    session: Session,
+    floor_id: uuid.UUID,
+    *,
+    contenu: bytes,
+    content_type: str | None,
+    file_name: str | None,
+    admin_id: uuid.UUID | None,
+) -> FloorPlan:
+    """Dépose le plan d'un étage, en remplaçant le précédent.
+
+    Le fichier précédent est effacé du disque après le remplacement : le garder
+    laisserait s'accumuler des plans que plus rien ne référence.
+    """
+    get_floor(session, floor_id)
+    extension = storage.verifier(content_type, len(contenu))
+    url = storage.enregistrer("plans", contenu, extension)
+
+    plan = session.scalars(
+        select(FloorPlan).where(FloorPlan.floor_id == floor_id)
+    ).one_or_none()
+    ancienne_url = plan.file_url if plan is not None else None
+    avant = audit_service.snapshot(plan, CHAMPS_PLAN) if plan is not None else None
+
+    if plan is None:
+        plan = FloorPlan(floor_id=floor_id)
+        session.add(plan)
+
+    plan.kind = (
+        PlanDocumentKind.PDF if extension == ".pdf" else PlanDocumentKind.IMAGE
+    )
+    plan.file_url = url
+    plan.file_name = storage.nom_affiche(file_name)
+    plan.file_size_bytes = len(contenu)
+    plan.uploaded_by_admin_id = admin_id
+    plan.uploaded_at = datetime.now(UTC)
+    session.flush()
+
+    audit_service.record(
+        session,
+        action=AuditAction.MODIFICATION if avant else AuditAction.CREATION,
+        target_type="floor_plan",
+        target_label=plan.file_name,
+        target_id=plan.id,
+        before=avant,
+        after=audit_service.snapshot(plan, CHAMPS_PLAN),
+    )
+    if ancienne_url:
+        storage.supprimer(ancienne_url)
+    return plan
+
+
+def delete_floor_plan(session: Session, floor_id: uuid.UUID) -> None:
+    plan = get_floor_plan(session, floor_id)
+    url = plan.file_url
+    audit_service.record(
+        session,
+        action=AuditAction.SUPPRESSION,
+        target_type="floor_plan",
+        target_label=plan.file_name,
+        target_id=plan.id,
+        before=audit_service.snapshot(plan, CHAMPS_PLAN),
+    )
+    session.delete(plan)
+    session.flush()
+    storage.supprimer(url)
 
 
 def set_placements(
@@ -388,6 +460,36 @@ def list_rooms(
     return paginate(session, requete, params, colonnes=TRI_SALLES)
 
 
+def occupancy_map(
+    session: Session, room_ids: list[uuid.UUID], *, days: int = 30
+) -> dict[uuid.UUID, int]:
+    """Taux d'occupation moyen des salles données, sur la fenêtre récente.
+
+    Lu dans la vue matérialisée qui alimente déjà les tableaux de bord : le
+    recalculer ici donnerait un second chiffre, et deux écrans afficheraient
+    deux occupations différentes pour la même salle.
+
+    Une seule requête pour toute la page — une par ligne rendrait la liste
+    proportionnellement lente au nombre de salles affichées.
+    """
+    if not room_ids:
+        return {}
+
+    lignes = session.execute(
+        text(
+            """
+            SELECT room_id, ROUND(AVG(occupancy_rate) * 100)::int AS taux
+              FROM v_room_occupancy_daily
+             WHERE occupancy_date >= CURRENT_DATE - CAST(:jours AS int)
+               AND room_id = ANY(CAST(:salles AS uuid[]))
+             GROUP BY room_id
+            """
+        ),
+        {"jours": days, "salles": [str(item) for item in room_ids]},
+    ).all()
+    return {ligne.room_id: ligne.taux for ligne in lignes}
+
+
 def get_room(session: Session, room_id: uuid.UUID) -> Room:
     salle = session.scalars(
         _requete_salle().where(Room.id == room_id, Room.deleted_at.is_(None))
@@ -473,8 +575,6 @@ def archive_room(session: Session, room_id: uuid.UUID) -> Room:
     Une salle qui porte des réservations à venir n'est pas archivable : elles
     disparaîtraient des écrans sans que personne ne soit prévenu.
     """
-    from datetime import UTC, datetime
-
     from sqlalchemy.dialects.postgresql import Range
 
     salle = get_room(session, room_id)
@@ -567,6 +667,52 @@ def list_photos(session: Session, room_id: uuid.UUID) -> list[RoomPhoto]:
             .order_by(RoomPhoto.position)
         )
     )
+
+
+def add_photo(
+    session: Session,
+    room_id: uuid.UUID,
+    *,
+    contenu: bytes,
+    content_type: str | None,
+    alt_text: str | None,
+) -> RoomPhoto:
+    """Ajoute une photo à une salle, à la suite des existantes.
+
+    La position n'est pas demandée à l'appelant : six photos au maximum, la
+    première sert de couverture, et laisser le client choisir un rang libre
+    l'obligerait à connaître un état qu'il vient à peine de lire.
+    """
+    get_room(session, room_id)
+    extension = storage.verifier(content_type, len(contenu))
+    if extension == ".pdf":
+        raise RuleViolationError(
+            "Une photo de salle doit être une image.", code="format_invalide"
+        )
+
+    existantes = list_photos(session, room_id)
+    if len(existantes) >= 6:
+        raise RuleViolationError(
+            "Six photos au maximum par salle.", code="trop_de_photos"
+        )
+
+    photo = RoomPhoto(
+        room_id=room_id,
+        file_url=storage.enregistrer("photos", contenu, extension),
+        alt_text=(alt_text or None),
+        position=max((item.position for item in existantes), default=-1) + 1,
+    )
+    session.add(photo)
+    session.flush()
+    audit_service.record(
+        session,
+        action=AuditAction.CREATION,
+        target_type="room_photo",
+        target_label=photo.file_url,
+        target_id=photo.id,
+        after=audit_service.snapshot(photo, CHAMPS_PHOTO),
+    )
+    return photo
 
 
 def delete_photo(session: Session, room_id: uuid.UUID, photo_id: uuid.UUID) -> None:

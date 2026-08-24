@@ -1,106 +1,123 @@
 // src/api/tickets.js
-// Endpoints FastAPI cibles :
-//   GET  /api/tickets                mes demandes d'assistance
-//   GET  /api/tickets/{id}           fil de discussion
-//   POST /api/tickets                nouvelle demande
-//   GET  /api/help/categories        catégories du centre d'aide
-//   GET  /api/help/articles?q=       recherche dans la base de connaissances
+// Endpoints réels :
+//   GET  /api/v1/tickets                  mes tickets
+//   POST /api/v1/tickets                  ouvrir un ticket, message initial compris
+//   GET  /api/v1/tickets/{id}             détail et fil des messages
+//   POST /api/v1/tickets/{id}/messages    répondre
+//   GET  /api/v1/faq/categories           catégories, avec leur compteur
+//   GET  /api/v1/faq/articles             recherche sur titre et extrait
+//   GET  /api/v1/faq/articles/{slug}      lecture, incrémente un compteur d'usage
 
-import { ticketCategories, tickets as seed } from '../mocks/tickets';
-import { helpArticles, helpCategories } from '../mocks/helpArticles';
-import { NOW, toDate } from '../utils/dates';
-import { normalize } from '../utils/format';
-import { ApiError, clone, createStore, delay, nextId, notFound } from './client';
+import * as adapt from './adapters';
+import { abortable, collect, get, items, post } from './client';
 
-const store = createStore(seed);
+/**
+ * Catégories de ticket. Fixes : elles ne sont pas un référentiel en base mais
+ * une valeur libre côté serveur, et l'écran doit proposer un choix borné.
+ */
+const CATEGORIES = [
+  { id: 'acces', label: 'Accès' },
+  { id: 'equipement', label: 'Équipement' },
+  { id: 'maintenance', label: 'Maintenance' },
+  { id: 'compte', label: 'Compte' },
+];
 
-export async function listTickets() {
-  await delay();
-  return store.all().sort((a, b) => toDate(b.updatedAt) - toDate(a.updatedAt));
+export async function listTickets({ status, signal } = {}) {
+  const page = await get('/tickets', {
+    params: { status, size: 100 },
+    signal: signal ?? abortable('tickets:list'),
+  });
+  return items(page).map(adapt.ticket);
 }
 
-export async function getTicket(id) {
-  await delay();
-  const ticket = store.find((t) => t.id === String(id));
-  if (!ticket) throw notFound('Ticket');
-  return ticket;
-}
-
-export async function createTicket({ subject, category, roomId, body }) {
-  await delay();
-  if (!subject?.trim() || !body?.trim()) {
-    throw new ApiError('Le sujet et le message sont obligatoires.', 422, 'champs_requis');
-  }
-  const ticket = {
-    id: nextId('tk').replace('tk-', ''),
-    subject: subject.trim(),
-    category,
-    status: 'ouvert',
-    updatedAt: NOW.toISOString(),
-    roomId: roomId ?? null,
-    messages: [{ author: 'utilisateur', at: NOW.toISOString(), body: body.trim() }],
-  };
-  return store.insert(ticket);
-}
-
-export async function replyToTicket(id, body) {
-  await delay();
-  const updated = store.update(id, (ticket) => ({
-    updatedAt: NOW.toISOString(),
-    messages: [...ticket.messages, { author: 'utilisateur', at: NOW.toISOString(), body }],
-  }));
-  if (!updated) throw notFound('Ticket');
-  return updated;
-}
-
-export async function listTicketCategories() {
-  await delay(120);
-  return clone(ticketCategories);
-}
-
-/** Catégories d'aide, avec un compteur calculé sur la base réelle d'articles. */
-export async function listHelpCategories() {
-  await delay(150);
-  return helpCategories.map((category) => ({
-    ...clone(category),
-    count: helpArticles.filter((article) => article.category === category.id).length,
-  }));
+export async function getTicket(id, { signal } = {}) {
+  return adapt.ticket(await get(`/tickets/${id}`, { signal }));
 }
 
 /**
- * Recherche d'articles par texte et/ou catégorie.
- * Accepte une chaîne (recherche simple) ou un objet { query, category }.
+ * Ouverture d'un ticket.
+ *
+ * Le message initial part avec le ticket : un ticket sans description
+ * obligerait le support à réclamer avant de pouvoir aider.
  */
-export async function searchHelpArticles(criteria = '') {
-  await delay(200);
+export async function createTicket({ subject, category, roomId, bookingId, body }) {
+  const data = await post('/tickets', {
+    subject,
+    category,
+    body,
+    room_id: roomId ?? null,
+    booking_id: bookingId ?? null,
+  });
+  return adapt.ticket(data);
+}
+
+export async function replyToTicket(id, body) {
+  const data = await post(`/tickets/${id}/messages`, { body, is_internal: false });
+  return adapt.ticketMessage(data);
+}
+
+export async function listTicketCategories() {
+  return CATEGORIES.map((item) => ({ ...item }));
+}
+
+/** Catégories d'aide, chacune portant son nombre d'articles publiés. */
+export async function listHelpCategories({ signal } = {}) {
+  const data = await get('/faq/categories', { signal });
+  return data.map((item) => ({ ...adapt.faqCategory(item), count: item.article_count }));
+}
+
+/**
+ * Recherche d'articles.
+ *
+ * Accepte une chaîne ou `{ query, category }`. Le filtrage est fait en SQL sur
+ * le titre et l'extrait : rapatrier la base pour la parcourir en mémoire
+ * deviendrait coûteux dès quelques centaines d'articles.
+ */
+export async function searchHelpArticles(criteria = '', { signal } = {}) {
   const { query = '', category = null } =
     typeof criteria === 'string' ? { query: criteria } : criteria;
 
-  const q = normalize(query);
-  return helpArticles
-    .filter((article) => (category ? article.category === category : true))
-    .filter((article) =>
-      q
-        ? normalize(`${article.title} ${article.excerpt} ${article.body}`).includes(q)
-        : true,
-    )
-    .map(clone);
+  const lignes = await collect('/faq/articles', {
+    params: { q: query || undefined, category_id: category || undefined },
+    signal: signal ?? abortable('faq:search'),
+  });
+  return lignes.map(adapt.faqArticle);
 }
 
-/** Articles liés à un article donné, résolus depuis leurs identifiants. */
-export async function listRelatedArticles(articleId) {
-  await delay(120);
-  const source = helpArticles.find((article) => article.id === articleId);
-  if (!source) return [];
-  return (source.related ?? [])
-    .map((id) => helpArticles.find((article) => article.id === id))
-    .filter(Boolean)
-    .map(clone);
+/**
+ * Articles liés.
+ *
+ * Le modèle ne stocke pas de liens explicites entre articles : les voisins de
+ * catégorie en tiennent lieu. Un lien saisi à la main se périmerait à la
+ * première réorganisation de la base de connaissances.
+ */
+export async function listRelatedArticles(articleId, { signal } = {}) {
+  const source = await getHelpArticle(articleId, { signal });
+  if (!source?.categoryId) return [];
+
+  const voisins = await collect('/faq/articles', {
+    params: { category_id: source.categoryId },
+    signal,
+  });
+  return voisins
+    .map(adapt.faqArticle)
+    .filter((item) => item.id !== source.id && item.slug !== source.slug)
+    .slice(0, 3);
 }
 
-export async function getHelpArticle(id) {
-  await delay(200);
-  const article = helpArticles.find((a) => a.id === id);
-  if (!article) throw notFound('Article');
-  return clone(article);
+/**
+ * Lecture d'un article.
+ *
+ * L'API adresse les articles par leur `slug`, lisible et stable. Les écrans
+ * passent tantôt un identifiant, tantôt un slug : les deux sont acceptés ici.
+ */
+export async function getHelpArticle(idOrSlug, { signal } = {}) {
+  const estUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    String(idOrSlug),
+  );
+  if (!estUuid) return adapt.faqArticle(await get(`/faq/articles/${idOrSlug}`, { signal }));
+
+  const lignes = await collect('/faq/articles', { signal });
+  const article = lignes.map(adapt.faqArticle).find((item) => item.id === idOrSlug);
+  return article ? adapt.faqArticle(await get(`/faq/articles/${article.slug}`, { signal })) : null;
 }

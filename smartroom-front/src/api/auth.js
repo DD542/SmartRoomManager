@@ -1,65 +1,122 @@
 // src/api/auth.js
-// Endpoints FastAPI cibles :
-//   POST /api/auth/login             { email, password } -> { user, token }
-//   POST /api/auth/sso/ece           authentification par le compte ECE
-//   POST /api/auth/forgot-password   { email } -> lien de réinitialisation
-//   GET  /api/users/me               profil de la session
-//   PATCH /api/users/me              profil + préférences
+// Endpoints réels :
+//   POST   /api/v1/auth/login             ouverture de session utilisateur
+//   POST   /api/v1/auth/refresh           rotation du jeton, cookie httpOnly
+//   POST   /api/v1/auth/logout            révocation de la famille de jetons
+//   GET    /api/v1/auth/me                session courante et permissions
+//   POST   /api/v1/auth/forgot-password   lien de réinitialisation
+//   POST   /api/v1/auth/reset-password    consommation du lien
+//   GET    /api/v1/users/me               profil
+//   PATCH  /api/v1/users/me               profil
+//   PUT    /api/v1/users/me/preferences   préférences
 
-import { credentials, currentUserId, userById, users } from '../mocks/users';
-import { ApiError, clone, createStore, delay } from './client';
+import * as adapt from './adapters';
+import { ApiError, get, patch, post, put, restoreSession, setAccessToken } from './client';
 
-const userStore = createStore(users);
+/**
+ * Ouvre une session. Le jeton d'accès est gardé en mémoire par le client ; le
+ * rafraîchissement est posé par le serveur en cookie httpOnly, hors de portée
+ * du JavaScript. Rien ne touche localStorage.
+ */
+export async function login({ email, password }) {
+  const payload = await post('/auth/login', { email, password });
+  setAccessToken(payload.access_token);
 
-export async function login({ email, password, remember = false }) {
-  await delay();
-  const normalized = String(email).trim().toLowerCase();
-  const match = credentials.find((c) => c.email === normalized && c.password === password);
-  const user = userStore.find((u) => u.email.toLowerCase() === normalized);
-
-  if (!user) throw new ApiError('Aucun compte ne correspond à cette adresse.', 404, 'inconnu');
-  if (!match) throw new ApiError('Mot de passe incorrect.', 401, 'identifiants');
-
-  // `remember` pilote la durée du jeton côté serveur, jamais un stockage navigateur.
   return {
-    user,
-    token: 'jeton-de-demonstration',
-    tokenExpiresInDays: remember ? 30 : 1,
-    firstLogin: false,
+    user: adapt.user(payload.user),
+    // Un compte sans préférence de bâtiment n'a jamais rempli l'accueil :
+    // c'est ce qui déclenche l'onboarding, plutôt qu'un drapeau inventé.
+    firstLogin: !payload.user?.preferences?.preferred_building_id,
   };
 }
 
-/** Connexion par le compte de l'école : ouvre directement l'onboarding. */
+/**
+ * Connexion par le compte de l'école.
+ *
+ * Le fournisseur d'identité de l'ECE n'est pas raccordé : la route n'existe pas
+ * encore côté API. L'appeler échouerait silencieusement, mieux vaut le dire.
+ */
 export async function loginWithEce() {
-  await delay();
-  return { user: clone(userById[currentUserId]), token: 'jeton-sso', firstLogin: true };
+  const erreur = new Error(
+    "La connexion par le compte ECE n'est pas encore disponible. "
+      + 'Utilisez votre adresse et votre mot de passe.',
+  );
+  erreur.name = 'ApiError';
+  erreur.status = 501;
+  erreur.code = 'sso_indisponible';
+  throw erreur;
+}
+
+/**
+ * Reprend la session au chargement de l'application, si le cookie tient encore.
+ *
+ * Passe par la reprise partagée du client : l'espace utilisateur et l'espace
+ * d'administration se montent ensemble, et deux rotations concurrentes du même
+ * jeton passeraient pour un rejeu.
+ */
+export async function restore() {
+  const payload = await restoreSession();
+  if (!payload) throw new ApiError('Session expirée.', 401, 'session_expiree');
+  return { user: adapt.user(payload.user), scope: payload.scope };
+}
+
+export async function session() {
+  const payload = await get('/auth/me');
+  return {
+    user: adapt.user(payload.user),
+    admin: adapt.admin(payload),
+    permissions: payload.permissions ?? [],
+  };
+}
+
+export async function logout() {
+  try {
+    await post('/auth/logout');
+  } finally {
+    // Le jeton local tombe même si le serveur n'a pas répondu : l'utilisateur
+    // a demandé à partir, l'écran ne doit pas le retenir.
+    setAccessToken(null);
+  }
 }
 
 export async function forgotPassword(email) {
-  await delay();
-  if (!String(email).includes('@')) {
-    throw new ApiError('Adresse e-mail invalide.', 422, 'email_invalide');
-  }
+  await post('/auth/forgot-password', { email });
+  // L'API répond 202 même pour une adresse inconnue : elle ne sert pas
+  // d'annuaire, et l'écran affiche le même message dans les deux cas.
   return { sent: true, expiresInMin: 30 };
 }
 
-export async function getCurrentUser(userId = currentUserId) {
-  await delay(150);
-  return userStore.find((u) => u.id === userId);
+export async function resetPassword({ token, password }) {
+  await post('/auth/reset-password', { token, password });
+  return { reset: true };
 }
 
-export async function updateProfile(userId, patch) {
-  await delay();
-  const updated = userStore.update(userId, patch);
-  if (!updated) throw new ApiError('Profil introuvable.', 404, 'introuvable');
-  return updated;
+export async function changePassword({ currentPassword, newPassword }) {
+  await post('/auth/change-password', {
+    current_password: currentPassword,
+    new_password: newPassword,
+  });
+  // Toutes les sessions tombent côté serveur : le jeton local n'a plus cours.
+  setAccessToken(null);
+  return { changed: true };
 }
 
-export async function savePreferences(userId, preferences) {
-  await delay();
-  const updated = userStore.update(userId, (user) => ({
-    preferences: { ...user.preferences, ...preferences },
-  }));
-  if (!updated) throw new ApiError('Profil introuvable.', 404, 'introuvable');
-  return updated;
+export async function getCurrentUser() {
+  return adapt.user(await get('/users/me'));
+}
+
+export async function updateProfile(_userId, patchBody) {
+  const payload = await patch('/users/me', {
+    first_name: patchBody.firstName,
+    last_name: patchBody.lastName,
+    phone: patchBody.phone,
+    promotion: patchBody.promotion,
+    department: patchBody.department,
+  });
+  return adapt.user(payload);
+}
+
+export async function savePreferences(_userId, preferences) {
+  const payload = await put('/users/me/preferences', adapt.preferencesIn(preferences));
+  return adapt.user(payload);
 }

@@ -13,7 +13,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Annotated
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import Base64Bytes, Field, field_validator, model_validator
 
 from app.api.v1.schemas.common import ApiModel, ReadModel
 from app.db.enums import EquipmentCategory, PlanDocumentKind, RoomStatus
@@ -63,6 +63,21 @@ class FloorOut(ReadModel):
     label: str
     level: int
     room_count: int = 0
+
+
+class UploadIn(ApiModel):
+    """Fichier déposé, encodé en base64 dans le corps JSON.
+
+    Le multipart demanderait `python-multipart`, hors de la liste de
+    dépendances arrêtée. Le surcoût de l'encodage — un tiers — reste supportable
+    pour des fichiers plafonnés à 5 Mo, et le corps reste homogène avec le
+    reste de l'API.
+    """
+
+    file_name: Annotated[str, Field(min_length=1, max_length=160)]
+    content_type: Annotated[str, Field(min_length=3, max_length=100)]
+    content: Base64Bytes
+    alt_text: Annotated[str | None, Field(max_length=160)] = None
 
 
 class FloorPlanOut(ReadModel):
@@ -220,6 +235,11 @@ class RoomOut(ReadModel):
     equipments: list[RoomEquipmentOut] = Field(default_factory=list)
     photos: list[RoomPhotoOut] = Field(default_factory=list)
     placement: RoomPlacementOut | None = None
+    #: Occupation moyenne des trente derniers jours, lue dans la vue
+    #: matérialisée qui alimente déjà les tableaux de bord. La recalculer
+    #: ailleurs donnerait un second chiffre, et deux écrans afficheraient deux
+    #: occupations différentes pour la même salle.
+    occupancy_percent: int = 0
     created_at: datetime
     updated_at: datetime
 

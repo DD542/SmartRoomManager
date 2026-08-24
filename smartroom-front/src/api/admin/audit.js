@@ -1,99 +1,118 @@
 // src/api/admin/audit.js
-// Endpoints FastAPI cibles :
-//   GET  /api/admin/audit?period=&author=&action=&q=   journal paginé
-//   GET  /api/admin/audit/{id}                          détail et diff
-//   POST /api/admin/audit/export                        export du journal
-//   POST /api/admin/audit/{id}/flag                     signalement d'une action
+// Endpoints réels :
+//   GET  /api/v1/admin/audit-logs             journal, du plus récent au plus ancien
+//   GET  /api/v1/admin/audit-logs/{id}        détail, valeurs avant et après
+//   POST /api/v1/admin/audit-logs/{id}/flag   signalement pour relecture
+//   GET  /api/v1/admin/audit-logs/export/csv  export borné
+//
+// Le tri n'est pas exposé : un journal d'audit ne se lit pas à l'envers, et
+// offrir l'ordre inverse laisserait croire qu'on peut en réorganiser le récit.
 
-import { auditEntries, auditHistory } from '../../mocks/admin/auditLog';
-import { admins } from '../../mocks/admin/admins';
-import { NOW, addDays, toDate, toDateInput } from '../../utils/dates';
-import { normalize } from '../../utils/format';
-import { ApiError, clone, createStore, delay } from '../client';
+import { addDays, toDateInput } from '../../utils/dates';
+import * as adapt from '../adapters';
+import { abortable, get, getText, items, post } from '../client';
+import { telecharger } from './reports';
 
-const store = createStore([...auditEntries, ...auditHistory]);
-
-const PERIODES = {
-  '24h': 1,
-  '7j': 7,
-  '30j': 30,
-  tout: null,
-};
+const PERIODES = { '24h': 1, '7j': 7, '30j': 30, tout: null };
 
 export const actionLabels = {
+  creation: 'Création',
   modification: 'Modification',
-  maintenance: 'Maintenance',
-  permission: 'Permission',
   suppression: 'Suppression',
+  permission: 'Permission',
+  maintenance: 'Maintenance',
   connexion: 'Connexion',
 };
 
 /**
- * Les actions automatiques sont attribuées au système. Le nom est normalisé ici
- * pour que la pastille d'initiales n'affiche pas une parenthèse.
+ * Les actions automatiques sont attribuées au système. Le serveur écrit déjà
+ * « Système » dans `actor_label` ; la normalisation reste ici pour que la
+ * pastille d'initiales n'affiche jamais une chaîne vide.
  */
-const decorer = (entry) => ({
-  ...entry,
-  authorName: entry.authorId ? entry.authorName : 'Système',
+const decorer = (entree) => ({
+  ...entree,
+  authorId: entree.actorId,
+  authorName: entree.actor || 'Système',
 });
 
-export async function listAuditEntries(filters = {}) {
-  await delay();
-  const { period = '7j', authorId, action, query } = filters;
+const bornes = (period) => {
   const jours = PERIODES[period] ?? null;
-  const depuis = jours ? addDays(NOW, -jours) : null;
+  return jours ? { since: addDays(new Date(), -jours).toISOString() } : {};
+};
 
-  return store
-    .all()
-    .filter((entry) => (depuis ? toDate(entry.at) >= depuis : true))
-    .filter((entry) => (authorId ? entry.authorId === authorId : true))
-    .filter((entry) => (action ? entry.action === action : true))
-    .filter((entry) =>
-      query ? normalize(`${entry.target} ${entry.authorName}`).includes(normalize(query)) : true,
-    )
-    .map(decorer)
-    .sort((a, b) => toDate(b.at) - toDate(a.at));
+export async function listAuditEntries(filters = {}) {
+  const { period = '7j', authorId, action, query } = filters;
+
+  const page = await get('/admin/audit-logs', {
+    params: {
+      ...bornes(period),
+      actor_id: authorId || undefined,
+      action: action || undefined,
+      q: query || undefined,
+      size: 100,
+    },
+    signal: abortable('admin:audit'),
+  });
+  return items(page).map((item) => decorer(adapt.auditEntry(item)));
 }
 
-export async function getAuditEntry(id) {
-  await delay(200);
-  const entry = store.find((item) => item.id === String(id));
-  if (!entry) throw new ApiError('Action introuvable.', 404, 'introuvable');
-  return decorer(entry);
+export async function getAuditEntry(id, { signal } = {}) {
+  return decorer(adapt.auditEntry(await get(`/admin/audit-logs/${id}`, { signal })));
 }
 
-export async function listAuditAuthors() {
-  await delay(120);
+/** Auteurs proposés au filtre : les administrateurs, plus le système. */
+export async function listAuditAuthors({ signal } = {}) {
+  const page = await get('/admin/users', {
+    params: { role: 'admin', size: 100 },
+    signal,
+  }).catch(() => ({ items: [] }));
+
   return [
-    ...admins.map((admin) => ({ id: admin.id, label: `${admin.firstName} ${admin.lastName}` })),
+    ...items(page).map((item) => ({
+      id: item.id,
+      label: `${item.first_name} ${item.last_name}`,
+    })),
     { id: null, label: 'Système' },
   ];
 }
 
 export async function listAuditActions() {
-  await delay(100);
   return Object.entries(actionLabels).map(([id, label]) => ({ id, label }));
 }
 
 /**
- * Un signalement n'efface rien : il ajoute une marque au journal, lui-même
- * immuable. C'est la propriété qui rend l'audit utile.
+ * Un signalement n'efface rien : il ajoute une marque au journal, lui-même en
+ * ajout seul. C'est la propriété qui rend l'audit utile — et le déclencheur en
+ * base n'autorise que cette colonne.
  */
 export async function flagAuditEntry(id, reason) {
-  await delay();
-  const updated = store.update(id, { flagged: true, flagReason: reason ?? '' });
-  if (!updated) throw new ApiError('Action introuvable.', 404, 'introuvable');
-  return updated;
+  const data = await post(`/admin/audit-logs/${id}/flag`, {
+    flagged: true,
+    reason: reason ?? '',
+  });
+  return decorer(adapt.auditEntry(data));
 }
 
+/**
+ * Export du journal.
+ *
+ * Borné côté serveur à cent entrées : exporter un journal entier offrirait une
+ * extraction de masse déguisée en consultation.
+ */
 export async function exportAuditLog(filters = {}) {
-  await delay(600);
-  const lignes = await listAuditEntries(filters);
+  const { period = '7j', action } = filters;
+  const csv = await getText('/admin/audit-logs/export/csv', {
+    params: { ...bornes(period), action: action || undefined },
+  });
+
+  const nom = `journal-audit-${toDateInput(new Date())}.csv`;
+  telecharger(csv, nom);
+
   return {
-    filename: `journal-audit-${toDateInput(NOW)}.csv`,
-    rows: lignes.length,
+    filename: nom,
+    rows: Math.max(0, csv.trim().split('\n').length - 1),
     columns: ['Horodatage', 'Auteur', 'Action', 'Cible', 'Adresse IP'],
   };
 }
 
-export const clonerLibelles = () => clone(actionLabels);
+export const clonerLibelles = () => ({ ...actionLabels });
