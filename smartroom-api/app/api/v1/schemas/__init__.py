@@ -32,12 +32,28 @@ from app.api.v1.schemas.bookings import (
     CancelIn,
     CheckInIn,
     MaintenanceOut,
+    InvitationRespondIn,
     OccurrenceOut,
+    ParticipantIn,
+    ParticipantInvitedOut,
+    ParticipantOut,
     RecurrenceIn,
     SeriesCreatedOut,
     SeriesPreviewOut,
 )
 from app.api.v1.schemas.common import ApiModel, ReadModel, SlotIn, SlotOut
+from app.api.v1.schemas.rules import (
+    AccessRequestDecisionIn,
+    AccessRequestIn,
+    AccessRequestOut,
+    BookingRuleIn,
+    BookingRuleOut,
+    ClosureIn,
+    ClosureOut,
+    OpeningWindowIn,
+    OpeningWindowOut,
+    RulePreviewOut,
+)
 from app.api.v1.schemas.parc import (
     BuildingIn,
     BuildingOut,
@@ -60,6 +76,20 @@ from app.api.v1.schemas.parc import (
 )
 
 __all__ = [
+    "RulePreviewOut",
+    "ParticipantOut",
+    "ParticipantInvitedOut",
+    "ParticipantIn",
+    "OpeningWindowOut",
+    "OpeningWindowIn",
+    "InvitationRespondIn",
+    "ClosureOut",
+    "ClosureIn",
+    "BookingRuleOut",
+    "BookingRuleIn",
+    "AccessRequestOut",
+    "AccessRequestIn",
+    "AccessRequestDecisionIn",
     "AccessCodeOut",
     "AdminBookingIn",
     "AlternativeOut",

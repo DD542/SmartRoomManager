@@ -132,3 +132,49 @@ def refresh_expiry() -> datetime:
 
 def reset_expiry() -> datetime:
     return now() + timedelta(minutes=settings.reset_ttl_minutes)
+
+
+# --------------------------------------------------------------------------- #
+# Invitations de participants
+# --------------------------------------------------------------------------- #
+
+
+def create_invitation_token(
+    *, booking_id: uuid.UUID, participant_id: uuid.UUID, expires_at: datetime
+) -> str:
+    """Jeton d'invitation, signé plutôt que stocké.
+
+    Un participant extérieur n'a pas de compte : lui demander de se connecter
+    pour répondre à une invitation serait absurde. Le jeton expire avec le
+    créneau — répondre à une réunion passée n'a aucun sens — ce qui dispense
+    d'une table de révocation.
+    """
+    charge: dict[str, Any] = {
+        "sub": str(participant_id),
+        "bkg": str(booking_id),
+        "typ": "invitation",
+        "iat": now(),
+        "exp": expires_at,
+    }
+    return jwt.encode(
+        charge, settings.jwt_secret.get_secret_value(), algorithm=settings.jwt_algorithm
+    )
+
+
+def decode_invitation_token(jeton: str) -> tuple[uuid.UUID, uuid.UUID]:
+    """Renvoie `(booking_id, participant_id)`, ou lève `TokenError`."""
+    try:
+        charge = jwt.decode(
+            jeton,
+            settings.jwt_secret.get_secret_value(),
+            algorithms=[settings.jwt_algorithm],
+        )
+    except JWTError as erreur:
+        raise TokenError(str(erreur)) from erreur
+
+    if charge.get("typ") != "invitation":
+        raise TokenError("Type de jeton inattendu.")
+    try:
+        return uuid.UUID(charge["bkg"]), uuid.UUID(charge["sub"])
+    except (KeyError, ValueError) as erreur:
+        raise TokenError("Jeton d'invitation illisible.") from erreur

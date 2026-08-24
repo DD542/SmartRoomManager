@@ -9,6 +9,7 @@ où elle est traitée.
 
 from __future__ import annotations
 
+import logging
 import secrets
 import uuid
 from collections.abc import Iterable
@@ -29,7 +30,13 @@ from app.core.errors import (
     RuleViolationError,
     SlotConflictError,
 )
-from app.db.enums import BookingEventType, BookingSource, BookingStatus
+from app.core.security import TokenError, create_invitation_token, decode_invitation_token
+from app.db.enums import (
+    BookingEventType,
+    BookingSource,
+    BookingStatus,
+    ParticipantResponse,
+)
 from app.domain import conflicts as dom_conflicts
 from app.domain import rules as dom_rules
 from app.domain.types import RuleCode, TimeSlot
@@ -49,6 +56,8 @@ from app.services.availability_service import (
     to_range,
     to_slot,
 )
+
+logger = logging.getLogger(__name__)
 
 FUSEAU = ZoneInfo(get_settings().timezone)
 CRYPT = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -82,6 +91,45 @@ def _traduire_course(erreur: IntegrityError) -> None:
             "Rafraîchissez la page pour voir les disponibilités à jour."
         ) from erreur
     raise erreur
+
+
+def _conflit_enrichi(
+    session: Session, rapport: SlotReport, *, attendees: int, user_id: uuid.UUID | None
+) -> SlotConflictError:
+    """Assemble un 409 porteur du conflit qualifié et des alternatives.
+
+    Les alternatives sont calculées ici pour que l'écran de conflit les affiche
+    sans second aller-retour réseau. Si leur calcul échoue — parc vide, salle
+    archivée — le refus part quand même : un conflit doit être annoncé, même
+    sans consolation à proposer.
+    """
+    bloquant = rapport.blocking[0]
+    message = dom_conflicts.describe(bloquant, FUSEAU)
+
+    try:
+        from app.services import recommendation_service
+
+        propositions = recommendation_service.suggest_alternatives(
+            session,
+            room_id=rapport.room_id,
+            slot=rapport.slot,
+            attendees=attendees,
+            user_id=user_id,
+            limit=5,
+        )
+    except Exception:  # noqa: BLE001
+        logger.warning("Alternatives indisponibles pour ce conflit", exc_info=True)
+        propositions = ()
+
+    from app.api.v1.schemas import AlternativeOut, ConflictOut
+
+    return SlotConflictError(
+        message,
+        conflict=ConflictOut.of(bloquant, message).model_dump(mode="json"),
+        alternatives=[
+            AlternativeOut.of(item).model_dump(mode="json") for item in propositions
+        ],
+    )
 
 
 def _appliquer(rapport: SlotReport, *, ignore_rules: bool) -> None:
@@ -179,6 +227,8 @@ def create_booking(
         now=now,
         check_quotas=not ignore_rules,
     )
+    if rapport.blocking:
+        raise _conflit_enrichi(session, rapport, attendees=attendees, user_id=owner_id)
     _appliquer(rapport, ignore_rules=ignore_rules)
 
     reservation = Booking(
@@ -496,4 +546,153 @@ def _charger(session: Session, booking_id: uuid.UUID) -> Booking:
     ).one_or_none()
     if reservation is None:
         raise NotFoundError("Réservation introuvable.")
+    return reservation
+
+
+# --------------------------------------------------------------------------- #
+# Participants
+# --------------------------------------------------------------------------- #
+
+
+def list_participants(session: Session, booking_id: uuid.UUID) -> list[BookingParticipant]:
+    _charger(session, booking_id)
+    return list(
+        session.scalars(
+            select(BookingParticipant)
+            .where(BookingParticipant.booking_id == booking_id)
+            .order_by(
+                BookingParticipant.is_organizer.desc(), BookingParticipant.display_name
+            )
+        )
+    )
+
+
+def add_participant(
+    session: Session, booking_id: uuid.UUID, *, email: str, display_name: str
+) -> tuple[BookingParticipant, str]:
+    """Invite un participant et renvoie son jeton de réponse.
+
+    L'effectif annoncé n'est pas recalculé depuis la liste : on réserve pour
+    douze personnes dont on n'invite nommément que trois, et la capacité se
+    juge sur l'effectif, pas sur le nombre d'invitations envoyées.
+    """
+    reservation = _charger(session, booking_id)
+    if reservation.status is BookingStatus.ANNULEE:
+        raise RuleViolationError("Réservation annulée.", code="deja_annulee")
+
+    deja = session.scalars(
+        select(BookingParticipant).where(
+            BookingParticipant.booking_id == booking_id,
+            BookingParticipant.email == email,
+        )
+    ).one_or_none()
+    if deja is not None:
+        raise RuleViolationError(
+            f"{email} figure déjà parmi les participants.", code="doublon"
+        )
+
+    participant = BookingParticipant(
+        booking_id=booking_id,
+        email=email,
+        display_name=display_name,
+        is_organizer=False,
+    )
+    session.add(participant)
+    session.flush()
+
+    jeton = create_invitation_token(
+        booking_id=booking_id,
+        participant_id=participant.id,
+        expires_at=reservation.time_range.upper,
+    )
+    return participant, jeton
+
+
+def remove_participant(
+    session: Session, booking_id: uuid.UUID, participant_id: uuid.UUID
+) -> None:
+    participant = session.scalars(
+        select(BookingParticipant).where(
+            BookingParticipant.id == participant_id,
+            BookingParticipant.booking_id == booking_id,
+        )
+    ).one_or_none()
+    if participant is None:
+        raise NotFoundError("Participant introuvable.")
+    if participant.is_organizer:
+        raise RuleViolationError(
+            "L'organisateur ne se retire pas de sa propre réservation.",
+            code="organisateur",
+        )
+
+    session.delete(participant)
+    session.flush()
+
+
+def respond_to_invitation(
+    session: Session, *, token: str, response: ParticipantResponse
+) -> BookingParticipant:
+    """Enregistre la réponse d'un invité, sans exiger de compte.
+
+    Le jeton porte l'identité : un participant extérieur n'a pas de session,
+    et lui en imposer une pour cliquer « je viens » ferait tomber le taux de
+    réponse à zéro.
+    """
+    try:
+        booking_id, participant_id = decode_invitation_token(token)
+    except TokenError as erreur:
+        raise NotFoundError(
+            "Invitation inconnue ou expirée.", code="jeton_invalide"
+        ) from erreur
+
+    participant = session.scalars(
+        select(BookingParticipant).where(
+            BookingParticipant.id == participant_id,
+            BookingParticipant.booking_id == booking_id,
+        )
+    ).one_or_none()
+    if participant is None:
+        raise NotFoundError("Invitation inconnue.")
+
+    reservation = _charger(session, booking_id)
+    if reservation.status is BookingStatus.ANNULEE:
+        raise RuleViolationError("Cette réservation a été annulée.", code="deja_annulee")
+
+    participant.response = response
+    participant.responded_at = datetime.now(FUSEAU)
+    session.flush()
+    return participant
+
+
+def mark_late(
+    session: Session, booking_id: uuid.UUID, *, now: datetime | None = None
+) -> Booking:
+    """Signale un retard : le créneau reste réservé au-delà de la fenêtre.
+
+    Sans cela, la tâche de libération rendrait la salle à quelqu'un qui arrive
+    avec dix minutes de retard. La marque vaut validation de présence.
+    """
+    now = en_utc(now or datetime.now(UTC))
+    reservation = _charger(session, booking_id)
+
+    if reservation.status is BookingStatus.ANNULEE:
+        raise RuleViolationError("Réservation annulée.", code="deja_annulee")
+    if reservation.checked_in_at is not None:
+        raise RuleViolationError("Présence déjà validée.", code="deja_validee")
+
+    creneau = to_slot(reservation.time_range)
+    if now < creneau.start:
+        raise RuleViolationError("Le créneau n'a pas encore commencé.", code="trop_tot")
+    if now >= creneau.end:
+        raise RuleViolationError("Le créneau est écoulé.", code="passe")
+
+    reservation.checked_in_at = now
+    _journaliser(
+        session,
+        reservation,
+        BookingEventType.CHECKIN,
+        "Arrivée tardive signalée",
+        reservation.owner_id,
+    )
+    session.flush()
     return reservation

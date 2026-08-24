@@ -9,6 +9,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.api.v1 import (
+    access_requests,
     admin,
     auth,
     availability,
@@ -17,6 +18,7 @@ from app.api.v1 import (
     equipments,
     recommendations,
     rooms,
+    rules,
 )
 
 v1_router = APIRouter(prefix="/api/v1")
@@ -27,4 +29,6 @@ v1_router.include_router(equipments.router)
 v1_router.include_router(availability.router)
 v1_router.include_router(bookings.router)
 v1_router.include_router(recommendations.router)
+v1_router.include_router(access_requests.router)
+v1_router.include_router(rules.router)
 v1_router.include_router(admin.router)

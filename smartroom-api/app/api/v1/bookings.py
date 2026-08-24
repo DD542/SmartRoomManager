@@ -14,7 +14,12 @@ from fastapi import APIRouter, Query, status
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import Range
 
-from app.api.deps import CurrentPrincipal, SessionDep, assert_owner_or_admin
+from app.api.deps import (
+    CurrentPrincipal,
+    PageDep,
+    SessionDep,
+    assert_owner_or_admin,
+)
 from app.api.v1.schemas import (
     AccessCodeOut,
     AlternativeOut,
@@ -24,14 +29,19 @@ from app.api.v1.schemas import (
     BookingPatchIn,
     CancelIn,
     CheckInIn,
+    InvitationRespondIn,
     OccurrenceOut,
+    ParticipantIn,
+    ParticipantInvitedOut,
+    ParticipantOut,
     RecurrenceIn,
     SeriesCreatedOut,
     SeriesPreviewOut,
     SlotOut,
 )
 from app.core.errors import NotFoundError
-from app.db.enums import BookingStatus
+from app.core.pagination import Page, paginate
+from app.db.enums import BookingStatus, ParticipantResponse
 from app.domain.types import TimeSlot
 from app.models import Booking
 from app.services import booking_service as service
@@ -41,25 +51,30 @@ from app.services import recurrence_service as recurrence
 router = APIRouter(prefix="/bookings", tags=["réservations"])
 
 
-@router.get("", response_model=list[BookingOut], summary="Mes réservations")
+@router.get(
+    "",
+    response_model=Page[BookingOut],
+    summary="Mes réservations",
+    description=(
+        "Les réservations du compte connecté, les plus proches d\'abord. Aucun "
+        "`owner_id` n\'est accepté : lister celles d\'un tiers passe par "
+        "l\'espace d\'administration, pas par un paramètre. Le filtre de "
+        "propriété est appliqué dans la requête SQL, pas vérifié après "
+        "chargement."
+    ),
+)
 def list_mine(
     session: SessionDep,
     principal: CurrentPrincipal,
+    params: PageDep,
     from_date: datetime | None = None,
     to_date: datetime | None = None,
     status_filter: BookingStatus | None = Query(default=None, alias="status"),
-    limit: int = Query(default=50, ge=1, le=200),
-) -> list[BookingOut]:
-    """Les réservations du compte connecté, les plus proches d'abord.
-
-    Aucun `owner_id` n'est accepté : lister celles d'un tiers passe par
-    l'espace d'administration, pas par un paramètre.
-    """
+) -> Page[BookingOut]:
     requete = (
         select(Booking)
         .where(Booking.owner_id == principal.user.id, Booking.deleted_at.is_(None))
         .order_by(Booking.time_range)
-        .limit(limit)
     )
     if status_filter is not None:
         requete = requete.where(Booking.status == status_filter)
@@ -70,7 +85,8 @@ def list_mine(
     if to_date is not None:
         requete = requete.where(Booking.time_range.op("&&")(Range(None, to_date, bounds="[)")))
 
-    return [BookingOut.of(item) for item in session.scalars(requete)]
+    reservations, total = paginate(session, requete, params)
+    return Page.build([BookingOut.of(item) for item in reservations], total, params)
 
 
 @router.get("/{booking_id}", response_model=BookingOut, summary="Détail")
@@ -87,6 +103,16 @@ def get_booking(
     response_model=BookingCreatedOut,
     status_code=status.HTTP_201_CREATED,
     summary="Réserver",
+    responses={
+        409: {
+            "description": (
+                "Créneau déjà pris. Le corps porte le conflit qualifié et les "
+                "alternatives calculées, pour que l\'écran de conflit les "
+                "affiche sans second aller-retour réseau."
+            )
+        },
+        422: {"description": "Règle de réservation enfreinte."},
+    },
 )
 def create(
     payload: BookingIn, session: SessionDep, principal: CurrentPrincipal
@@ -286,3 +312,145 @@ def create_recurring(
         bookings=[BookingOut.of(item) for item in creees],
         skipped=[_occurrence(item) for item in ecartees],
     )
+
+
+# --------------------------------------------------------------------------- #
+# Participants
+# --------------------------------------------------------------------------- #
+
+
+@router.get(
+    "/{booking_id}/participants",
+    response_model=list[ParticipantOut],
+    summary="Participants d\'une réservation",
+)
+def list_participants(
+    booking_id: uuid.UUID, session: SessionDep, principal: CurrentPrincipal
+) -> list[ParticipantOut]:
+    reservation = _charger(session, booking_id)
+    assert_owner_or_admin(principal, reservation.owner_id)
+    return [
+        ParticipantOut(
+            id=item.id,
+            booking_id=item.booking_id,
+            user_id=item.user_id,
+            email=item.email,
+            display_name=item.display_name,
+            response=item.response.value,
+            is_organizer=item.is_organizer,
+            responded_at=item.responded_at,
+        )
+        for item in service.list_participants(session, booking_id)
+    ]
+
+
+@router.post(
+    "/{booking_id}/participants",
+    response_model=ParticipantInvitedOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Inviter un participant",
+    description=(
+        "Renvoie le jeton d\'invitation, qui part dans le courriel. Il expire "
+        "avec le créneau : répondre à une réunion passée n\'a aucun sens, ce qui "
+        "dispense d\'une table de révocation."
+    ),
+    responses={422: {"description": "Participant déjà invité, ou réservation annulée."}},
+)
+def add_participant(
+    booking_id: uuid.UUID,
+    payload: ParticipantIn,
+    session: SessionDep,
+    principal: CurrentPrincipal,
+) -> ParticipantInvitedOut:
+    reservation = _charger(session, booking_id)
+    assert_owner_or_admin(principal, reservation.owner_id)
+
+    participant, jeton = service.add_participant(
+        session, booking_id, email=payload.email, display_name=payload.display_name
+    )
+    session.commit()
+
+    return ParticipantInvitedOut(
+        participant=ParticipantOut(
+            id=participant.id,
+            booking_id=participant.booking_id,
+            user_id=participant.user_id,
+            email=participant.email,
+            display_name=participant.display_name,
+            response=participant.response.value,
+            is_organizer=participant.is_organizer,
+            responded_at=participant.responded_at,
+        ),
+        invitation_token=jeton,
+    )
+
+
+@router.delete(
+    "/{booking_id}/participants/{participant_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Retirer un participant",
+    responses={422: {"description": "L\'organisateur ne se retire pas."}},
+)
+def remove_participant(
+    booking_id: uuid.UUID,
+    participant_id: uuid.UUID,
+    session: SessionDep,
+    principal: CurrentPrincipal,
+) -> None:
+    reservation = _charger(session, booking_id)
+    assert_owner_or_admin(principal, reservation.owner_id)
+
+    service.remove_participant(session, booking_id, participant_id)
+    session.commit()
+
+
+@router.post(
+    "/participants/respond",
+    response_model=ParticipantOut,
+    summary="Répondre à une invitation",
+    description=(
+        "Ouverte sans session : le jeton porte l\'identité. Un participant "
+        "extérieur n\'a pas de compte, et lui en imposer un pour cliquer "
+        "« je viens » ferait tomber le taux de réponse à zéro."
+    ),
+    responses={404: {"description": "Invitation inconnue ou expirée."}},
+)
+def respond_to_invitation(
+    payload: InvitationRespondIn, session: SessionDep
+) -> ParticipantOut:
+    participant = service.respond_to_invitation(
+        session, token=payload.token, response=ParticipantResponse(payload.response)
+    )
+    session.commit()
+    return ParticipantOut(
+        id=participant.id,
+        booking_id=participant.booking_id,
+        user_id=participant.user_id,
+        email=participant.email,
+        display_name=participant.display_name,
+        response=participant.response.value,
+        is_organizer=participant.is_organizer,
+        responded_at=participant.responded_at,
+    )
+
+
+@router.post(
+    "/{booking_id}/late",
+    response_model=BookingOut,
+    summary="Signaler un retard",
+    description=(
+        "Le créneau reste réservé au-delà de la fenêtre de validation. Sans "
+        "cela, la tâche de libération rendrait la salle à quelqu\'un qui arrive "
+        "avec dix minutes de retard. La marque vaut validation de présence."
+    ),
+    responses={422: {"description": "Créneau non commencé, écoulé, ou déjà validé."}},
+)
+def mark_late(
+    booking_id: uuid.UUID, session: SessionDep, principal: CurrentPrincipal
+) -> BookingOut:
+    reservation = _charger(session, booking_id)
+    assert_owner_or_admin(principal, reservation.owner_id)
+
+    marquee = service.mark_late(session, booking_id)
+    session.commit()
+    return BookingOut.of(marquee)

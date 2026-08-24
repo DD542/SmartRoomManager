@@ -225,8 +225,9 @@ class TestReservation:
         poser(session, salle, autre, creneau(jour_ouvre, 12))
 
         entetes = connecter(client, compte.email)
-        liste = client.get("/api/v1/bookings", headers=entetes).json()
-        assert {item["owner_id"] for item in liste} == {str(compte.id)}
+        corps = client.get("/api/v1/bookings", headers=entetes).json()
+        assert {item["owner_id"] for item in corps["items"]} == {str(compte.id)}
+        assert corps["total"] == 1
 
     def test_alternatives_d_une_reservation(
         self, client, session, compte, salle, creer_salle, jour_ouvre

@@ -158,3 +158,31 @@ class SeriesCreatedOut(ReadModel):
     bookings: list[BookingOut] = Field(default_factory=list)
     #: Dates écartées : la série passe quand même, l'utilisateur voit ce qui manque.
     skipped: list[OccurrenceOut] = Field(default_factory=list)
+
+
+class ParticipantIn(ApiModel):
+    email: Annotated[str, Field(pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$", max_length=255)]
+    display_name: Annotated[str, Field(min_length=1, max_length=120)]
+
+
+class ParticipantOut(ReadModel):
+    id: uuid.UUID
+    booking_id: uuid.UUID
+    user_id: uuid.UUID | None
+    email: str
+    display_name: str
+    response: str
+    is_organizer: bool
+    responded_at: datetime | None
+
+
+class ParticipantInvitedOut(ReadModel):
+    """Le jeton d'invitation ne sort qu'ici : il part dans le courriel."""
+
+    participant: ParticipantOut
+    invitation_token: str
+
+
+class InvitationRespondIn(ApiModel):
+    token: Annotated[str, Field(min_length=16, max_length=2048)]
+    response: Annotated[str, Field(pattern=r"^(accepte|decline)$")]
