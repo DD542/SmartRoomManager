@@ -133,19 +133,19 @@ def register_exception_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(Exception)
-    async def _inattendue(_: Request, erreur: Exception) -> JSONResponse:
+    async def _inattendue(request: Request, erreur: Exception) -> JSONResponse:
         """Dernier filet : aucune trace technique ne sort vers le client.
 
         L'identifiant de requête accompagne la réponse : il relie le message
         affiché à l'écran à la trace complète côté serveur.
         """
-        contexte = current_context()
-        logger.exception("Erreur non gérée [%s]", contexte.request_id, exc_info=erreur)
+        identifiant = getattr(request.state, "request_id", current_context().request_id)
+        logger.exception("Erreur non gérée [%s]", identifiant, exc_info=erreur)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content=enveloppe(
                 "erreur_interne",
                 "Une erreur inattendue est survenue. L'incident a été enregistré.",
-                request_id=contexte.request_id,
+                request_id=identifiant,
             ),
         )

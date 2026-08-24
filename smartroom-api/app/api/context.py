@@ -15,15 +15,22 @@ from __future__ import annotations
 import ipaddress
 import uuid
 from contextvars import ContextVar
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 
 from starlette.datastructures import Headers, MutableHeaders
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class RequestContext:
-    """Ce que l'audit doit savoir d'une requête, et rien de plus."""
+    """Ce que l'audit doit savoir d'une requête, et rien de plus.
+
+    Volontairement **mutable**. FastAPI exécute chaque dépendance et chaque
+    route synchrone dans un fil du pool, avec une *copie* du contexte : un
+    `ContextVar.set()` fait dans la dépendance ne serait pas visible de la
+    route. Les copies partagent la référence de l'objet, pas l'objet lui-même :
+    le muter propage l'information là où un remplacement se perdrait.
+    """
 
     request_id: str
     ip_address: str | None = None
@@ -49,14 +56,10 @@ def bind_principal(*, user_id: uuid.UUID, user_label: str, is_admin: bool) -> No
     L'authentification n'a pas encore eu lieu quand le middleware s'exécute :
     c'est la dépendance qui résout le principal qui appelle ceci.
     """
-    _CONTEXTE.set(
-        replace(
-            current_context(),
-            user_id=user_id,
-            user_label=user_label,
-            is_admin=is_admin,
-        )
-    )
+    contexte = current_context()
+    contexte.user_id = user_id
+    contexte.user_label = user_label
+    contexte.is_admin = is_admin
 
 
 def _adresse(headers: Headers, client: tuple[str, int] | None) -> str | None:
@@ -100,6 +103,11 @@ class RequestContextMiddleware:
 
         headers = Headers(scope=scope)
         identifiant = headers.get("x-request-id") or uuid.uuid4().hex
+
+        # Le gestionnaire d'erreur de dernier recours est monté au-dessus de ce
+        # middleware : le `ContextVar` n'y est plus visible. Le `scope`, lui,
+        # traverse toute la pile.
+        scope.setdefault("state", {})["request_id"] = identifiant
 
         jeton = _CONTEXTE.set(
             RequestContext(

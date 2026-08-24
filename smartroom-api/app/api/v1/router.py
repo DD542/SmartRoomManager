@@ -8,11 +8,22 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from app.api.v1 import admin, auth, availability, bookings, recommendations, rooms
+from app.api.v1 import (
+    admin,
+    auth,
+    availability,
+    bookings,
+    buildings,
+    equipments,
+    recommendations,
+    rooms,
+)
 
 v1_router = APIRouter(prefix="/api/v1")
 v1_router.include_router(auth.router)
+v1_router.include_router(buildings.router)
 v1_router.include_router(rooms.router)
+v1_router.include_router(equipments.router)
 v1_router.include_router(availability.router)
 v1_router.include_router(bookings.router)
 v1_router.include_router(recommendations.router)

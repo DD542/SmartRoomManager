@@ -1,66 +1,186 @@
-"""Consultation du parc.
+"""Parc de salles : consultation et administration.
 
 La recherche par créneau vit dans `availability` : elle interroge le moteur.
-Ici, on ne fait que lire le parc — deux besoins distincts, deux routes.
+Ici, on lit et on modifie le parc — deux besoins distincts, deux routeurs.
 """
 
 from __future__ import annotations
 
 import uuid
+from typing import Annotated
 
-from fastapi import APIRouter, Query
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
+from fastapi import APIRouter, Depends, Query, status
 
-from app.api.deps import CurrentPrincipal, SessionDep
-from app.core.errors import NotFoundError
+from app.api.deps import (
+    ROOMS_MANAGE,
+    CurrentPrincipal,
+    PageDep,
+    SessionDep,
+    require_permission,
+)
+from app.api.v1.schemas import (
+    RoomBulkIn,
+    RoomBulkOut,
+    RoomFiltersOut,
+    RoomIn,
+    RoomOut,
+    RoomPatchIn,
+    RoomPhotoOut,
+)
+from app.api.v1.serializers import batiment_sortie, equipement_sortie, etage_sortie, salle_sortie
+from app.core.pagination import Page
 from app.db.enums import RoomStatus
-from app.models import Floor, Room, RoomEquipment
-from app.schemas.parc import RoomRead
+from app.services import parc_service as service
 
-router = APIRouter(prefix="/rooms", tags=["salles"])
+router = APIRouter(prefix="/rooms", tags=["parc"])
 
-
-def _requete_complete():
-    """Chargements explicites : sans eux, afficher trente salles déclencherait
-    cent requêtes d'équipements."""
-    return select(Room).options(
-        selectinload(Room.floor).selectinload(Floor.building),
-        selectinload(Room.room_equipments).selectinload(RoomEquipment.equipment),
-        selectinload(Room.photos),
-        selectinload(Room.placement),
-    )
+Ecriture = Depends(require_permission(ROOMS_MANAGE))
 
 
-@router.get("", response_model=list[RoomRead], summary="Parc de salles")
+@router.get(
+    "",
+    response_model=Page[RoomOut],
+    summary="Lister les salles",
+    description=(
+        "Filtres cumulatifs, tous validés. Les salles archivées sont exclues "
+        "sauf demande explicite du statut. Tri autorisé sur `name`, `capacity`, "
+        "`status` et `created_at`, préfixé de `-` pour décroissant."
+    ),
+)
 def list_rooms(
     session: SessionDep,
     _: CurrentPrincipal,
+    params: PageDep,
     building_id: uuid.UUID | None = None,
-    min_capacity: int | None = Query(default=None, ge=1, le=500),
+    floor_id: uuid.UUID | None = None,
+    min_capacity: Annotated[int | None, Query(ge=1, le=500)] = None,
+    equipment_ids: Annotated[list[uuid.UUID] | None, Query()] = None,
     accessible_only: bool = False,
-    status: RoomStatus | None = None,
-) -> list[Room]:
-    requete = (
-        _requete_complete().where(Room.deleted_at.is_(None)).order_by(Room.name)
+    room_status: Annotated[RoomStatus | None, Query(alias="status")] = None,
+    q: Annotated[str | None, Query(max_length=120)] = None,
+) -> Page[RoomOut]:
+    salles, total = service.list_rooms(
+        session,
+        params,
+        building_id=building_id,
+        floor_id=floor_id,
+        min_capacity=min_capacity,
+        equipment_ids=equipment_ids,
+        accessible_only=accessible_only,
+        status=room_status,
+        query=q,
     )
-    if building_id is not None:
-        requete = requete.join(Room.floor).where(Floor.building_id == building_id)
-    if min_capacity is not None:
-        requete = requete.where(Room.capacity >= min_capacity)
-    if accessible_only:
-        requete = requete.where(Room.is_accessible.is_(True))
-    requete = requete.where(
-        Room.status == status if status is not None else Room.status != RoomStatus.ARCHIVEE
-    )
-    return list(session.scalars(requete).unique())
+    return Page.build([salle_sortie(item) for item in salles], total, params)
 
 
-@router.get("/{room_id}", response_model=RoomRead, summary="Fiche salle")
-def get_room(room_id: uuid.UUID, session: SessionDep, _: CurrentPrincipal) -> Room:
-    salle = session.scalars(
-        _requete_complete().where(Room.id == room_id, Room.deleted_at.is_(None))
-    ).one_or_none()
-    if salle is None:
-        raise NotFoundError("Salle introuvable.")
-    return salle
+@router.get(
+    "/filters",
+    response_model=RoomFiltersOut,
+    summary="Valeurs proposées par les filtres",
+    description=(
+        "Bâtiments, étages, équipements filtrables et bornes de capacité, "
+        "mesurés sur le parc réel. Une borne codée en dur côté front mentirait "
+        "dès qu'une salle plus grande entrerait au catalogue."
+    ),
+)
+def room_filters(session: SessionDep, _: CurrentPrincipal) -> RoomFiltersOut:
+    brut = service.room_filters(session)
+    return RoomFiltersOut(
+        buildings=[batiment_sortie(*ligne) for ligne in brut["buildings"]],
+        floors=[etage_sortie(*ligne) for ligne in brut["floors"]],
+        equipments=[equipement_sortie(*ligne) for ligne in brut["equipments"]],
+        statuses=brut["statuses"],
+        capacity_min=brut["capacity_min"],
+        capacity_max=brut["capacity_max"],
+    )
+
+
+@router.get("/{room_id}", response_model=RoomOut, summary="Fiche d'une salle")
+def get_room(room_id: uuid.UUID, session: SessionDep, _: CurrentPrincipal) -> RoomOut:
+    return salle_sortie(service.get_room(session, room_id))
+
+
+@router.post(
+    "",
+    response_model=RoomOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Créer une salle",
+    description="L'identifiant lisible est dérivé du nom s'il n'est pas fourni.",
+    responses={409: {"description": "Nom ou identifiant déjà pris."}},
+)
+def create_room(
+    payload: RoomIn, session: SessionDep, _admin=Ecriture
+) -> RoomOut:
+    salle = service.create_room(session, payload)
+    session.commit()
+    return salle_sortie(salle)
+
+
+@router.patch(
+    "/{room_id}",
+    response_model=RoomOut,
+    summary="Modifier une salle",
+    description=(
+        "Modification partielle : seuls les champs fournis sont appliqués. "
+        "`equipments`, s'il est fourni, remplace l'équipement de la salle."
+    ),
+)
+def update_room(
+    room_id: uuid.UUID, payload: RoomPatchIn, session: SessionDep, _admin=Ecriture
+) -> RoomOut:
+    salle = service.update_room(session, room_id, payload)
+    session.commit()
+    return salle_sortie(salle)
+
+
+@router.delete(
+    "/{room_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Archiver une salle",
+    description=(
+        "Archive plutôt que supprimer : les réservations passées y renvoient "
+        "encore. Refusé tant que la salle porte des réservations à venir."
+    ),
+    responses={422: {"description": "Réservations à venir sur cette salle."}},
+)
+def archive_room(room_id: uuid.UUID, session: SessionDep, _admin=Ecriture) -> None:
+    service.archive_room(session, room_id)
+    session.commit()
+
+
+@router.post(
+    "/bulk",
+    response_model=RoomBulkOut,
+    summary="Action groupée sur plusieurs salles",
+    description=(
+        "Chaque salle est traitée indépendamment : une seule en échec n'annule "
+        "pas les autres, et la réponse dit laquelle a échoué et pourquoi."
+    ),
+)
+def bulk_rooms(payload: RoomBulkIn, session: SessionDep, _admin=Ecriture) -> RoomBulkOut:
+    reussies, echouees = service.bulk_update_rooms(session, payload)
+    session.commit()
+    return RoomBulkOut(succeeded=reussies, failed=echouees)
+
+
+@router.get(
+    "/{room_id}/photos",
+    response_model=list[RoomPhotoOut],
+    summary="Photos d'une salle",
+)
+def list_photos(
+    room_id: uuid.UUID, session: SessionDep, _: CurrentPrincipal
+) -> list[RoomPhotoOut]:
+    return [RoomPhotoOut.model_validate(item) for item in service.list_photos(session, room_id)]
+
+
+@router.delete(
+    "/{room_id}/photos/{photo_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Retirer une photo",
+)
+def delete_photo(
+    room_id: uuid.UUID, photo_id: uuid.UUID, session: SessionDep, _admin=Ecriture
+) -> None:
+    service.delete_photo(session, room_id, photo_id)
+    session.commit()

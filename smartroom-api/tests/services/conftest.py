@@ -126,6 +126,7 @@ def video(session: Session, marque: str) -> Equipment:
         label="Vidéoprojecteur",
         category=EquipmentCategory.AUDIOVISUEL,
         icon="projector",
+        is_filterable=True,
     )
     session.add(materiel)
     session.flush()

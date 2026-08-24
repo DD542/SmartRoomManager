@@ -529,3 +529,56 @@ def room_profile(session: Session, room_id: uuid.UUID) -> RoomProfile:
 
 def describe_conflicts(conflicts: Sequence[Conflict]) -> tuple[str, ...]:
     return dom_conflicts.report(conflicts, FUSEAU)
+
+
+def calendar_events(
+    session: Session,
+    *,
+    window: TimeSlot,
+    viewer_id: uuid.UUID | None = None,
+    room_ids: Sequence[uuid.UUID] | None = None,
+    building_id: uuid.UUID | None = None,
+    limit: int = 500,
+) -> list[tuple[Booking, Room, bool]]:
+    """Réservations recoupant une plage visible, pour le calendrier.
+
+    Le filtre `&&` emprunte l'index GiST de la contrainte anti-chevauchement :
+    seules les lignes visibles à l'écran sont chargées, quelle que soit la
+    taille de l'historique.
+    """
+    requete = (
+        select(Booking, Room)
+        .join(Room, Room.id == Booking.room_id)
+        .where(
+            Booking.status != BookingStatus.ANNULEE,
+            Booking.deleted_at.is_(None),
+            Booking.time_range.op("&&")(to_range(window)),
+        )
+        .order_by(Booking.time_range)
+        .limit(limit)
+    )
+    if room_ids:
+        requete = requete.where(Booking.room_id.in_(list(room_ids)))
+    if building_id is not None:
+        requete = requete.join(Floor, Floor.id == Room.floor_id).where(
+            Floor.building_id == building_id
+        )
+
+    return [
+        (reservation, salle, viewer_id is not None and reservation.owner_id == viewer_id)
+        for reservation, salle in session.execute(requete).all()
+    ]
+
+
+def closed_windows(
+    session: Session, *, room_id: uuid.UUID, window: TimeSlot
+) -> tuple[TimeSlot, ...]:
+    """Plages fermées d'une salle sur une période.
+
+    Complément des amplitudes d'ouverture : le calendrier grise ces plages
+    plutôt que de laisser croire qu'on peut y déposer un créneau.
+    """
+    salle = charger_salle(session, room_id)
+    jours = dom_rules.local_days(window, FUSEAU)
+    ouvertes = open_windows_for(session, salle, jours[0], jours[-1])
+    return dom_availability.subtract(window, list(ouvertes))

@@ -12,7 +12,8 @@ d'audit modifiable ne vaudrait rien.
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
+from decimal import Decimal
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -46,7 +47,11 @@ def snapshot(instance: object, champs: tuple[str, ...]) -> dict[str, Any]:
     photo: dict[str, Any] = {}
     for champ in champs:
         valeur = getattr(instance, champ, None)
-        if isinstance(valeur, uuid.UUID | datetime):
+        if isinstance(valeur, uuid.UUID | datetime | date):
+            photo[champ] = str(valeur)
+        elif isinstance(valeur, Decimal):
+            # JSONB n'accepte pas Decimal ; `float` perdrait la précision d'une
+            # surface au centième, `str` la conserve telle qu'elle est stockée.
             photo[champ] = str(valeur)
         elif hasattr(valeur, "value"):
             photo[champ] = valeur.value
