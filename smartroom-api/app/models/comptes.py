@@ -123,6 +123,12 @@ class User(TimestampMixin, SoftDeleteMixin, Base):
     access_requests: Mapped[list["AccessRequest"]] = relationship(back_populates="requester")
     tickets: Mapped[list["Ticket"]] = relationship(back_populates="requester")
     ticket_messages: Mapped[list["TicketMessage"]] = relationship(back_populates="author")
+    refresh_tokens: Mapped[list["RefreshToken"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan", passive_deletes=True
+    )
+    password_resets: Mapped[list["PasswordResetToken"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan", passive_deletes=True
+    )
     notifications: Mapped[list["Notification"]] = relationship(
         back_populates="user", cascade="all, delete-orphan", passive_deletes=True, lazy="select"
     )

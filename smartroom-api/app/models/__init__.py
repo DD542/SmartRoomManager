@@ -6,6 +6,7 @@ migration autogénérée, sans le moindre avertissement.
 """
 
 from app.db.base import Base
+from app.models.auth import PasswordResetToken, RefreshToken
 from app.models.comptes import (
     AdminAccount,
     AdminInvitation,
@@ -55,6 +56,8 @@ from app.models.support import (
 )
 
 __all__ = [
+    "PasswordResetToken",
+    "RefreshToken",
     "Base",
     # Parc
     "Building",

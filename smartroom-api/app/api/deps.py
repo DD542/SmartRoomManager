@@ -3,7 +3,7 @@
 L'identité se lit dans le jeton, jamais dans la charge utile : un client qui
 enverrait `owner_id` ne réserverait pas pour autrui. Les routes qui agissent au
 nom d'un tiers passent explicitement par l'espace d'administration, derrière une
-permission.
+permission nommée.
 """
 
 from __future__ import annotations
@@ -12,18 +12,20 @@ import uuid
 from dataclasses import dataclass
 from typing import Annotated
 
-import jwt
 from fastapi import Depends, Header
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from app.api.context import bind_principal
 from app.core.errors import AuthenticationError, NotFoundError, PermissionError_
-from app.core.security import decode_access_token
+from app.core.pagination import PageParams, page_params
+from app.core.security import TokenError, decode_access_token
 from app.db.enums import UserStatus
 from app.db.session import get_session
-from app.models import AdminAccount, User
+from app.models import AdminAccount, Permission, User
 
 SessionDep = Annotated[Session, Depends(get_session)]
+PageDep = Annotated[PageParams, Depends(page_params)]
 
 #: Les sept permissions structurelles, telles qu'insérées par la migration.
 ROOMS_MANAGE = "rooms.manage"
@@ -34,6 +36,16 @@ CONFLICTS_ARBITRATE = "conflicts.arbitrate"
 DATA_EXPORT = "data.export"
 SYSTEM_CONFIGURE = "system.configure"
 
+PERMISSIONS = (
+    ROOMS_MANAGE,
+    RULES_CONFIGURE,
+    USERS_MANAGE,
+    SUPPORT_HANDLE,
+    CONFLICTS_ARBITRATE,
+    DATA_EXPORT,
+    SYSTEM_CONFIGURE,
+)
+
 
 @dataclass(frozen=True, slots=True)
 class Principal:
@@ -42,13 +54,14 @@ class Principal:
     user: User
     scope: str
     admin: AdminAccount | None = None
+    permissions: frozenset[str] = frozenset()
 
     @property
     def is_admin(self) -> bool:
         return self.scope == "admin" and self.admin is not None
 
     def can(self, code: str) -> bool:
-        return self.is_admin and self.admin is not None and self.admin.has_permission(code)
+        return self.is_admin and code in self.permissions
 
 
 def _jeton(authorization: str | None) -> str:
@@ -61,14 +74,21 @@ def get_principal(
     session: SessionDep,
     authorization: Annotated[str | None, Header()] = None,
 ) -> Principal:
-    """Décode le jeton et recharge le compte : un compte suspendu perd la main
-    immédiatement, sans attendre l'expiration de sa session."""
+    """Décode le jeton et recharge le compte.
+
+    Les permissions sont relues en base à chaque requête, jamais reprises du
+    jeton : une révocation prend ainsi effet immédiatement plutôt qu'au
+    renouvellement suivant. Le coût est d'une requête indexée par appel.
+    """
     try:
         charge = decode_access_token(_jeton(authorization))
-    except jwt.ExpiredSignatureError as erreur:
-        raise AuthenticationError("Session expirée.", code="session_expiree") from erreur
-    except jwt.PyJWTError as erreur:
-        raise AuthenticationError("Jeton invalide.", code="jeton_invalide") from erreur
+    except TokenError as erreur:
+        message = str(erreur).lower()
+        code = "session_expiree" if "expire" in message else "jeton_invalide"
+        raise AuthenticationError(
+            "Session expirée." if code == "session_expiree" else "Jeton invalide.",
+            code=code,
+        ) from erreur
 
     try:
         identifiant = uuid.UUID(charge["sub"])
@@ -77,7 +97,10 @@ def get_principal(
 
     compte = session.scalars(
         select(User)
-        .options(selectinload(User.admin_account).selectinload(AdminAccount.grants))
+        .options(
+            selectinload(User.admin_account).selectinload(AdminAccount.permissions),
+            selectinload(User.preferences),
+        )
         .where(User.id == identifiant, User.deleted_at.is_(None))
     ).one_or_none()
 
@@ -87,7 +110,25 @@ def get_principal(
         raise PermissionError_("Compte suspendu.", code="compte_suspendu")
 
     scope = charge.get("scope", "user")
-    return Principal(user=compte, scope=scope, admin=compte.admin_account)
+    admin = compte.admin_account
+
+    droits: frozenset[str] = frozenset()
+    if admin is not None:
+        # Le propriétaire détient tout, sans dépendre de la matrice : la lui
+        # retirer fermerait la configuration du système pour tout le monde.
+        droits = (
+            frozenset(PERMISSIONS)
+            if admin.is_owner
+            else frozenset(item.code for item in admin.permissions)
+        )
+
+    principal = Principal(user=compte, scope=scope, admin=admin, permissions=droits)
+    bind_principal(
+        user_id=compte.id,
+        user_label=f"{compte.first_name} {compte.last_name}",
+        is_admin=principal.is_admin,
+    )
+    return principal
 
 
 CurrentPrincipal = Annotated[Principal, Depends(get_principal)]
@@ -117,16 +158,28 @@ CurrentAdmin = Annotated[AdminAccount, Depends(get_current_admin)]
 
 
 def require_permission(code: str):
-    """Fabrique une garde pour une permission donnée.
+    """Fabrique une garde pour une permission donnée."""
 
-    Le propriétaire du système traverse toutes les gardes : `has_permission`
-    le reconnaît sans lire la matrice, qu'aucune opération ne peut lui retirer.
-    """
-
-    def garde(admin: CurrentAdmin) -> AdminAccount:
-        if not admin.has_permission(code):
+    def garde(principal: CurrentPrincipal) -> AdminAccount:
+        admin = get_current_admin(principal)
+        if code not in principal.permissions:
             raise PermissionError_(
                 f"Permission « {code} » requise.", code="permission_manquante"
+            )
+        return admin
+
+    return garde
+
+
+def require_any(*codes: str):
+    """Garde satisfaite par l'une quelconque des permissions listées."""
+
+    def garde(principal: CurrentPrincipal) -> AdminAccount:
+        admin = get_current_admin(principal)
+        if not any(code in principal.permissions for code in codes):
+            listees = " ou ".join(f"« {code} »" for code in codes)
+            raise PermissionError_(
+                f"Permission {listees} requise.", code="permission_manquante"
             )
         return admin
 
@@ -136,8 +189,8 @@ def require_permission(code: str):
 def assert_owner_or_admin(principal: Principal, owner_id: uuid.UUID | None) -> None:
     """Une réservation ne se lit et ne se modifie que par son organisateur.
 
-    L'administration passe outre, mais seulement avec la permission d'arbitrage :
-    consulter la réservation d'un tiers est déjà un acte de back-office.
+    Cette garde double le filtre appliqué en SQL : elle couvre les chemins où
+    l'objet est chargé par identifiant, sans clause de propriété.
     """
     if owner_id is not None and owner_id == principal.user.id:
         return
@@ -146,3 +199,12 @@ def assert_owner_or_admin(principal: Principal, owner_id: uuid.UUID | None) -> N
     # 404 et non 403 : répondre « interdit » confirmerait l'existence de la
     # réservation d'un tiers à qui essaie des identifiants au hasard.
     raise NotFoundError("Réservation introuvable.")
+
+
+def known_permissions(session: Session) -> list[Permission]:
+    """Référentiel des permissions, pour l'écran de la matrice."""
+    return list(
+        session.scalars(
+            select(Permission).order_by(Permission.group_id, Permission.sort_order)
+        )
+    )

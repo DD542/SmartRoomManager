@@ -24,6 +24,7 @@ from sqlalchemy import create_engine, select, text
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.core.limiter import limiter
 from app.core.security import hash_password
 from app.db.enums import EquipmentCategory, RoomStatus, RuleScope
 from app.db.session import get_session
@@ -84,10 +85,16 @@ def client(session: Session) -> Iterator[TestClient]:
     vie de l'application — donc la boucle de maintenance — ne démarre pas.
     """
     app.dependency_overrides[get_session] = lambda: session
+    # Le limiteur est en mémoire et partagé : sans cela, la dizaine de
+    # connexions d'une suite épuiserait le quota de la première minute. Il a
+    # son propre test, qui le réactive.
+    limiter.enabled = False
+    limiter.reset()
     try:
         yield TestClient(app, raise_server_exceptions=False)
     finally:
         app.dependency_overrides.clear()
+        limiter.enabled = True
 
 
 @pytest.fixture
