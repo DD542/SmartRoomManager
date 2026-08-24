@@ -340,7 +340,11 @@ class TestRecommandation:
     def test_profil_utilisateur_agrege(self, session, compte, salle, jour_ouvre):
         """Les réservations à venir comptent au quota, les passées à l'habitude."""
         poser(session, salle, compte, creneau(jour_ouvre, 10))
-        poser(session, salle, compte, creneau(jour_ouvre - timedelta(days=7), 10))
+        # Quatorze jours et non sept : `jour_ouvre` est le prochain mardi, donc
+        # jusqu'à sept jours devant. Retrancher sept jours ne donne une date
+        # passée que si l'on est lundi ou mardi — le test réussissait cinq jours
+        # sur sept, ce qui est la pire forme d'échec.
+        poser(session, salle, compte, creneau(jour_ouvre - timedelta(days=14), 10))
 
         profil = reco.load_user_profile(session, compte.id)
         assert profil.active_bookings == 1
