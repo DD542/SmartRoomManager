@@ -72,9 +72,15 @@ export async function session() {
 export async function logout() {
   try {
     await post('/auth/logout');
+  } catch {
+    // Se déconnecter ne peut pas échouer du point de vue de l'utilisateur : il
+    // a demandé à partir. Un serveur injoignable laisserait sinon remonter une
+    // erreur alors que l'écran est déjà revenu à la connexion.
+    //
+    // Le jeton de rafraîchissement reste alors valide côté serveur jusqu'à son
+    // expiration : c'est le compromis assumé, et il ne vaut que pour une panne
+    // réseau — un serveur joignable révoque toujours la famille.
   } finally {
-    // Le jeton local tombe même si le serveur n'a pas répondu : l'utilisateur
-    // a demandé à partir, l'écran ne doit pas le retenir.
     setAccessToken(null);
   }
 }

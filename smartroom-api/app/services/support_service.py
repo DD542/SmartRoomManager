@@ -339,6 +339,15 @@ def set_article_status(
     if article is None:
         raise NotFoundError("Article introuvable.")
 
+    # `ck_faq_articles_publishable` exige un corps réel pour publier. Sans ce
+    # contrôle, la contrainte le refuse quand même — mais en erreur d'intégrité,
+    # donc en 500, là où l'auteur attend qu'on lui dise ce qui manque.
+    if status is ArticleStatus.PUBLIE and len((article.body or "").strip()) < 40:
+        raise RuleViolationError(
+            "Article trop court pour être publié : quarante caractères au moins.",
+            code="contenu_insuffisant",
+        )
+
     avant = article.status
     article.status = status
     # `ck_faq_articles_published` impose l'équivalence stricte entre le statut

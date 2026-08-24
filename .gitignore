@@ -26,3 +26,11 @@ htmlcov/
 # Fichiers téléversés : plans d'étage et photos de salles. En production,
 # `media_root` désigne un volume monté, jamais le dépôt.
 smartroom-api/media/
+sauvegardes/*
+!sauvegardes/.gitkeep
+
+# Rapports de couverture et artefacts de test
+coverage/
+htmlcov/
+.coverage
+coverage.xml

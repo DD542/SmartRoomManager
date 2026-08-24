@@ -169,11 +169,18 @@ def _journaliser(
     )
 
 
-def issue_access_code(session: Session, reservation: Booking) -> IssuedCode | None:
+def issue_access_code(
+    session: Session, reservation: Booking, *, now: datetime | None = None
+) -> IssuedCode | None:
     """Émet un code temporaire si la salle exige un badge.
 
     Le clair est renvoyé à l'appelant et jamais persisté : la base ne garde que
     l'empreinte et un indice masqué.
+
+    `now` suit celui de l'appelant : lire l'horloge système ici produirait un
+    `issued_at` postérieur à `expires_at` dès que la réservation est datée
+    autrement que « maintenant » — ce que `ck_booking_access_codes_expiry`
+    refuse, en signalant une incohérence qui n'est pas celle de l'appelant.
     """
     salle = charger_salle(session, reservation.room_id)
     if not salle.badge_required:
@@ -186,7 +193,7 @@ def issue_access_code(session: Session, reservation: Booking) -> IssuedCode | No
         booking_id=reservation.id,
         code_hash=CRYPT.hash(clair),
         code_hint=f"{prefixe}-****",
-        issued_at=datetime.now(FUSEAU),
+        issued_at=now or datetime.now(FUSEAU),
         expires_at=reservation.time_range.upper,
     )
     session.add(code)
@@ -269,7 +276,7 @@ def create_booking(
         )
 
     _journaliser(session, reservation, BookingEventType.CREATION, "Réservation créée", owner_id)
-    code = issue_access_code(session, reservation)
+    code = issue_access_code(session, reservation, now=now)
     session.flush()
     return reservation, code
 

@@ -4,29 +4,35 @@ Les contraintes vivant dans la base, ces tests s'exécutent contre le schéma
 réel — un SQLite en mémoire ne connaît ni TSTZRANGE, ni EXCLUDE, ni les index
 partiels, c'est-à-dire précisément ce qu'ils vérifient.
 
-    docker compose up -d db
-    alembic upgrade head
+La base est fournie par `tests/conftest.py` : conteneur éphémère, ou
+`TEST_DATABASE_URL` en intégration continue. Aucune commande à lancer à la main.
+
     pytest tests/services
+
+Régime d'isolation : une connexion, une transaction ouverte au début du test et
+annulée à la fin, quoi qu'il arrive. La session est liée en
+`join_transaction_mode="create_savepoint"`, ce qui transforme les `commit` des
+routes en relâchement de point de sauvegarde : la transaction extérieure reste
+ouverte et annulable. Aucun test ne voit les écritures d'un autre, et l'ordre
+d'exécution est sans effet.
+
+Les tests de concurrence n'utilisent pas ce régime — voir `test_concurrency.py`.
 """
 
 from __future__ import annotations
 
-import os
 import uuid
 from collections.abc import Iterator
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta  # noqa: F401
 from decimal import Decimal
-from zoneinfo import ZoneInfo
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, select, text
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.config import get_settings
 from app.core.limiter import limiter
-from app.core.security import hash_password
-from app.db.enums import EquipmentCategory, RoomStatus, RuleScope
+from app.db.enums import RoomStatus
 from app.db.session import get_session
 from app.domain.types import TimeSlot
 from app.main import app
@@ -36,25 +42,33 @@ from app.models import (
     Building,
     Equipment,
     Floor,
-    OpeningHour,
     Permission,
     Room,
-    RoomEquipment,
     User,
 )
+from tests import fabriques
+from tests.fabriques import (
+    FabriqueAdministrateur,
+    FabriqueBatiment,
+    FabriqueCompte,
+    FabriqueEquipement,
+    FabriqueEtage,
+    FabriqueSalle,
+)
+from tests.horloge import PARIS, charge_creneau
+from tests.horloge import creneau as _creneau
+from tests.horloge import prochain
 
-PARIS = ZoneInfo(get_settings().timezone)
-MOT_DE_PASSE = "smartroom2026"
+#: Réexporté : de nombreux tests l'importent depuis ce module.
+MOT_DE_PASSE = fabriques.MOT_DE_PASSE
+
+pytestmark = pytest.mark.integration
 
 
 @pytest.fixture(scope="session")
-def engine():
-    url = os.getenv("TEST_DATABASE_URL", get_settings().database_url)
-    moteur = create_engine(url, future=True)
-    with moteur.connect() as connexion:
-        connexion.execute(text("SELECT 1 FROM alembic_version LIMIT 1"))
-    yield moteur
-    moteur.dispose()
+def engine(moteur):
+    """Alias historique du moteur de session, conservé pour les tests existants."""
+    return moteur
 
 
 @pytest.fixture
@@ -69,9 +83,11 @@ def session(engine) -> Iterator[Session]:
     session = Session(
         bind=connexion, expire_on_commit=False, join_transaction_mode="create_savepoint"
     )
+    fabriques.brancher(session)
     try:
         yield session
     finally:
+        fabriques.debrancher()
         session.close()
         transaction.rollback()
         connexion.close()
@@ -102,39 +118,35 @@ def marque() -> str:
     return uuid.uuid4().hex[:6]
 
 
+# --------------------------------------------------------------------------- #
+# Parc
+# --------------------------------------------------------------------------- #
+
+
 @pytest.fixture
 def batiment(session: Session, marque: str) -> Building:
-    chiffres = "".join(c for c in marque if c.isdigit())[:3] or "1"
-    batiment = Building(code=f"V{chiffres}", name=f"Campus intégration {marque}")
-    session.add(batiment)
-    session.flush()
-    return batiment
+    return FabriqueBatiment(name=f"Campus intégration {marque}")
 
 
 @pytest.fixture
 def etage(session: Session, batiment: Building) -> Floor:
-    etage = Floor(building_id=batiment.id, code="V", label="Étage intégration", level=3)
-    session.add(etage)
-    session.flush()
-    return etage
+    return FabriqueEtage(building=batiment, code="V", label="Étage intégration", level=3)
 
 
 @pytest.fixture
 def video(session: Session, marque: str) -> Equipment:
-    materiel = Equipment(
-        code=f"video-{marque}",
-        label="Vidéoprojecteur",
-        category=EquipmentCategory.AUDIOVISUEL,
-        icon="projector",
-        is_filterable=True,
-    )
-    session.add(materiel)
-    session.flush()
-    return materiel
+    return FabriqueEquipement(code=f"video-{marque}", label="Vidéoprojecteur")
 
 
 @pytest.fixture
 def creer_salle(session: Session, etage: Floor, marque: str):
+    """Fabrique une salle et pose son amplitude d'ouverture.
+
+    `horaires=None` produit une salle sans amplitude propre : elle héritera
+    alors du bâtiment, puis du global. C'est le cas dont ont besoin les tests
+    de résolution de portée.
+    """
+
     def _creer(
         nom: str = "Salle",
         *,
@@ -144,35 +156,19 @@ def creer_salle(session: Session, etage: Floor, marque: str):
         statut: RoomStatus = RoomStatus.DISPONIBLE,
         horaires: tuple[time, time] | None = (time(8, 0), time(20, 0)),
     ) -> Room:
-        piece = Room(
-            floor_id=etage.id,
+        piece = FabriqueSalle(
+            floor=etage,
             name=f"{nom} {marque}",
-            slug=f"{nom.lower()}-{marque}-{uuid.uuid4().hex[:4]}",
             capacity=capacity,
             area_m2=Decimal("24.00"),
             status=statut,
             is_accessible=accessible,
         )
-        session.add(piece)
-        session.flush()
-
-        for materiel in equipements or []:
-            session.add(
-                RoomEquipment(room_id=piece.id, equipment_id=materiel.id, quantity=1)
-            )
+        if equipements:
+            fabriques.equiper(session, piece, *equipements)
         if horaires is not None:
             ouvre, ferme = horaires
-            for jour in range(7):
-                session.add(
-                    OpeningHour(
-                        scope=RuleScope.SALLE,
-                        room_id=piece.id,
-                        weekday=jour,
-                        opens_at=ouvre,
-                        closes_at=ferme,
-                    )
-                )
-        session.flush()
+            fabriques.poser_horaires(session, piece, ouvre=ouvre, ferme=ferme)
         return piece
 
     return _creer
@@ -183,18 +179,18 @@ def salle(creer_salle) -> Room:
     return creer_salle("Vinci")
 
 
+# --------------------------------------------------------------------------- #
+# Comptes
+# --------------------------------------------------------------------------- #
+
+
 @pytest.fixture
 def creer_compte(session: Session):
     def _creer(prenom: str = "Camille") -> User:
-        compte = User(
+        return FabriqueCompte(
             email=f"{prenom.lower()}-{uuid.uuid4().hex[:8]}@ece.fr",
-            password_hash=hash_password(MOT_DE_PASSE),
             first_name=prenom,
-            last_name="Durand",
         )
-        session.add(compte)
-        session.flush()
-        return compte
 
     return _creer
 
@@ -206,14 +202,16 @@ def compte(creer_compte) -> User:
 
 @pytest.fixture
 def administrateur(session: Session, creer_compte) -> AdminAccount:
-    profil = creer_compte("Lea")
-    admin = AdminAccount(user_id=profil.id, job_title="Responsable planning")
-    session.add(admin)
-    session.flush()
-    return admin
+    return FabriqueAdministrateur(user=creer_compte("Lea"))
 
 
 def accorder(session: Session, admin: AdminAccount, *codes: str) -> None:
+    """Ajoute des permissions à un administrateur, puis invalide son cache.
+
+    L'invalidation est nécessaire : la garde lit `admin.permissions`, chargé au
+    premier accès. Sans elle, une permission accordée après ce chargement
+    resterait invisible et le test échouerait sur un 403 incompréhensible.
+    """
     for code in codes:
         permission = session.scalars(select(Permission).where(Permission.code == code)).one()
         session.add(
@@ -224,29 +222,31 @@ def accorder(session: Session, admin: AdminAccount, *codes: str) -> None:
 
 
 def connecter(client: TestClient, email: str, *, admin: bool = False) -> dict[str, str]:
+    """Ouvre une session et rend l'en-tête d'autorisation correspondant."""
     chemin = "/api/v1/auth/admin/login" if admin else "/api/v1/auth/login"
     reponse = client.post(chemin, json={"email": email, "password": MOT_DE_PASSE})
     assert reponse.status_code == 200, reponse.text
     return {"Authorization": f"Bearer {reponse.json()['access_token']}"}
 
 
+# --------------------------------------------------------------------------- #
+# Temps
+# --------------------------------------------------------------------------- #
+
+
 @pytest.fixture
 def jour_ouvre() -> date:
     """Prochain mardi : jour ouvré garanti, hors fermetures du jeu de démonstration."""
-    reference = date.today() + timedelta(days=1)
-    while reference.weekday() != 1:
-        reference += timedelta(days=1)
-    return reference
+    return prochain(1)
 
 
 def creneau(jour: date, heure: int, minutes: int = 0, duree: int = 60) -> TimeSlot:
     """Créneau exprimé en heure locale, normalisé en UTC par `TimeSlot`."""
-    depart = datetime.combine(jour, time(heure, minutes), tzinfo=PARIS)
-    return TimeSlot(start=depart, end=depart + timedelta(minutes=duree))
+    return _creneau(jour, heure, minutes, duree)
 
 
 def charge(slot: TimeSlot) -> dict[str, str]:
-    return {"starts_at": slot.start.isoformat(), "ends_at": slot.end.isoformat()}
+    return charge_creneau(slot)
 
 
 @pytest.fixture

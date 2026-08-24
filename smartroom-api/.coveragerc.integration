@@ -1,11 +1,15 @@
 [run]
 branch = True
-source = app/domain
+source =
+    app/services
+    app/api
+omit =
+    app/api/v1/schemas/*
 
 [report]
 show_missing = True
 skip_covered = False
-fail_under = 100
+fail_under = 85
 exclude_lines =
     pragma: no cover
     if TYPE_CHECKING:
@@ -18,4 +22,4 @@ exclude_lines =
     ^\s*\.\.\.$
 
 [html]
-directory = htmlcov/domaine
+directory = htmlcov/integration
