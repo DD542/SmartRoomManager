@@ -10,8 +10,9 @@ import { fmtTime, toDate } from './dates';
  *   - 'adjacent' : aucun chevauchement, mais l'écart est inférieur au battement
  *                  exigé par la salle (aération, transition, ménage).
  *
- * Le moteur ne connaît ni React ni les mocks : il prend des créneaux et rend
- * des objets Conflict, réutilisables côté FastAPI sans réécriture.
+ * Le moteur ne connaît pas React : il prend des créneaux et rend des objets
+ * Conflict. Il double celui du serveur, qui reste seul juge — ce qu'il calcule
+ * n'est qu'un avis affiché avant l'aller-retour.
  */
 
 const ACTIVE_STATUSES = ['confirmee', 'en_attente'];

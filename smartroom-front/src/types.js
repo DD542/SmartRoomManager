@@ -1,6 +1,6 @@
 // Modèle de données partagé — documentation JSDoc uniquement, aucun code exécuté.
-// Contrat entre src/mocks/, src/api/ et les pages ; miroir des schémas Pydantic
-// attendus côté FastAPI.
+// Contrat entre src/api/ et les pages ; miroir des schémas Pydantic servis par
+// FastAPI.
 
 /**
  * @typedef {Object} Building

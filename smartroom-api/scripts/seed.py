@@ -694,32 +694,192 @@ def creer_support(
         categories[code] = categorie
     session.flush()
 
+    # Repris de la maquette : vingt-deux articles couvrant le parcours réel.
+    # Sept ont été réécrits — ils décrivaient une pondération, un délai
+    # d'annulation et un changement de mot de passe que le code n'applique pas,
+    # et un centre d'aide qui se trompe sur son propre produit vaut moins que
+    # pas de centre d'aide.
     articles = [
-        ("reserver", "reserver-une-salle-en-quatre-etapes", "Réserver une salle en quatre étapes",
+        ("reserver", "reserver-une-salle-en-quatre-etapes",
+         "Réserver une salle en quatre étapes",
          "Besoin, sélection, validation du créneau, confirmation.",
-         "Indiquez votre besoin, choisissez une salle parmi les propositions, validez le "
-         "créneau puis confirmez : la réservation est immédiate et le code d'accès arrive "
-         "par e-mail.", ArticleStatus.PUBLIE),
-        ("acces", "mon-code-d-acces-ne-fonctionne-pas", "Mon code d'accès ne fonctionne pas",
-         "Le code est généré une heure avant le début de la réunion.",
-         "Le code d'accès est généré une heure avant le début de la réunion et figure sur la "
-         "fiche de votre réservation. S'il est refusé, ouvrez un ticket : le terminal peut "
-         "nécessiter une resynchronisation.", ArticleStatus.PUBLIE),
-        ("annulation", "annuler-une-reservation", "Annuler une réservation",
-         "L'annulation est possible tant que le créneau n'a pas commencé.",
-         "Vous pouvez annuler depuis le détail de la réservation tant que le créneau n'a pas "
-         "commencé. Un motif est demandé et les participants sont prévenus automatiquement.",
+         "Décrivez d’abord votre besoin : date, créneau, effectif et équipements requis. "
+         "Le système propose ensuite les salles compatibles, classées par pertinence. "
+         "Choisissez-en une pour ouvrir son calendrier, sélectionnez le créneau puis "
+         "confirmez : le code d’accès et l’e-mail de confirmation partent immédiatement.",
          ArticleStatus.PUBLIE),
-        ("equipements", "pourquoi-15-minutes-entre-deux-reunions", "Pourquoi 15 minutes entre deux réunions ?",
-         "C'est le battement exigé pour l'aération et la remise en état.",
-         "Un battement de quinze minutes sépare deux réunions dans une même salle : il permet "
-         "l'aération, la remise en état du mobilier et évite les débordements en chaîne.",
+        ("reserver", "sur-quels-criteres-une-salle-m-est-elle-recommandee",
+         "Sur quels critères une salle m’est-elle recommandée ?",
+         "Un score sur 100 pondère six critères, de la capacité à vos habitudes.",
+         "Six critères sont pondérés sur 100 : l’ajustement de la capacité (30 points, un "
+         "surdimensionnement est pénalisé), la présence des équipements demandés (25), "
+         "votre bâtiment de préférence (15), l’étage (10), le taux d’occupation de la "
+         "salle (12) et vos réservations passées (8). La justification affichée sous "
+         "chaque proposition est construite à partir de ce calcul : elle change avec vos "
+         "critères.",
          ArticleStatus.PUBLIE),
-        ("compte", "regler-mes-notifications", "Régler mes notifications",
-         "Délai de rappel et canaux se règlent depuis le profil.",
-         "Le délai de rappel et les canaux de notification se règlent depuis votre profil, "
-         "section Préférences. Le rappel par défaut est envoyé trente minutes avant le début.",
+        ("reserver", "pourquoi-une-salle-apparait-elle-a-capacite-juste",
+         "Pourquoi une salle apparaît-elle « à capacité juste » ?",
+         "Elle accueille votre effectif, mais sans marge.",
+         "Une salle dont la capacité correspond exactement à votre effectif reste "
+         "proposée, mais signalée : aucune place supplémentaire n’est disponible si un "
+         "participant s’ajoute. Les salles trop petites, elles, sont écartées de la "
+         "sélection.",
+         ArticleStatus.PUBLIE),
+        ("reserver", "un-conflit-est-detecte-sur-mon-creneau-que-faire",
+         "Un conflit est détecté sur mon créneau, que faire ?",
+         "Décaler l’horaire, ou changer de salle sur le même créneau.",
+         "Le moteur distingue trois cas : le créneau est déjà entièrement pris, il "
+         "chevauche partiellement une autre réunion, ou il est trop proche de la "
+         "précédente. L’écran de conflit propose des créneaux libres dans la même salle "
+         "et des salles équivalentes sur le créneau initial, chacun noté en pourcentage "
+         "de compatibilité.",
+         ArticleStatus.PUBLIE),
+        ("reserver", "pourquoi-dois-je-laisser-15-minutes-entre-deux-reunions",
+         "Pourquoi dois-je laisser 15 minutes entre deux réunions ?",
+         "C’est le battement exigé pour l’aération et la remise en état.",
+         "Chaque salle impose un battement entre deux réservations. Une demande qui "
+         "démarre moins de 15 minutes après la fin de la précédente est signalée comme "
+         "conflit potentiel : elle reste possible, mais l’écran vous propose un créneau "
+         "décalé.",
+         ArticleStatus.PUBLIE),
+        ("reserver", "reserver-plusieurs-occurrences-d-un-coup",
+         "Réserver plusieurs occurrences d’un coup",
+         "Activez la récurrence, puis vérifiez l’aperçu des dates générées.",
+         "Activez « Réunion récurrente » à l’étape 1, choisissez une salle, puis "
+         "configurez la règle : quotidienne, hebdomadaire ou mensuelle, avec une fin "
+         "après N occurrences ou à une date. L’aperçu qualifie chaque date : les "
+         "occurrences en conflit sont signalées et seront ignorées à la création, les "
+         "autres sont réservées en une fois.",
+         ArticleStatus.PUBLIE),
+        ("reserver", "reserver-en-dehors-des-jours-d-ouverture-d-une-salle",
+         "Réserver en dehors des jours d’ouverture d’une salle",
+         "Une demande d’accès exceptionnel doit être validée par le gestionnaire de site.",
+         "Certaines salles ne sont ouvertes que certains jours. Pour un créneau en "
+         "dehors, une demande d’accès exceptionnel est nécessaire : motivez-la, indiquez "
+         "l’effectif attendu et acceptez les consignes de sécurité. Le gestionnaire "
+         "répond sous 24 h ouvrées.",
+         ArticleStatus.PUBLIE),
+        ("acces", "comment-obtenir-le-code-d-acces-de-ma-salle",
+         "Comment obtenir le code d’accès de ma salle ?",
+         "Émis à la confirmation, valable jusqu’à la fin du créneau.",
+         "Le code est émis au moment où la réservation est confirmée et reste valable "
+         "jusqu’à la fin du créneau. Il apparaît sur l’écran de confirmation, dans "
+         "l’e-mail et dans le rappel. Ailleurs, il reste masqué sous la forme « A-**** » "
+         "jusqu’à ce que vous cliquiez sur « Révéler » : le code en clair n’est stocké "
+         "nulle part, seule son empreinte l’est.",
+         ArticleStatus.PUBLIE),
+        ("acces", "mon-code-d-acces-ne-fonctionne-pas",
+         "Mon code d’accès ne fonctionne pas",
+         "Vérifiez qu’il s’agit du code de cette réservation, puis ouvrez un ticket.",
+         "Vérifiez d’abord que vous utilisez le code de la bonne réservation : chacune a "
+         "le sien, et une réservation voisine dans la même salle en a un autre. Si le "
+         "terminal refuse toujours un code valide, ouvrez une demande d’assistance en "
+         "catégorie « Accès » : le terminal sera resynchronisé.",
+         ArticleStatus.PUBLIE),
+        ("acces", "quelles-salles-exigent-un-badge-en-plus-du-code",
+         "Quelles salles exigent un badge en plus du code ?",
+         "Les salles de conseil et les salles premium, signalées « Badge requis ».",
+         "Certaines salles demandent un badge d’accès actif en plus du code numérique. La "
+         "mention « Badge requis » apparaît sur la fiche de la salle, sur le détail de la "
+         "réservation et dans l’e-mail de confirmation. Le numéro de badge figure dans "
+         "votre profil.",
+         ArticleStatus.PUBLIE),
+        ("acces", "valider-ma-presence-sur-place",
+         "Valider ma présence sur place",
+         "La validation s’ouvre au début du créneau et dure dix minutes.",
+         "Sur place, saisissez le code affiché sur l’écran de la salle : une lettre, un "
+         "tiret et quatre chiffres. La fenêtre de validation s’ouvre au début du créneau "
+         "et se ferme au bout de dix minutes — ce délai est configurable par salle. Passé "
+         "ce délai sans validation, le créneau est libéré et la salle redevient "
+         "réservable. Le bouton « Je suis en retard » vaut validation de présence et "
+         "empêche cette libération.",
+         ArticleStatus.PUBLIE),
+        ("annulation", "jusqu-a-quand-puis-je-annuler-une-reservation",
+         "Jusqu’à quand puis-je annuler une réservation ?",
+         "Jusqu’à une heure avant le début, avec un motif obligatoire.",
+         "Une réservation s’annule jusqu’à une heure avant son début — ce délai est "
+         "configurable par salle. Le motif est obligatoire : il alimente les statistiques "
+         "d’occupation. Les participants sont prévenus par e-mail et le créneau est "
+         "libéré immédiatement.",
+         ArticleStatus.PUBLIE),
+        ("annulation", "modifier-l-horaire-ou-la-salle-d-une-reservation",
+         "Modifier l’horaire ou la salle d’une réservation",
+         "Date, créneau, titre et effectif. Changer de salle passe par une annulation.",
+         "Depuis le détail de la réservation, « Modifier » permet de changer la date, le "
+         "créneau, le titre et l'effectif. Le nouveau créneau est revérifié : s'il entre "
+         "en conflit, la modification est refusée avec le motif. Changer de salle n'est "
+         "pas une modification : annulez et réservez la nouvelle, sans quoi deux salles "
+         "porteraient la même réunion le temps de l'opération. Le code d'accès, lui, ne "
+         "change pas.",
+         ArticleStatus.PUBLIE),
+        ("annulation", "annuler-une-seule-occurrence-d-une-serie",
+         "Annuler une seule occurrence d’une série",
+         "Chaque occurrence est une réservation indépendante.",
+         "Les occurrences d’une réunion récurrente sont créées comme des réservations "
+         "distinctes, rattachées à la même série. Annuler l’une d’elles depuis « Mes "
+         "réservations » ne touche pas les autres dates.",
+         ArticleStatus.PUBLIE),
+        ("equipements", "filtrer-les-salles-par-equipement",
+         "Filtrer les salles par équipement",
+         "Visio, écran, tableau blanc, vidéoprojecteur, micro, prises, climatisation.",
+         "Les équipements requis se sélectionnent à l’étape 1 du tunnel ou depuis le rail "
+         "de filtres du catalogue. Une salle n’est proposée que si elle possède la "
+         "totalité des équipements demandés : retirez-en un pour élargir les résultats.",
+         ArticleStatus.PUBLIE),
+        ("equipements", "trouver-une-salle-accessible-pmr",
+         "Trouver une salle accessible PMR",
+         "Un filtre dédié écarte les salles non accessibles.",
+         "L’option « Salle accessible PMR » ne retient que les salles de plain-pied ou "
+         "desservies par un ascenseur. Elle est disponible à l’étape 1 du tunnel et dans "
+         "les filtres du catalogue, et reste active pendant toute la recherche.",
+         ArticleStatus.PUBLIE),
+        ("equipements", "signaler-un-equipement-defectueux",
+         "Signaler un équipement défectueux",
+         "Ouvrez un ticket en catégorie « Maintenance » ou « Équipement ».",
+         "Depuis le centre d’aide, créez une demande en précisant la salle, l’équipement "
+         "concerné et le créneau. Le service technique traite les demandes sous 24 h "
+         "ouvrées ; l’avancement se suit dans « Mes demandes ».",
+         ArticleStatus.PUBLIE),
+        ("equipements", "pourquoi-une-salle-est-elle-indisponible",
+         "Pourquoi une salle est-elle indisponible ?",
+         "Elle est occupée sur le créneau, ou en maintenance.",
+         "Une salle « Occupée » est réservée sur le créneau demandé : un autre horaire la "
+         "rend à nouveau disponible. Une salle « En maintenance » est retirée de la "
+         "réservation le temps de l’intervention, et n’apparaît pas dans les "
+         "recommandations.",
+         ArticleStatus.PUBLIE),
+        ("compte", "modifier-mon-delai-de-rappel",
+         "Modifier mon délai de rappel",
+         "15, 30 ou 60 minutes avant le début de la réunion.",
+         "Dans Profil et paramètres, section Notifications, choisissez le délai souhaité. "
+         "Il s’applique à toutes vos réservations, y compris celles déjà créées.",
+         ArticleStatus.PUBLIE),
+        ("compte", "quelles-notifications-vais-je-recevoir",
+         "Quelles notifications vais-je recevoir ?",
+         "Confirmation, rappel avant la réunion, conflits et réponses du support.",
+         "Deux réglages indépendants : l’e-mail de confirmation à chaque réservation, et "
+         "les alertes dans l’application pour les conflits, les validations et les "
+         "réponses du support. Le rappel avant réunion suit le délai choisi dans votre "
+         "profil.",
+         ArticleStatus.PUBLIE),
+        ("compte", "a-quoi-servent-mes-statistiques",
+         "À quoi servent mes statistiques ?",
+         "Heures réservées, répartition par salle, créneaux préférés, taux de présence.",
+         "L’écran Mes statistiques agrège vos réservations sur le mois, le trimestre ou "
+         "l’année : heures réservées, annulations, répartition par salle et créneaux les "
+         "plus utilisés. Le taux de présence compte les réunions passées pour lesquelles "
+         "vous avez validé votre arrivée.",
          ArticleStatus.BROUILLON),
+        ("compte", "changer-mon-mot-de-passe",
+         "Changer mon mot de passe",
+         "Depuis Profil et paramètres ; toutes les sessions sont refermées.",
+         "Le mot de passe se change depuis Profil et paramètres. L’actuel est demandé, et "
+         "toutes vos sessions ouvertes sont refermées : un mot de passe changé après une "
+         "compromission ne laisse aucun accès derrière lui. En cas d’oubli, utilisez « "
+         "Mot de passe oublié » sur l’écran de connexion : un lien valable trente minutes "
+         "est envoyé sur votre adresse institutionnelle.",
+         ArticleStatus.PUBLIE),
     ]
     for code_categorie, slug, titre, accroche, corps, statut in articles:
         session.add(
@@ -764,13 +924,27 @@ def creer_support(
         for mot in mots:
             session.add(ChatbotIntentKeyword(intent_id=intention.id, keyword=mot))
 
+    # Reprises de la maquette. « Nouveau code généré » a été réécrite : aucune
+    # route ne régénère un code d'accès, et laisser le support le promettre
+    # l'engagerait sur une action qu'il ne peut pas mener.
     for code, categorie, libelle, corps in [
         ("rep-code", "acces", "Code d'accès resynchronisé",
          "Bonjour, je viens de forcer une mise à jour du terminal de la salle. "
-         "Pouvez-vous réessayer avec le même code ?"),
-        ("rep-maintenance", "equipements", "Intervention programmée",
+         "Pouvez-vous réessayer avec le même code et me confirmer que l'accès fonctionne ?"),
+        ("rep-retrouver-code", "acces", "Retrouver votre code d'accès",
+         "Bonjour, le code de votre réservation figure sur sa fiche, dans l'espace "
+         "« Mes réservations », ainsi que dans l'e-mail de confirmation. Chaque "
+         "réservation a le sien : vérifiez qu'il s'agit bien de celui du créneau en cours."),
+        ("rep-maintenance", "maintenance", "Intervention programmée",
          "Bonjour, votre signalement a été transmis au service technique. "
-         "Une intervention est programmée sous 48 heures."),
+         "Une intervention est programmée sous 24 h ouvrées ; la salle reste "
+         "réservable entre-temps."),
+        ("rep-equipement", "equipement", "Équipement mobile disponible",
+         "Bonjour, un équipement mobile équivalent est disponible à l'accueil du "
+         "bâtiment sur simple demande, le temps du remplacement."),
+        ("rep-cloture", "compte", "Clôture après résolution",
+         "Bonjour, sans retour de votre part sous 48 h, nous clôturerons cette demande. "
+         "Vous pouvez la rouvrir à tout moment depuis le centre d'aide."),
     ]:
         session.add(
             TicketResponseTemplate(code=code, category=categorie, label=libelle, body=corps)
