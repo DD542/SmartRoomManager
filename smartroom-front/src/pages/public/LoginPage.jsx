@@ -161,10 +161,12 @@ export default function LoginPage() {
       </Button>
 
       <Callout tone="info" className="mt-5">
-        Comptes de démonstration, mot de passe <span className="font-mono text-content">smartroom</span> :{' '}
+        Comptes de démonstration, mot de passe{' '}
+        <span className="font-mono text-content">smartroom2026</span> :{' '}
         <span className="font-mono text-content">dylan.menga@edu.ece.fr</span> (étudiant) ou{' '}
-        <span className="font-mono text-content">s.boukehila@ece.fr</span> (gestionnaire de site, accès
-        aux zones d’administration). Le bouton ECE simule une première connexion et ouvre l’onboarding.
+        <span className="font-mono text-content">marie.laurent@ece.fr</span> (pédagogie).
+        L’espace d’administration a sa propre connexion : s’authentifier ici n’y donne pas accès.
+        Le compte ECE n’est pas encore raccordé.
       </Callout>
     </Card>
   );

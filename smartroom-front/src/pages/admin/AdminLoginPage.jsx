@@ -127,7 +127,7 @@ export default function AdminLoginPage() {
 
           <Callout tone="info" className="mt-3">
             Comptes de démonstration, mot de passe{' '}
-            <span className="font-mono text-content">smartroom</span> :{' '}
+            <span className="font-mono text-content">smartroom2026</span> :{' '}
             <span className="font-mono text-content">d.menga@ece.fr</span> (toutes permissions),{' '}
             <span className="font-mono text-content">s.boukehila@ece.fr</span> (salles, aide,
             conflits) ou <span className="font-mono text-content">c.nkoulou@ece.fr</span> (aide et
