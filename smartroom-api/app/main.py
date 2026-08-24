@@ -7,7 +7,6 @@ en vie tant que l'application tourne.
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -24,7 +23,7 @@ from app.api.v1.router import v1_router
 from app.core.config import get_settings
 from app.core.limiter import limiter
 from app.db.session import get_session
-from app.tasks.maintenance import boucle
+from app.tasks.scheduler import build_scheduler
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -70,18 +69,20 @@ TAGS = [
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-    """Démarre la maintenance périodique, et l'arrête sans laisser de tâche orpheline."""
-    tache = asyncio.create_task(boucle(), name="maintenance")
+    """Démarre les tâches planifiées, et les arrête sans en laisser d'orpheline."""
+    scheduler = build_scheduler()
+    scheduler.start()
     logger.info(
-        "Maintenance planifiée toutes les %s s.", settings.maintenance_interval_seconds
+        "Tâches planifiées : réservations toutes les %s s, agrégats toutes les %s s.",
+        settings.maintenance_interval_seconds,
+        settings.stats_cache_seconds * 3,
     )
     try:
         yield
     finally:
-        tache.cancel()
-        # `gather` avec `return_exceptions` : l'annulation est attendue, elle ne
-        # doit pas remonter comme une erreur d'extinction.
-        await asyncio.gather(tache, return_exceptions=True)
+        # `wait=False` : l'extinction ne doit pas attendre la fin d'un
+        # rafraîchissement de vue matérialisée qui peut durer.
+        scheduler.shutdown(wait=False)
 
 
 app = FastAPI(

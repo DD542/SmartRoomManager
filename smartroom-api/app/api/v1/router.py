@@ -16,9 +16,12 @@ from app.api.v1 import (
     bookings,
     buildings,
     equipments,
+    notifications,
     recommendations,
     rooms,
     rules,
+    stats,
+    support,
 )
 
 v1_router = APIRouter(prefix="/api/v1")
@@ -31,4 +34,7 @@ v1_router.include_router(bookings.router)
 v1_router.include_router(recommendations.router)
 v1_router.include_router(access_requests.router)
 v1_router.include_router(rules.router)
+v1_router.include_router(support.router)
+v1_router.include_router(notifications.router)
+v1_router.include_router(stats.router)
 v1_router.include_router(admin.router)

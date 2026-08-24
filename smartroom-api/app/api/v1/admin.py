@@ -162,6 +162,10 @@ def run_maintenance(
     Utile en démonstration : le passage automatique a lieu toutes les cinq
     minutes, ce qui est trop long pour montrer une libération en séance.
     """
-    from app.tasks.maintenance import passer
+    from datetime import UTC, datetime
 
-    return passer(session)
+    from app.tasks.scheduler import release_and_close, send_reminders
+
+    liberees, closes = release_and_close(session)
+    send_reminders(session)
+    return MaintenanceOut(released=liberees, closed=closes, ran_at=datetime.now(UTC))

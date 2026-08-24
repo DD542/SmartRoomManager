@@ -110,3 +110,109 @@ def record_login(session: Session, *, label: str, scope: str, success: bool) -> 
         target_label=label,
         after={"scope": scope, "success": success},
     )
+
+
+# --------------------------------------------------------------------------- #
+# Consultation du journal
+# --------------------------------------------------------------------------- #
+
+
+def search(
+    session,
+    params,
+    *,
+    since=None,
+    until=None,
+    actor_id=None,
+    action=None,
+    target_type=None,
+    query=None,
+):
+    """Journal filtré et paginé.
+
+    Le tri est fixé par la route et non exposé : un journal d'audit se lit du
+    plus récent au plus ancien, toujours.
+    """
+    from sqlalchemy import or_, select
+
+    from app.core.pagination import paginate
+    from app.models import AuditLog
+
+    requete = select(AuditLog).order_by(AuditLog.occurred_at.desc())
+
+    if since is not None:
+        requete = requete.where(AuditLog.occurred_at >= since)
+    if until is not None:
+        requete = requete.where(AuditLog.occurred_at <= until)
+    if actor_id is not None:
+        requete = requete.where(AuditLog.actor_admin_id == actor_id)
+    if action is not None:
+        requete = requete.where(AuditLog.action == action)
+    if target_type is not None:
+        requete = requete.where(AuditLog.target_type == target_type)
+    if query:
+        motif = f"%{query}%"
+        requete = requete.where(
+            or_(
+                AuditLog.target_label.ilike(motif),
+                AuditLog.actor_label.ilike(motif),
+            )
+        )
+
+    return paginate(session, requete, params)
+
+
+def get(session, entry_id):
+    from app.core.errors import NotFoundError
+    from app.models import AuditLog
+
+    entree = session.get(AuditLog, entry_id)
+    if entree is None:
+        raise NotFoundError("Entrée introuvable.")
+    return entree
+
+
+def flag(session, entry_id, *, flagged: bool, reason: str | None = None):
+    """Signale une entrée pour relecture.
+
+    Le déclencheur d'ajout seul autorise cette colonne : signaler n'est pas
+    réécrire l'histoire, c'est y poser un marque-page.
+    """
+    from app.core.errors import RuleViolationError
+
+    entree = get(session, entry_id)
+    if flagged and not (reason or "").strip():
+        raise RuleViolationError("Un motif est requis pour signaler.", code="motif_requis")
+
+    entree.flagged_at = datetime.now(UTC) if flagged else None
+    entree.flag_reason = reason.strip() if flagged and reason else None
+    session.flush()
+    return entree
+
+
+def export_csv(session, **filtres) -> str:
+    """Export CSV du journal filtré.
+
+    Borné à la première page : un journal d'audit complet se lit dans un outil
+    d'analyse, pas dans un tableur, et l'exporter entièrement offrirait une
+    extraction de masse déguisée en consultation.
+    """
+    from app.core.pagination import PageParams
+
+    entrees, _ = search(session, PageParams(page=1, size=100), **filtres)
+    lignes = ["Date;Acteur;Action;Cible;Libellé;Adresse IP"]
+    lignes.extend(
+        ";".join(
+            str(valeur).replace(";", ",")
+            for valeur in (
+                item.occurred_at.isoformat(),
+                item.actor_label,
+                item.action.value,
+                item.target_type,
+                item.target_label,
+                item.ip_address or "",
+            )
+        )
+        for item in entrees
+    )
+    return "\n".join(lignes) + "\n"
