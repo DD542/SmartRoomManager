@@ -20,14 +20,26 @@ import { ApiError, abortable, get, items, post } from '../client';
  * `conflit_reservation` désigne un créneau déjà pris ; les autres types
  * décrivent une règle enfreinte, pas un tiers lésé.
  */
+/**
+ * Types de dérogation de l'API traduits dans le vocabulaire de l'écran.
+ *
+ * `QueueList` connaît quatre familles et les nomme ; l'API en distingue cinq,
+ * plus fines. Sans cette table, chaque élément retombe sur le libellé par
+ * défaut — un conflit de réservation s'affichait « Validation ».
+ */
+const FAMILLE = {
+  conflit_reservation: 'conflit_double',
+  equipement_indisponible: 'conflit_materiel',
+  hors_jour_ouverture: 'demande_acces',
+  hors_horaire: 'demande_acces',
+  depassement_capacite: 'validation',
+};
+
 const ONGLETS = {
   tous: () => true,
-  conflits: (item) => item.accessType === 'conflit_reservation',
-  demandes: (item) =>
-    item.accessType === 'hors_jour_ouverture' || item.accessType === 'hors_horaire',
-  validations: (item) =>
-    item.accessType === 'depassement_capacite'
-    || item.accessType === 'equipement_indisponible',
+  conflits: (item) => item.type === 'conflit_double' || item.type === 'conflit_materiel',
+  demandes: (item) => item.type === 'demande_acces',
+  validations: (item) => item.type === 'validation',
 };
 
 const URGENCE = {
@@ -50,7 +62,7 @@ const ORDRE = { haute: 0, moyenne: 1, basse: 2 };
 
 const element = (demande) => ({
   ...demande,
-  type: demande.accessType,
+  type: FAMILLE[demande.accessType] ?? 'validation',
   urgency: URGENCE[demande.accessType] ?? 'basse',
   title: `${demande.roomName} — ${TITRES[demande.accessType] ?? 'Demande d’accès'}`,
   detail: demande.reason,
@@ -58,16 +70,24 @@ const element = (demande) => ({
   room: { id: demande.roomId, name: demande.roomName },
 });
 
-async function fileOuverte(signal) {
+/**
+ * File des demandes ouvertes.
+ *
+ * `cle` distingue les usages concurrents. La liste et les compteurs partagent
+ * la même source mais partent ensemble : sous une clé commune, le second appel
+ * annulerait le premier, et l'écran resterait sur son squelette en affichant
+ * un compteur juste au-dessus d'une liste vide.
+ */
+async function fileOuverte(cle, signal) {
   const page = await get('/admin/access-requests', {
     params: { request_status: 'ouvert', size: 100 },
-    signal: signal ?? abortable('admin:queue'),
+    signal: signal ?? abortable(cle),
   });
   return items(page).map(adapt.accessRequest).map(element);
 }
 
 export async function listQueue(tab = 'tous') {
-  const lignes = await fileOuverte();
+  const lignes = await fileOuverte('admin:queue:liste');
   return lignes
     .filter(ONGLETS[tab] ?? ONGLETS.tous)
     .sort(
@@ -77,7 +97,7 @@ export async function listQueue(tab = 'tous') {
 }
 
 export async function countQueue() {
-  const lignes = await fileOuverte();
+  const lignes = await fileOuverte('admin:queue:compteurs');
   return {
     tous: lignes.length,
     conflits: lignes.filter(ONGLETS.conflits).length,
@@ -96,7 +116,7 @@ export async function countQueue() {
 export async function getQueueItem(id, { signal } = {}) {
   const demande = element(adapt.accessRequest(await get(`/access-requests/${id}`, { signal })));
 
-  const [alternatives, occupants] = await Promise.all([
+  const [propositions, occupants, parc] = await Promise.all([
     post(`/recommendations/rooms/${demande.roomId}/alternatives`, {
       slot: adapt.slotIn(demande.start, demande.end),
       attendees: 1,
@@ -113,10 +133,38 @@ export async function getQueueItem(id, { signal } = {}) {
     })
       .then((data) => data.events.map(adapt.calendarEvent))
       .catch(() => []),
+    // Le moteur ne rend qu'un identifiant de salle : « proposer 0e03efc0 » ne
+    // se décide pas. Le catalogue est relu une fois pour nommer les
+    // propositions et donner leur capacité, qui est le critère de l'arbitre.
+    get('/rooms', { params: { size: 100 }, signal })
+      .then((page) => items(page).map(adapt.room))
+      .catch(() => []),
   ]);
+
+  const parNom = new Map(parc.map((salle) => [salle.id, salle]));
+  const alternatives = propositions
+    // `decide` réserve toujours le créneau demandé et ne fait varier que la
+    // salle : `alternative_room_id` est son seul degré de liberté. Les familles
+    // `meme_salle_autre_creneau` et `proche` déplacent l'horaire — les proposer
+    // ici ferait choisir un report que la décision ne peut pas appliquer, et
+    // renverrait le demandeur sur le créneau litigieux, que la contrainte
+    // d'exclusion refuse. Seul « autre salle, même créneau » est arbitrable.
+    .filter((proposition) => proposition.kind === 'autre_salle_meme_creneau')
+    .map((proposition) => {
+      const salle = parNom.get(proposition.roomId);
+      return salle
+        ? { ...proposition, room: { id: salle.id, name: salle.name, capacity: salle.capacity } }
+        : null;
+    })
+    // Une proposition dont la salle a disparu du catalogue n'est pas
+    // affichable : mieux vaut l'écarter que de rendre une ligne sans nom.
+    .filter(Boolean);
+
+  const salleDemandee = parNom.get(demande.roomId);
 
   return {
     ...demande,
+    room: { ...demande.room, capacity: salleDemandee?.capacity ?? null },
     alternatives,
     occupants,
     claimants: [

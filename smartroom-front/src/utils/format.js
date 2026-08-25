@@ -39,10 +39,21 @@ export const TICKET_STATUS_LABEL = {
   resolu: 'Résolu',
 };
 
+/**
+ * Libellés des rôles réellement portés par les données.
+ *
+ * Deux vocabulaires coexistent, et c'est voulu : l'annuaire d'administration
+ * classe par droits (`is_admin` de l'API donne `admin` ou `utilisateur`), le
+ * profil utilisateur classe par appartenance (`etudiant` ou `personnel`, déduit
+ * de la promotion). Les clés `enseignant` et `gestionnaire` figuraient encore
+ * ici sans qu'aucune source ne les produise : le filtre « Rôle » retombait donc
+ * sur la clé technique et affichait « utilisateur » en minuscules.
+ */
 export const USER_ROLE_LABEL = {
+  admin: 'Administrateur',
+  utilisateur: 'Utilisateur',
   etudiant: 'Étudiant',
-  enseignant: 'Enseignant',
-  gestionnaire: 'Gestionnaire',
+  personnel: 'Personnel',
 };
 
 export const PARTICIPANT_STATUS_LABEL = {

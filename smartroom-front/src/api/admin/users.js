@@ -9,18 +9,35 @@
 import * as adapt from '../adapters';
 import { ApiError, abortable, get, items, patch } from '../client';
 
-const metriques = (data) =>
-  data
-    ? {
-        activeBookings: data.active_bookings,
-        cancellations: data.cancellations,
-        noShows: data.no_shows,
-        attendanceRate: data.attendance_rate,
-        bookedHours: data.booked_hours_this_week,
-        weeklyQuotaHours: data.weekly_quota_hours,
-        remainingCredits: data.remaining_credits_h,
-      }
-    : null;
+/**
+ * Métriques d'un compte, sous les noms que lit `UsersTable`.
+ *
+ * La table affiche un taux de no-show et un score de fiabilité ; l'API rend un
+ * taux de présence. Les deux se déduisent de lui, et le déduire ici plutôt que
+ * dans le composant garde une seule définition de « fiable ».
+ *
+ * Sans historique, le taux est nul côté API et les deux mesures restent nulles
+ * ici : la table affiche « — », ce qui est plus honnête qu'un 100/100 accordé
+ * à un compte qui n'a jamais rien réservé.
+ */
+const metriques = (data) => {
+  if (!data) return null;
+  const presence = data.attendance_rate;
+  return {
+    bookings: data.active_bookings,
+    noShowRate: presence === null || presence === undefined ? null : 1 - presence,
+    reliabilityScore:
+      presence === null || presence === undefined ? null : Math.round(presence * 100),
+    remainingCreditsH: data.remaining_credits_h,
+    // Conservées telles quelles pour la fiche détaillée, qui les affiche
+    // séparément du tableau.
+    cancellations: data.cancellations,
+    noShows: data.no_shows,
+    attendanceRate: presence,
+    bookedHours: data.booked_hours_this_week,
+    weeklyQuotaHours: data.weekly_quota_hours,
+  };
+};
 
 const compte = (data) => ({
   ...adapt.user(data),
@@ -54,9 +71,11 @@ export async function getManagedUser(id, { signal } = {}) {
   const [fiche, reservations] = await Promise.all([
     get(`/admin/users/${id}`, { signal }),
     get('/admin/bookings', {
-      params: { owner_id: id, limit: 5 },
+      params: { owner_id: id, size: 5 },
       signal,
-    }).catch(() => []),
+    })
+      .then(items)
+      .catch(() => []),
   ]);
 
   return {
@@ -86,18 +105,28 @@ export async function setUserStatus(id, status, { reason } = {}) {
     throw new ApiError('Statut inconnu.', 422, 'statut_invalide');
   }
 
-  const data = await patch(`/admin/users/${id}/status`, {
-    status,
-    reason:
-      reason?.trim()
-      || (status === 'suspendu' ? 'Suspension administrative' : 'Réactivation du compte'),
-  });
+  // Le motif n'est pas complété par défaut : l'API l'exige, et lui substituer
+  // un « Suspension administrative » générique remplirait le journal d'audit
+  // d'entrées qui ne disent rien de la décision. L'écran le fait saisir.
+  const motif = reason?.trim() ?? '';
+  if (motif.length < 3) {
+    throw new ApiError('Indiquez le motif de la décision.', 422, 'motif_requis');
+  }
 
+  const data = await patch(`/admin/users/${id}/status`, { status, reason: motif });
+
+  // Le total de l'enveloppe, et non la longueur de la page : compter les
+  // lignes rendues plafonnerait le décompte à la taille de page.
   const aVenir = await get('/admin/bookings', {
-    params: { owner_id: id, status: 'confirmee', from_date: new Date().toISOString(), limit: 100 },
-  }).catch(() => []);
+    params: {
+      owner_id: id,
+      status: 'confirmee',
+      from_date: new Date().toISOString(),
+      size: 1,
+    },
+  }).catch(() => ({ total: 0 }));
 
-  return { ...compte(data), upcomingBookings: aVenir.length };
+  return { ...compte(data), upcomingBookings: aVenir.total ?? 0 };
 }
 
 export async function adjustCredits(id, hours) {

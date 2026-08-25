@@ -8,25 +8,30 @@
 //   GET  /api/v1/admin/users                   organisateurs sélectionnables
 
 import * as adapt from '../adapters';
-import { abortable, get, items, post } from '../client';
+import { abortable, collect, get, items, post } from '../client';
 
 const iso = (valeur) => (valeur instanceof Date ? valeur.toISOString() : valeur);
 
 export async function listAllBookings(filters = {}) {
-  const data = await get('/admin/bookings', {
-    params: {
-      room_id: filters.roomId,
-      building_id: filters.buildingId,
-      owner_id: filters.ownerId,
-      status: filters.status,
-      from_date: iso(filters.from),
-      to_date: iso(filters.to),
-      limit: filters.limit ?? 200,
-    },
-    signal: abortable('admin:bookings'),
-  });
-
-  const lignes = data.map(adapt.booking);
+  // `collect` et non une page unique : l'écran pagine côté client sur
+  // l'ensemble chargé, et demander une seule page de cent lignes en cacherait
+  // silencieusement le reste — l'utilisateur croirait voir tout le parc.
+  // Le plafond de `collect` borne la dépense ; la taille de page maximale est
+  // de cent, la demander plus grande rend 422.
+  const lignes = (
+    await collect('/admin/bookings', {
+      params: {
+        room_id: filters.roomId,
+        building_id: filters.buildingId,
+        owner_id: filters.ownerId,
+        status: filters.status,
+        from_date: iso(filters.from),
+        to_date: iso(filters.to),
+      },
+      signal: abortable('admin:bookings'),
+      max: filters.max ?? 500,
+    })
+  ).map(adapt.booking);
   const q = (filters.query ?? '').trim().toLowerCase();
   // Le terme libre est appliqué ici : la route filtre sur des identifiants, et
   // ajouter une recherche plein texte sur un titre saisi libre n'apporterait
@@ -51,23 +56,23 @@ export async function listBookingFilters({ signal } = {}) {
     get('/rooms', { params: { size: 100 }, signal }),
   ]);
 
+  // `{ value, label }` et non `{ id, name }` : ces listes alimentent
+  // directement `FilterBar`, qui lit `option.value` pour la valeur du
+  // `<option>` **et** pour sa clé React. Une clé absente rend toutes les
+  // options indistinguables et les sélecteurs inutilisables.
   return {
-    buildings: batiments.map(adapt.building),
-    rooms: items(salles).map((item) => ({
-      id: item.id,
-      name: item.name,
-      buildingId: item.building_id,
-    })),
+    buildings: batiments.map((item) => ({ value: item.id, label: item.name })),
+    rooms: items(salles).map((item) => ({ value: item.id, label: item.name })),
     statuses: [
-      { id: 'confirmee', label: 'Confirmée' },
-      { id: 'terminee', label: 'Terminée' },
-      { id: 'annulee', label: 'Annulée' },
+      { value: 'confirmee', label: 'Confirmée' },
+      { value: 'terminee', label: 'Terminée' },
+      { value: 'annulee', label: 'Annulée' },
     ],
     sources: [
-      { id: 'utilisateur', label: 'Utilisateur' },
-      { id: 'admin', label: 'Administration' },
-      { id: 'recurrente', label: 'Récurrente' },
-      { id: 'blocage', label: 'Blocage' },
+      { value: 'utilisateur', label: 'Utilisateur' },
+      { value: 'admin', label: 'Administration' },
+      { value: 'recurrente', label: 'Récurrente' },
+      { value: 'blocage', label: 'Blocage' },
     ],
   };
 }

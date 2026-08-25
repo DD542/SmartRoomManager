@@ -190,6 +190,7 @@ export const room = (data) => {
         }
       : null,
     occupancyRate: (data.occupancy_percent ?? 0) / 100,
+    bookingCount: data.booking_count ?? 0,
   };
 };
 

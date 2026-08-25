@@ -11,14 +11,22 @@ import { toDateInput } from '../../utils/dates';
 import * as adapt from '../adapters';
 import { ApiError, collect, del, get, items, post, put } from '../client';
 
+/**
+ * Jours de la grille, dans l'ordre où ils se lisent.
+ *
+ * `day` est la valeur du réseau, où 0 vaut dimanche — c'est la convention de
+ * `EXTRACT(DOW)`, que la base impose et qui reste inchangée. Seul l'ordre de
+ * cette liste gouverne l'affichage : une semaine d'établissement commence le
+ * lundi, et présenter dimanche en tête faisait lire le week-end en premier.
+ */
 const JOURS = [
-  { day: 0, label: 'Dimanche' },
   { day: 1, label: 'Lundi' },
   { day: 2, label: 'Mardi' },
   { day: 3, label: 'Mercredi' },
   { day: 4, label: 'Jeudi' },
   { day: 5, label: 'Vendredi' },
   { day: 6, label: 'Samedi' },
+  { day: 0, label: 'Dimanche' },
 ];
 
 const hhmm = (heure) => String(heure ?? '').slice(0, 5);

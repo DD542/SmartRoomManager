@@ -18,10 +18,17 @@ const ONGLETS = {
   tous: undefined,
 };
 
-async function file(statut, signal) {
+/**
+ * File des tickets d'un statut donné.
+ *
+ * La clé d'annulation porte le statut interrogé. `countTickets` lance quatre
+ * appels de front : sous une clé commune, trois s'annuleraient mutuellement et
+ * les compteurs resteraient vides — ou l'écran, bloqué sur son squelette.
+ */
+async function file(statut, { cle = 'liste', signal } = {}) {
   const page = await get('/admin/tickets', {
     params: { status: statut, size: 100 },
-    signal: signal ?? abortable('admin:tickets'),
+    signal: signal ?? abortable(`admin:tickets:${cle}:${statut ?? 'tous'}`),
   });
   return { lignes: items(page).map(adapt.ticket), total: page.total ?? 0 };
 }
@@ -49,10 +56,10 @@ export async function listAdminTickets(tab = 'ouverts') {
  */
 export async function countTickets() {
   const [ouverts, enCours, resolus, tous] = await Promise.all([
-    file('ouvert'),
-    file('en_cours'),
-    file('resolu'),
-    file(undefined),
+    file('ouvert', { cle: 'compte' }),
+    file('en_cours', { cle: 'compte' }),
+    file('resolu', { cle: 'compte' }),
+    file(undefined, { cle: 'compte' }),
   ]);
   return {
     ouverts: ouverts.total,

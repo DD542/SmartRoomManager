@@ -12,23 +12,25 @@
 import * as adapt from '../adapters';
 import { ApiError, abortable, del, get, items, patch, post, put } from '../client';
 
-/** Salle enrichie du décompte de réservations affiché dans la liste. */
-async function decorer(salle, { signal } = {}) {
-  const reservations = await get('/admin/bookings', {
-    params: { room_id: salle.id, limit: 200 },
-    signal,
-  }).catch(() => []);
-
-  const actives = reservations.filter((item) => item.status !== 'annulee');
+/**
+ * Salle telle que l'attend l'écran d'administration.
+ *
+ * Le décompte de réservations vient désormais de la fiche elle-même. Il était
+ * auparavant lu par un appel à `/admin/bookings` **par salle** : une requête
+ * par ligne affichée, et un 403 pour l'administrateur qui n'a que la
+ * permission du parc — cette route exigeant celle d'arbitrage.
+ */
+function decorer(salle) {
   const moisCourant = new Date().getMonth();
-
   return {
     ...salle,
     building: { id: salle.buildingId, name: salle.buildingName },
-    bookingCount: actives.length,
-    monthlyBookings: actives.filter(
-      (item) => new Date(item.slot.starts_at).getMonth() === moisCourant,
-    ).length,
+    bookingCount: salle.bookingCount,
+    // Le détail par mois n'est pas servi par la fiche : la colonne du tableau
+    // n'affiche que le total, et inventer un sous-total serait pire que de ne
+    // pas l'afficher.
+    monthlyBookings: null,
+    mois: moisCourant,
   };
 }
 
@@ -54,14 +56,11 @@ export async function listManagedRooms(filters = {}) {
     ? salles.filter((item) => item.floor === filters.floor)
     : salles;
 
-  // Le décompte est demandé pour l'ensemble affiché, en parallèle : le faire
-  // salle par salle à l'ouverture de chaque ligne rendrait le tri illisible.
-  return Promise.all(parLibelle.map((salle) => decorer(salle)));
+  return parLibelle.map(decorer);
 }
 
 export async function getManagedRoom(id, { signal } = {}) {
-  const salle = adapt.room(await get(`/rooms/${id}`, { signal }));
-  return decorer(salle, { signal });
+  return decorer(adapt.room(await get(`/rooms/${id}`, { signal })));
 }
 
 /** Référentiels de la barre de filtres, mesurés sur le catalogue réel. */
@@ -71,6 +70,8 @@ export async function listRoomFilters({ signal } = {}) {
     get('/rooms', { params: { size: 100 }, signal }),
   ]);
 
+  const nomBatiment = new Map(donnees.buildings.map((item) => [item.id, item.name]));
+
   return {
     // Le catalogue lui-même sert de référentiel aux écrans qui ciblent une
     // salle précise : portée d'une règle, périmètre d'une fermeture.
@@ -78,7 +79,18 @@ export async function listRoomFilters({ signal } = {}) {
       .map((item) => ({ value: item.id, label: item.name }))
       .sort((a, b) => a.label.localeCompare(b.label, 'fr')),
     buildings: donnees.buildings.map((item) => ({ value: item.id, label: item.name })),
-    floors: donnees.floors.map((item) => ({ value: item.id, label: item.label })),
+    // Chaque bâtiment a son « 1er étage » : la seule étiquette d'étage produit
+    // autant d'entrées homonymes que de bâtiments, indiscernables au choix. Le
+    // bâtiment porteur les sépare, et l'ordre suit la hiérarchie réelle du parc
+    // plutôt que celui, arbitraire, du référentiel.
+    floors: donnees.floors
+      .map((item) => ({
+        value: item.id,
+        label: `${nomBatiment.get(item.building_id) ?? 'Bâtiment inconnu'} — ${item.label}`,
+        buildingId: item.building_id,
+        level: item.level,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label, 'fr') || a.level - b.level),
     statuses: [
       { value: 'disponible', label: 'Disponible' },
       { value: 'maintenance', label: 'En maintenance' },

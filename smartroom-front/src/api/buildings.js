@@ -11,6 +11,7 @@
 // Regrouper les plans par bâtiment aurait mélangé le rez-de-chaussée et le
 // troisième dans une même image.
 
+import { plural } from '../utils/format';
 import * as adapt from './adapters';
 import { ApiError, collect, del, get, items, put } from './client';
 
@@ -38,7 +39,7 @@ export async function listFloorPlans({ signal } = {}) {
       id: etage.id,
       buildingId: batiment.id,
       label: `${batiment.name} — ${etage.label}`,
-      sublabel: [batiment.address, `${etage.roomCount} salles`].filter(Boolean).join(' — '),
+      sublabel: [batiment.address, plural(etage.roomCount, 'salle')].filter(Boolean).join(' — '),
     })),
   );
 }
@@ -116,7 +117,14 @@ const TYPES_ACCEPTES = [
 
 export async function getPlanDocumentForPlan(planId, { signal } = {}) {
   if (!planId) return null;
-  const plan = await get(`/floors/${planId}/plan`, { signal }).catch(() => null);
+  // Seul le 404 signifie « aucun plan déposé » : c'est un état vide, pas une
+  // panne, et l'écran doit le présenter comme tel. Tout autre échec — 500,
+  // coupure réseau, jeton expiré — reste une erreur et remonte : l'avaler
+  // afficherait « aucun plan » sur un étage qui en a un.
+  const plan = await get(`/floors/${planId}/plan`, { signal }).catch((erreur) => {
+    if (erreur instanceof ApiError && erreur.status === 404) return null;
+    throw erreur;
+  });
   return plan ? document_(plan) : null;
 }
 

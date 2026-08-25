@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { isCancelled } from '../api/client';
 
 /**
  * Exécute une fonction de src/api/ et expose les quatre états attendus par
@@ -36,6 +37,13 @@ export function useAsync(fn, deps = [], options = {}) {
       return result;
     } catch (err) {
       if (!mounted.current) return null;
+      // Une annulation n'est pas un échec : c'est le résultat attendu quand un
+      // filtre change avant que la réponse précédente n'arrive. La signaler
+      // comme une erreur inverserait l'intention du mécanisme d'annulation, et
+      // afficherait « Impossible de charger » pendant qu'une requête plus
+      // récente est en vol. L'état reste « chargement » : c'est elle qui
+      // conclura.
+      if (isCancelled(err)) return null;
       setError(err);
       setStatus('erreur');
       return null;

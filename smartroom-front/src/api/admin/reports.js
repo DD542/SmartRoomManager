@@ -27,7 +27,7 @@ export async function getOverview(days = 7) {
     get('/admin/stats/overview', { params: { days }, signal }),
     get('/admin/stats/overview', { params: { days: days * 2 }, signal }),
     get('/admin/stats/occupancy', {
-      params: { first_day: jour(debut), last_day: jour(aujourdhui), granularity: 'jour' },
+      params: { first_day: jour(debut), last_day: jour(aujourdhui), granularity: 'day' },
       signal,
     }),
     get('/admin/stats/rooms', { params: { limit: 50 }, signal }),
@@ -140,7 +140,7 @@ async function heatmap(signal) {
 }
 
 /** Rapport d'occupation détaillé, filtrable par période et par bâtiment. */
-export async function getReport({ from, to, buildingIds = [], granularity = 'mois' } = {}) {
+export async function getReport({ from, to, buildingIds = [], granularity = 'month' } = {}) {
   const signal = abortable('admin:report');
   const debut = from ? new Date(from) : addDays(new Date(), -30);
   const fin = to ? new Date(to) : new Date();
