@@ -155,16 +155,28 @@ class TestPermissionsAdministration:
         assert reponse.json()["error"]["code"] == "permission_manquante"
 
     @pytest.mark.parametrize(("methode", "chemin", "corps", "permission"), ROUTES_PROTEGEES)
-    def test_avec_la_permission_la_route_n_est_plus_refusee(
+    def test_avec_la_permission_la_route_repond(
         self, client, session, administrateur, methode, chemin, corps, permission
     ):
         """Contre-épreuve indispensable : sans elle, une route cassée qui
-        répondrait 403 à tout le monde passerait le cas précédent."""
+        répondrait 403 à tout le monde passerait le cas précédent.
+
+        L'assertion a d'abord été un simple `!= 403`, et c'était trop faible :
+        un 500 la satisfait. `GET /admin/accounts` a rendu 500 sur chaque appel
+        pendant que ce test restait vert, parce que le paramètre de garde
+        `_admin` masquait la fonction `_admin()` du module. On exige donc que
+        la route *réponde* : jamais 5xx, et 200 pour une lecture — accorder le
+        droit de lire et recevoir une erreur serveur n'est pas « ne plus être
+        refusé ».
+        """
         accorder(session, administrateur, permission)
         entetes = connecter(client, administrateur.user.email, admin=True)
 
         reponse = _appeler(client, methode, chemin, corps, entetes)
         assert reponse.status_code != 403, reponse.text
+        assert reponse.status_code < 500, reponse.text
+        if methode == "GET":
+            assert reponse.status_code == 200, reponse.text
 
     @pytest.mark.parametrize(("methode", "chemin", "corps", "permission"), ROUTES_PROTEGEES)
     def test_un_utilisateur_simple_n_atteint_pas_l_administration(
