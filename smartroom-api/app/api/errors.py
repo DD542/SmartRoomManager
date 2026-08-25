@@ -19,6 +19,7 @@ from sqlalchemy.exc import IntegrityError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.context import current_context
+from app.api.messages import traduire
 from app.core.errors import DomainError
 
 logger = logging.getLogger(__name__)
@@ -54,11 +55,15 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(RequestValidationError)
     async def _validation(_: Request, erreur: RequestValidationError) -> JSONResponse:
         """Pydantic rend une liste technique ; on garde le premier message pour
-        l'affichage et la liste complète pour surligner les champs du formulaire."""
+        l'affichage et la liste complète pour surligner les champs du formulaire.
+
+        Les messages sont traduits : le front les affiche tels quels, et une
+        expression régulière rendue à l'écran ne dit rien à l'utilisateur.
+        """
         champs = [
             {
                 "field": ".".join(str(part) for part in item["loc"][1:]) or "body",
-                "message": item["msg"],
+                "message": traduire(item),
             }
             for item in erreur.errors()
         ]

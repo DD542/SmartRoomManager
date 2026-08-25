@@ -24,6 +24,18 @@ from app.models import AuditLog
 
 #: Champs jamais recopiés dans la trace : les journaliser reviendrait à stocker
 #: un secret en clair à côté de celui qu'on protège.
+
+#: Champs de tri acceptés. Sans liste blanche, `paginate` abandonne le tri
+#: demandé au lieu de le refuser : l'écran afficherait un ordre qu'il n'a pas
+#: demandé, en croyant l'avoir obtenu.
+TRI_AUDIT: dict[str, Any] = {
+    "occurred_at": AuditLog.occurred_at,
+    "action": AuditLog.action,
+    "target_type": AuditLog.target_type,
+    "actor_label": AuditLog.actor_label,
+}
+
+
 CHAMPS_SENSIBLES = frozenset(
     {"password", "password_hash", "token", "token_hash", "code_hash", "secret"}
 )
@@ -159,7 +171,7 @@ def search(
             )
         )
 
-    return paginate(session, requete, params)
+    return paginate(session, requete, params, colonnes=TRI_AUDIT)
 
 
 def get(session, entry_id):

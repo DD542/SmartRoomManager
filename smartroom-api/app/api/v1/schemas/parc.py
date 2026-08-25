@@ -251,6 +251,10 @@ class RoomOut(ReadModel):
     #: ailleurs donnerait un second chiffre, et deux écrans afficheraient deux
     #: occupations différentes pour la même salle.
     occupancy_percent: int = 0
+    #: Réservations actives de la salle. Portée ici et non lue depuis
+    #: `/admin/bookings`, qui exige la permission d'arbitrage : un
+    #: administrateur du seul parc verrait sinon une colonne vide.
+    booking_count: int = 0
     created_at: datetime
     updated_at: datetime
 

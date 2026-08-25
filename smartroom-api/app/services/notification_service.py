@@ -20,6 +20,16 @@ from app.db.enums import AuditAction
 from app.models import EmailTemplate, EmailTemplateVariable, Notification
 from app.services import audit_service, mail_service
 
+
+#: Champs de tri acceptés. Sans liste blanche, `paginate` abandonne le tri
+#: demandé au lieu de le refuser : l'écran afficherait un ordre qu'il n'a pas
+#: demandé, en croyant l'avoir obtenu.
+TRI_NOTIFICATIONS: dict[str, Any] = {
+    "sent_at": Notification.sent_at,
+    "title": Notification.title,
+}
+
+
 CHAMPS_GABARIT = ("code", "name", "trigger_label", "subject", "body", "is_enabled")
 
 
@@ -37,7 +47,7 @@ def list_for_user(
     )
     if unread_only:
         requete = requete.where(Notification.read_at.is_(None))
-    return paginate(session, requete, params)
+    return paginate(session, requete, params, colonnes=TRI_NOTIFICATIONS)
 
 
 def unread_count(session: Session, user_id: uuid.UUID) -> int:

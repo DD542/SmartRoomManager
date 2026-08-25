@@ -29,6 +29,24 @@ from app.models import (
 )
 from app.services import audit_service
 
+#: Champs de tri acceptés des tickets et des articles. Sans liste blanche,
+#: `paginate` abandonne le tri demandé au lieu de le refuser : l'écran
+#: afficherait un ordre qu'il n'a pas demandé, en croyant l'avoir obtenu.
+TRI_TICKETS: dict[str, Any] = {
+    "created_at": Ticket.created_at,
+    "status": Ticket.status,
+    "reference": Ticket.reference,
+    "resolved_at": Ticket.resolved_at,
+}
+
+TRI_ARTICLES: dict[str, Any] = {
+    "title": FaqArticle.title,
+    "status": FaqArticle.status,
+    "view_count": FaqArticle.view_count,
+    "published_at": FaqArticle.published_at,
+}
+
+
 #: `ck_tickets_reference_format` impose `^#?[0-9]{1,10}$` : la référence est
 #: numérique, précédée d'un croisillon. Elle se dicte au téléphone, ce qu'un
 #: UUID ne permet pas.
@@ -76,7 +94,7 @@ def list_mine(
     )
     if status is not None:
         requete = requete.where(Ticket.status == status)
-    return paginate(session, requete, params)
+    return paginate(session, requete, params, colonnes=TRI_TICKETS)
 
 
 def list_all(
@@ -96,7 +114,7 @@ def list_all(
         requete = requete.where(
             or_(Ticket.subject.ilike(f"%{query}%"), Ticket.reference.ilike(f"%{query}%"))
         )
-    return paginate(session, requete, params)
+    return paginate(session, requete, params, colonnes=TRI_TICKETS)
 
 
 def get_ticket(session: Session, ticket_id: uuid.UUID) -> Ticket:
@@ -287,7 +305,7 @@ def list_articles(
         requete = requete.where(
             or_(FaqArticle.title.ilike(motif), FaqArticle.excerpt.ilike(motif))
         )
-    return paginate(session, requete, params)
+    return paginate(session, requete, params, colonnes=TRI_ARTICLES)
 
 
 def get_article(session: Session, slug: str, *, count_view: bool = True) -> FaqArticle:

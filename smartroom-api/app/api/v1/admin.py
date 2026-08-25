@@ -17,6 +17,7 @@ from app.api.deps import (
     CONFLICTS_ARBITRATE,
     ROOMS_MANAGE,
     SYSTEM_CONFIGURE,
+    PageDep,
     SessionDep,
     require_permission,
 )
@@ -27,6 +28,7 @@ from app.api.v1.schemas import (
     CancelIn,
     MaintenanceOut,
 )
+from app.core.pagination import Page, paginate
 from app.db.enums import BookingSource, BookingStatus
 from app.models import AdminAccount, Booking, Floor, Room
 from app.services import booking_service as service
@@ -36,25 +38,28 @@ router = APIRouter(prefix="/admin", tags=["administration"])
 
 @router.get(
     "/bookings",
-    response_model=list[BookingOut],
+    response_model=Page[BookingOut],
     summary="Réservations, tous comptes confondus",
+    description=(
+        "Paginée comme les autres collections : `page`, `size`, et l'enveloppe "
+        "`{items, total, pagination}`. Elle exposait auparavant un `limit` seul, "
+        "ce qui empêchait l'écran d'aller au-delà de sa première page et "
+        "obligeait à deux composants de pagination différents."
+    ),
     dependencies=[Depends(require_permission(CONFLICTS_ARBITRATE))],
 )
 def list_bookings(
     session: SessionDep,
+    params: PageDep,
     room_id: uuid.UUID | None = None,
     building_id: uuid.UUID | None = None,
     owner_id: uuid.UUID | None = None,
     status_filter: BookingStatus | None = Query(default=None, alias="status"),
     from_date: datetime | None = None,
     to_date: datetime | None = None,
-    limit: int = Query(default=100, ge=1, le=500),
-) -> list[BookingOut]:
+) -> Page[BookingOut]:
     requete = (
-        select(Booking)
-        .where(Booking.deleted_at.is_(None))
-        .order_by(Booking.time_range)
-        .limit(limit)
+        select(Booking).where(Booking.deleted_at.is_(None)).order_by(Booking.time_range)
     )
     if room_id is not None:
         requete = requete.where(Booking.room_id == room_id)
@@ -71,7 +76,8 @@ def list_bookings(
     if to_date is not None:
         requete = requete.where(Booking.time_range.op("&&")(Range(None, to_date, bounds="[)")))
 
-    return [BookingOut.of(item) for item in session.scalars(requete).unique()]
+    reservations, total = paginate(session, requete, params)
+    return Page.build([BookingOut.of(item) for item in reservations], total, params)
 
 
 @router.post(

@@ -55,7 +55,7 @@ def equipement_sortie(materiel: Equipment, room_count: int = 0) -> EquipmentOut:
     )
 
 
-def salle_sortie(salle: Room, occupation: int = 0) -> RoomOut:
+def salle_sortie(salle: Room, occupation: int = 0, reservations: int = 0) -> RoomOut:
     """Aplatit l'étage et le bâtiment dans la fiche.
 
     Les écrans affichent « Salle Vinci — Campus Eiffel, 2e étage » : leur
@@ -67,6 +67,7 @@ def salle_sortie(salle: Room, occupation: int = 0) -> RoomOut:
     """
     return RoomOut(
         occupancy_percent=occupation,
+        booking_count=reservations,
         id=salle.id,
         floor_id=salle.floor_id,
         building_id=salle.floor.building_id,

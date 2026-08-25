@@ -63,7 +63,15 @@ def _utilisateur(compte: User) -> UserOut:
     )
 
 
-def _admin(admin: AdminAccount) -> AdminAccountOut:
+def _compte_admin(admin: AdminAccount) -> AdminAccountOut:
+    """Sérialise un compte d'administration.
+
+    Nommée `_compte_admin` et non `_admin` : les routes de ce module reçoivent
+    leur garde de permission dans un paramètre nommé `_admin`, qui masquait la
+    fonction dans leur portée locale. `list_admins` appelait donc l'instance
+    injectée au lieu du sérialiseur, et rendait un 500 sur chaque lecture de la
+    liste des administrateurs.
+    """
     return AdminAccountOut(
         user_id=admin.user_id,
         email=admin.user.email,
@@ -151,9 +159,15 @@ def my_metrics(session: SessionDep, principal: CurrentPrincipal) -> UserMetricsO
 
 @router.get(
     "/admin/users",
-    response_model=Page[UserOut],
+    response_model=Page[UserDetailOut],
     summary="Annuaire des comptes",
-    description="Tri autorisé sur `last_name`, `email`, `promotion`, `created_at`.",
+    description=(
+        "Tri autorisé sur `last_name`, `email`, `promotion`, `created_at`. "
+        "Chaque ligne porte ses métriques — réservations actives, absences, "
+        "crédits restants — agrégées pour toute la page en deux requêtes. Les "
+        "rendre par un appel de détail obligerait l'écran à une requête par "
+        "ligne affichée."
+    ),
 )
 def list_users(
     session: SessionDep,
@@ -174,7 +188,18 @@ def list_users(
         role=role,
         query=q,
     )
-    return Page.build([_utilisateur(item) for item in comptes], total, params)
+    mesures = service.metrics_for(session, [item.id for item in comptes])
+    return Page.build(
+        [
+            UserDetailOut(
+                **_utilisateur(item).model_dump(),
+                metrics=UserMetricsOut(**mesures[item.id]),
+            )
+            for item in comptes
+        ],
+        total,
+        params,
+    )
 
 
 @router.get(
@@ -259,7 +284,7 @@ def list_permissions(
 )
 def list_admins(session: SessionDep, params: PageDep, _admin=Gestion) -> Page[AdminAccountOut]:
     admins, total = service.list_admins(session, params)
-    return Page.build([_admin(item) for item in admins], total, params)
+    return Page.build([_compte_admin(item) for item in admins], total, params)
 
 
 @router.post(
@@ -276,7 +301,7 @@ def promote(
 ) -> AdminAccountOut:
     promu = service.promote(session, payload, granted_by=admin.user_id)
     session.commit()
-    return _admin(promu)
+    return _compte_admin(promu)
 
 
 @router.patch(
@@ -300,7 +325,7 @@ def update_permissions(
         session, user_id, payload.permissions, granted_by=admin.user_id
     )
     session.commit()
-    return _admin(modifie)
+    return _compte_admin(modifie)
 
 
 @router.delete(

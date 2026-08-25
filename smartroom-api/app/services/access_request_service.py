@@ -22,6 +22,15 @@ from app.db.enums import AccessType, AuditAction, BookingSource, RequestStatus
 from app.domain.types import TimeSlot
 from app.models import AccessRequest, Room, User
 from app.services import audit_service, booking_service
+
+#: Champs de tri acceptés de la file d'arbitrage. Sans liste blanche,
+#: `paginate` abandonne le tri demandé au lieu de le refuser.
+TRI_DEMANDES: dict[str, Any] = {
+    "created_at": AccessRequest.created_at,
+    "status": AccessRequest.status,
+    "reference": AccessRequest.reference,
+}
+
 from app.services.availability_service import check_slot, en_utc, to_range
 
 #: Préfixe des références lisibles, repris tel quel par l'écran d'arbitrage.
@@ -61,7 +70,7 @@ def list_mine(
     )
     if status is not None:
         requete = requete.where(AccessRequest.status == status)
-    return paginate(session, requete, params)
+    return paginate(session, requete, params, colonnes=TRI_DEMANDES)
 
 
 def list_all(
@@ -76,7 +85,7 @@ def list_all(
         requete = requete.where(AccessRequest.status == status)
     if room_id is not None:
         requete = requete.where(AccessRequest.room_id == room_id)
-    return paginate(session, requete, params)
+    return paginate(session, requete, params, colonnes=TRI_DEMANDES)
 
 
 def get(session: Session, request_id: uuid.UUID) -> AccessRequest:

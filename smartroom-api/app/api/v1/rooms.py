@@ -72,9 +72,16 @@ def list_rooms(
         status=room_status,
         query=q,
     )
-    occupation = service.occupancy_map(session, [item.id for item in salles])
+    identifiants = [item.id for item in salles]
+    occupation = service.occupancy_map(session, identifiants)
+    comptes = service.booking_counts(session, identifiants)
     return Page.build(
-        [salle_sortie(item, occupation.get(item.id, 0)) for item in salles], total, params
+        [
+            salle_sortie(item, occupation.get(item.id, 0), comptes.get(item.id, 0))
+            for item in salles
+        ],
+        total,
+        params,
     )
 
 
@@ -103,7 +110,11 @@ def room_filters(session: SessionDep, _: CurrentPrincipal) -> RoomFiltersOut:
 @router.get("/{room_id}", response_model=RoomOut, summary="Fiche d'une salle")
 def get_room(room_id: uuid.UUID, session: SessionDep, _: CurrentPrincipal) -> RoomOut:
     salle = service.get_room(session, room_id)
-    return salle_sortie(salle, service.occupancy_map(session, [salle.id]).get(salle.id, 0))
+    return salle_sortie(
+        salle,
+        service.occupancy_map(session, [salle.id]).get(salle.id, 0),
+        service.booking_counts(session, [salle.id]).get(salle.id, 0),
+    )
 
 
 @router.post(

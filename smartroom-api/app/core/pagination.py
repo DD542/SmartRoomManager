@@ -89,11 +89,31 @@ class Page(BaseModel, Generic[T]):
         )
 
 
+def _cle_stable(requete: Select) -> object | None:
+    """Clé primaire de l'entité interrogée, pour départager les ex æquo.
+
+    Trier sur une colonne non unique puis découper en pages laisse PostgreSQL
+    libre de l'ordre entre valeurs égales : deux pages consécutives peuvent
+    alors répéter une ligne et en omettre une autre, sans que rien ne le
+    signale. La clé primaire rend le découpage déterministe.
+    """
+    descriptions = requete.column_descriptions
+    entite = descriptions[0].get("entity") if descriptions else None
+    return getattr(entite, "id", None)
+
+
 def apply_sort(requete: Select, params: PageParams, colonnes: dict[str, object]) -> Select:
     """Applique le tri demandé, refusé s'il ne figure pas dans la liste blanche.
 
     Un champ inconnu lève 422 plutôt que d'être ignoré : un tri silencieusement
     abandonné produit un écran qui ment sur son propre état.
+
+    Le tri **remplace** celui de la requête reçue, il ne s'y ajoute pas.
+    `Select.order_by()` empile les clauses : sur une requête déjà ordonnée — et
+    la plupart le sont, par date décroissante — la colonne demandée se serait
+    retrouvée en second rang, à départager des horodatages quasi uniques. Le
+    paramètre était accepté, validé, et sans effet observable : le pire des
+    trois états possibles.
     """
     if params.sort is None:
         return requete
@@ -109,7 +129,10 @@ def apply_sort(requete: Select, params: PageParams, colonnes: dict[str, object])
             fields=[{"field": "sort", "message": "Champ de tri inconnu."}],
         )
 
-    return requete.order_by(colonne.desc() if descendant else colonne.asc())
+    voulu = colonne.desc() if descendant else colonne.asc()
+    stable = _cle_stable(requete)
+    clauses = [voulu] if stable is None else [voulu, stable.asc()]
+    return requete.order_by(None).order_by(*clauses)
 
 
 def paginate(

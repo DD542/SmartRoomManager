@@ -30,6 +30,17 @@ from app.models import (
 )
 from app.services import audit_service
 
+
+#: Champs de tri acceptés. Sans liste blanche, `paginate` abandonne le tri
+#: demandé au lieu de le refuser : l'écran afficherait un ordre qu'il n'a pas
+#: demandé, en croyant l'avoir obtenu.
+TRI_FERMETURES: dict[str, Any] = {
+    "label": ClosurePeriod.label,
+    "date_span": ClosurePeriod.date_span,
+    "created_at": ClosurePeriod.created_at,
+}
+
+
 CHAMPS_REGLE = (
     "min_duration_min",
     "max_duration_min",
@@ -42,6 +53,27 @@ CHAMPS_REGLE = (
     "max_active_bookings",
     "validation_capacity_threshold",
 )
+
+
+def _perimetre(
+    session: Session,
+    scope: RuleScope,
+    building_id: uuid.UUID | None,
+    room_id: uuid.UUID | None,
+) -> str:
+    """Nomme la cible d'une surcharge pour le journal d'audit.
+
+    « portée salle » ne dit pas laquelle : deux surcharges concurrentes sur
+    deux salles produisaient des entrées identiques, et la trace ne permettait
+    plus de savoir laquelle avait bougé.
+    """
+    if scope is RuleScope.SALLE and room_id is not None:
+        nom = session.scalar(select(Room.name).where(Room.id == room_id))
+        return f"salle {nom}" if nom else f"salle {room_id}"
+    if scope is RuleScope.BATIMENT and building_id is not None:
+        nom = session.scalar(select(Building.name).where(Building.id == building_id))
+        return f"bâtiment {nom}" if nom else f"bâtiment {building_id}"
+    return "établissement entier"
 
 
 def _cible(scope: RuleScope, building_id: uuid.UUID | None, room_id: uuid.UUID | None) -> None:
@@ -170,7 +202,7 @@ def upsert_rule(
         session,
         action=AuditAction.CREATION if creation else AuditAction.MODIFICATION,
         target_type="booking_rule",
-        target_label=f"Règles — portée {scope.value}",
+        target_label=f"Règles — {_perimetre(session, scope, building_id, room_id)}",
         target_id=regle.id,
         before=avant,
         after=audit_service.snapshot(regle, CHAMPS_REGLE),
@@ -292,7 +324,7 @@ def replace_openings(
         session,
         action=AuditAction.MODIFICATION,
         target_type="opening_hours",
-        target_label=f"Horaires — portée {scope.value}",
+        target_label=f"Horaires — {_perimetre(session, scope, building_id, room_id)}",
         after={"days": len(creees), "scope": scope.value},
     )
     session.flush()
@@ -324,7 +356,7 @@ def list_closures(
                         bounds="[)")
         requete = requete.where(ClosurePeriod.date_span.op("&&")(periode))
 
-    return paginate(session, requete, params)
+    return paginate(session, requete, params, colonnes=TRI_FERMETURES)
 
 
 def create_closure(session: Session, payload: Any) -> ClosurePeriod:

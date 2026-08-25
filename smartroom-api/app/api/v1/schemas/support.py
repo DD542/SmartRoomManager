@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Annotated, Any
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from app.api.v1.schemas.common import ApiModel, ReadModel
 from app.db.enums import ArticleStatus, AuditAction, NotificationChannel, TicketStatus
@@ -289,7 +289,16 @@ class AuditEntryOut(ReadModel):
     target_id: uuid.UUID | None
     diff_before: dict[str, Any] | None
     diff_after: dict[str, Any] | None
+    #: `INET` côté base : psycopg rend un `IPv4Address`, que Pydantic refuse de
+    #: convertir en `str` de lui-même. Le validateur le fait, sans quoi toute
+    #: entrée d'audit portant une adresse — c'est-à-dire toute écriture faite
+    #: depuis un navigateur — rend un 500 à la lecture.
     ip_address: str | None
+
+    @field_validator("ip_address", mode="before")
+    @classmethod
+    def _adresse_en_texte(cls, valeur: object) -> str | None:
+        return None if valeur is None else str(valeur)
     session_id: str | None
     flagged_at: datetime | None
     flag_reason: str | None

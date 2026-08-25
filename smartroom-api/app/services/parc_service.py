@@ -212,6 +212,21 @@ def delete_floor_plan(session: Session, floor_id: uuid.UUID) -> None:
     storage.supprimer(url)
 
 
+def _nom_etage(session: Session, floor_id: uuid.UUID) -> str:
+    """Étage nommé comme le lisent les écrans : bâtiment puis niveau.
+
+    Le journal d'audit est relu par un humain, souvent longtemps après. Y
+    consigner l'identifiant technique de l'étage obligeait à une requête pour
+    savoir de quel bâtiment il s'agissait, et rendait la trace inexploitable.
+    """
+    ligne = session.execute(
+        select(Building.name, Floor.label)
+        .join(Floor, Floor.building_id == Building.id)
+        .where(Floor.id == floor_id)
+    ).first()
+    return f"{ligne[0]} — {ligne[1]}" if ligne else f"l'étage {floor_id}"
+
+
 def set_placements(
     session: Session, floor_id: uuid.UUID, placements: list[Any]
 ) -> list[RoomPlacement]:
@@ -264,7 +279,7 @@ def set_placements(
         session,
         action=AuditAction.MODIFICATION,
         target_type="floor_plan",
-        target_label=f"Plan de l'étage {floor_id}",
+        target_label=f"Plan de {_nom_etage(session, floor_id)}",
         target_id=floor_id,
         after={"placements": len(resultat)},
     )
@@ -458,6 +473,31 @@ def list_rooms(
         requete = requete.order_by(Room.name)
 
     return paginate(session, requete, params, colonnes=TRI_SALLES)
+
+
+def booking_counts(
+    session: Session, room_ids: list[uuid.UUID]
+) -> dict[uuid.UUID, int]:
+    """Nombre de réservations actives par salle, en une requête.
+
+    Porté par la fiche salle et non lu depuis `/admin/bookings` : cette
+    dernière exige la permission d'arbitrage, que n'a pas un administrateur
+    chargé du seul parc. Il verrait alors une colonne vide sur un écran qu'il a
+    pourtant le droit de consulter.
+    """
+    if not room_ids:
+        return {}
+
+    lignes = session.execute(
+        select(Booking.room_id, func.count())
+        .where(
+            Booking.room_id.in_(room_ids),
+            Booking.deleted_at.is_(None),
+            Booking.status != BookingStatus.ANNULEE,
+        )
+        .group_by(Booking.room_id)
+    ).all()
+    return {ligne[0]: ligne[1] for ligne in lignes}
 
 
 def occupancy_map(

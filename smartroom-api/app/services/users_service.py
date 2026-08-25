@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime, timedelta
+from collections.abc import Sequence
 from typing import Any
 
 from sqlalchemy import func, or_, select
@@ -30,6 +31,19 @@ from app.models import (
     UserPreference,
 )
 from app.services import audit_service, auth_service
+
+#: Champs de tri acceptés des comptes d'administration.
+TRI_ADMINS: dict[str, Any] = {
+    "last_name": User.last_name,
+    "email": User.email,
+    "job_title": AdminAccount.job_title,
+}
+
+
+#: Quota appliqué à un compte sans ligne de préférences. Aligné sur le défaut
+#: du modèle : deux valeurs divergentes feraient afficher des crédits restants
+#: différents selon l'écran consulté.
+QUOTA_PAR_DEFAUT = 12
 
 CHAMPS_PROFIL = ("first_name", "last_name", "phone", "promotion", "department", "status")
 
@@ -199,7 +213,7 @@ def user_metrics(session: Session, user_id: uuid.UUID) -> dict[str, Any]:
     quota = (
         compte.preferences.weekly_quota_hours
         if compte.preferences is not None
-        else 12
+        else QUOTA_PAR_DEFAUT
     )
     ecoulees = ligne[3] or 0
     honorees = ecoulees - (ligne[2] or 0)
@@ -213,6 +227,98 @@ def user_metrics(session: Session, user_id: uuid.UUID) -> dict[str, Any]:
         "weekly_quota_hours": quota,
         "remaining_credits_h": max(0, round(quota - float(heures_semaine), 2)),
     }
+
+
+def metrics_for(
+    session: Session, user_ids: Sequence[uuid.UUID]
+) -> dict[uuid.UUID, dict[str, Any]]:
+    """Métriques de plusieurs comptes, en deux requêtes quel que soit le nombre.
+
+    L'annuaire d'administration affiche une colonne « réservations » par ligne.
+    Appeler `user_metrics` par ligne ferait une requête par utilisateur affiché,
+    et cent lignes coûteraient deux cents allers-retours.
+
+    Les comptes sans aucune réservation ne sortent pas des agrégats : ils sont
+    complétés à zéro, faute de quoi l'écran afficherait un vide là où la réponse
+    est « aucune ».
+    """
+    if not user_ids:
+        return {}
+
+    maintenant = datetime.now(UTC)
+    lundi = maintenant - timedelta(days=maintenant.weekday())
+    debut_semaine = lundi.replace(hour=0, minute=0, second=0, microsecond=0)
+    ecoule = Booking.time_range.op("<<")(Range(maintenant, None, bounds="[)"))
+
+    lignes = session.execute(
+        select(
+            Booking.owner_id,
+            func.count().filter(Booking.status != BookingStatus.ANNULEE),
+            func.count().filter(Booking.status == BookingStatus.ANNULEE),
+            func.count().filter(
+                Booking.checked_in_at.is_(None)
+                & (Booking.status != BookingStatus.ANNULEE)
+                & ecoule
+            ),
+            func.count().filter((Booking.status != BookingStatus.ANNULEE) & ecoule),
+            # `filter` porte sur l'agrégat et non sur l'expression sommée :
+            # SQLAlchemy ne l'expose que sur les fonctions d'agrégation, et
+            # l'appliquer plus bas lève au moment de compiler la requête.
+            func.coalesce(
+                func.sum(
+                    func.extract(
+                        "epoch",
+                        func.upper(Booking.time_range) - func.lower(Booking.time_range),
+                    )
+                    / 3600
+                ).filter(
+                    (Booking.status != BookingStatus.ANNULEE)
+                    & Booking.time_range.op("&&")(Range(debut_semaine, None, bounds="[)"))
+                ),
+                0,
+            ),
+        )
+        .where(Booking.owner_id.in_(user_ids), Booking.deleted_at.is_(None))
+        .group_by(Booking.owner_id)
+    ).all()
+
+    quotas = dict(
+        session.execute(
+            select(UserPreference.user_id, UserPreference.weekly_quota_hours).where(
+                UserPreference.user_id.in_(user_ids)
+            )
+        ).all()
+    )
+
+    mesures: dict[uuid.UUID, dict[str, Any]] = {}
+    for ligne in lignes:
+        quota = quotas.get(ligne[0], QUOTA_PAR_DEFAUT)
+        ecoulees = ligne[4] or 0
+        honorees = ecoulees - (ligne[3] or 0)
+        heures = float(ligne[5] or 0)
+        mesures[ligne[0]] = {
+            "active_bookings": ligne[1] or 0,
+            "cancellations": ligne[2] or 0,
+            "no_shows": ligne[3] or 0,
+            "attendance_rate": round(honorees / ecoulees, 4) if ecoulees else None,
+            "booked_hours_this_week": round(heures, 2),
+            "weekly_quota_hours": quota,
+            "remaining_credits_h": max(0, round(quota - heures, 2)),
+        }
+
+    for identifiant in user_ids:
+        if identifiant not in mesures:
+            quota = quotas.get(identifiant, QUOTA_PAR_DEFAUT)
+            mesures[identifiant] = {
+                "active_bookings": 0,
+                "cancellations": 0,
+                "no_shows": 0,
+                "attendance_rate": None,
+                "booked_hours_this_week": 0.0,
+                "weekly_quota_hours": quota,
+                "remaining_credits_h": float(quota),
+            }
+    return mesures
 
 
 def set_status(
@@ -289,7 +395,7 @@ def list_admins(session: Session, params: PageParams) -> tuple[list[AdminAccount
         .where(User.deleted_at.is_(None))
         .order_by(User.last_name)
     )
-    return paginate(session, requete, params)
+    return paginate(session, requete, params, colonnes=TRI_ADMINS)
 
 
 def _appliquer_permissions(
