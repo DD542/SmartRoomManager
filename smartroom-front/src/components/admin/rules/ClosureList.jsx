@@ -54,8 +54,8 @@ export function ClosureList({ closures = [], onRemove, busy = false }) {
                 </span>
               </span>
 
-              <Badge tone={closure.kind === 'ferme' ? 'danger' : 'warning'} dot>
-                {closure.kind === 'ferme' ? 'Fermeture' : 'Exception'}
+              <Badge tone={closure.kind === 'fermeture' ? 'danger' : 'warning'} dot>
+                {closure.kind === 'fermeture' ? 'Fermeture' : 'Exception'}
               </Badge>
 
               <IconButton

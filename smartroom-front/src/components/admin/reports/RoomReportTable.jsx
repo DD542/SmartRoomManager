@@ -59,7 +59,7 @@ export function RoomReportTable({ rows = [], className }) {
         </div>
       ) : (
         <>
-          <div className="hidden md:block">
+          <div className="hidden lg:block">
             <DataTable
               columns={COLONNES}
               table={table}
@@ -67,7 +67,7 @@ export function RoomReportTable({ rows = [], className }) {
               onRowClick={(row) => navigate(`/admin/salles/${row.roomId}`)}
             />
           </div>
-          <ul className="flex flex-col gap-2 px-4 pb-4 md:hidden">
+          <ul className="flex flex-col gap-2 px-4 pb-4 lg:hidden">
             {lignes.map((salle, index) => (
               <li
                 key={salle.id}

@@ -11,6 +11,12 @@ export default {
           DEFAULT: '#5B9BFF',
           hover: '#4A8AF5',
           soft: 'rgba(91,155,255,0.18)',
+          // Accent lisible sur `accent-soft`. Le #5B9BFF n'y donne que 3,76:1,
+          // sous le seuil AA, et aucune opacité de fond ne l'y ramène : la
+          // teinte elle-même est trop sombre. Celle-ci monte à 5,28:1 sans
+          // changer de famille chromatique. Réservée au texte posé sur un fond
+          // accentué — ailleurs, `accent` suffit.
+          bright: '#8FBAFF',
         },
         success: { DEFAULT: '#3DDBA6', soft: 'rgba(61,219,166,0.16)' },
         warning: { DEFAULT: '#FCC63F', soft: 'rgba(252,198,63,0.16)' },

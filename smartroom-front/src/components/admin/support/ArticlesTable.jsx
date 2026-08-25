@@ -76,5 +76,59 @@ export function ArticlesTable({ table, busy = false, onEdit, onToggleStatus, onD
     },
   ];
 
-  return <DataTable columns={colonnes} table={table} rowLabel="articles" />;
+  return (
+    <>
+      <div className="hidden lg:block">
+        <DataTable columns={colonnes} table={table} rowLabel="articles" />
+      </div>
+
+      {/* Sous 1024 px : cinq colonnes dont un extrait et trois actions
+          demandaient 783 px dans un conteneur de 321. La carte porte les mêmes
+          informations et les mêmes trois actions. */}
+      <ul className="flex flex-col gap-2 p-3 lg:hidden">
+        {table.rows.map((row) => (
+          <li key={row.id} className="rounded-xl border border-line bg-surface-raised p-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-sm text-content">{row.title}</p>
+                <p className="truncate text-[11px] text-content-faint">{row.excerpt}</p>
+              </div>
+              <Badge tone={row.status === 'publie' ? 'success' : 'default'} dot>
+                {row.status === 'publie' ? 'Publié' : 'Brouillon'}
+              </Badge>
+            </div>
+
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <span className="flex items-center gap-3 font-mono text-[11px] text-content-muted">
+                <span className="inline-flex items-center gap-1.5">
+                  <Eye size={12} aria-hidden="true" />
+                  {row.views}
+                </span>
+                <span>{row.updatedAt ? fmtDate(row.updatedAt) : '—'}</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <IconButton
+                  icon={row.status === 'publie' ? Undo2 : Send}
+                  label={row.status === 'publie' ? `Dépublier ${row.title}` : `Publier ${row.title}`}
+                  disabled={busy}
+                  onClick={() => onToggleStatus(row)}
+                />
+                <IconButton
+                  icon={Pencil}
+                  label={`Modifier ${row.title}`}
+                  onClick={() => onEdit(row)}
+                />
+                <IconButton
+                  icon={Trash2}
+                  label={`Supprimer ${row.title}`}
+                  disabled={busy}
+                  onClick={() => onDelete(row)}
+                />
+              </span>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
 }

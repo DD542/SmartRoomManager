@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { Ban, Check, ShieldCheck } from 'lucide-react';
 import { Badge } from '../../ui/Badge';
 import { Button } from '../../ui/Button';
-import { Input } from '../../ui/Form';
+import { Input, Textarea } from '../../ui/Form';
+import { Modal } from '../../ui/Modal';
 import { DetailRow } from '../DetailPanel';
 import { fmtDate } from '../../../utils/dates';
-import { BOOKING_STATUS_LABEL, fmtPercent } from '../../../utils/format';
+import { BOOKING_STATUS_LABEL, fmtPercent, fullName } from '../../../utils/format';
 
 /**
  * A-11 — fiche d'un utilisateur.
@@ -15,7 +16,19 @@ import { BOOKING_STATUS_LABEL, fmtPercent } from '../../../utils/format';
  */
 export function UserDetail({ user, onStatus, onCredits, busy = false }) {
   const [quota, setQuota] = useState(user.preferences?.weeklyQuotaHours ?? 12);
+  // Le changement de statut passe par une modale qui recueille le motif :
+  // l'API l'exige (trois caractères au moins) parce qu'il constitue la trace
+  // au journal d'audit. Le fabriquer côté écran aurait rempli le journal de
+  // « Suspension administrative » identiques, sans dire pourquoi.
+  const [motif, setMotif] = useState('');
+  const [confirme, setConfirme] = useState(false);
   const suspendu = user.status === 'suspendu';
+  const motifCourt = motif.trim().length < 3;
+
+  const fermer = () => {
+    setConfirme(false);
+    setMotif('');
+  };
 
   return (
     <>
@@ -85,11 +98,57 @@ export function UserDetail({ user, onStatus, onCredits, busy = false }) {
           size="sm"
           icon={suspendu ? ShieldCheck : Ban}
           loading={busy}
-          onClick={() => onStatus(suspendu ? 'actif' : 'suspendu')}
+          onClick={() => setConfirme(true)}
         >
           {suspendu ? 'Réactiver le compte' : 'Suspendre le compte'}
         </Button>
       </div>
+
+      <Modal
+        open={confirme}
+        onClose={fermer}
+        icon={suspendu ? ShieldCheck : Ban}
+        tone={suspendu ? 'default' : 'danger'}
+        size="sm"
+        title={suspendu ? 'Réactiver le compte' : 'Suspendre le compte'}
+        description={
+          suspendu
+            ? `${fullName(user)} pourra de nouveau réserver dès la réactivation.`
+            : `${fullName(user)} ne pourra plus réserver et ses sessions ouvertes seront fermées. Les réservations déjà confirmées sont conservées.`
+        }
+        footer={
+          <>
+            <Button variant="ghost" onClick={fermer} disabled={busy}>
+              Annuler
+            </Button>
+            <Button
+              variant={suspendu ? 'success' : 'danger'}
+              icon={suspendu ? ShieldCheck : Ban}
+              loading={busy}
+              disabled={motifCourt}
+              onClick={() => {
+                onStatus(suspendu ? 'actif' : 'suspendu', motif.trim());
+                fermer();
+              }}
+            >
+              {suspendu ? 'Réactiver' : 'Suspendre'}
+            </Button>
+          </>
+        }
+      >
+        <Textarea
+          label="Motif de la décision"
+          rows={3}
+          value={motif}
+          onChange={(event) => setMotif(event.target.value)}
+          placeholder={
+            suspendu
+              ? 'Régularisation après entretien du 24 août.'
+              : 'Trois absences non excusées en deux semaines.'
+          }
+          hint="Obligatoire : il est consigné au journal d’audit et notifié au compte."
+        />
+      </Modal>
     </>
   );
 }

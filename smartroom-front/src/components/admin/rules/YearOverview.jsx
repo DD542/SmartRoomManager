@@ -5,8 +5,12 @@ import { cn } from '../../../utils/cn';
 import { monthGrid, toDateInput } from '../../../utils/dates';
 import { Card, CardHeader } from '../../ui/Card';
 
+// Clés alignées sur `ClosureKind` de l'API : « fermeture », pas « ferme ».
+// Sous l'ancienne clé, `TONS[kind]` valait `undefined` — la case gardait le
+// fond de la carte et recevait quand même `text-ink` : une journée de
+// fermeture s'affichait en encre sur surface, à 1,29:1, donc invisible.
 const TONS = {
-  ferme: 'bg-danger/70 border-danger',
+  fermeture: 'bg-danger/70 border-danger',
   exception: 'bg-warning/70 border-warning',
 };
 
@@ -67,7 +71,9 @@ export function YearOverview({ year, days = {}, closures = [] }) {
                         horsMois && 'opacity-25',
                         kind
                           ? `${TONS[kind]} text-ink`
-                          : 'border-transparent bg-line/40 text-content-faint',
+                          // `content-muted` et non `faint` : sur `line/40` la
+                          // teinte faible ne donnait que 4,43:1 à 8 px.
+                          : 'border-transparent bg-line/40 text-content-muted',
                       )}
                     >
                       {format(jour, 'd')}

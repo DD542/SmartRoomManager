@@ -27,7 +27,7 @@ const itemClass = ({ isActive }) =>
   cn(
     'relative flex h-10 w-10 items-center justify-center rounded-xl border transition',
     isActive
-      ? 'border-accent/50 bg-accent-soft text-accent'
+      ? 'border-accent/50 bg-accent-soft text-accent-bright'
       : 'border-transparent text-content-muted hover:bg-surface-raised hover:text-content',
   );
 
@@ -41,7 +41,7 @@ export function Sidebar() {
       <NavLink
         to="/app"
         aria-label="SmartRoom Manager, retour à l’accueil"
-        className="mb-1 flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-sm font-semibold text-white"
+        className="mb-1 flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-sm font-semibold text-ink"
       >
         SR
       </NavLink>

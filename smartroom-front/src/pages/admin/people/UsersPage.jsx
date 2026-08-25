@@ -128,9 +128,9 @@ export default function UsersPage() {
               key={fiche.data.id}
               user={fiche.data}
               busy={envoi}
-              onStatus={(statut) =>
+              onStatus={(statut, raison) =>
                 agir(
-                  () => setUserStatus(selectionId, statut),
+                  () => setUserStatus(selectionId, statut, { reason: raison }),
                   statut === 'suspendu' ? 'Compte suspendu' : 'Compte réactivé',
                 )
               }

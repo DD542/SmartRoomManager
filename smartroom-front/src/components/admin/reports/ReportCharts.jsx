@@ -33,12 +33,12 @@ const infobulle = (formatter) => (
 );
 
 /** A-02 — heures réservées par pas de temps (jour ou mois selon le filtre). */
-export function PeriodHoursChart({ data = [], granularity = 'mois' }) {
+export function PeriodHoursChart({ data = [], granularity = 'month' }) {
   return (
     <Card>
       <CardHeader
         title="Heures réservées"
-        subtitle={granularity === 'jour' ? 'Agrégées par jour' : 'Agrégées par mois'}
+        subtitle={granularity === 'day' ? 'Agrégées par jour' : 'Agrégées par mois'}
       />
       {data.length === 0 ? (
         <Vide />

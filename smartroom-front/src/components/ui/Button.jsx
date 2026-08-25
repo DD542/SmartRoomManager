@@ -4,7 +4,7 @@ import { Loader2 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
 const VARIANTS = {
-  primary: 'bg-accent text-white hover:bg-accent-hover border border-transparent',
+  primary: 'bg-accent text-ink hover:bg-accent-hover border border-transparent',
   secondary: 'bg-surface-raised text-content border border-line hover:border-line-strong',
   ghost: 'bg-transparent text-content-muted border border-transparent hover:bg-surface-raised hover:text-content',
   danger: 'bg-transparent text-danger border border-danger/40 hover:bg-danger/10',

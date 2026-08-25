@@ -16,7 +16,9 @@ export default function App() {
     <AuthProvider>
       <AdminSessionProvider>
         <ToastProvider>
-          <RouterProvider router={router} />
+          {/* `v7_startTransition` se déclare ici et non sur le routeur : c'est
+              `RouterProvider` qui enveloppe les mises à jour d'état. */}
+          <RouterProvider router={router} future={{ v7_startTransition: true }} />
         </ToastProvider>
       </AdminSessionProvider>
     </AuthProvider>

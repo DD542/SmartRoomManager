@@ -97,7 +97,7 @@ function RequirePermission({ permission, children }) {
   return peut(permission) ? children : <PermissionDenied permission={permission} />;
 }
 
-export const router = createBrowserRouter([
+const routes = [
   {
     element: <PublicLayout />,
     children: [
@@ -297,4 +297,21 @@ export const router = createBrowserRouter([
   },
   { path: '/403', element: <ForbiddenPage /> },
   { path: '*', element: <NotFoundPage /> },
-]);
+];
+
+export const router = createBrowserRouter(routes, {
+  // Comportements de la version 7 activés dès maintenant. Ils ne changent rien
+  // au fonctionnement observable ici, mais un avertissement permanent en
+  // console finit par masquer les vrais.
+  //
+  // `v7_startTransition` n'est pas ici : il se déclare sur `RouterProvider`,
+  // pas sur le routeur. Le poser à cet endroit ne produit aucune erreur — et
+  // l'avertissement continue de s'afficher, ce qui est le pire des cas.
+  future: {
+    v7_relativeSplatPath: true,
+    v7_fetcherPersist: true,
+    v7_normalizeFormMethod: true,
+    v7_partialHydration: true,
+    v7_skipActionErrorRevalidation: true,
+  },
+});

@@ -86,11 +86,11 @@ export const toUserRow = (user) => ({
 export function UsersTable({ table, onSelect, selectedId }) {
   return (
     <>
-      <div className="hidden md:block">
+      <div className="hidden lg:block">
         <DataTable columns={colonnes} table={table} rowLabel="utilisateurs" onRowClick={onSelect} />
       </div>
 
-      <ul className="flex flex-col gap-2 p-3 md:hidden">
+      <ul className="flex flex-col gap-2 p-3 lg:hidden">
         {table.rows.map((row, index) => (
           <li key={row.id} className="animate-fade-in-up" style={{ animationDelay: `${Math.min(index, 12) * 40}ms` }}>
             <button

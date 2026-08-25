@@ -18,7 +18,7 @@ export function BulkActionBar({
 
   return (
     <div className="sticky bottom-4 z-30 mx-auto flex w-fit max-w-full flex-wrap items-center gap-2 rounded-xl border border-line bg-surface-raised px-3 py-2">
-      <span className="rounded-lg bg-accent px-2 py-1 font-mono text-xs text-white">{count}</span>
+      <span className="rounded-lg bg-accent px-2 py-1 font-mono text-xs text-ink">{count}</span>
       {/* Le libellé complet est fourni par l'écran : accoler « s » à
           « réservation sélectionné » produirait un accord faux. */}
       <span className="pr-1 text-xs text-content">

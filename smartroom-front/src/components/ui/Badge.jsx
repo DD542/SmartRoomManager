@@ -3,7 +3,7 @@ import { cn } from '../../utils/cn';
 
 const TONES = {
   default: 'border-line bg-surface-raised text-content-muted',
-  accent: 'border-accent/40 bg-accent-soft text-accent',
+  accent: 'border-accent/40 bg-accent-soft text-accent-bright',
   success: 'border-success/40 bg-success-soft text-success',
   warning: 'border-warning/40 bg-warning-soft text-warning',
   danger: 'border-danger/40 bg-danger-soft text-danger',
@@ -47,7 +47,13 @@ export function Pill({ active = false, className, children, count, ...props }) {
       {...props}
     >
       {children}
-      {typeof count === 'number' && <span className="text-content-faint">({count})</span>}
+      {/* Le compteur monte d'un cran sur la pastille active : `content-faint`
+          sur le fond `accent-soft`, plus clair que la surface, ne donnait que
+          4:1 — sous le seuil AA. Sur les pastilles inactives, le fond reste
+          sombre et la teinte faible passe. */}
+      {typeof count === 'number' && (
+        <span className={active ? 'text-content-muted' : 'text-content-faint'}>({count})</span>
+      )}
     </button>
   );
 }

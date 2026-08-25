@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Bell, FileClock, Search } from 'lucide-react';
+import { AlertTriangle, Bell, FileClock, Menu, Search } from 'lucide-react';
 import { countQueue } from '../../api/admin/conflicts';
 import { useAdminSession } from '../../hooks/useAdminSession';
 import { usePermission } from '../../hooks/usePermission';
 import { Avatar } from '../ui/Avatar';
 import { IconButton } from '../ui/Button';
+import { plural } from '../../utils/format';
 
 /** Barre haute de l'administration : recherche, file d'arbitrage, audit, compte. */
-export function AdminTopbar() {
+export function AdminTopbar({ onOpenMenu }) {
   const navigate = useNavigate();
   const { admin } = useAdminSession();
   const { peut } = usePermission();
@@ -31,6 +32,13 @@ export function AdminTopbar() {
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 md:px-4">
+      {/* Ouvre la navigation en feuille : sous 768 px la barre latérale est
+          masquée, et sans ce bouton aucun écran d'administration n'est
+          atteignable. */}
+      <span className="md:hidden">
+        <IconButton icon={Menu} label="Ouvrir la navigation" onClick={onOpenMenu} />
+      </span>
+
       <form
         role="search"
         className="relative min-w-0 flex-1 md:max-w-md"
@@ -66,7 +74,7 @@ export function AdminTopbar() {
               icon={AlertTriangle}
               label={
                 enAttente > 0
-                  ? `File d’arbitrage, ${enAttente} éléments en attente`
+                  ? `File d’arbitrage, ${plural(enAttente, 'élément')} en attente`
                   : 'File d’arbitrage'
               }
               onClick={() => navigate('/admin/conflits')}

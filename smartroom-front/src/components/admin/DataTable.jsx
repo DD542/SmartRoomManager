@@ -7,14 +7,44 @@ import { Pagination } from '../ui/Table';
  * Tableau d'administration : tri par colonne, sélection multiple et pagination.
  * L'état vient de useDataTable ; ce composant ne fait que l'afficher.
  *
- * Sous 768px, les pages rendent des cartes à la place : un tableau de huit
- * colonnes n'est pas consultable au doigt.
+ * Sous 1024 px, les pages rendent des cartes à la place. Le basculement était
+ * réglé sur 768 px : entre les deux, la barre latérale prenait déjà 240 px et
+ * il restait moins de 530 px pour un tableau large de 720 — la ligne défilait
+ * horizontalement dans sa carte, et les dernières colonnes ne se voyaient
+ * jamais.
  */
-export function DataTable({ columns = [], table, onRowClick, selectable = false, rowLabel = 'éléments' }) {
+export function DataTable({
+  columns = [],
+  table,
+  onRowClick,
+  selectable = false,
+  rowLabel = 'éléments',
+  rowName,
+}) {
+  // Nom annoncé par la case de sélection. Sans lui, un lecteur d'écran lisait
+  // « Sélectionner cb79005a-dc84-40ba… » : l'identifiant technique ne désigne
+  // rien pour qui ne voit pas la ligne. À défaut de `rowName`, la première
+  // colonne fait office de nom — c'est celle qui identifie la ligne à l'œil.
+  const nommer = (row) => {
+    const nom = rowName?.(row);
+    if (nom) return nom;
+    const premiere = columns[0];
+    const valeur = premiere?.render ? premiere.render(row) : row[premiere?.key];
+    return typeof valeur === 'string' || typeof valeur === 'number' ? String(valeur) : row.id;
+  };
+
   return (
     <div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] border-collapse text-sm">
+        {/* Largeur minimale proportionnelle au nombre de colonnes. Fixée à
+            720 px pour toutes, elle imposait un défilement horizontal aux
+            tableaux de trois colonnes — le catalogue d'équipements tenait dans
+            321 px et s'en voyait refuser deux tiers. Le plafond reste 720 : la
+            règle ne peut que réduire, jamais élargir un tableau existant. */}
+        <table
+          className="w-full border-collapse text-sm"
+          style={{ minWidth: `${Math.min(720, (columns.length + (selectable ? 1 : 0)) * 96)}px` }}
+        >
           <thead>
             <tr className="border-b border-line text-left">
               {selectable && (
@@ -69,9 +99,28 @@ export function DataTable({ columns = [], table, onRowClick, selectable = false,
 
           <tbody>
             {table.rows.map((row, index) => (
+              // Une ligne cliquable doit s'actionner au clavier. Sans
+              // `tabIndex` ni gestionnaire de touche, la seule façon d'ouvrir
+              // une fiche à partir de 1024 px était la souris : les listes de
+              // cartes, qui portent de vrais boutons, cèdent la place au
+              // tableau à cette largeur, et l'écran devenait inutilisable sans
+              // pointeur. `aria-label` nomme la cible, `row` reste le rôle —
+              // un `role="button"` détruirait la sémantique du tableau.
               <tr
                 key={row.id}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
+                onKeyDown={
+                  onRowClick
+                    ? (event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          onRowClick(row);
+                        }
+                      }
+                    : undefined
+                }
+                tabIndex={onRowClick ? 0 : undefined}
+                aria-label={onRowClick ? `Ouvrir ${nommer(row)}` : undefined}
                 className={cn(
                   'animate-fade-in-up border-b border-line/60 transition last:border-0',
                   onRowClick && 'cursor-pointer hover:bg-surface-raised',
@@ -86,7 +135,7 @@ export function DataTable({ columns = [], table, onRowClick, selectable = false,
                       checked={table.selection.includes(row.id)}
                       onChange={() => table.basculerLigne(row.id)}
                     />
-                    <span className="sr-only">Sélectionner {row.id}</span>
+                    <span className="sr-only">Sélectionner {nommer(row)}</span>
                   </td>
                 )}
                 {columns.map((column) => (

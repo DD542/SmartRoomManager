@@ -61,7 +61,11 @@ export function QueueList({ items = [], counts = {}, tab, onTabChange, selectedI
               >
                 <span className="flex flex-wrap items-center gap-2">
                   <Icone size={14} aria-hidden="true" className="shrink-0 text-content-muted" />
-                  <span className="font-mono text-[11px] text-content-muted">{item.id}</span>
+                  {/* La référence et non l'identifiant : « #CONF-8492 » se cite au
+                      téléphone, un UUID ne se lit pas. */}
+                  <span className="font-mono text-[11px] text-content-muted">
+                    {item.reference ?? item.id}
+                  </span>
                   <Badge tone={URGENCE_TON[item.urgency] ?? 'default'} dot>
                     {item.urgency}
                   </Badge>

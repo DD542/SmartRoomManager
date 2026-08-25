@@ -6,7 +6,7 @@ const TONE = {
   disponible: 'border-success/50 bg-success-soft text-success',
   occupee: 'border-line bg-surface-raised text-content-muted',
   maintenance: 'border-warning/50 bg-warning-soft text-warning',
-  mienne: 'border-accent bg-accent-soft text-accent',
+  mienne: 'border-accent bg-accent-soft text-accent-bright',
 };
 
 /**

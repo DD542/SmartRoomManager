@@ -27,7 +27,7 @@ const FILTRES_INITIAUX = {
   from: PRESETS[1].from,
   to: PRESETS[1].to,
   buildingIds: [],
-  granularity: 'mois',
+  granularity: 'month',
 };
 
 /**

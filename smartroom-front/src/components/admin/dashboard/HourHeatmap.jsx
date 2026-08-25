@@ -34,7 +34,13 @@ export function HourHeatmap({ heatmap, className }) {
       />
 
       <div className="overflow-x-auto px-4 pb-4">
-        <table className="w-full min-w-[520px] border-separate border-spacing-1 text-xs">
+        {/* La largeur minimale ne s'applique qu'à partir de 640 px. Imposée à
+            520 sur un écran de 375, elle faisait défiler la page entière de
+            155 px : le conteneur `overflow-x-auto` ci-dessus ne suffisait pas à
+            la contenir. Sous ce seuil les cases se resserrent, ce qu'une carte
+            de densité supporte — la couleur porte l'information, et chaque case
+            garde son libellé pour les lecteurs d'écran. */}
+        <table className="w-full border-separate border-spacing-1 text-xs sm:min-w-[520px]">
           <caption className="sr-only">
             Nombre de réservations par jour de la semaine et par heure d’ouverture
           </caption>

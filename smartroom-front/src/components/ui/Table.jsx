@@ -84,7 +84,7 @@ export function Pagination({ page = 1, pageCount = 1, total = 0, pageSize = 10, 
             className={cn(
               'h-8 min-w-8 rounded-lg border px-2 text-xs transition',
               value === page
-                ? 'border-accent bg-accent text-white'
+                ? 'border-accent bg-accent text-ink'
                 : 'border-line bg-surface text-content-muted hover:text-content',
             )}
           >

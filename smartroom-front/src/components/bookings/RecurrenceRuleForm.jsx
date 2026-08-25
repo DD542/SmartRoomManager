@@ -53,7 +53,7 @@ export function RecurrenceRuleForm({ rule, onChange, anchorDate }) {
                     className={cn(
                       'h-8 w-8 rounded-full border text-xs transition',
                       active
-                        ? 'border-accent bg-accent text-white'
+                        ? 'border-accent bg-accent text-ink'
                         : 'border-line bg-surface text-content-muted hover:text-content',
                     )}
                   >

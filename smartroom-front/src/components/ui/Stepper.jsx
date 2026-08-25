@@ -31,7 +31,7 @@ export function Stepper({ steps = [], current = 1, onGoTo, className, compact = 
                   className={cn(
                     'flex h-7 w-7 items-center justify-center rounded-full border text-xs font-medium transition',
                     done && 'border-success bg-success-soft text-success',
-                    active && 'border-accent bg-accent text-white',
+                    active && 'border-accent bg-accent text-ink',
                     !done && !active && 'border-line bg-surface text-content-faint',
                   )}
                 >

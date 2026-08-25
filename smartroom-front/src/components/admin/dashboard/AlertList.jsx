@@ -7,7 +7,7 @@ import { PermissionGate } from '../PermissionGate';
 
 const TONS = {
   warning: { icon: AlertTriangle, classe: 'border-warning/40 bg-warning-soft text-warning' },
-  info: { icon: Info, classe: 'border-accent/40 bg-accent-soft text-accent' },
+  info: { icon: Info, classe: 'border-accent/40 bg-accent-soft text-accent-bright' },
 };
 
 /**

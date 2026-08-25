@@ -73,7 +73,7 @@ export function EquipmentModal({ open, onClose, onSubmit, equipment, icons = [],
                     className={cn(
                       'flex h-10 w-10 items-center justify-center rounded-xl border transition',
                       actif
-                        ? 'border-accent bg-accent-soft text-accent'
+                        ? 'border-accent bg-accent-soft text-accent-bright'
                         : 'border-line bg-surface-raised text-content-muted hover:border-line-strong',
                     )}
                   >

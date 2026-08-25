@@ -8,6 +8,7 @@ import {
 } from '../../api/buildings';
 import { listBookings } from '../../api/bookings';
 import { useAsync } from '../../hooks/useAsync';
+import { useAdminSession } from '../../hooks/useAdminSession';
 import { useAuth } from '../../hooks/useAuth';
 import { NOW, fmtDate, isSameDay, toDate } from '../../utils/dates';
 import { Card, CardHeader } from '../../components/ui/Card';
@@ -22,11 +23,17 @@ import { RoomPlanAside } from '../../components/rooms/RoomPlanAside';
 /** U-18 — Plan de localisation du bâtiment, avec panneau de détail de la salle. */
 export default function FloorPlanPage() {
   const { user } = useAuth();
+  const { permissions } = useAdminSession();
   const [planId, setPlanId] = useState('plan-a');
   const [selected, setSelected] = useState(null);
 
   // Le dépôt du plan est une opération d'administration.
-  const canManage = user.role === 'gestionnaire';
+  // Le dépôt du plan est une opération d'administration, gouvernée par la
+  // permission `rooms.manage` — la même que côté back. Elle s'appuyait
+  // auparavant sur `user.role === 'gestionnaire'` : aucune source ne produit
+  // cette valeur (l'adaptateur ne rend que `etudiant` ou `personnel`), et la
+  // zone d'import était donc invisible pour tout le monde.
+  const canManage = permissions.includes('rooms.manage');
 
   useEffect(() => {
     document.title = 'Plan du bâtiment — SmartRoom Manager';

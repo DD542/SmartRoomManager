@@ -33,7 +33,7 @@ export function TicketThread({ ticket, templates = [], onReply, busy = false }) 
     <Card className="flex flex-col">
       <CardHeader
         title={ticket.subject}
-        subtitle={`#${ticket.id} · ${ticket.assignee}`}
+        subtitle={`${ticket.reference ?? `#${ticket.id}`} · ${ticket.assignee ?? 'non attribué'}`}
         action={
           <Badge tone={ticket.status === 'resolu' ? 'success' : 'warning'} dot>
             {TICKET_STATUS_LABEL[ticket.status] ?? ticket.status}

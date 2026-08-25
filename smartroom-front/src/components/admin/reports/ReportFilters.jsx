@@ -4,9 +4,13 @@ import { Input } from '../../ui/Form';
 import { SegmentedControl } from '../../ui/Tabs';
 import { ToggleChip } from '../../ui/Badge';
 
+// La valeur est celle qui transite sur le réseau : l'API n'accepte que
+// `day`, `week` et `month`. Le français vit dans le libellé, et nulle part
+// ailleurs — un état de composant en français obligerait à traduire à chaque
+// appel, donc à oublier de le faire une fois.
 const GRANULARITES = [
-  { value: 'jour', label: 'Par jour' },
-  { value: 'mois', label: 'Par mois' },
+  { value: 'day', label: 'Par jour' },
+  { value: 'month', label: 'Par mois' },
 ];
 
 /**

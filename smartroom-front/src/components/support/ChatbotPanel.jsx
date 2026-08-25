@@ -75,7 +75,7 @@ export function ChatbotPanel() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Ouvrir l’assistant SmartBot"
-        className="fixed bottom-20 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full border border-accent/50 bg-accent text-white transition hover:bg-accent-hover md:bottom-6"
+        className="fixed bottom-20 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full border border-accent/50 bg-accent text-ink transition hover:bg-accent-hover md:bottom-6"
       >
         <Bot size={20} aria-hidden="true" />
       </button>
@@ -116,7 +116,7 @@ export function ChatbotPanel() {
               <div
                 className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
                   message.from === 'user'
-                    ? 'bg-accent text-white'
+                    ? 'bg-accent text-ink'
                     : 'border border-line bg-surface-raised text-content'
                 }`}
               >

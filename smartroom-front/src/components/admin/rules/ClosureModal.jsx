@@ -13,7 +13,7 @@ const PORTEES = [
 ];
 
 const NATURES = [
-  { value: 'ferme', label: 'Fermeture — aucune réservation possible' },
+  { value: 'fermeture', label: 'Fermeture — aucune réservation possible' },
   { value: 'exception', label: 'Exception — ouverture ou usage particulier' },
 ];
 
@@ -23,7 +23,7 @@ const VIERGE = {
   to: toDateInput(NOW),
   scopeType: 'global',
   scopeIds: [],
-  kind: 'ferme',
+  kind: 'fermeture',
 };
 
 /**

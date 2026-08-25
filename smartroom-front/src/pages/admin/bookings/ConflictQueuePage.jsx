@@ -139,13 +139,14 @@ function Detail({ item, onDecide, loading }) {
       <Card>
         <CardHeader
           title={item.title}
-          subtitle={`${item.id} · déposé ${fmtRelative(item.createdAt)}`}
+          subtitle={`${item.reference ?? item.id} · déposé ${fmtRelative(item.createdAt)}`}
           icon={MapPin}
         />
         <div className="flex flex-col gap-3 px-4 pb-4">
           {item.room && (
             <p className="text-xs text-content-muted">
-              {item.room.name} — capacité {item.room.capacity} places
+              {item.room.name}
+              {item.room.capacity ? ` — capacité ${item.room.capacity} places` : ''}
             </p>
           )}
           {item.detail && <p className="text-sm text-content">{item.detail}</p>}

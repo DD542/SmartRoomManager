@@ -5,6 +5,7 @@ import { getRoom } from '../../api/rooms';
 import { getNextFreeSlot } from '../../api/availability';
 import { getPlanDocument, planIdForRoom } from '../../api/buildings';
 import { useAsync } from '../../hooks/useAsync';
+import { useAdminSession } from '../../hooks/useAdminSession';
 import { useAuth } from '../../hooks/useAuth';
 import { NOW, fmtTime, toDateInput } from '../../utils/dates';
 import { fmtArea, fmtCapacity, ROOM_STATUS_LABEL } from '../../utils/format';
@@ -27,13 +28,17 @@ export default function RoomDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { permissions } = useAdminSession();
   const room = useAsync(() => getRoom(id), [id]);
   const nextSlot = useAsync(() => getNextFreeSlot(id, NOW), [id]);
   const planDocument = useAsync(() => getPlanDocument(id), [id]);
 
-  // Le dépôt du plan est une opération d'administration : seul un gestionnaire
-  // de site voit la zone d'import.
-  const canManage = user.role === 'gestionnaire';
+  // Le dépôt du plan est une opération d'administration, gouvernée par la
+  // permission `rooms.manage` — la même que côté back. Elle s'appuyait
+  // auparavant sur `user.role === 'gestionnaire'` : aucune source ne produit
+  // cette valeur (l'adaptateur ne rend que `etudiant` ou `personnel`), et la
+  // zone d'import était donc invisible pour tout le monde.
+  const canManage = permissions.includes('rooms.manage');
   const planId = planIdForRoom(id);
 
   useEffect(() => {

@@ -56,7 +56,9 @@ export function TicketQueue({ tickets = [], counts = {}, tab, onTabChange, selec
                 )}
               >
                 <span className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-[11px] text-content-muted">#{ticket.id}</span>
+                  <span className="font-mono text-[11px] text-content-muted">
+                    {ticket.reference ?? `#${ticket.id}`}
+                  </span>
                   <Badge tone={STATUT_TON[ticket.status] ?? 'default'} dot>
                     {TICKET_STATUS_LABEL[ticket.status] ?? ticket.status}
                   </Badge>

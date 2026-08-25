@@ -15,6 +15,14 @@ import { fullName } from '../../../utils/format';
  */
 export function PermissionMatrix({ groups = [], admins = [], onToggle, busy = false }) {
   return (
+    // Seule table de l'administration qui reste une table sous 1024 px, et
+    // c'est délibéré : la matrice existe pour comparer les comptes entre eux
+    // sur une même ligne. La replier en cartes détruirait précisément la
+    // lecture qu'elle sert. WCAG 1.4.10 exclut d'ailleurs les tableaux de
+    // données de la règle de non-défilement bidirectionnel. Le défilement
+    // reste enfermé dans ce conteneur — la page, elle, ne défile jamais
+    // latéralement — et chaque colonne contient des interrupteurs focusables,
+    // ce qui la rend parcourable au clavier seul.
     <div className="overflow-x-auto">
       <table className="w-full min-w-[640px] border-collapse text-sm">
         <caption className="sr-only">
@@ -83,7 +91,7 @@ function Groupe({ groupe, admins, onToggle, busy }) {
                 <td key={admin.id} className="px-3 py-2.5 text-center">
                   <Tooltip label="Le compte propriétaire conserve toutes les permissions.">
                     <span
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-accent/40 bg-accent-soft text-accent"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-accent/40 bg-accent-soft text-accent-bright"
                       role="img"
                       aria-label={`${libelle} : accordée et verrouillée`}
                     >
