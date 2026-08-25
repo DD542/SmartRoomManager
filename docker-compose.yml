@@ -76,6 +76,14 @@ services:
       LOG_JSON: "false"
       LOG_LEVEL: DEBUG
       MEDIA_ROOT: /app/media
+      # Limiteur d'authentification relevé sur cette pile, et sur elle seule.
+      # La campagne de bout en bout ouvre une session par test — la rotation
+      # des jetons de rafraîchissement interdit d'en partager une, un cookie
+      # rejoué déclenchant la détection de rejeu. Sous le plafond de production
+      # (5/minute), la suite tombe sur un 429 qui ne dit rien du produit. Le
+      # limiteur garde son propre test côté back, qui le réactive et vérifie
+      # le refus ; `docker-compose.prod.yml` conserve la valeur de production.
+      RATE_LIMIT_LOGIN: ${RATE_LIMIT_LOGIN:-100/minute}
     ports:
       - "8000:8000"
     volumes:

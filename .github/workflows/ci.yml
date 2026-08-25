@@ -192,9 +192,11 @@ jobs:
       - name: Servir le front et lancer le parcours
         working-directory: smartroom-front
         env:
-          # Le limiteur est relevé pour cette campagne : chaque test ouvre sa
-          # propre session, et la rotation des jetons interdit d'en conserver
-          # une entre les tests. Le limiteur garde son test dédié côté back.
+          # Le limiteur est relevé par `docker-compose.yml`, qui sert cette
+          # pile : chaque test ouvre sa propre session, et la rotation des
+          # jetons interdit d'en conserver une entre les tests. Ce commentaire
+          # annonçait ce relèvement sans qu'aucune variable ne l'applique — la
+          # campagne heurtait donc le plafond de cinq connexions par minute.
           E2E_BASE_URL: http://localhost:5180
         run: |
           npm run dev -- --host 0.0.0.0 --port 5180 &
