@@ -10,7 +10,8 @@
 //   DELETE /api/v1/rooms/{id}/photos/{photo_id} retrait d'un visuel
 
 import * as adapt from '../adapters';
-import { ApiError, abortable, del, get, items, patch, post, put } from '../client';
+import { ApiError, abortable, del, enBase64, get, items, patch, post, put } from '../client';
+import { TAILLE_MAX_MO } from '../buildings';
 
 /**
  * Salle telle que l'attend l'écran d'administration.
@@ -166,6 +167,49 @@ export async function removeRoomPhoto(id, index) {
   }
 
   await del(`/rooms/${id}/photos/${cible.id}`);
+  return getManagedRoom(id);
+}
+
+/**
+ * Types acceptés pour un plan de localisation.
+ *
+ * Plus étroit que pour un plan d'étage, qui accepte le PDF : celui-ci
+ * s'affiche dans une vignette, là où un lecteur de PDF n'a pas sa place. Le
+ * SVG est écarté parce qu'il porte du script, et serait servi depuis le
+ * domaine de l'application. Le serveur applique la même liste ; celle-ci
+ * répond sans aller-retour.
+ */
+export const TYPES_PLAN_LOCALISATION = ['image/png', 'image/jpeg', 'image/webp'];
+
+/**
+ * Dépôt du plan portant le repère de la salle.
+ *
+ * Distinct des photos, qui montrent la salle, et du plan de l'étage, qui vaut
+ * pour tout un niveau : une salle peut être située sans que son étage ait reçu
+ * de plan, et l'inverse.
+ */
+export async function uploadRoomLocationPlan(id, file) {
+  if (!file) throw new ApiError('Aucun fichier sélectionné.', 422, 'fichier_manquant');
+  if (!TYPES_PLAN_LOCALISATION.includes(file.type)) {
+    throw new ApiError(
+      'Format refusé : déposez une image PNG, JPEG ou WebP.',
+      422,
+      'format_invalide',
+    );
+  }
+  if (file.size > TAILLE_MAX_MO * 1024 * 1024) {
+    throw new ApiError(`Fichier trop lourd : ${TAILLE_MAX_MO} Mo maximum.`, 422, 'trop_lourd');
+  }
+
+  await put(`/rooms/${id}/location-plan`, {
+    content_type: file.type,
+    content: await enBase64(file),
+  });
+  return getManagedRoom(id);
+}
+
+export async function removeRoomLocationPlan(id) {
+  await del(`/rooms/${id}/location-plan`);
   return getManagedRoom(id);
 }
 

@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import {
   AlertTriangle,
   BarChart3,
+  Building2,
   CalendarClock,
   CalendarRange,
   DoorOpen,
@@ -49,6 +50,7 @@ export const ADMIN_NAV = [
     id: 'espaces',
     label: 'Espaces',
     items: [
+      { to: '/admin/batiments', label: 'Bâtiments', icon: Building2, permission: 'rooms.manage' },
       { to: '/admin/salles', label: 'Salles', icon: DoorOpen, permission: 'rooms.manage' },
       { to: '/admin/equipements', label: 'Équipements', icon: Monitor, permission: 'rooms.manage' },
       { to: '/admin/plans', label: 'Plans', icon: Map, permission: 'rooms.manage' },

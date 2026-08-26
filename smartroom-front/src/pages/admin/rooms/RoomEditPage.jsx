@@ -26,7 +26,7 @@ const ONGLETS = [
   { id: 'equipements', label: 'Équipements' },
   { id: 'acces', label: 'Accès' },
   { id: 'disponibilite', label: 'Disponibilité' },
-  { id: 'photos', label: 'Photos' },
+  { id: 'photos', label: 'Visuels' },
 ];
 
 /**
@@ -92,7 +92,11 @@ export default function RoomEditPage() {
     setPhotoEnCours(true);
     try {
       const majour = await action();
-      setDraft((current) => ({ ...current, photos: majour.photos }));
+      setDraft((current) => ({
+        ...current,
+        photos: majour.photos,
+        locationPlanUrl: majour.locationPlanUrl ?? null,
+      }));
       salle.setData(majour);
     } catch (erreur) {
       toast.error('Visuel refusé', erreur.message);

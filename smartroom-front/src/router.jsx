@@ -57,6 +57,8 @@ import TicketsPage from './pages/admin/support/TicketsPage';
 import KnowledgePage from './pages/admin/support/KnowledgePage';
 import EmailTemplatesPage from './pages/admin/support/EmailTemplatesPage';
 import AdminProfilePage from './pages/admin/account/AdminProfilePage';
+import BuildingsPage from './pages/admin/rooms/BuildingsPage';
+import RootRedirect from './pages/RootRedirect';
 import AuditLogPage from './pages/admin/audit/AuditLogPage';
 
 /** Garde d'authentification : mémorise l'URL demandée pour y revenir après connexion. */
@@ -99,10 +101,16 @@ function RequirePermission({ permission, children }) {
 }
 
 const routes = [
+  // La racine ne sert plus la vitrine : chacun arrive sur le tableau de bord de
+  // sa session, et un visiteur sur l'écran de connexion. Traverser une page de
+  // présentation pour atteindre son travail n'a de sens qu'une seule fois.
+  { path: '/', element: <RootRedirect /> },
   {
     element: <PublicLayout />,
     children: [
-      { path: '/', element: <LandingPage /> },
+      // La vitrine garde une adresse propre : elle décrit le produit, et cet
+      // usage-là survit à la redirection de la racine.
+      { path: '/presentation', element: <LandingPage /> },
       { path: '/invitation/:token', element: <InvitationPage /> },
     ],
   },
@@ -187,6 +195,14 @@ const routes = [
         element: (
           <RequirePermission permission="conflicts.arbitrate">
             <ConflictQueuePage />
+          </RequirePermission>
+        ),
+      },
+      {
+        path: 'batiments',
+        element: (
+          <RequirePermission permission="rooms.manage">
+            <BuildingsPage />
           </RequirePermission>
         ),
       },

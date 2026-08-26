@@ -3,17 +3,33 @@ import { ImagePlus, Star, Trash2 } from 'lucide-react';
 import { cn } from '../../../utils/cn';
 import { Button } from '../../ui/Button';
 import { Callout } from '../../ui/Card';
+import { LocationPlanField } from './LocationPlanField';
 
 const ACCEPT = 'image/png,image/jpeg,image/webp,image/svg+xml';
 const TAILLE_MAX_MO = 2;
 
 /**
- * A-06 — onglet Photos.
+ * A-06 — onglet Visuels.
+ *
+ * Deux choses distinctes y cohabitent, et l'onglet les sépare parce que les
+ * confondre mènerait à montrer l'une pour l'autre : les **photos** montrent la
+ * salle et illustrent sa carte dans la recherche ; le **plan de localisation**
+ * porte le repère de la salle et sert à la trouver.
  *
  * Le premier visuel est celui des cartes de recherche : il se choisit
  * explicitement plutôt que d'être le hasard de l'ordre de dépôt.
  */
-export function PhotosTab({ photos = [], onAdd, onRemove, onCover, busy = false }) {
+export function PhotosTab({
+  photos = [],
+  onAdd,
+  onRemove,
+  onCover,
+  busy = false,
+  locationPlanUrl = null,
+  onUploadPlan,
+  onRemovePlan,
+  creating = false,
+}) {
   const inputRef = useRef(null);
   const [erreur, setErreur] = useState(null);
 
@@ -38,14 +54,25 @@ export function PhotosTab({ photos = [], onAdd, onRemove, onCover, busy = false 
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-xs text-content-muted">
-        Six visuels au maximum. Le premier illustre la salle dans les résultats de recherche.
-      </p>
+      <LocationPlanField
+        src={locationPlanUrl}
+        busy={busy}
+        disabled={creating}
+        onUpload={onUploadPlan}
+        onRemove={onRemovePlan}
+      />
+
+      <div className="border-t border-line pt-4">
+        <p className="text-xs text-content-muted">
+          Photos de la salle — six au maximum. La première l’illustre dans les résultats de
+          recherche.
+        </p>
+      </div>
 
       <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {photos.map((photo, index) => (
           <li
-            key={index}
+            key={photo.id ?? photo.url ?? index}
             className={cn(
               'group relative overflow-hidden rounded-xl border',
               index === 0 ? 'border-accent' : 'border-line',

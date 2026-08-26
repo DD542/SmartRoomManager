@@ -1,4 +1,10 @@
-import { addRoomPhoto, removeRoomPhoto, setCoverPhoto } from '../../../api/admin/rooms';
+import {
+  addRoomPhoto,
+  removeRoomLocationPlan,
+  removeRoomPhoto,
+  setCoverPhoto,
+  uploadRoomLocationPlan,
+} from '../../../api/admin/rooms';
 import { AccessTab } from './AccessTab';
 import { AvailabilityTab } from './AvailabilityTab';
 import { EquipmentTab } from './EquipmentTab';
@@ -58,9 +64,13 @@ export function RoomTabPanels({
     <PhotosTab
       photos={draft.photos}
       busy={photoBusy}
+      creating={creating}
+      locationPlanUrl={draft.locationPlanUrl}
       onAdd={(dataUrl) => onPhoto(() => addRoomPhoto(roomId, dataUrl))}
       onRemove={(index) => onPhoto(() => removeRoomPhoto(roomId, index))}
       onCover={(index) => onPhoto(() => setCoverPhoto(roomId, index))}
+      onUploadPlan={(fichier) => onPhoto(() => uploadRoomLocationPlan(roomId, fichier))}
+      onRemovePlan={() => onPhoto(() => removeRoomLocationPlan(roomId))}
     />
   );
 }
