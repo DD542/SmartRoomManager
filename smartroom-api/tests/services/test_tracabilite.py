@@ -95,6 +95,18 @@ class TestLisibiliteDesCibles:
         assert salle.name in entree.target_label
         assert "portée salle" not in entree.target_label
 
+    def test_une_surcharge_de_batiment_nomme_le_batiment(self, session, batiment):
+        rules_service.upsert_rule(
+            session,
+            BookingRuleIn(max_duration_min=100),
+            scope=RuleScope.BATIMENT,
+            building_id=batiment.id,
+        )
+
+        entree = _derniere(session, "booking_rule")
+        assert batiment.name in entree.target_label
+        assert "portée batiment" not in entree.target_label
+
     def test_une_regle_globale_dit_qu_elle_vise_tout_l_etablissement(self, session):
         rules_service.upsert_rule(
             session,
