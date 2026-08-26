@@ -2,7 +2,9 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import * as sessionApi from '../api/admin/session';
 import { onSessionExpired } from '../api/client';
 
-const AdminSessionContext = createContext(null);
+// Exporté pour que les tests de composants puissent poser une session sans
+// monter le fournisseur entier, qui appellerait le réseau au montage.
+export const AdminSessionContext = createContext(null);
 
 /**
  * Session d'administration.

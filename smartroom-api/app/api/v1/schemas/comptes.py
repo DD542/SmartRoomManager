@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import Field
+from pydantic import Base64Bytes, Field, field_validator
 
 from app.api.v1.schemas.common import ApiModel, ReadModel
 from app.db.enums import UserStatus
@@ -48,6 +48,42 @@ class ProfileIn(ApiModel):
     department: Annotated[str | None, Field(max_length=60)] = None
 
 
+class AvatarIn(ApiModel):
+    """Photo de profil, encodée en base64 dans le corps JSON.
+
+    Même transport que les plans d'étage : le multipart demanderait
+    `python-multipart`, hors de la liste de dépendances arrêtée, et le surcoût
+    d'un tiers reste supportable sous un plafond de 5 Mo.
+    """
+
+    content_type: Annotated[str, Field(min_length=3, max_length=100)]
+    content: Base64Bytes
+
+
+class SessionOut(ReadModel):
+    """Une session ouverte, du point de vue de son titulaire.
+
+    `id` désigne la famille de jetons et non un jeton : chaque
+    rafraîchissement en émet un nouveau, et exposer le dernier en date ferait
+    changer l'identifiant d'une session toutes les quinze minutes.
+    """
+
+    id: uuid.UUID
+    scope: str
+    ip_address: str | None
+    user_agent: str | None
+    started_at: datetime
+    expires_at: datetime
+    current: bool = False
+
+    @field_validator("ip_address", mode="before")
+    @classmethod
+    def _adresse_en_texte(cls, valeur: object) -> str | None:
+        # La colonne est un `INET` : SQLAlchemy en rend un `IPv4Address`, que
+        # Pydantic refuserait sur un champ déclaré `str | None`.
+        return None if valeur is None else str(valeur)
+
+
 class UserOut(ReadModel):
     id: uuid.UUID
     email: str
@@ -57,6 +93,7 @@ class UserOut(ReadModel):
     promotion: str | None
     department: str | None
     badge_number: str | None
+    avatar_url: str | None = None
     status: UserStatus
     is_admin: bool = False
     last_login_at: datetime | None

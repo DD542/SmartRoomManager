@@ -11,7 +11,7 @@
 //   PUT    /api/v1/users/me/preferences   préférences
 
 import * as adapt from './adapters';
-import { ApiError, get, patch, post, put, restoreSession, setAccessToken } from './client';
+import { ApiError, del, enBase64, get, patch, post, put, restoreSession, setAccessToken } from './client';
 
 /**
  * Ouvre une session. Le jeton d'accès est gardé en mémoire par le client ; le
@@ -120,6 +120,69 @@ export async function updateProfile(_userId, patchBody) {
     department: patchBody.department,
   });
   return adapt.user(payload);
+}
+
+/**
+ * Types acceptés pour une photo de profil.
+ *
+ * Plus étroit que le magasin de médias, qui prend aussi le SVG et le PDF pour
+ * les plans d'étage : un PDF ne fait pas un portrait, et un SVG porte du
+ * script — servi depuis le domaine de l'application, il s'exécuterait avec ses
+ * droits. Le serveur applique la même liste ; celle-ci répond sans aller-retour.
+ */
+export const TYPES_PHOTO = ['image/png', 'image/jpeg', 'image/webp'];
+const TAILLE_MAX_MO = 5;
+
+/** Dépôt d'une photo de profil. Rend le profil complet, photo comprise. */
+export async function uploadAvatar(file) {
+  if (!file) throw new ApiError('Aucun fichier sélectionné.', 422, 'fichier_manquant');
+  if (!TYPES_PHOTO.includes(file.type)) {
+    throw new ApiError(
+      'Format refusé : déposez une image PNG, JPEG ou WebP.',
+      422,
+      'format_invalide',
+    );
+  }
+  if (file.size > TAILLE_MAX_MO * 1024 * 1024) {
+    throw new ApiError(`Fichier trop lourd : ${TAILLE_MAX_MO} Mo maximum.`, 422, 'trop_lourd');
+  }
+
+  const data = await put('/users/me/avatar', {
+    content_type: file.type,
+    content: await enBase64(file),
+  });
+  return adapt.user(data);
+}
+
+/** Retrait de la photo. L'écran retombe sur les initiales. */
+export async function removeAvatar() {
+  return adapt.user(await del('/users/me/avatar'));
+}
+
+/**
+ * Sessions ouvertes du compte.
+ *
+ * Une entrée par session, c'est-à-dire par famille de jetons : chaque
+ * rafraîchissement en émet un nouveau, et les compter un par un afficherait
+ * « 47 appareils connectés » à qui n'en a qu'un.
+ */
+export async function listSessions({ signal } = {}) {
+  const data = await get('/users/me/sessions', { signal });
+  return data.map((item) => ({
+    id: item.id,
+    scope: item.scope,
+    ip: item.ipAddress ?? item.ip_address ?? null,
+    userAgent: item.user_agent ?? null,
+    startedAt: item.started_at ? new Date(item.started_at) : null,
+    expiresAt: item.expires_at ? new Date(item.expires_at) : null,
+    current: Boolean(item.current),
+  }));
+}
+
+/** Ferme toutes les sessions sauf celle qui appelle. */
+export async function revokeOtherSessions() {
+  const data = await del('/users/me/sessions');
+  return data?.closed ?? 0;
 }
 
 export async function savePreferences(_userId, preferences) {

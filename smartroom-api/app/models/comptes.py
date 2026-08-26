@@ -66,6 +66,9 @@ class User(TimestampMixin, SoftDeleteMixin, Base):
         CheckConstraint("btrim(first_name) <> ''", name="first_name_not_blank"),
         CheckConstraint("btrim(last_name) <> ''", name="last_name_not_blank"),
         CheckConstraint(
+            "avatar_url IS NULL OR length(avatar_url) > 0", name="avatar_url_non_vide"
+        ),
+        CheckConstraint(
             "phone IS NULL OR phone ~ '^[0-9 +.()-]{6,20}$'", name="phone_format"
         ),
         CheckConstraint(
@@ -105,6 +108,11 @@ class User(TimestampMixin, SoftDeleteMixin, Base):
     promotion: Mapped[str | None] = mapped_column(String(60), default=None)
     department: Mapped[str | None] = mapped_column(String(60), default=None)
     badge_number: Mapped[str | None] = mapped_column(String(20), default=None)
+    #: Adresse du fichier servi, pas le fichier. Ranger l'image en base ferait
+    #: payer son poids à chaque lecture de l'annuaire, qui n'en a pas besoin :
+    #: la liste des comptes affiche des initiales, la fiche seule montre la
+    #: photo. `NULL` est l'état normal d'un compte sans photo.
+    avatar_url: Mapped[str | None] = mapped_column(String(255), default=None)
     status: Mapped[UserStatus] = mapped_column(
         pg_enum(UserStatus, "user_status"), server_default=text("'actif'"), default=UserStatus.ACTIF
     )

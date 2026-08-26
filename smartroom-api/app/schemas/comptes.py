@@ -96,6 +96,7 @@ class UserRead(TimestampedRead):
     promotion: str | None
     department: str | None
     badge_number: str | None
+    avatar_url: str | None = None
     status: UserStatus
     last_login_at: datetime | None
     preferences: UserPreferenceRead | None = None

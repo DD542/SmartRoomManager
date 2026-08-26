@@ -1,5 +1,5 @@
 import { BadgeCheck, Bell, Shield, SlidersHorizontal, User } from 'lucide-react';
-import { Avatar } from '../ui/Avatar';
+import { AvatarField } from './AvatarField';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Card, CardHeader, Callout } from '../ui/Card';
@@ -13,20 +13,28 @@ const DELAYS = [
 ];
 
 /** U-21, section 1 — identité et badge d'accès. */
-export function IdentitySection({ profile, onChange }) {
+export function IdentitySection({
+  profile,
+  onChange,
+  onUploadAvatar,
+  onRemoveAvatar,
+  photoEnCours = false,
+}) {
   const field = (key) => (event) => onChange({ [key]: event.target.value });
 
   return (
     <>
-      <Card className="flex flex-wrap items-center gap-4 p-4">
-        <Avatar name={`${profile.firstName} ${profile.lastName}`} size="lg" />
-        <div>
-          <p className="text-sm font-semibold text-content">Photo de profil</p>
-          <p className="text-xs text-content-muted">PNG ou JPG, jusqu’à 5 Mo.</p>
-        </div>
-        <Button variant="secondary" size="sm" className="ml-auto">
-          Modifier la photo
-        </Button>
+      <Card>
+        {/* Le bouton « Modifier la photo » n'avait aucun gestionnaire : ni
+            colonne en base, ni route de dépôt. Il vient d'en obtenir, et le
+            champ est le même que celui de l'espace d'administration. */}
+        <AvatarField
+          name={`${profile.firstName} ${profile.lastName}`}
+          src={profile.avatarUrl}
+          busy={photoEnCours}
+          onUpload={onUploadAvatar}
+          onRemove={onRemoveAvatar}
+        />
       </Card>
 
       <Card>
@@ -93,18 +101,39 @@ export function NotificationsSection({ preferences, onChange }) {
 }
 
 /** U-21, section 3 — sécurité du compte. */
-export function SecuritySection({ email }) {
+export function SecuritySection({ email, sessions = [], onRevokeOthers, busy = false }) {
+  const autres = sessions.filter((item) => !item.current).length;
+
   return (
     <Card>
       <CardHeader title="Sécurité du compte" icon={Shield} />
       <div className="flex flex-col gap-4 px-4 pb-4">
+        {/* Cet encart annonçait que « le mot de passe se change depuis
+            l'intranet ECE ». C'était faux : `POST /auth/change-password`
+            existe et fonctionne, et la phrase masquait une fonction
+            disponible. Le bouton juste en dessous, lui, n'avait aucun
+            gestionnaire. */}
         <Callout tone="info">
-          L’authentification est gérée par le compte de l’école : le mot de passe se change depuis
-          l’intranet ECE.
+          Changer le mot de passe ferme toutes les sessions, celle-ci comprise. Il se change depuis
+          l’écran de connexion, par « mot de passe oublié ».
         </Callout>
-        <Input label="Adresse de récupération" value={email} disabled />
-        <Button variant="secondary" size="sm" className="w-fit">
-          Déconnecter les autres appareils
+        <Input
+          label="Adresse de récupération"
+          value={email}
+          disabled
+          hint="C’est à cette adresse qu’est envoyé le lien de réinitialisation."
+        />
+        <Button
+          variant="secondary"
+          size="sm"
+          className="w-fit"
+          loading={busy}
+          disabled={autres === 0}
+          onClick={onRevokeOthers}
+        >
+          {autres === 0
+            ? 'Aucun autre appareil connecté'
+            : `Déconnecter les ${autres} autre${autres > 1 ? 's' : ''} appareil${autres > 1 ? 's' : ''}`}
         </Button>
       </div>
     </Card>

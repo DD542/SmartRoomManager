@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Bell, Save, Shield, SlidersHorizontal, User } from 'lucide-react';
+import { listSessions, removeAvatar, revokeOtherSessions, uploadAvatar } from '../../api/auth';
 import { listBuildings } from '../../api/buildings';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
@@ -31,6 +32,20 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
 
   const buildings = useAsync(listBuildings, []);
+  const sessions = useAsync(() => listSessions(), []);
+  const [photoEnCours, setPhotoEnCours] = useState(false);
+
+  /** Dépôt et retrait de la photo, avec le profil local remis à jour. */
+  const changerPhoto = async (action, succes) => {
+    setPhotoEnCours(true);
+    try {
+      const maj = await action();
+      setProfile((courant) => ({ ...courant, avatarUrl: maj.avatarUrl }));
+      toast({ tone: 'success', title: succes });
+    } finally {
+      setPhotoEnCours(false);
+    }
+  };
 
   useEffect(() => {
     document.title = 'Profil et paramètres — SmartRoom Manager';
@@ -93,6 +108,11 @@ export default function ProfilePage() {
             <IdentitySection
               profile={profile}
               onChange={(patch) => setProfile((current) => ({ ...current, ...patch }))}
+              photoEnCours={photoEnCours}
+              onUploadAvatar={(fichier) =>
+                changerPhoto(() => uploadAvatar(fichier), 'Photo mise à jour')
+              }
+              onRemoveAvatar={() => changerPhoto(removeAvatar, 'Photo retirée')}
             />
           )}
           {section === 'notifications' && (
@@ -101,7 +121,21 @@ export default function ProfilePage() {
               onChange={(patch) => setPreferences((current) => ({ ...current, ...patch }))}
             />
           )}
-          {section === 'securite' && <SecuritySection email={profile.email} />}
+          {section === 'securite' && (
+            <SecuritySection
+              email={profile.email}
+              sessions={sessions.data ?? []}
+              busy={photoEnCours}
+              onRevokeOthers={async () => {
+                const fermees = await revokeOtherSessions();
+                await sessions.reload();
+                toast({
+                  tone: 'success',
+                  title: `${fermees} appareil(s) déconnecté(s)`,
+                });
+              }}
+            />
+          )}
           {section === 'preferences' && (
             <PreferencesSection
               preferences={preferences}

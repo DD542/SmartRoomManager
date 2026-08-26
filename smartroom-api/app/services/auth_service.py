@@ -63,14 +63,18 @@ def _emettre(
 ) -> tuple[str, str, int]:
     """Émet un couple accès + rafraîchissement, dans une famille donnée."""
     contexte = current_context()
-    acces, duree = create_access_token(subject=compte.id, scope=scope)
+    # La famille est tirée avant l'émission : le jeton d'accès la porte, pour
+    # que l'écran des sessions sache laquelle est la sienne sans que le cookie
+    # de rafraîchissement ait à sortir de son chemin.
+    famille = family_id or uuid.uuid4()
+    acces, duree = create_access_token(subject=compte.id, scope=scope, family_id=famille)
     clair, empreinte = new_opaque_token()
 
     session.add(
         RefreshToken(
             user_id=compte.id,
             token_hash=empreinte,
-            family_id=family_id or uuid.uuid4(),
+            family_id=famille,
             scope=scope,
             expires_at=refresh_expiry(),
             ip_address=contexte.ip_address,

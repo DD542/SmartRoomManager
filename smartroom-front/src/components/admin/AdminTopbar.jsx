@@ -4,14 +4,14 @@ import { AlertTriangle, Bell, FileClock, Menu, Search } from 'lucide-react';
 import { countQueue } from '../../api/admin/conflicts';
 import { useAdminSession } from '../../hooks/useAdminSession';
 import { usePermission } from '../../hooks/usePermission';
-import { Avatar } from '../ui/Avatar';
 import { IconButton } from '../ui/Button';
+import { AccountMenu } from './AccountMenu';
 import { plural } from '../../utils/format';
 
 /** Barre haute de l'administration : recherche, file d'arbitrage, audit, compte. */
 export function AdminTopbar({ onOpenMenu }) {
   const navigate = useNavigate();
-  const { admin } = useAdminSession();
+  const { logout } = useAdminSession();
   const { peut } = usePermission();
   const [query, setQuery] = useState('');
   const [enAttente, setEnAttente] = useState(0);
@@ -98,7 +98,15 @@ export function AdminTopbar({ onOpenMenu }) {
         )}
         <IconButton icon={Bell} label="Notifications" onClick={() => navigate('/admin')} />
         <span className="ml-1">
-          <Avatar name={admin ? `${admin.firstName} ${admin.lastName}` : 'Administration'} />
+          {/* L'avatar était un simple carré de couleur, sans action ni nom
+              accessible : le seul point de la barre qui parle du compte ne
+              menait nulle part. */}
+          <AccountMenu
+            onLogout={() => {
+              logout();
+              navigate('/admin/connexion');
+            }}
+          />
         </span>
       </div>
     </header>

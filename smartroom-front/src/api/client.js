@@ -269,3 +269,20 @@ export async function collect(path, { params, signal, max = 500 } = {}) {
   }
   return tout;
 }
+
+/**
+ * Contenu d'un fichier en base64, sans le préfixe `data:` de FileReader.
+ *
+ * Vit ici parce que c'est une question de transport : l'API reçoit ses
+ * fichiers encodés dans le corps JSON, le multipart demandant une dépendance
+ * de plus côté serveur. Deux modules en avaient besoin — les plans d'étage et
+ * les photos de profil — et le second allait le recopier.
+ */
+export function enBase64(file) {
+  return new Promise((resolve, reject) => {
+    const lecteur = new FileReader();
+    lecteur.onerror = () => reject(new ApiError('Fichier illisible.', 422, 'fichier_illisible'));
+    lecteur.onload = () => resolve(String(lecteur.result).split(',')[1] ?? '');
+    lecteur.readAsDataURL(file);
+  });
+}

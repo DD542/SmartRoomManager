@@ -101,6 +101,21 @@ test.describe('espace d’administration', () => {
       );
     }
 
+    // --- Menu du compte et écran de profil -----------------------------------
+    // L'avatar de la barre haute était un carré de couleur sans action : le
+    // seul point qui parle du compte ne menait nulle part.
+    await page.goto('/admin');
+    await page.getByRole('button', { name: /Mon compte/ }).click();
+    const compte = page.getByRole('menu');
+    await expect(compte).toBeVisible();
+    await compte.getByRole('menuitem', { name: /Mon profil/ }).click();
+
+    await expect(page).toHaveURL(/\/admin\/profil$/);
+    await expect(page.locator('main')).toContainText('Sessions ouvertes');
+    // La session qui consulte doit se reconnaître, sinon fermer « les autres »
+    // reviendrait à se déconnecter soi-même sans le savoir.
+    await expect(page.locator('main')).toContainText('Cet appareil');
+
     // --- Garde-fou de la suspension -----------------------------------------
     // Elle partait d'un seul clic, le motif étant fabriqué côté écran.
     await page.goto('/admin/utilisateurs');

@@ -56,6 +56,7 @@ import RolesPage from './pages/admin/people/RolesPage';
 import TicketsPage from './pages/admin/support/TicketsPage';
 import KnowledgePage from './pages/admin/support/KnowledgePage';
 import EmailTemplatesPage from './pages/admin/support/EmailTemplatesPage';
+import AdminProfilePage from './pages/admin/account/AdminProfilePage';
 import AuditLogPage from './pages/admin/audit/AuditLogPage';
 
 /** Garde d'authentification : mémorise l'URL demandée pour y revenir après connexion. */
@@ -284,6 +285,12 @@ const routes = [
             <EmailTemplatesPage />
           </RequirePermission>
         ),
+      },
+      {
+        // Sans permission : régler son propre compte n'est pas un droit
+        // d'administration, c'est ce que tout titulaire de compte peut faire.
+        path: 'profil',
+        element: <AdminProfilePage />,
       },
       {
         path: 'audit',

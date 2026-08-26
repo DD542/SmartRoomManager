@@ -113,9 +113,30 @@ export async function cancelInvitation(invitationId) {
   return { invitationId, cancelled: true };
 }
 
+/**
+ * Référentiel des droits, groupé comme le serveur le rend.
+ *
+ * Les libellés viennent de la base et non d'une table écrite en dur : un droit
+ * ajouté au référentiel apparaîtrait sinon sous son code technique, et un
+ * droit renommé garderait son ancien nom à l'écran.
+ */
+export async function listPermissionGroups({ signal } = {}) {
+  const groupes = await get('/admin/permissions', { signal });
+  return groupes.map((groupe) => ({
+    id: groupe.id,
+    code: groupe.code,
+    label: groupe.label,
+    permissions: groupe.permissions.map((item) => ({
+      id: item.id,
+      code: item.code,
+      label: item.label,
+    })),
+  }));
+}
+
 /** Codes de permission connus du serveur, à plat. */
 export async function permissionsDisponibles({ signal } = {}) {
-  const groupes = await get('/admin/permissions', { signal });
+  const groupes = await listPermissionGroups({ signal });
   return groupes.flatMap((groupe) => groupe.permissions.map((item) => item.code));
 }
 

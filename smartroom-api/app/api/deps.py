@@ -55,6 +55,9 @@ class Principal:
     scope: str
     admin: AdminAccount | None = None
     permissions: frozenset[str] = frozenset()
+    #: Session dont ce jeton est issu, quand il la porte. Sert à l'écran des
+    #: sessions ouvertes, qui doit distinguer celle qui l'interroge.
+    family_id: uuid.UUID | None = None
 
     @property
     def is_admin(self) -> bool:
@@ -122,7 +125,17 @@ def get_principal(
             else frozenset(item.code for item in admin.permissions)
         )
 
-    principal = Principal(user=compte, scope=scope, admin=admin, permissions=droits)
+    famille = charge.get("fam")
+    try:
+        famille = uuid.UUID(famille) if famille else None
+    except ValueError:
+        # Une revendication illisible n'invalide pas le jeton : elle ne sert
+        # qu'au confort d'un écran, et le refuser fermerait la session entière.
+        famille = None
+
+    principal = Principal(
+        user=compte, scope=scope, admin=admin, permissions=droits, family_id=famille
+    )
     bind_principal(
         user_id=compte.id,
         user_label=f"{compte.first_name} {compte.last_name}",

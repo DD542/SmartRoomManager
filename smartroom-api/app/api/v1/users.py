@@ -8,6 +8,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, status
 from pydantic import Field
 
+from sqlalchemy import select
+
 from app.api.deps import (
     USERS_MANAGE,
     CurrentPrincipal,
@@ -20,6 +22,7 @@ from app.api.v1.schemas.comptes import (
     AdminAccountOut,
     AdminInvitationOut,
     AdminPromoteIn,
+    AvatarIn,
     InvitationIn,
     PermissionGroupOut,
     PermissionsIn,
@@ -27,6 +30,7 @@ from app.api.v1.schemas.comptes import (
     PreferencesOut,
     ProfileIn,
     QuotaIn,
+    SessionOut,
     UserDetailOut,
     UserMetricsOut,
     UserOut,
@@ -34,7 +38,9 @@ from app.api.v1.schemas.comptes import (
 )
 from app.core.pagination import Page
 from app.db.enums import UserStatus
-from app.models import AdminAccount, AdminInvitation, User, UserPreference
+from app.core.config import get_settings
+from app.core.security import fingerprint
+from app.models import AdminAccount, AdminInvitation, RefreshToken, User, UserPreference
 from app.services import users_service as service
 
 router = APIRouter(tags=["comptes"])
@@ -56,6 +62,7 @@ def _utilisateur(compte: User) -> UserOut:
         promotion=compte.promotion,
         department=compte.department,
         badge_number=compte.badge_number,
+        avatar_url=compte.avatar_url,
         status=compte.status,
         is_admin=compte.admin_account is not None,
         last_login_at=compte.last_login_at,
@@ -121,6 +128,91 @@ def update_my_profile(
     compte = service.update_profile(session, principal.user.id, payload)
     session.commit()
     return _utilisateur(compte)
+
+
+@router.put(
+    "/users/me/avatar",
+    response_model=UserOut,
+    summary="Déposer ma photo de profil",
+    description=(
+        "PNG, JPEG ou WebP, 5 Mo au maximum. Le SVG est refusé bien que le "
+        "magasin de médias l'accepte pour les plans : il porte du script, et "
+        "servi depuis le domaine de l'application il s'exécuterait avec ses "
+        "droits. La photo précédente est effacée du disque. Le contenu voyage "
+        "encodé en base64 dans le corps JSON, le multipart demandant une "
+        "dépendance de plus."
+    ),
+    responses={422: {"description": "Format refusé, fichier vide ou trop lourd."}},
+)
+def upload_my_avatar(
+    payload: AvatarIn, session: SessionDep, principal: CurrentPrincipal
+) -> UserOut:
+    compte = service.set_avatar(
+        session,
+        principal.user.id,
+        contenu=payload.content,
+        content_type=payload.content_type,
+    )
+    session.commit()
+    return _utilisateur(compte)
+
+
+@router.delete(
+    "/users/me/avatar",
+    response_model=UserOut,
+    summary="Retirer ma photo de profil",
+    description="L'écran retombe sur les initiales, qui sont son état par défaut.",
+)
+def delete_my_avatar(session: SessionDep, principal: CurrentPrincipal) -> UserOut:
+    compte = service.remove_avatar(session, principal.user.id)
+    session.commit()
+    return _utilisateur(compte)
+
+
+@router.get(
+    "/users/me/sessions",
+    response_model=list[SessionOut],
+    summary="Mes sessions ouvertes",
+    description=(
+        "Une entrée par *session*, c'est-à-dire par famille de jetons — et non "
+        "par jeton : chaque rafraîchissement en émet un nouveau, si bien qu'un "
+        "seul navigateur en produit des dizaines par jour. La session qui "
+        "appelle est signalée par `current`."
+    ),
+)
+def my_sessions(session: SessionDep, principal: CurrentPrincipal) -> list[SessionOut]:
+    courante = principal.family_id
+    return [
+        SessionOut(
+            id=ligne.family_id,
+            scope=ligne.scope,
+            ip_address=ligne.ip_address,
+            user_agent=ligne.user_agent,
+            started_at=ligne.created_at,
+            expires_at=ligne.expires_at,
+            current=ligne.family_id == courante,
+        )
+        for ligne in service.active_sessions(session, principal.user.id)
+    ]
+
+
+@router.delete(
+    "/users/me/sessions",
+    summary="Fermer mes autres sessions",
+    description=(
+        "Révoque toutes les familles de jetons sauf celle qui appelle. Garder "
+        "la sienne est délibéré : se déconnecter soi-même obligerait à se "
+        "reconnecter pour vérifier que l'ordre a été suivi."
+    ),
+)
+def revoke_my_other_sessions(
+    session: SessionDep, principal: CurrentPrincipal
+) -> dict[str, int]:
+    fermees = service.revoke_other_sessions(
+        session, principal.user.id, keep_family=principal.family_id
+    )
+    session.commit()
+    return {"closed": fermees}
 
 
 @router.get("/users/me/preferences", response_model=PreferencesOut, summary="Mes préférences")

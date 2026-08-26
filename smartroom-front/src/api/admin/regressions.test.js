@@ -18,6 +18,7 @@ import * as conflicts from './conflicts';
 import * as rooms from './rooms';
 import * as schedules from './schedules';
 import * as users from './users';
+import * as auth from '../auth';
 import * as buildings from '../buildings';
 import { USER_ROLE_LABEL } from '../../utils/format';
 import { creneau } from './creneau.fixture';
@@ -275,5 +276,55 @@ describe('Libellés de rôle', () => {
     expect(USER_ROLE_LABEL.utilisateur).toBe('Utilisateur');
     expect(USER_ROLE_LABEL.admin).toBe('Administrateur');
     expect(USER_ROLE_LABEL.gestionnaire).toBeUndefined();
+  });
+});
+
+describe('Photo de profil et sessions', () => {
+  it('refuse un format que le serveur refuserait, sans aller-retour', async () => {
+    // Le contrôle local n'est pas une sécurité — le serveur applique la même
+    // liste — mais une réponse immédiate : refuser un fichier après l'avoir
+    // téléversé serait discourtois.
+    const pdf = new File(['x'], 'plan.pdf', { type: 'application/pdf' });
+    await expect(auth.uploadAvatar(pdf)).rejects.toThrow(/PNG, JPEG ou WebP/);
+  });
+
+  it('refuse au-delà de cinq mégaoctets', async () => {
+    const lourd = new File(['x'], 'moi.png', { type: 'image/png' });
+    Object.defineProperty(lourd, 'size', { value: 6 * 1024 * 1024 });
+    await expect(auth.uploadAvatar(lourd)).rejects.toThrow(/trop lourd/i);
+  });
+
+  it('refuse l’absence de fichier plutôt que d’envoyer un corps vide', async () => {
+    await expect(auth.uploadAvatar(null)).rejects.toThrow(ApiError);
+  });
+
+  it('rend les sessions groupées par famille, la courante signalée', async () => {
+    serveur.use(
+      http.get(`${BASE}/users/me/sessions`, () =>
+        HttpResponse.json([
+          {
+            id: 'fam-1',
+            scope: 'admin',
+            ip_address: '203.0.113.7',
+            user_agent: 'Mozilla/5.0 Chrome/120.0',
+            started_at: '2026-08-25T09:00:00Z',
+            expires_at: '2026-09-24T09:00:00Z',
+            current: true,
+          },
+        ]),
+      ),
+    );
+
+    const [session] = await auth.listSessions();
+
+    expect(session).toMatchObject({ id: 'fam-1', ip: '203.0.113.7', current: true });
+    expect(session.startedAt).toBeInstanceOf(Date);
+  });
+
+  it('rend le nombre de sessions fermées', async () => {
+    serveur.use(
+      http.delete(`${BASE}/users/me/sessions`, () => HttpResponse.json({ closed: 3 })),
+    );
+    await expect(auth.revokeOtherSessions()).resolves.toBe(3);
   });
 });

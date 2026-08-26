@@ -13,7 +13,7 @@
 
 import { plural } from '../utils/format';
 import * as adapt from './adapters';
-import { ApiError, collect, del, get, items, put } from './client';
+import { ApiError, collect, del, enBase64, get, items, put } from './client';
 
 export async function listBuildings({ signal } = {}) {
   return (await get('/buildings', { signal })).map(adapt.building);
@@ -157,19 +157,9 @@ export async function uploadPlanDocument(planId, file) {
   const data = await put(`/floors/${planId}/plan`, {
     file_name: file.name,
     content_type: file.type,
-    content: await base64(file),
+    content: await enBase64(file),
   });
   return document_(data);
-}
-
-/** Contenu du fichier en base64, sans le préfixe `data:` de FileReader. */
-function base64(file) {
-  return new Promise((resolve, reject) => {
-    const lecteur = new FileReader();
-    lecteur.onerror = () => reject(new ApiError('Fichier illisible.', 422, 'fichier_illisible'));
-    lecteur.onload = () => resolve(String(lecteur.result).split(',')[1] ?? '');
-    lecteur.readAsDataURL(file);
-  });
 }
 
 export async function deletePlanDocument(planId) {

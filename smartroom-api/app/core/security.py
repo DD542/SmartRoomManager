@@ -60,12 +60,21 @@ def now() -> datetime:
 # --------------------------------------------------------------------------- #
 
 
-def create_access_token(*, subject: uuid.UUID, scope: Scope) -> tuple[str, int]:
+def create_access_token(
+    *, subject: uuid.UUID, scope: Scope, family_id: uuid.UUID | None = None
+) -> tuple[str, int]:
     """Émet un jeton signé et renvoie sa durée de validité en secondes.
 
     Les permissions n'y figurent pas : elles sont relues en base à chaque
     garde, pour qu'une révocation prenne effet immédiatement plutôt qu'au
     renouvellement suivant.
+
+    `family_id` désigne la session dont ce jeton est issu. Il y figure parce
+    que le cookie de rafraîchissement, seul autre porteur de l'information, est
+    limité au chemin `/api/v1/auth` — et cette limitation est une protection
+    qu'on ne desserre pas pour permettre à un écran de dire « c'est vous ».
+    L'identifiant n'est pas un secret : le connaître ne permet ni de
+    rafraîchir, ni de révoquer, la garde vérifiant toujours le porteur.
     """
     duree = timedelta(minutes=settings.access_ttl_minutes)
     emis_le = now()
@@ -78,6 +87,8 @@ def create_access_token(*, subject: uuid.UUID, scope: Scope) -> tuple[str, int]:
         "exp": emis_le + duree,
         "jti": secrets.token_hex(8),
     }
+    if family_id is not None:
+        charge["fam"] = str(family_id)
     jeton = jwt.encode(
         charge, settings.jwt_secret.get_secret_value(), algorithm=settings.jwt_algorithm
     )

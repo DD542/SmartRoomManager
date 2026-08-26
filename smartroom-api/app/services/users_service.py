@@ -16,6 +16,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.dialects.postgresql import Range
 from sqlalchemy.orm import Session, selectinload
 
+from app.core import storage
 from app.core.errors import NotFoundError, RuleViolationError
 from app.core.pagination import PageParams, paginate
 from app.core.security import new_opaque_token
@@ -27,6 +28,7 @@ from app.models import (
     Booking,
     Permission,
     PermissionGroup,
+    RefreshToken,
     User,
     UserPreference,
 )
@@ -93,6 +95,103 @@ def update_profile(session: Session, user_id: uuid.UUID, payload: Any) -> User:
         setattr(compte, champ, valeur)
     session.flush()
     return compte
+
+
+#: Types d'image acceptés pour une photo de profil.
+#:
+#: Sous-ensemble strict de ceux du magasin de médias : un PDF fait un plan
+#: d'étage valable, jamais un portrait, et le SVG est écarté parce qu'il porte
+#: du script — servi depuis le domaine de l'application, il s'exécuterait avec
+#: ses droits.
+TYPES_AVATAR = frozenset({"image/png", "image/jpeg", "image/webp"})
+
+
+def set_avatar(
+    session: Session, user_id: uuid.UUID, *, contenu: bytes, content_type: str
+) -> User:
+    """Remplace la photo de profil, et efface la précédente.
+
+    L'ancienne est retirée du disque : la conserver accumulerait un fichier par
+    changement, sans que rien ne les référence plus jamais.
+    """
+    if content_type not in TYPES_AVATAR:
+        raise RuleViolationError(
+            "Format refusé : déposez une image PNG, JPEG ou WebP.",
+            code="format_invalide",
+        )
+
+    compte = _charger(session, user_id)
+    extension = storage.verifier(content_type, len(contenu))
+    ancienne = compte.avatar_url
+    compte.avatar_url = storage.enregistrer("avatars", contenu, extension)
+    if ancienne:
+        storage.supprimer(ancienne)
+    session.flush()
+    return compte
+
+
+def remove_avatar(session: Session, user_id: uuid.UUID) -> User:
+    """Retire la photo. L'écran retombe sur les initiales, son état par défaut."""
+    compte = _charger(session, user_id)
+    if compte.avatar_url:
+        storage.supprimer(compte.avatar_url)
+        compte.avatar_url = None
+        session.flush()
+    return compte
+
+
+def active_sessions(session: Session, user_id: uuid.UUID) -> list[RefreshToken]:
+    """Sessions ouvertes du compte, la plus récente en tête.
+
+    Une session est une *famille* de jetons, pas un jeton : chaque
+    rafraîchissement en émet un nouveau et consomme le précédent, si bien qu'un
+    même navigateur en produit des dizaines. Les compter un par un afficherait
+    « 47 appareils connectés » à qui n'en a qu'un.
+    """
+    lignes = session.scalars(
+        select(RefreshToken)
+        .where(
+            RefreshToken.user_id == user_id,
+            RefreshToken.revoked_at.is_(None),
+            RefreshToken.expires_at > datetime.now(UTC),
+        )
+        .order_by(RefreshToken.created_at.desc())
+    ).all()
+
+    familles: dict[uuid.UUID, RefreshToken] = {}
+    for ligne in lignes:
+        familles.setdefault(ligne.family_id, ligne)
+    return list(familles.values())
+
+
+def revoke_other_sessions(
+    session: Session, user_id: uuid.UUID, *, keep_family: uuid.UUID | None
+) -> int:
+    """Ferme toutes les sessions sauf celle qui appelle.
+
+    Garder la sienne est délibéré : se déconnecter soi-même en fermant les
+    autres oblige à se reconnecter pour vérifier que l'ordre a été suivi, et
+    fait douter de son effet.
+    """
+    ouvertes = session.scalars(
+        select(RefreshToken).where(
+            RefreshToken.user_id == user_id,
+            RefreshToken.revoked_at.is_(None),
+        )
+    ).all()
+
+    maintenant = datetime.now(UTC)
+    fermees = {
+        ligne.family_id
+        for ligne in ouvertes
+        if keep_family is None or ligne.family_id != keep_family
+    }
+    for ligne in ouvertes:
+        if ligne.family_id in fermees:
+            ligne.revoked_at = maintenant
+
+    session.flush()
+    return len(fermees)
 
 
 def get_preferences(session: Session, user_id: uuid.UUID) -> UserPreference:
