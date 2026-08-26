@@ -14,12 +14,17 @@ from app.api.deps import (
     require_permission,
 )
 from app.api.v1.schemas import (
+    BuildingIn,
     BuildingOut,
+    BuildingPatchIn,
+    FloorCreateIn,
     FloorOut,
+    FloorPatchIn,
     FloorPlanOut,
     PlacementIn,
     RoomPlacementOut,
     UploadIn,
+    VisuelIn,
 )
 from app.api.v1.serializers import batiment_sortie, etage_sortie
 from app.core import storage
@@ -49,6 +54,133 @@ def get_building(
     building_id: uuid.UUID, session: SessionDep, _: CurrentPrincipal
 ) -> BuildingOut:
     return batiment_sortie(service.get_building(session, building_id))
+
+
+@router.post(
+    "/buildings",
+    response_model=BuildingOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Déclarer un bâtiment",
+    description=(
+        "Le code est unique et sert d'identifiant lisible dans les exports. "
+        "Un bâtiment naît sans étage : les niveaux s'ajoutent ensuite, et une "
+        "salle ne se rattache qu'à un étage."
+    ),
+    responses={422: {"description": "Code déjà pris."}},
+)
+def create_building(payload: BuildingIn, session: SessionDep, _admin=Ecriture) -> BuildingOut:
+    batiment = service.create_building(session, payload)
+    session.commit()
+    return batiment_sortie(batiment)
+
+
+@router.patch(
+    "/buildings/{building_id}",
+    response_model=BuildingOut,
+    summary="Modifier un bâtiment",
+    description=(
+        "Le code n'est pas modifiable : il est cité dans les exports déjà "
+        "produits et dans le journal d'audit, et le changer réécrirait le passé."
+    ),
+)
+def update_building(
+    building_id: uuid.UUID, payload: BuildingPatchIn, session: SessionDep, _admin=Ecriture
+) -> BuildingOut:
+    batiment = service.update_building(session, building_id, payload)
+    session.commit()
+    return batiment_sortie(batiment)
+
+
+@router.delete(
+    "/buildings/{building_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Supprimer un bâtiment vide",
+    description=(
+        "Refusé tant que le bâtiment porte une salle. Archiver les salles en "
+        "cascade serait pire qu'un refus : une salle archivée reste citée dans "
+        "les réservations passées, et son bâtiment doit rester lisible."
+    ),
+    responses={422: {"description": "Le bâtiment porte encore des salles."}},
+)
+def delete_building(building_id: uuid.UUID, session: SessionDep, _admin=Ecriture) -> None:
+    service.delete_building(session, building_id)
+    session.commit()
+
+
+@router.put(
+    "/buildings/{building_id}/image",
+    response_model=BuildingOut,
+    summary="Déposer la photographie d'un bâtiment",
+    description=(
+        "PNG, JPEG ou WebP, 5 Mo au maximum. Ni PDF ni SVG : l'image s'affiche "
+        "dans une carte, et le SVG porte du script qui s'exécuterait avec les "
+        "droits de l'application. Le visuel précédent est effacé du disque."
+    ),
+    responses={422: {"description": "Format refusé, fichier vide ou trop lourd."}},
+)
+def upload_building_image(
+    building_id: uuid.UUID, payload: VisuelIn, session: SessionDep, _admin=Ecriture
+) -> BuildingOut:
+    batiment = service.set_building_image(
+        session, building_id, contenu=payload.content, content_type=payload.content_type
+    )
+    session.commit()
+    return batiment_sortie(batiment)
+
+
+@router.delete(
+    "/buildings/{building_id}/image",
+    response_model=BuildingOut,
+    summary="Retirer la photographie d'un bâtiment",
+)
+def delete_building_image(
+    building_id: uuid.UUID, session: SessionDep, _admin=Ecriture
+) -> BuildingOut:
+    batiment = service.delete_building_image(session, building_id)
+    session.commit()
+    return batiment_sortie(batiment)
+
+
+@router.post(
+    "/buildings/{building_id}/floors",
+    response_model=FloorOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Ajouter un étage",
+    description=(
+        "`level` est un entier de tri, distinct de `code` : « RDC », « 1er » et "
+        "« 2e » ne s'ordonnent pas comme du texte, et une liste triée "
+        "alphabétiquement placerait le rez-de-chaussée entre le premier et le "
+        "deuxième."
+    ),
+    responses={422: {"description": "Code ou niveau déjà pris dans ce bâtiment."}},
+)
+def create_floor(
+    building_id: uuid.UUID, payload: FloorCreateIn, session: SessionDep, _admin=Ecriture
+) -> FloorOut:
+    etage = service.create_floor(session, building_id, payload)
+    session.commit()
+    return etage_sortie(etage)
+
+
+@router.patch("/floors/{floor_id}", response_model=FloorOut, summary="Modifier un étage")
+def update_floor(
+    floor_id: uuid.UUID, payload: FloorPatchIn, session: SessionDep, _admin=Ecriture
+) -> FloorOut:
+    etage = service.update_floor(session, floor_id, payload)
+    session.commit()
+    return etage_sortie(etage)
+
+
+@router.delete(
+    "/floors/{floor_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Supprimer un étage vide",
+    description="Refusé tant que l'étage porte une salle. Son plan est effacé avec lui.",
+    responses={422: {"description": "L'étage porte encore des salles."}},
+)
+def delete_floor(floor_id: uuid.UUID, session: SessionDep, _admin=Ecriture) -> None:
+    service.delete_floor(session, floor_id)
+    session.commit()
 
 
 @router.get(

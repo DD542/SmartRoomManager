@@ -9,6 +9,11 @@
 export const SALLE_VIERGE = {
   name: '',
   buildingId: '',
+  // `floorId` et non `floor` : une salle se rattache à un étage identifié, pas
+  // à une étiquette. Le champ était un texte libre, et la création échouait
+  // systématiquement sur « L'étage est obligatoire » — aucune saisie ne pouvait
+  // produire l'identifiant que l'API attend.
+  floorId: '',
   floor: '',
   capacity: 8,
   area: 20,
@@ -18,6 +23,7 @@ export const SALLE_VIERGE = {
   accessible: false,
   badgeRequired: true,
   photos: [],
+  locationPlanUrl: null,
   rules: {
     visitDays: [1, 2, 3, 4, 5],
     openTime: '08:00',
@@ -33,6 +39,7 @@ export function versBrouillon(room) {
   return {
     name: room.name,
     buildingId: room.buildingId,
+    floorId: room.floorId ?? '',
     floor: room.floor,
     capacity: room.capacity,
     area: room.area,
@@ -42,6 +49,7 @@ export function versBrouillon(room) {
     accessible: room.accessible,
     badgeRequired: room.badgeRequired,
     photos: [...(room.photos ?? [])],
+    locationPlanUrl: room.locationPlanUrl ?? null,
     occupancyRate: room.occupancyRate,
     rules: { ...room.rules, constraints: [...(room.rules?.constraints ?? [])] },
   };
@@ -52,6 +60,7 @@ export function validerSalle(draft) {
   const erreurs = {};
   if (!draft.name?.trim()) erreurs.name = 'Le nom est obligatoire.';
   if (!draft.buildingId) erreurs.buildingId = 'Le bâtiment est obligatoire.';
+  if (!draft.floorId) erreurs.floorId = 'L’étage est obligatoire.';
   if (Number(draft.capacity) < 1) erreurs.capacity = 'Au moins une place.';
   if (Number(draft.area) < 1) erreurs.area = 'Surface obligatoire.';
   return erreurs;

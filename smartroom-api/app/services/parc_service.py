@@ -15,6 +15,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import Select, delete, func, select, text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.core import storage
@@ -46,9 +47,11 @@ CHAMPS_SALLE = (
     "badge_required",
     "description",
     "floor_id",
+    "location_plan_url",
 )
 CHAMPS_EQUIPEMENT = ("code", "label", "category", "icon", "description", "is_filterable")
-CHAMPS_BATIMENT = ("code", "name", "address", "sort_order")
+CHAMPS_BATIMENT = ("code", "name", "address", "image_url", "sort_order")
+CHAMPS_ETAGE = ("code", "label", "level")
 CHAMPS_PLAN = ("kind", "file_url", "file_name", "file_size_bytes")
 CHAMPS_PHOTO = ("file_url", "alt_text", "position")
 
@@ -132,6 +135,261 @@ def get_floor(session: Session, floor_id: uuid.UUID) -> Floor:
     if etage is None:
         raise NotFoundError("Étage introuvable.")
     return etage
+
+
+#: Types acceptés pour une photographie de bâtiment ou un plan de localisation.
+#:
+#: Le PDF est écarté : ces visuels s'affichent dans une carte ou une vignette,
+#: là où un lecteur de PDF n'a pas sa place. Le SVG l'est aussi, parce qu'il
+#: porte du script et serait servi depuis le domaine de l'application.
+TYPES_VISUEL = frozenset({"image/png", "image/jpeg", "image/webp"})
+
+
+def _remplacer_visuel(
+    contenu: bytes, content_type: str | None, dossier: str, ancienne: str | None
+) -> str:
+    """Écrit un visuel, efface celui qu'il remplace, et rend sa nouvelle adresse.
+
+    Effacer l'ancien n'est pas une politesse : sans cela, chaque changement
+    laisserait sur le disque un fichier que plus rien ne référence, et rien
+    dans l'application ne signalerait jamais le volume perdu.
+    """
+    if content_type not in TYPES_VISUEL:
+        raise RuleViolationError(
+            "Format refusé : déposez une image PNG, JPEG ou WebP.", code="format_invalide"
+        )
+    extension = storage.verifier(content_type, len(contenu))
+    url = storage.enregistrer(dossier, contenu, extension)
+    if ancienne:
+        storage.supprimer(ancienne)
+    return url
+
+
+def create_building(session: Session, payload: Any) -> Building:
+    """Crée un bâtiment.
+
+    Le code est unique — la contrainte le garantit — et sert d'identifiant
+    court dans les exports. Le doublon est traduit ici plutôt que laissé à
+    PostgreSQL, dont le message nomme une contrainte et pas un bâtiment.
+    """
+    batiment = Building(**payload.model_dump(exclude_unset=True))
+    session.add(batiment)
+    try:
+        session.flush()
+    except IntegrityError as erreur:
+        raise RuleViolationError(
+            f"Le code « {payload.code} » est déjà pris par un autre bâtiment.",
+            code="code_pris",
+        ) from erreur
+
+    audit_service.record(
+        session,
+        action=AuditAction.CREATION,
+        target_type="building",
+        target_label=batiment.name,
+        target_id=batiment.id,
+        after=audit_service.snapshot(batiment, CHAMPS_BATIMENT),
+    )
+    return batiment
+
+
+def update_building(session: Session, building_id: uuid.UUID, payload: Any) -> Building:
+    batiment = get_building(session, building_id)
+    avant = audit_service.snapshot(batiment, CHAMPS_BATIMENT)
+
+    for champ, valeur in payload.model_dump(exclude_unset=True).items():
+        setattr(batiment, champ, valeur)
+    session.flush()
+
+    audit_service.record(
+        session,
+        action=AuditAction.MODIFICATION,
+        target_type="building",
+        target_label=batiment.name,
+        target_id=batiment.id,
+        before=avant,
+        after=audit_service.snapshot(batiment, CHAMPS_BATIMENT),
+    )
+    return batiment
+
+
+def delete_building(session: Session, building_id: uuid.UUID) -> None:
+    """Supprime un bâtiment vide.
+
+    Refusé tant qu'il porte une salle : la clé étrangère est en `RESTRICT`, et
+    laisser PostgreSQL trancher rendrait un message que personne ne comprend.
+    Archiver les salles en cascade serait pire — une salle archivée reste dans
+    les réservations passées, et son bâtiment doit rester lisible.
+    """
+    batiment = get_building(session, building_id)
+    salles = session.scalar(
+        select(func.count())
+        .select_from(Room)
+        .join(Floor, Room.floor_id == Floor.id)
+        .where(Floor.building_id == building_id, Room.deleted_at.is_(None))
+    )
+    if salles:
+        raise RuleViolationError(
+            f"« {batiment.name} » porte encore {salles} salle(s) : videz-le d'abord.",
+            code="batiment_occupe",
+        )
+
+    if batiment.image_url:
+        storage.supprimer(batiment.image_url)
+    audit_service.record(
+        session,
+        action=AuditAction.SUPPRESSION,
+        target_type="building",
+        target_label=batiment.name,
+        target_id=batiment.id,
+        before=audit_service.snapshot(batiment, CHAMPS_BATIMENT),
+    )
+    session.delete(batiment)
+    session.flush()
+
+
+def set_building_image(
+    session: Session, building_id: uuid.UUID, *, contenu: bytes, content_type: str | None
+) -> Building:
+    batiment = get_building(session, building_id)
+    avant = audit_service.snapshot(batiment, CHAMPS_BATIMENT)
+    batiment.image_url = _remplacer_visuel(
+        contenu, content_type, "batiments", batiment.image_url
+    )
+    session.flush()
+
+    audit_service.record(
+        session,
+        action=AuditAction.MODIFICATION,
+        target_type="building",
+        target_label=batiment.name,
+        target_id=batiment.id,
+        before=avant,
+        after=audit_service.snapshot(batiment, CHAMPS_BATIMENT),
+    )
+    return batiment
+
+
+def delete_building_image(session: Session, building_id: uuid.UUID) -> Building:
+    batiment = get_building(session, building_id)
+    if batiment.image_url:
+        storage.supprimer(batiment.image_url)
+        batiment.image_url = None
+        session.flush()
+    return batiment
+
+
+def create_floor(session: Session, building_id: uuid.UUID, payload: Any) -> Floor:
+    """Ajoute un niveau à un bâtiment.
+
+    `level` est un entier de tri distinct de `code` : « RDC », « 1er », « 2e »
+    ne s'ordonnent pas comme du texte, et une liste d'étages triée
+    alphabétiquement placerait le rez-de-chaussée entre le premier et le
+    deuxième.
+    """
+    get_building(session, building_id)
+    etage = Floor(building_id=building_id, **payload.model_dump(exclude_unset=True))
+    session.add(etage)
+    try:
+        session.flush()
+    except IntegrityError as erreur:
+        raise RuleViolationError(
+            "Ce bâtiment a déjà un étage portant ce code ou ce niveau.",
+            code="etage_en_double",
+        ) from erreur
+
+    audit_service.record(
+        session,
+        action=AuditAction.CREATION,
+        target_type="floor",
+        target_label=_nom_etage(session, etage.id),
+        target_id=etage.id,
+        after=audit_service.snapshot(etage, CHAMPS_ETAGE),
+    )
+    return etage
+
+
+def update_floor(session: Session, floor_id: uuid.UUID, payload: Any) -> Floor:
+    etage = get_floor(session, floor_id)
+    avant = audit_service.snapshot(etage, CHAMPS_ETAGE)
+
+    for champ, valeur in payload.model_dump(exclude_unset=True).items():
+        setattr(etage, champ, valeur)
+    session.flush()
+
+    audit_service.record(
+        session,
+        action=AuditAction.MODIFICATION,
+        target_type="floor",
+        target_label=_nom_etage(session, etage.id),
+        target_id=etage.id,
+        before=avant,
+        after=audit_service.snapshot(etage, CHAMPS_ETAGE),
+    )
+    return etage
+
+
+def delete_floor(session: Session, floor_id: uuid.UUID) -> None:
+    """Supprime un étage vide, son plan compris."""
+    etage = get_floor(session, floor_id)
+    nom = _nom_etage(session, floor_id)
+    salles = session.scalar(
+        select(func.count())
+        .select_from(Room)
+        .where(Room.floor_id == floor_id, Room.deleted_at.is_(None))
+    )
+    if salles:
+        raise RuleViolationError(
+            f"« {nom} » porte encore {salles} salle(s) : videz-le d'abord.",
+            code="etage_occupe",
+        )
+
+    plan = session.scalars(select(FloorPlan).where(FloorPlan.floor_id == floor_id)).one_or_none()
+    if plan is not None:
+        storage.supprimer(plan.file_url)
+
+    audit_service.record(
+        session,
+        action=AuditAction.SUPPRESSION,
+        target_type="floor",
+        target_label=nom,
+        target_id=floor_id,
+        before=audit_service.snapshot(etage, CHAMPS_ETAGE),
+    )
+    session.delete(etage)
+    session.flush()
+
+
+def set_room_location_plan(
+    session: Session, room_id: uuid.UUID, *, contenu: bytes, content_type: str | None
+) -> Room:
+    """Dépose le plan portant le repère de la salle."""
+    salle = get_room(session, room_id)
+    avant = audit_service.snapshot(salle, CHAMPS_SALLE)
+    salle.location_plan_url = _remplacer_visuel(
+        contenu, content_type, "reperes", salle.location_plan_url
+    )
+    session.flush()
+
+    audit_service.record(
+        session,
+        action=AuditAction.MODIFICATION,
+        target_type="room",
+        target_label=salle.name,
+        target_id=salle.id,
+        before=avant,
+        after=audit_service.snapshot(salle, CHAMPS_SALLE),
+    )
+    return salle
+
+
+def delete_room_location_plan(session: Session, room_id: uuid.UUID) -> Room:
+    salle = get_room(session, room_id)
+    if salle.location_plan_url:
+        storage.supprimer(salle.location_plan_url)
+        salle.location_plan_url = None
+        session.flush()
+    return salle
 
 
 def get_floor_plan(session: Session, floor_id: uuid.UUID) -> FloorPlan:

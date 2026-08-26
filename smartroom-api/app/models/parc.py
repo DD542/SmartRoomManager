@@ -56,6 +56,9 @@ class Building(TimestampMixin, Base):
         UniqueConstraint("code", name="uq_buildings_code"),
         CheckConstraint("code ~ '^[A-Z0-9]{1,4}$'", name="code_format"),
         CheckConstraint("btrim(name) <> ''", name="name_not_blank"),
+        CheckConstraint(
+            "image_url IS NULL OR length(image_url) > 0", name="image_url_non_vide"
+        ),
         Index("idx_buildings_sort_order", "sort_order", "name"),
     )
 
@@ -64,6 +67,8 @@ class Building(TimestampMixin, Base):
     code: Mapped[str] = mapped_column(String(4))
     name: Mapped[str] = mapped_column(String(120))
     address: Mapped[str | None] = mapped_column(String(255), default=None)
+    #: Photographie du bâtiment, servie depuis le magasin de médias.
+    image_url: Mapped[str | None] = mapped_column(String(255), default=None)
     sort_order: Mapped[int] = mapped_column(SmallInteger, server_default=text("0"), default=0)
 
     floors: Mapped[list["Floor"]] = relationship(
@@ -149,6 +154,10 @@ class Room(TimestampMixin, SoftDeleteMixin, Base):
         CheckConstraint("btrim(name) <> ''", name="name_not_blank"),
         CheckConstraint("slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'", name="slug_format"),
         CheckConstraint(
+            "location_plan_url IS NULL OR length(location_plan_url) > 0",
+            name="location_plan_url_non_vide",
+        ),
+        CheckConstraint(
             "deleted_at IS NULL OR status = 'archivee'", name="archived_state"
         ),
         # Unicités partielles : archiver une salle libère son nom et son slug.
@@ -193,6 +202,10 @@ class Room(TimestampMixin, SoftDeleteMixin, Base):
     #: Code permanent du terminal, haché : le clair n'est jamais persisté.
     access_code_hash: Mapped[str | None] = mapped_column(Text, default=None)
     description: Mapped[str | None] = mapped_column(Text, default=None)
+    #: Plan portant le repère de la salle. Distinct de ses photos, qui montrent
+    #: la salle, et du plan de l'étage, qui vaut pour tout un niveau : une salle
+    #: peut être située sans que son étage ait reçu de plan, et l'inverse.
+    location_plan_url: Mapped[str | None] = mapped_column(String(255), default=None)
 
     floor: Mapped["Floor"] = relationship(back_populates="rooms", lazy="selectin")
     placement: Mapped["RoomPlacement | None"] = relationship(

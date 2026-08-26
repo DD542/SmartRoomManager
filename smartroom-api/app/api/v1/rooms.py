@@ -28,6 +28,7 @@ from app.api.v1.schemas import (
     PhotoOrderIn,
     RoomPhotoOut,
     UploadIn,
+    VisuelIn,
 )
 from app.api.v1.serializers import batiment_sortie, equipement_sortie, etage_sortie, salle_sortie
 from app.core.pagination import Page
@@ -189,6 +190,40 @@ def list_photos(
     room_id: uuid.UUID, session: SessionDep, _: CurrentPrincipal
 ) -> list[RoomPhotoOut]:
     return [RoomPhotoOut.model_validate(item) for item in service.list_photos(session, room_id)]
+
+
+@router.put(
+    "/{room_id}/location-plan",
+    response_model=RoomOut,
+    summary="Déposer le plan de localisation d'une salle",
+    description=(
+        "L'image porte déjà le repère de la salle : c'est un plan annoté, pas "
+        "une photographie de la pièce — celles-ci sont les `photos`. Elle est "
+        "distincte du plan de l'étage, qui vaut pour tout un niveau : une salle "
+        "peut être située sans que son étage ait reçu de plan, et l'inverse. "
+        "PNG, JPEG ou WebP, 5 Mo au maximum ; le visuel précédent est effacé."
+    ),
+    responses={422: {"description": "Format refusé, fichier vide ou trop lourd."}},
+)
+def upload_location_plan(
+    room_id: uuid.UUID, payload: VisuelIn, session: SessionDep, _admin=Ecriture
+) -> RoomOut:
+    salle = service.set_room_location_plan(
+        session, room_id, contenu=payload.content, content_type=payload.content_type
+    )
+    session.commit()
+    return salle_sortie(salle)
+
+
+@router.delete(
+    "/{room_id}/location-plan",
+    response_model=RoomOut,
+    summary="Retirer le plan de localisation d'une salle",
+)
+def delete_location_plan(room_id: uuid.UUID, session: SessionDep, _admin=Ecriture) -> RoomOut:
+    salle = service.delete_room_location_plan(session, room_id)
+    session.commit()
+    return salle_sortie(salle)
 
 
 @router.post(

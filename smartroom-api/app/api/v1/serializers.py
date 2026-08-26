@@ -25,6 +25,7 @@ def batiment_sortie(batiment: Building, floor_count: int = 0, room_count: int = 
         code=batiment.code,
         name=batiment.name,
         address=batiment.address,
+        image_url=batiment.image_url,
         sort_order=batiment.sort_order,
         floor_count=floor_count,
         room_count=room_count,
@@ -82,6 +83,7 @@ def salle_sortie(salle: Room, occupation: int = 0, reservations: int = 0) -> Roo
         is_accessible=salle.is_accessible,
         badge_required=salle.badge_required,
         description=salle.description,
+        location_plan_url=salle.location_plan_url,
         equipments=[
             RoomEquipmentOut(
                 equipment_id=lien.equipment_id,

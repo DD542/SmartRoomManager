@@ -104,6 +104,7 @@ export const building = (data) => ({
   code: data.code,
   name: data.name,
   address: data.address,
+  imageUrl: data.image_url ?? null,
   // Les écrans affichent un « campus » sous le nom du bâtiment. Le modèle n'en
   // tient pas : l'adresse en tient lieu, elle porte la même information pour
   // un lecteur.
@@ -161,6 +162,7 @@ export const room = (data) => {
     building: data.building_name ? { id: data.building_id, name: data.building_name } : null,
     floorId: data.floor_id,
     floor: data.floor_label,
+    locationPlanUrl: data.location_plan_url ?? null,
     floorLevel: data.floor_level,
     capacity: data.capacity,
     area: Number(data.area_m2),

@@ -59,10 +59,13 @@ from app.api.v1.schemas.rules import (
 from app.api.v1.schemas.parc import (
     BuildingIn,
     BuildingOut,
+    BuildingPatchIn,
     EquipmentIn,
     EquipmentOut,
+    FloorCreateIn,
     FloorIn,
     FloorOut,
+    FloorPatchIn,
     FloorPlanOut,
     PhotoOrderIn,
     UploadIn,
@@ -77,9 +80,14 @@ from app.api.v1.schemas.parc import (
     RoomPatchIn,
     RoomPhotoOut,
     RoomPlacementOut,
+    VisuelIn,
 )
 
 __all__ = [
+    "VisuelIn",
+    "FloorPatchIn",
+    "FloorCreateIn",
+    "BuildingPatchIn",
     "RulePreviewOut",
     "ParticipantOut",
     "ParticipantInvitedOut",

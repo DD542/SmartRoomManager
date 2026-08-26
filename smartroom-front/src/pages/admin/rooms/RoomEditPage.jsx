@@ -132,6 +132,7 @@ export default function RoomEditPage() {
                 onChange={modifier}
                 errors={erreurs}
                 buildings={referentiels.data?.buildings ?? []}
+                floors={referentiels.data?.floors ?? []}
                 catalog={catalogue.data ?? []}
                 categories={categories}
                 creating={creation}

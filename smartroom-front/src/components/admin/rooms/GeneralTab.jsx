@@ -12,7 +12,17 @@ const STATUTS = [
  * Capacité et surface sont numériques et bornées à 1 : ce sont elles qui
  * alimentent le moteur de recommandation, une valeur nulle le fausserait.
  */
-export function GeneralTab({ draft, onChange, buildings = [], errors = {} }) {
+export function GeneralTab({ draft, onChange, buildings = [], floors = [], errors = {} }) {
+  // Les étages du bâtiment choisi, et eux seuls : proposer ceux des autres
+  // laisserait rattacher une salle à un niveau qui n'existe pas chez elle.
+  const etagesDuBatiment = floors
+    .filter((etage) => etage.buildingId === draft.buildingId)
+    // Le bâtiment est déjà choisi juste à côté : le répéter sur chaque option
+    // n'apprend rien. Les étages restent triés par niveau, « RDC » précédant
+    // « 1er », ce qu'un tri alphabétique ne ferait pas.
+    .map((etage) => ({ ...etage, label: etage.shortLabel ?? etage.label }))
+    .sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
+
   return (
     <div className="flex flex-col gap-4">
       <Input
@@ -31,14 +41,31 @@ export function GeneralTab({ draft, onChange, buildings = [], errors = {} }) {
           placeholder="Choisir un bâtiment"
           options={buildings}
           value={draft.buildingId}
-          onChange={(event) => onChange({ buildingId: event.target.value })}
+          error={errors.buildingId}
+          // Changer de bâtiment vide l'étage : le garder rattacherait la salle
+          // à un niveau d'un autre bâtiment, que l'API refuserait sans que
+          // l'écran dise pourquoi.
+          onChange={(event) => onChange({ buildingId: event.target.value, floorId: '' })}
         />
-        <Input
+        {/* Une liste et non un champ libre. C'était un texte, et l'API attend
+            un identifiant d'étage : aucune saisie ne pouvait aboutir, la
+            création échouant toujours sur « L'étage est obligatoire ». */}
+        <Select
           label="Étage"
           required
-          placeholder="2e"
-          value={draft.floor}
-          onChange={(event) => onChange({ floor: event.target.value })}
+          placeholder={
+            draft.buildingId ? 'Choisir un étage' : 'Choisissez d’abord un bâtiment'
+          }
+          disabled={!draft.buildingId}
+          options={etagesDuBatiment}
+          value={draft.floorId}
+          error={errors.floorId}
+          hint={
+            draft.buildingId && etagesDuBatiment.length === 0
+              ? 'Ce bâtiment n’a pas encore d’étage : ajoutez-en un depuis Bâtiments.'
+              : undefined
+          }
+          onChange={(event) => onChange({ floorId: event.target.value })}
         />
       </div>
 

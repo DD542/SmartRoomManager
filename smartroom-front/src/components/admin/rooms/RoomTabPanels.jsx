@@ -17,6 +17,7 @@ export function RoomTabPanels({
   onChange,
   errors,
   buildings,
+  floors,
   catalog,
   categories,
   creating,
@@ -25,7 +26,15 @@ export function RoomTabPanels({
   roomId,
 }) {
   if (tab === 'general') {
-    return <GeneralTab draft={draft} onChange={onChange} buildings={buildings} errors={errors} />;
+    return (
+      <GeneralTab
+        draft={draft}
+        onChange={onChange}
+        buildings={buildings}
+        floors={floors}
+        errors={errors}
+      />
+    );
   }
   if (tab === 'equipements') {
     return (

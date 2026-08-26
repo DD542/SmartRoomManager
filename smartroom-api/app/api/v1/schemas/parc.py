@@ -37,11 +37,53 @@ class BuildingIn(ApiModel):
     sort_order: Annotated[int, Field(ge=0, le=999)] = 0
 
 
+class BuildingPatchIn(ApiModel):
+    """Modification partielle : seuls les champs transmis sont appliqués.
+
+    Le code n'y figure pas. Il est cité dans les exports déjà produits et dans
+    le journal d'audit : le changer réécrirait le passé.
+    """
+
+    name: Annotated[str | None, Field(min_length=1, max_length=120)] = None
+    address: Annotated[str | None, Field(max_length=255)] = None
+    sort_order: Annotated[int | None, Field(ge=0, le=999)] = None
+
+
+class FloorPatchIn(ApiModel):
+    code: Annotated[str | None, Field(min_length=1, max_length=8)] = None
+    label: Annotated[str | None, Field(min_length=1, max_length=60)] = None
+    level: Annotated[int | None, Field(ge=-5, le=50)] = None
+
+
+class FloorCreateIn(ApiModel):
+    """Étage créé sous un bâtiment déjà désigné par le chemin.
+
+    `building_id` n'y figure donc pas : le porter deux fois autoriserait deux
+    valeurs contradictoires dans une même requête.
+    """
+
+    code: Annotated[str, Field(min_length=1, max_length=8)] = Field(examples=["R2"])
+    label: Annotated[str, Field(min_length=1, max_length=60)] = Field(examples=["2e étage"])
+    level: Annotated[int, Field(ge=-5, le=50)]
+
+
+class VisuelIn(ApiModel):
+    """Image déposée, encodée en base64 dans le corps JSON.
+
+    Même transport que les plans d'étage et les photos de profil : le multipart
+    demanderait `python-multipart`, hors de la liste de dépendances arrêtée.
+    """
+
+    content_type: Annotated[str, Field(min_length=3, max_length=100)]
+    content: Base64Bytes
+
+
 class BuildingOut(ReadModel):
     id: uuid.UUID
     code: str
     name: str
     address: str | None
+    image_url: str | None = None
     sort_order: int
     floor_count: int = 0
     room_count: int = 0
@@ -243,6 +285,9 @@ class RoomOut(ReadModel):
     is_accessible: bool
     badge_required: bool
     description: str | None
+    #: Plan portant le repère de la salle. Distinct de `photos`, qui montrent
+    #: la salle elle-même, et du plan de l'étage, qui vaut pour tout un niveau.
+    location_plan_url: str | None = None
     equipments: list[RoomEquipmentOut] = Field(default_factory=list)
     photos: list[RoomPhotoOut] = Field(default_factory=list)
     placement: RoomPlacementOut | None = None

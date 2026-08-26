@@ -87,6 +87,9 @@ export async function listRoomFilters({ signal } = {}) {
       .map((item) => ({
         value: item.id,
         label: `${nomBatiment.get(item.building_id) ?? 'Bâtiment inconnu'} — ${item.label}`,
+        // Le libellé nu, pour les écrans où le bâtiment est déjà choisi : y
+        // répéter son nom sur chaque option n'apprend rien et allonge la liste.
+        shortLabel: item.label,
         buildingId: item.building_id,
         level: item.level,
       }))
