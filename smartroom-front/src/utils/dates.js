@@ -43,23 +43,44 @@ export const isValidDate = (value) => {
   return date instanceof Date && isValid(date);
 };
 
+/** Marque d'une date absente. Un tiret se lit ; une page blanche non. */
+export const SANS_DATE = '—';
+
+/**
+ * Applique un format, sauf quand il n'y a rien à formater.
+ *
+ * Plusieurs colonnes sont nullables et le resteront : une dernière connexion
+ * qui n'a jamais eu lieu, une résolution qui n'est pas venue. `toDate(null)`
+ * rend une date invalide, dont `format` lève — et l'exception remontait
+ * jusqu'à la frontière d'erreur, emportant l'écran entier. Un compte
+ * d'administration jamais connecté suffisait à rendre la page des rôles
+ * inaccessible.
+ *
+ * Une valeur *malformée* reste une erreur et lève : c'est un défaut, pas un
+ * état. Seule l'absence est traitée comme ce qu'elle est.
+ */
+const formater = (value, rendu) =>
+  value === null || value === undefined || value === '' ? SANS_DATE : rendu(toDate(value));
+
 /** '14:00' */
-export const fmtTime = (value) => format(toDate(value), 'HH:mm');
+export const fmtTime = (value) => formater(value, (date) => format(date, 'HH:mm'));
 
 /** '26/03' */
-export const fmtDayMonth = (value) => format(toDate(value), 'dd/MM');
+export const fmtDayMonth = (value) => formater(value, (date) => format(date, 'dd/MM'));
 
 /** '26/03/2026' */
-export const fmtDate = (value) => format(toDate(value), 'dd/MM/yyyy');
+export const fmtDate = (value) => formater(value, (date) => format(date, 'dd/MM/yyyy'));
 
 /** 'jeudi 26 mars 2026' */
-export const fmtDateLong = (value) => format(toDate(value), 'EEEE d MMMM yyyy', { locale: fr });
+export const fmtDateLong = (value) =>
+  formater(value, (date) => format(date, 'EEEE d MMMM yyyy', { locale: fr }));
 
 /** 'Jeu. 26 Mars' */
-export const fmtDateShort = (value) => {
-  const raw = format(toDate(value), 'EEE d MMM', { locale: fr });
-  return raw.charAt(0).toUpperCase() + raw.slice(1);
-};
+export const fmtDateShort = (value) =>
+  formater(value, (date) => {
+    const raw = format(date, 'EEE d MMM', { locale: fr });
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
+  });
 
 /** '2026-03-26' pour les <input type="date"> */
 export const toDateInput = (value) => format(toDate(value), 'yyyy-MM-dd');
@@ -94,6 +115,7 @@ export const fmtCountdown = (start, end, now = NOW) => {
 
 /** Horodatage relatif des notifications : 'il y a 5 min', 'hier'. */
 export const fmtRelative = (value, now = NOW) => {
+  if (value === null || value === undefined || value === '') return SANS_DATE;
   const diff = differenceInMinutes(now, toDate(value));
   if (diff < 1) return "à l'instant";
   if (diff < 60) return `il y a ${diff} min`;

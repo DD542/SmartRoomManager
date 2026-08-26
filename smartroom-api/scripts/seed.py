@@ -36,6 +36,7 @@ from sqlalchemy import delete, select, text
 from sqlalchemy.dialects.postgresql import Range
 from sqlalchemy.orm import Session
 
+from app.core import storage
 from app.core.config import get_settings
 from app.db.enums import (
     AccessType,
@@ -118,15 +119,21 @@ def creneau(jour: date, debut: time, minutes: int) -> Range[datetime]:
 # --------------------------------------------------------------------------- #
 
 BATIMENTS = [
-    ("A", "Campus Eiffel", "12 rue Pasteur, 94270 Le Kremlin-Bicêtre", 1),
-    ("B", "Campus Newton", "37 quai de Grenelle, 75015 Paris", 2),
-    ("C", "Annexe", "10 rue Sextius Michel, 75015 Paris", 3),
+    ("EIF1", "Eiffel 1", "12 rue Pasteur, 94270 Le Kremlin-Bicêtre", 1),
+    ("EIF2", "Eiffel 2", "14 rue Pasteur, 94270 Le Kremlin-Bicêtre", 2),
+    ("EIF3", "Eiffel 3", "37 quai de Grenelle, 75015 Paris", 3),
+    ("EIF4", "Eiffel 4", "39 quai de Grenelle, 75015 Paris", 4),
+    ("EIF5", "Eiffel 5", "10 rue Sextius Michel, 75015 Paris", 5),
+    ("EIF6", "Eiffel 6", "12 rue Sextius Michel, 75015 Paris", 6),
 ]
 
 ETAGES = {
-    "A": [("RDC", "Rez-de-chaussée", 0), ("1er", "1er étage", 1), ("2e", "2e étage", 2)],
-    "B": [("1er", "1er étage", 1), ("2e", "2e étage", 2), ("3e", "3e étage", 3)],
-    "C": [("RDC", "Rez-de-chaussée", 0)],
+    "EIF1": [("RDC", "Rez-de-chaussée", 0), ("1er", "1er étage", 1), ("2e", "2e étage", 2)],
+    "EIF2": [("RDC", "Rez-de-chaussée", 0), ("1er", "1er étage", 1)],
+    "EIF3": [("1er", "1er étage", 1), ("2e", "2e étage", 2), ("3e", "3e étage", 3)],
+    "EIF4": [("RDC", "Rez-de-chaussée", 0), ("1er", "1er étage", 1)],
+    "EIF5": [("SS", "Sous-sol", -1), ("RDC", "Rez-de-chaussée", 0)],
+    "EIF6": [("RDC", "Rez-de-chaussée", 0), ("1er", "1er étage", 1), ("2e", "2e étage", 2)],
 }
 
 EQUIPEMENTS = [
@@ -139,45 +146,91 @@ EQUIPEMENTS = [
     ("aircon", "Climatisation", EquipmentCategory.AMENAGEMENT, "Snowflake", False),
 ]
 
+#: Trente salles, cinq par bâtiment. Les noms sont ceux de scientifiques : ils
+#: se retiennent mieux qu'un numéro, et c'est l'usage dans un établissement.
+#:
 #: (nom, bâtiment, étage, capacité, surface, équipements, PMR, badge, statut)
 SALLES = [
-    ("Salle Vinci", "A", "2e", 12, 28, ["visio", "screen4k", "whiteboard", "sockets"], False, True, RoomStatus.DISPONIBLE),
-    ("Salle Eiffel", "A", "RDC", 8, 22, ["screen4k", "whiteboard"], True, True, RoomStatus.DISPONIBLE),
-    ("Salle Turing", "A", "1er", 8, 24, ["visio", "whiteboard"], False, True, RoomStatus.DISPONIBLE),
-    ("Salle Lovelace", "A", "1er", 8, 20, ["screen4k", "sockets"], True, False, RoomStatus.DISPONIBLE),
-    ("Salle Curie", "B", "3e", 20, 46, ["visio", "projector", "mic", "aircon"], True, True, RoomStatus.DISPONIBLE),
-    ("Salle Ampère", "B", "1er", 30, 64, ["projector", "mic"], True, True, RoomStatus.MAINTENANCE),
-    ("Salle Conseil Alpha", "B", "2e", 12, 30, ["visio", "screen4k", "whiteboard", "aircon"], False, True, RoomStatus.DISPONIBLE),
-    ("Salle Pascal", "C", "RDC", 25, 52, ["projector", "aircon"], False, False, RoomStatus.DISPONIBLE),
+    # --- Eiffel 1 : petites salles de travail, un amphi au rez-de-chaussée ---
+    ("Salle Vinci", "EIF1", "2e", 12, 28, ["visio", "screen4k", "whiteboard", "sockets"], False, True, RoomStatus.DISPONIBLE),
+    ("Salle Turing", "EIF1", "1er", 8, 24, ["visio", "whiteboard"], False, True, RoomStatus.DISPONIBLE),
+    ("Salle Lovelace", "EIF1", "1er", 8, 20, ["screen4k", "sockets"], True, False, RoomStatus.DISPONIBLE),
+    ("Salle Hopper", "EIF1", "RDC", 6, 16, ["whiteboard", "sockets"], True, False, RoomStatus.DISPONIBLE),
+    ("Amphi Eiffel", "EIF1", "RDC", 90, 180, ["projector", "mic", "aircon"], True, True, RoomStatus.DISPONIBLE),
+    # --- Eiffel 2 : réunions d'équipe ---------------------------------------
+    ("Salle Curie", "EIF2", "1er", 20, 46, ["visio", "projector", "mic", "aircon"], True, True, RoomStatus.DISPONIBLE),
+    ("Salle Pascal", "EIF2", "1er", 25, 52, ["projector", "aircon"], False, False, RoomStatus.DISPONIBLE),
+    ("Salle Fermat", "EIF2", "RDC", 10, 26, ["screen4k", "whiteboard"], True, True, RoomStatus.DISPONIBLE),
+    ("Salle Germain", "EIF2", "RDC", 8, 22, ["whiteboard", "sockets"], False, True, RoomStatus.DISPONIBLE),
+    ("Salle Noether", "EIF2", "RDC", 6, 18, ["screen4k"], True, False, RoomStatus.DISPONIBLE),
+    # --- Eiffel 3 : direction et conseils -----------------------------------
+    ("Salle Conseil Alpha", "EIF3", "3e", 12, 30, ["visio", "screen4k", "whiteboard", "aircon"], False, True, RoomStatus.DISPONIBLE),
+    ("Salle Conseil Beta", "EIF3", "3e", 12, 30, ["visio", "screen4k", "aircon"], False, True, RoomStatus.DISPONIBLE),
+    ("Salle Ampère", "EIF3", "2e", 30, 64, ["projector", "mic"], True, True, RoomStatus.MAINTENANCE),
+    ("Salle Volta", "EIF3", "2e", 16, 38, ["projector", "whiteboard"], True, True, RoomStatus.DISPONIBLE),
+    ("Salle Joule", "EIF3", "1er", 10, 25, ["screen4k", "sockets"], False, True, RoomStatus.DISPONIBLE),
+    # --- Eiffel 4 : travaux pratiques ---------------------------------------
+    ("Labo Pasteur", "EIF4", "1er", 24, 60, ["projector", "aircon", "sockets"], True, True, RoomStatus.DISPONIBLE),
+    ("Labo Lavoisier", "EIF4", "1er", 24, 58, ["projector", "sockets"], True, True, RoomStatus.DISPONIBLE),
+    ("Labo Becquerel", "EIF4", "RDC", 18, 44, ["screen4k", "sockets"], False, True, RoomStatus.MAINTENANCE),
+    ("Salle Fresnel", "EIF4", "RDC", 12, 30, ["whiteboard", "sockets"], True, False, RoomStatus.DISPONIBLE),
+    ("Salle Coulomb", "EIF4", "RDC", 8, 21, ["whiteboard"], False, False, RoomStatus.DISPONIBLE),
+    # --- Eiffel 5 : espaces de projet, dont un sous-sol ----------------------
+    ("Atelier Monge", "EIF5", "SS", 20, 70, ["projector", "sockets", "aircon"], False, True, RoomStatus.DISPONIBLE),
+    ("Atelier Fourier", "EIF5", "SS", 16, 55, ["screen4k", "sockets"], False, True, RoomStatus.DISPONIBLE),
+    ("Salle Laplace", "EIF5", "RDC", 10, 26, ["visio", "whiteboard"], True, True, RoomStatus.DISPONIBLE),
+    ("Salle Cauchy", "EIF5", "RDC", 8, 20, ["whiteboard", "sockets"], True, False, RoomStatus.DISPONIBLE),
+    ("Salle Galois", "EIF5", "RDC", 6, 16, ["screen4k"], False, False, RoomStatus.ARCHIVEE),
+    # --- Eiffel 6 : enseignement --------------------------------------------
+    ("Salle Descartes", "EIF6", "2e", 35, 78, ["projector", "mic", "aircon"], True, True, RoomStatus.DISPONIBLE),
+    ("Salle Leibniz", "EIF6", "2e", 30, 70, ["projector", "mic"], True, True, RoomStatus.DISPONIBLE),
+    ("Salle Euler", "EIF6", "1er", 24, 55, ["projector", "whiteboard"], True, True, RoomStatus.DISPONIBLE),
+    ("Salle Gauss", "EIF6", "1er", 18, 42, ["screen4k", "whiteboard"], False, True, RoomStatus.DISPONIBLE),
+    ("Salle Riemann", "EIF6", "RDC", 12, 30, ["visio", "screen4k"], True, True, RoomStatus.DISPONIBLE),
 ]
 
-#: Comptes nommés des maquettes, puis vingt-deux comptes générés.
+#: Salles tenant un rôle dans le jeu de démonstration.
+#:
+#: Les scénarios ci-dessous — conflits, tickets, fermetures — désignaient leurs
+#: salles par un nom écrit en clair à chaque usage. Renommer une salle cassait
+#: alors le seed loin de sa définition, avec un `KeyError` qui ne disait pas
+#: laquelle. Les rôles sont nommés ici, une fois.
+SALLE_DISPUTEE = "Salle Vinci"
+SALLE_SECONDE = "Salle Curie"
+SALLE_VALIDATION = "Salle Conseil Alpha"
+SALLE_EN_TRAVAUX = "Salle Ampère"
+SALLE_TICKET_ACCES = "Salle Vinci"
+SALLE_TICKET_MATERIEL = "Salle Curie"
+SALLE_TICKET_RESOLU = "Salle Fermat"
+
+#: Bâtiment portant une surcharge de règles et une fermeture pour travaux.
+#: Nommé ici pour la même raison que les salles ci-dessus : un code écrit en
+#: clair dans les scénarios casse le seed dès qu'il change, loin de sa cause.
+BATIMENT_SURCHARGE = "EIF5"
+
+#: Cinq comptes utilisateurs. Le jeu en comptait trente-et-un : de quoi
+#: remplir une page d'annuaire, mais rien de plus qu'une liste de noms.
 UTILISATEURS_NOMMES = [
     ("Dylan", "Menga Wanda", "dylan.menga@edu.ece.fr", "B3 Data & IA", "Ingénierie", "20841"),
     ("Jean", "Dupont", "jean.dupont@edu.ece.fr", "B3 Data & IA", "Ingénierie", "20718"),
     ("Alice", "Leroy", "alice.leroy@edu.ece.fr", "B3 Cyber", "Ingénierie", "20903"),
-    ("Marc", "Blanc", "marc.blanc@edu.ece.fr", "B3 Data & IA", "Ingénierie", "20655"),
     ("Marie", "Laurent", "marie.laurent@ece.fr", None, "Pédagogie", "10422"),
     ("Amadou", "Diallo", "a.diallo@ece.fr", None, "Pédagogie", "10318"),
-    ("Nora", "Chaib", "nora.chaib@edu.ece.fr", "B3 Cyber", "Ingénierie", "20877"),
-    ("Paul", "Vidal", "paul.vidal@edu.ece.fr", "B2 Généraliste", "Ingénierie", "21044"),
-    ("Léa", "Fontaine", "lea.fontaine@edu.ece.fr", "B2 Généraliste", "Ingénierie", "21077"),
 ]
 
-PRENOMS = ["Camille", "Hugo", "Inès", "Louis", "Sarah", "Yanis", "Chloé", "Adam", "Emma",
-           "Noah", "Jade", "Rayan", "Manon", "Ethan", "Lina", "Nathan", "Sofia", "Théo",
-           "Anaïs", "Malik", "Julie", "Karim"]
-NOMS = ["Bernard", "Petit", "Roux", "Moreau", "Simon", "Michel", "Garcia", "David",
-        "Bertrand", "Morel", "Girard", "Bonnet", "Dupuis", "Lambert", "Fournier",
-        "Rousseau", "Vincent", "Muller", "Faure", "Andre", "Mercier", "Blanchard"]
-PROMOTIONS = ["B1 Généraliste", "B2 Généraliste", "B3 Data & IA", "B3 Cyber", "B3 Énergie"]
-
+#: Cinq comptes d'administration, aux périmètres volontairement différents :
+#: une matrice de permissions où tout le monde a tout ne prouve rien, et
+#: l'écran des rôles n'aurait rien à montrer.
 ADMINISTRATEURS = [
     ("Dylan", "Menga", "d.menga@ece.fr", "Directeur IT", True, None),
     ("Samir", "Boukehila", "s.boukehila@ece.fr", "Directeur de site", False,
      ["rooms.manage", "support.handle", "conflicts.arbitrate"]),
     ("Claire", "Nkoulou", "c.nkoulou@ece.fr", "Référente support", False,
      ["support.handle", "conflicts.arbitrate"]),
+    ("Ana", "Ferreira", "a.ferreira@ece.fr", "Responsable du parc", False,
+     ["rooms.manage", "rules.configure"]),
+    ("Tarek", "Haddad", "t.haddad@ece.fr", "Contrôle de gestion", False,
+     ["data.export"]),
 ]
 
 OBJETS_REUNION = [
@@ -186,15 +239,101 @@ OBJETS_REUNION = [
     "Point équipe", "Cours de rattrapage", "Session de travail", "Préparation examen",
 ]
 
+#: Teintes des visuels générés, dans la palette de l'application.
+_ENCRE = "#101623"
+_SURFACE = "#1A2231"
+_LIGNE = "#2C3850"
+_ACCENT = "#5B9BFF"
+_TEXTE = "#B4C0D4"
+
+
+def _ecrire_svg(dossier: str, nom: str, svg: str) -> str:
+    """Écrit un visuel sous `MEDIA_ROOT` et rend son adresse publique.
+
+    Le format est SVG faute de bibliothèque d'imagerie : le projet n'en a pas,
+    et en ajouter une pour peupler une démonstration serait payer cher un
+    décor. Le SVG porte du texte lisible, ce qu'un PNG composé à la main ne
+    permettrait pas.
+
+    Les routes de dépôt refusent le SVG, et ce n'est pas une contradiction :
+    elles reçoivent des fichiers *téléversés*, dont l'origine n'est pas
+    contrôlée, là où ceux-ci sont composés par le seed lui-même.
+    """
+    cible = storage.racine() / dossier
+    cible.mkdir(parents=True, exist_ok=True)
+    (cible / nom).write_text(svg, encoding="utf-8")
+    return f"{get_settings().media_url}/{dossier}/{nom}"
+
+
+def visuel_batiment(code: str, nom: str) -> str:
+    """Façade stylisée : des étages, des fenêtres, et le nom en clair."""
+    fenetres = "".join(
+        f'<rect x="{90 + colonne * 60}" y="{110 + ligne * 55}" width="38" height="34" rx="3" '
+        f'fill="{_ACCENT}" fill-opacity="{0.15 + 0.1 * ((colonne + ligne) % 3)}"/>'
+        for ligne in range(4)
+        for colonne in range(7)
+    )
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" width="640" height="400">'
+        f'<rect width="640" height="400" fill="{_ENCRE}"/>'
+        f'<rect x="70" y="80" width="500" height="260" rx="8" fill="{_SURFACE}" '
+        f'stroke="{_LIGNE}" stroke-width="2"/>'
+        f"{fenetres}"
+        f'<rect x="290" y="290" width="60" height="50" rx="4" fill="{_ACCENT}" fill-opacity="0.4"/>'
+        f'<text x="320" y="60" fill="{_TEXTE}" font-family="system-ui,sans-serif" '
+        f'font-size="26" text-anchor="middle">{nom}</text>'
+        f'<text x="320" y="375" fill="{_ACCENT}" font-family="monospace" '
+        f'font-size="15" text-anchor="middle">{code}</text>'
+        "</svg>"
+    )
+    return _ecrire_svg("batiments", f"{code.lower()}.svg", svg)
+
+
+def visuel_plan(salle: str, batiment: str, etage: str, place: int) -> str:
+    """Plan d'étage portant le repère de la salle.
+
+    C'est l'image que l'utilisateur consulte pour trouver son chemin : la salle
+    y est encadrée et nommée, les voisines restent grises.
+    """
+    cases = []
+    for index in range(6):
+        colonne, ligne = index % 3, index // 3
+        x, y = 70 + colonne * 170, 110 + ligne * 120
+        marquee = index == place % 6
+        cases.append(
+            f'<rect x="{x}" y="{y}" width="150" height="100" rx="6" '
+            f'fill="{_ACCENT if marquee else _SURFACE}" '
+            f'fill-opacity="{0.35 if marquee else 1}" '
+            f'stroke="{_ACCENT if marquee else _LIGNE}" stroke-width="{3 if marquee else 1}"/>'
+        )
+        if marquee:
+            cases.append(
+                f'<text x="{x + 75}" y="{y + 56}" fill="{_TEXTE}" '
+                f'font-family="system-ui,sans-serif" font-size="15" text-anchor="middle">'
+                f"{salle}</text>"
+            )
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" width="640" height="400">'
+        f'<rect width="640" height="400" fill="{_ENCRE}"/>'
+        f'<text x="320" y="60" fill="{_TEXTE}" font-family="system-ui,sans-serif" '
+        f'font-size="20" text-anchor="middle">{batiment} — {etage}</text>'
+        + "".join(cases)
+        + f'<text x="320" y="375" fill="{_ACCENT}" font-family="monospace" font-size="13" '
+        f'text-anchor="middle">Vous cherchez : {salle}</text>'
+        "</svg>"
+    )
+    ardoise = salle.lower().replace(" ", "-").replace("é", "e").replace("è", "e")
+    return _ecrire_svg("reperes", f"{ardoise}.svg", svg)
+
 
 def visuel(nom_salle: str, index: int) -> str:
-    """Data URI SVG : aucun appel réseau, rendu identique hors ligne."""
+    """Photo de la salle. Data URI : aucun fichier, aucun appel réseau."""
     svg = (
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400">'
-        '<rect width="640" height="400" fill="#1A2231"/>'
-        '<rect x="120" y="150" width="400" height="110" rx="10" fill="none" '
-        'stroke="#5B9BFF" stroke-opacity="0.35" stroke-width="3"/>'
-        f'<text x="320" y="330" fill="#B4C0D4" font-family="monospace" '
+        f'<rect width="640" height="400" fill="{_SURFACE}"/>'
+        f'<rect x="120" y="150" width="400" height="110" rx="10" fill="none" '
+        f'stroke="{_ACCENT}" stroke-opacity="0.35" stroke-width="3"/>'
+        f'<text x="320" y="330" fill="{_TEXTE}" font-family="monospace" '
         f'font-size="22" text-anchor="middle">{nom_salle} - vue {index}</text>'
         "</svg>"
     )
@@ -240,7 +379,13 @@ def vider(session: Session) -> None:
 def creer_parc(session: Session) -> tuple[dict[str, Building], dict[str, Room], dict[str, Equipment]]:
     batiments: dict[str, Building] = {}
     for code, nom, adresse, ordre in BATIMENTS:
-        batiment = Building(code=code, name=nom, address=adresse, sort_order=ordre)
+        batiment = Building(
+            code=code,
+            name=nom,
+            address=adresse,
+            sort_order=ordre,
+            image_url=visuel_batiment(code, nom),
+        )
         session.add(batiment)
         batiments[code] = batiment
 
@@ -268,7 +413,18 @@ def creer_parc(session: Session) -> tuple[dict[str, Building], dict[str, Room], 
 
     session.flush()
 
+    # Le plan de localisation nomme le bâtiment et l'étage en clair : « EIF3 »
+    # et « 2e » ne disent rien à qui cherche son chemin.
+    BATIMENTS_PAR_CODE = {code: nom for code, nom, _, _ in BATIMENTS}
+    LIBELLES_ETAGE = {
+        (code_batiment, code_etage): libelle
+        for code_batiment, liste in ETAGES.items()
+        for code_etage, libelle, _ in liste
+    }
+
     salles: dict[str, Room] = {}
+    #: Nombre de salles déjà placées sur chaque étage, pour ne pas les empiler.
+    occupation_etage: dict[tuple[str, str], int] = {}
     for index, (nom, bat, etg, capacite, surface, codes, pmr, badge, statut) in enumerate(SALLES):
         salle = Room(
             floor_id=etages[(bat, etg)].id,
@@ -280,6 +436,9 @@ def creer_parc(session: Session) -> tuple[dict[str, Building], dict[str, Room], 
             is_accessible=pmr,
             badge_required=badge,
             description=f"{nom} — {capacite} places, {surface} m².",
+            location_plan_url=visuel_plan(
+                nom, BATIMENTS_PAR_CODE[bat], LIBELLES_ETAGE[(bat, etg)], index
+            ),
         )
         session.add(salle)
         session.flush()
@@ -296,8 +455,13 @@ def creer_parc(session: Session) -> tuple[dict[str, Building], dict[str, Room], 
                     position=position,
                 )
             )
-        # Placement sur le plan : grille de deux colonnes, sans recouvrement.
-        colonne, ligne = index % 2, index // 2
+        # Placement sur le plan de *son* étage, et non sur un index global.
+        # Les coordonnées sont des pourcentages : calculées sur le rang de la
+        # salle dans tout le parc, elles sortaient du plan dès la neuvième —
+        # une contrainte de base l'a signalé, ce qu'aucun écran n'aurait fait.
+        rang = occupation_etage.get((bat, etg), 0)
+        occupation_etage[(bat, etg)] = rang + 1
+        colonne, ligne = rang % 2, rang // 2
         session.add(
             RoomPlacement(
                 room_id=salle.id,
@@ -306,7 +470,7 @@ def creer_parc(session: Session) -> tuple[dict[str, Building], dict[str, Room], 
                 width=Decimal(36),
                 height=Decimal(18),
                 rotation=0,
-                is_entrance_marked=(index == 0),
+                is_entrance_marked=(rang == 0),
             )
         )
 
@@ -334,21 +498,9 @@ def creer_comptes(
         session.add(utilisateur)
         utilisateurs.append(utilisateur)
 
-    for index in range(22):
-        prenom, nom = PRENOMS[index], NOMS[index]
-        utilisateur = User(
-            email=f"{prenom.lower()}.{nom.lower()}@edu.ece.fr".replace("ï", "i").replace("é", "e"),
-            password_hash=empreinte,
-            first_name=prenom,
-            last_name=nom,
-            promotion=ALEA.choice(PROMOTIONS),
-            department="Ingénierie",
-            badge_number=f"3{index:04d}",
-            # Un compte suspendu pour démontrer la zone de danger de l'écran A-11.
-            status=UserStatus.SUSPENDU if index == 3 else UserStatus.ACTIF,
-        )
-        session.add(utilisateur)
-        utilisateurs.append(utilisateur)
+    # Le dernier compte est suspendu : la zone de danger de l'écran des
+    # utilisateurs n'aurait rien à montrer si tous étaient actifs.
+    utilisateurs[-1].status = UserStatus.SUSPENDU
 
     session.flush()
 
@@ -405,7 +557,7 @@ def creer_regles(
     session.add(
         BookingRule(
             scope=RuleScope.BATIMENT,
-            building_id=batiments["C"].id,
+            building_id=batiments[BATIMENT_SURCHARGE].id,
             max_duration_min=180,
             weekly_quota_hours=8,
             buffer_min=30,
@@ -414,7 +566,7 @@ def creer_regles(
     session.add(
         BookingRule(
             scope=RuleScope.SALLE,
-            room_id=salles["Salle Ampère"].id,
+            room_id=salles[SALLE_EN_TRAVAUX].id,
             min_duration_min=60,
             max_duration_min=240,
             validation_capacity_threshold=25,
@@ -425,7 +577,7 @@ def creer_regles(
         session.add(
             OpeningHour(
                 scope=RuleScope.BATIMENT,
-                building_id=batiments["C"].id,
+                building_id=batiments[BATIMENT_SURCHARGE].id,
                 weekday=jour,
                 is_open=jour in (1, 2, 3, 4, 5),
                 opens_at=time(8, 30),
@@ -455,7 +607,7 @@ def creer_regles(
     )
     session.add(maintenance)
     session.flush()
-    session.add(ClosureBuilding(closure_id=maintenance.id, building_id=batiments["C"].id))
+    session.add(ClosureBuilding(closure_id=maintenance.id, building_id=batiments[BATIMENT_SURCHARGE].id))
 
     session.commit()
 
@@ -577,12 +729,12 @@ def creer_conflits(
     La contrainte EXCLUDE interdisant deux réservations qui se recouvrent, un
     conflit se matérialise par une *demande* portant sur un créneau déjà pris.
     """
-    vinci, curie = salles["Salle Vinci"], salles["Salle Curie"]
+    vinci, curie = salles[SALLE_DISPUTEE], salles[SALLE_SECONDE]
     demain = AUJOURD_HUI + timedelta(days=1)
     while demain.weekday() >= 5:
         demain += timedelta(days=1)
 
-    titulaire, contestataire = utilisateurs[0], utilisateurs[5]
+    titulaire, contestataire = utilisateurs[0], utilisateurs[1]
 
     # Cas 1 — recouvrement total : le créneau 14:00-15:30 est déjà réservé.
     plage_vinci = creneau(demain, time(14, 0), 90)
@@ -661,7 +813,7 @@ def creer_conflits(
         AccessRequest(
             reference="#ACC-2201",
             requester_id=utilisateurs[4].id,
-            room_id=salles["Salle Conseil Alpha"].id,
+            room_id=salles[SALLE_VALIDATION].id,
             requested_range=creneau(AUJOURD_HUI - timedelta(days=4), time(7, 0), 60),
             access_type=AccessType.HORS_HORAIRE,
             reason="Comité exceptionnel avant l'ouverture.",
@@ -952,13 +1104,15 @@ def creer_support(
 
     support = administrateurs["c.nkoulou@ece.fr"]
     tickets = [
-        ("#152", "Climatisation défectueuse — Salle Curie", "equipements", TicketStatus.OUVERT,
+        ("#152", f"Climatisation défectueuse — {SALLE_TICKET_MATERIEL}", "equipements",
+         TicketStatus.OUVERT,
          "La climatisation ne démarre plus, la salle est difficilement utilisable l'après-midi.",
-         "Salle Curie"),
-        ("#148", "Code d'accès invalide — Salle Vinci", "acces", TicketStatus.EN_COURS,
-         "Le code est refusé par le terminal depuis ce matin.", "Salle Vinci"),
+         SALLE_TICKET_MATERIEL),
+        ("#148", f"Code d'accès invalide — {SALLE_TICKET_ACCES}", "acces", TicketStatus.EN_COURS,
+         "Le code est refusé par le terminal depuis ce matin.", SALLE_TICKET_ACCES),
         ("#131", "Demande d'ajout de projecteur", "equipements", TicketStatus.RESOLU,
-         "Serait-il possible d'ajouter un vidéoprojecteur en salle Eiffel ?", "Salle Eiffel"),
+         f"Serait-il possible d'ajouter un vidéoprojecteur en {SALLE_TICKET_RESOLU} ?",
+         SALLE_TICKET_RESOLU),
     ]
     for reference, sujet, categorie, statut, message, nom_salle in tickets:
         ticket = Ticket(

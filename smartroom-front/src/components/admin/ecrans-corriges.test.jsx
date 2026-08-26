@@ -18,6 +18,7 @@ import { AlternativeList } from './conflicts/AlternativeList';
 import { YearOverview } from './rules/YearOverview';
 import { UserDetail } from './people/UserDetail';
 import { Pill } from '../ui/Badge';
+import { SANS_DATE, fmtDate, fmtDateLong, fmtRelative, fmtTime } from '../../utils/dates';
 
 describe('Liste des salles de repli', () => {
   const PROPOSITION = {
@@ -166,5 +167,29 @@ describe('Pastille de filtre', () => {
     );
     expect(container.querySelector('.text-content-muted')).toBeTruthy();
     expect(container.querySelector('.text-content-faint')).toBeNull();
+  });
+});
+
+describe('Formateurs de date', () => {
+  it('rend une marque lisible quand la date est absente', () => {
+    // Plusieurs colonnes sont nullables et le resteront : une dernière
+    // connexion qui n'a jamais eu lieu, une résolution qui n'est pas venue.
+    // `format` levait sur la date invalide, et l'exception remontait jusqu'à
+    // la frontière d'erreur — un administrateur jamais connecté rendait
+    // l'écran des rôles entièrement inaccessible.
+    expect(fmtDate(null)).toBe(SANS_DATE);
+    expect(fmtDateLong(undefined)).toBe(SANS_DATE);
+    expect(fmtRelative(null)).toBe(SANS_DATE);
+    expect(fmtTime('')).toBe(SANS_DATE);
+  });
+
+  it('formate normalement une date présente', () => {
+    expect(fmtDate('2026-08-25T10:00:00Z')).toBe('25/08/2026');
+  });
+
+  it('laisse lever sur une valeur malformée', () => {
+    // Une valeur absente est un état ; une valeur illisible est un défaut, et
+    // la masquer derrière un tiret le rendrait introuvable.
+    expect(() => fmtDate('pas une date')).toThrow();
   });
 });

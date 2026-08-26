@@ -24,7 +24,12 @@ export function PermissionMatrix({ groups = [], admins = [], onToggle, busy = fa
     // latéralement — et chaque colonne contient des interrupteurs focusables,
     // ce qui la rend parcourable au clavier seul.
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[640px] border-collapse text-sm">
+      {/* La largeur minimale ne s'applique qu'à partir de 640 px. Imposée en
+          dessous, elle faisait défiler la page entière : un conteneur
+          `overflow-x-auto` ne suffit pas à la contenir, comme la carte de
+          densité l'avait déjà montré. Le défilement reste ici, dans le
+          conteneur, et la page ne bouge plus. */}
+      <table className="w-full border-collapse text-sm sm:min-w-[640px]">
         <caption className="sr-only">
           Permissions accordées à chaque compte d’administration
         </caption>

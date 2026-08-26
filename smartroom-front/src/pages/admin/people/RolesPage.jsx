@@ -111,7 +111,9 @@ export default function RolesPage() {
             {(comptes.data ?? []).map((admin) => (
               <li key={admin.id}>
                 {fullName(admin)} — {admin.role} · dernière connexion{' '}
-                {fmtRelative(admin.lastLoginAt)}
+                {/* « Jamais connecté » et non un tiret : c'est une
+                    information sur le compte, pas une donnée manquante. */}
+                {admin.lastLoginAt ? fmtRelative(admin.lastLoginAt) : 'Jamais connecté'}
               </li>
             ))}
           </ul>
