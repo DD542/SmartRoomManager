@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { createRoom, getManagedRoom, listRoomFilters, updateRoom } from '../../../api/admin/rooms';
+import {
+  addRoomPhoto,
+  createRoom,
+  getManagedRoom,
+  listRoomFilters,
+  updateRoom,
+  uploadRoomLocationPlan,
+} from '../../../api/admin/rooms';
 import { equipmentCategories, listEquipmentCatalog } from '../../../api/admin/equipment';
 import { useAsync } from '../../../hooks/useAsync';
 import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
@@ -69,12 +76,85 @@ export default function RoomEditPage() {
   const erreurs = validerSalle(draft);
   const valide = alertes.length === 0 && Object.keys(erreurs).length === 0;
 
+  /**
+   * Visuels choisis avant que la salle existe.
+   *
+   * Un fichier s'attache à un identifiant, et il n'y en a pas encore : ils
+   * attendent dans le brouillon, puis partent juste après la création. Exiger
+   * d'enregistrer d'abord obligeait à revenir sur ses pas pour finir une fiche
+   * qu'on croyait terminée.
+   */
+  const enAttente = (ordre) =>
+    setDraft((courant) => {
+      if ('photo' in ordre) {
+        return { ...courant, pendingPhotos: [...courant.pendingPhotos, ordre.photo] };
+      }
+      if ('retirerPhoto' in ordre) {
+        return {
+          ...courant,
+          pendingPhotos: courant.pendingPhotos.filter((_, i) => i !== ordre.retirerPhoto),
+        };
+      }
+      if ('couverture' in ordre) {
+        const choisie = courant.pendingPhotos[ordre.couverture];
+        return {
+          ...courant,
+          pendingPhotos: [
+            choisie,
+            ...courant.pendingPhotos.filter((_, i) => i !== ordre.couverture),
+          ],
+        };
+      }
+      if ('plan' in ordre) {
+        // L'aperçu local est révoqué en même temps que le fichier qu'il
+        // décrit : un `blob:` laissé derrière retient sa donnée en mémoire
+        // jusqu'au rechargement de l'onglet.
+        if (courant.pendingLocationPlan?.apercu) {
+          URL.revokeObjectURL(courant.pendingLocationPlan.apercu);
+        }
+        return {
+          ...courant,
+          pendingLocationPlan: ordre.plan
+            ? { fichier: ordre.plan, apercu: URL.createObjectURL(ordre.plan) }
+            : null,
+        };
+      }
+      return courant;
+    });
+
   const enregistrer = async () => {
     setEnregistrement(true);
     try {
       if (creation) {
         const creee = await createRoom(draft);
-        toast.success('Salle créée', `${creee.name} est désormais réservable.`);
+
+        // Les visuels retenus partent maintenant que la salle a un
+        // identifiant. Un échec ici ne défait pas la création : la salle
+        // existe, et l'écran de détail permet de reprendre le dépôt.
+        const manques = [];
+        for (const dataUrl of draft.pendingPhotos) {
+          try {
+            await addRoomPhoto(creee.id, dataUrl);
+          } catch {
+            manques.push('une photo');
+          }
+        }
+        if (draft.pendingLocationPlan) {
+          try {
+            await uploadRoomLocationPlan(creee.id, draft.pendingLocationPlan.fichier);
+          } catch {
+            manques.push('le plan de localisation');
+          }
+        }
+
+        if (manques.length > 0) {
+          toast.error(
+            'Salle créée, visuels incomplets',
+            `${creee.name} existe, mais ${manques.join(' et ')} n’a pas pu être déposé.`,
+          );
+        } else {
+          toast.success('Salle créée', `${creee.name} est désormais réservable.`);
+        }
         naviguer(`/admin/salles/${creee.id}`, { replace: true });
         return;
       }
@@ -113,7 +193,7 @@ export default function RoomEditPage() {
         title={creation ? 'Nouvelle salle' : (draft.name || 'Salle')}
         subtitle={
           creation
-            ? 'Les visuels pourront être ajoutés une fois la salle créée.'
+            ? 'Photos et plan de localisation se joignent dès maintenant : ils partiront avec la salle.'
             : 'Chaque modification est répercutée immédiatement côté utilisateur.'
         }
       />
@@ -142,6 +222,7 @@ export default function RoomEditPage() {
                 creating={creation}
                 photoBusy={photoEnCours}
                 onPhoto={surPhoto}
+                onAttente={enAttente}
                 roomId={id}
               />
             </div>

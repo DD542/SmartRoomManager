@@ -2,7 +2,6 @@ import { useRef, useState } from 'react';
 import { MapPin, Trash2, Upload } from 'lucide-react';
 import { TYPES_PLAN_LOCALISATION } from '../../../api/admin/rooms';
 import { Button } from '../../ui/Button';
-import { Callout } from '../../ui/Card';
 
 /**
  * Plan de localisation de la salle.
@@ -20,7 +19,7 @@ import { Callout } from '../../ui/Card';
  * Une salle peut être située sans que son étage ait reçu de plan, et l'inverse :
  * les deux sont indépendants.
  */
-export function LocationPlanField({ src, onUpload, onRemove, busy = false, disabled = false }) {
+export function LocationPlanField({ src, onUpload, onRemove, busy = false, enAttente = false }) {
   const champ = useRef(null);
   const [erreur, setErreur] = useState(null);
 
@@ -39,14 +38,6 @@ export function LocationPlanField({ src, onUpload, onRemove, busy = false, disab
     }
   };
 
-  if (disabled) {
-    return (
-      <Callout tone="info" title="Plan de localisation">
-        Il s’ajoutera une fois la salle créée : le fichier s’attache à un identifiant.
-      </Callout>
-    );
-  }
-
   return (
     <div className="rounded-xl border border-line bg-surface-raised p-3">
       <div className="mb-2.5 flex flex-wrap items-center gap-2">
@@ -56,6 +47,7 @@ export function LocationPlanField({ src, onUpload, onRemove, busy = false, disab
           <p className="text-[11px] text-content-muted">
             Le plan portant le repère de la salle, tel que l’utilisateur le consultera.
             PNG, JPEG ou WebP.
+            {enAttente && ' Il partira dès la salle créée.'}
           </p>
         </div>
 

@@ -58,8 +58,11 @@ export function EquipmentModal({ open, onClose, onSubmit, equipment, icons = [],
           onChange={(event) => modifier({ category: event.target.value })}
         />
 
-        <Field label="Icône">
-          <ul className="flex flex-wrap gap-2">
+        <Field label="Icône" hint="Trente-quatre icônes, groupées par usage.">
+          {/* Hauteur bornée : la liste comptait sept icônes, elle en compte
+              trente-quatre, et les laisser s'étaler repoussait le descriptif
+              et le bouton d'envoi hors de l'écran. */}
+          <ul className="flex max-h-36 flex-wrap gap-2 overflow-y-auto pr-1">
             {icons.map((nom) => {
               const Icone = equipmentIcon(nom);
               const actif = form.icon === nom;

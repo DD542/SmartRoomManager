@@ -29,6 +29,7 @@ export function RoomTabPanels({
   creating,
   photoBusy,
   onPhoto,
+  onAttente,
   roomId,
 }) {
   if (tab === 'general') {
@@ -50,27 +51,35 @@ export function RoomTabPanels({
   if (tab === 'acces') return <AccessTab draft={draft} onChange={onChange} />;
   if (tab === 'disponibilite') return <AvailabilityTab draft={draft} onChange={onChange} />;
 
-  // Les visuels s'attachent à un identifiant : ils n'existent qu'après création.
-  if (creating) {
-    return (
-      <p className="text-sm text-content-muted">
-        Les visuels s’attachent à une salle existante : enregistrez d’abord la salle, l’onglet
-        s’activera ensuite.
-      </p>
-    );
-  }
-
   return (
     <PhotosTab
-      photos={draft.photos}
+      // En création, les visuels vivent dans le brouillon : ils partiront dès
+      // que la salle aura un identifiant.
+      photos={creating ? draft.pendingPhotos : draft.photos}
       busy={photoBusy}
       creating={creating}
-      locationPlanUrl={draft.locationPlanUrl}
-      onAdd={(dataUrl) => onPhoto(() => addRoomPhoto(roomId, dataUrl))}
-      onRemove={(index) => onPhoto(() => removeRoomPhoto(roomId, index))}
-      onCover={(index) => onPhoto(() => setCoverPhoto(roomId, index))}
-      onUploadPlan={(fichier) => onPhoto(() => uploadRoomLocationPlan(roomId, fichier))}
-      onRemovePlan={() => onPhoto(() => removeRoomLocationPlan(roomId))}
+      locationPlanUrl={
+        creating ? draft.pendingLocationPlan?.apercu ?? null : draft.locationPlanUrl
+      }
+      onAdd={(dataUrl) =>
+        creating ? onAttente({ photo: dataUrl }) : onPhoto(() => addRoomPhoto(roomId, dataUrl))
+      }
+      onRemove={(index) =>
+        creating
+          ? onAttente({ retirerPhoto: index })
+          : onPhoto(() => removeRoomPhoto(roomId, index))
+      }
+      onCover={(index) =>
+        creating ? onAttente({ couverture: index }) : onPhoto(() => setCoverPhoto(roomId, index))
+      }
+      onUploadPlan={(fichier) =>
+        creating
+          ? onAttente({ plan: fichier })
+          : onPhoto(() => uploadRoomLocationPlan(roomId, fichier))
+      }
+      onRemovePlan={() =>
+        creating ? onAttente({ plan: null }) : onPhoto(() => removeRoomLocationPlan(roomId))
+      }
     />
   );
 }

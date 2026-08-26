@@ -23,11 +23,30 @@ const PRESETS = [
   { label: 'Ce mois-ci', from: toDateInput(startOfMonth(NOW)), to: toDateInput(NOW) },
 ];
 
+/**
+ * Pas d'agrégation adapté à la durée observée.
+ *
+ * Le rapport partait sur trente jours agrégés *par mois* : un seul seau, donc
+ * une seule barre, et un histogramme qui n'apprenait rien. Le pas suit
+ * désormais la période — assez de barres pour qu'une tendance se voie, pas
+ * assez pour qu'elles se confondent.
+ *
+ * L'administrateur garde la main : dès qu'il choisit un pas, la période cesse
+ * de le recalculer.
+ */
+function granulariteParDefaut(du, au) {
+  const jours = Math.round((new Date(au) - new Date(du)) / 86_400_000);
+  if (jours <= 21) return 'day';
+  if (jours <= 120) return 'week';
+  return 'month';
+}
+
 const FILTRES_INITIAUX = {
   from: PRESETS[1].from,
   to: PRESETS[1].to,
   buildingIds: [],
-  granularity: 'month',
+  granularity: granulariteParDefaut(PRESETS[1].from, PRESETS[1].to),
+  granulariteChoisie: false,
 };
 
 /**
@@ -83,7 +102,16 @@ export default function ReportsPage() {
 
       <ReportFilters
         value={filtres}
-        onChange={setFiltres}
+        onChange={(suivants) =>
+          setFiltres(
+            suivants.granulariteChoisie
+              ? suivants
+              : {
+                  ...suivants,
+                  granularity: granulariteParDefaut(suivants.from, suivants.to),
+                },
+          )
+        }
         buildings={batiments.data ?? []}
         presets={PRESETS}
       />

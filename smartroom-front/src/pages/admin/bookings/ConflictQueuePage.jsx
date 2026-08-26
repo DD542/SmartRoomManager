@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Inbox, MapPin, PartyPopper } from 'lucide-react';
+import { Inbox, MapPin } from 'lucide-react';
 import { arbitrate, countQueue, getQueueItem, listQueue } from '../../../api/admin/conflicts';
 import { useAsync } from '../../../hooks/useAsync';
 import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
@@ -74,17 +74,7 @@ export default function ConflictQueuePage() {
           status={file.status}
           error={file.error}
           onRetry={file.reload}
-          isEmpty={(file.data ?? []).length === 0}
           skeleton={<SkeletonCard />}
-          empty={
-            <Card>
-              <EmptyState
-                icon={PartyPopper}
-                title="File vide"
-                description="Aucun conflit ni aucune demande en attente sur cet onglet."
-              />
-            </Card>
-          }
         >
           <Card className="overflow-hidden lg:sticky lg:top-4">
             <QueueList

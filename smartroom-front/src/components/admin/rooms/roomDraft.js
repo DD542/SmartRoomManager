@@ -24,6 +24,12 @@ export const SALLE_VIERGE = {
   badgeRequired: true,
   photos: [],
   locationPlanUrl: null,
+  // Visuels choisis avant que la salle existe. Un fichier s'attache à un
+  // identifiant, et il n'y en a pas encore : ils attendent ici, puis partent
+  // juste après la création. Exiger d'enregistrer d'abord obligeait à revenir
+  // sur ses pas pour finir une fiche qu'on croyait terminée.
+  pendingPhotos: [],
+  pendingLocationPlan: null,
   rules: {
     visitDays: [1, 2, 3, 4, 5],
     openTime: '08:00',

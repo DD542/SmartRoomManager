@@ -179,11 +179,16 @@ export const room = (data) => {
       icon: item.icon,
       quantity: item.quantity,
     })),
-    photos: (data.photos ?? []).map((item) => ({
-      id: item.id,
-      url: item.file_url,
-      alt: item.alt_text,
-    })),
+    // Une liste d'adresses, et non d'objets. Les six écrans qui consomment
+    // `photos` écrivent tous `src={room.photos?.[0]}` : la forme objet y
+    // rendait « [object Object] », et *toutes* les photos de salle de
+    // l'application étaient cassées — sans erreur, sans requête en échec, juste
+    // un cadre vide qu'on prend pour une salle sans visuel.
+    //
+    // `alt_text` n'est repris nulle part : chaque écran rédige son propre
+    // texte alternatif selon le contexte où il place l'image. Qui en aurait
+    // besoin lira `/rooms/{id}/photos`, qui rend les enregistrements complets.
+    photos: (data.photos ?? []).map((item) => item.file_url),
     plan: data.placement
       ? {
           x: Number(data.placement.pos_x),

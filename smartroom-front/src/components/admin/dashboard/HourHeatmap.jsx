@@ -12,11 +12,51 @@ import { Card, CardHeader } from '../../ui/Card';
  * La légende de la cellule survolée s'affiche au-dessus plutôt qu'en infobulle
  * flottante, pour rester lisible au clavier comme à la souris.
  */
+/**
+ * Cinq teintes, du plus creux au plus dense.
+ *
+ * L'échelle était une opacité continue de 0,18 à 0,80 appliquée au rapport de
+ * la case au maximum du tableau. Deux choses la rendaient illisible : cent
+ * cinquante nuances d'un même bleu ne se distinguent pas à l'œil, et un
+ * rapport au maximum écrase toute la distribution quand une seule case
+ * culmine — les cinquante-neuf autres se retrouvaient dans le même quart bas.
+ *
+ * Cinq crans se comptent, et la légende les montre. La teinte change en même
+ * temps que l'opacité : la variation d'une seule dimension est trop faible sur
+ * un fond sombre.
+ */
+const NIVEAUX = [
+  { fond: 'rgba(91,155,255,0.10)', bord: 'rgba(91,155,255,0.20)' },
+  { fond: 'rgba(91,155,255,0.28)', bord: 'rgba(91,155,255,0.35)' },
+  { fond: 'rgba(108,192,255,0.48)', bord: 'rgba(108,192,255,0.55)' },
+  { fond: 'rgba(128,220,235,0.70)', bord: 'rgba(128,220,235,0.75)' },
+  { fond: 'rgba(160,240,205,0.92)', bord: 'rgba(160,240,205,1)' },
+];
+
+/**
+ * Seuils séparant les cinq crans, tirés de la distribution réelle.
+ *
+ * Des quantiles et non des tranches égales : les réservations se concentrent
+ * aux heures ouvrables, et découper l'intervalle en cinq parts égales
+ * laisserait quatre crans vides. Chaque cran porte ainsi à peu près le même
+ * nombre de cases, ce qui est précisément ce qu'on veut comparer.
+ */
+function seuils(valeurs) {
+  const positives = valeurs.filter((valeur) => valeur > 0).sort((a, b) => a - b);
+  if (positives.length === 0) return [];
+  return [0.2, 0.4, 0.6, 0.8].map(
+    (part) => positives[Math.min(positives.length - 1, Math.floor(positives.length * part))],
+  );
+}
+
+const cran = (valeur, bornes) => bornes.filter((borne) => valeur > borne).length;
+
 export function HourHeatmap({ heatmap, className }) {
   const [survolee, setSurvolee] = useState(null);
   const { hours = [], days = [], cells = [] } = heatmap ?? {};
 
   const cellule = (day, hour) => cells.find((item) => item.day === day && item.hour === hour);
+  const bornes = seuils(cells.map((item) => item.value));
   const libelleJour = (value) => WEEK_DAYS.find((jour) => jour.value === value)?.label ?? '';
 
   return (
@@ -83,14 +123,15 @@ export function HourHeatmap({ heatmap, className }) {
                         className={cn(
                           'h-7 w-full rounded-md border transition duration-200',
                           'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent',
-                          item.value === 0
-                            ? 'border-line/60 bg-surface-raised/40'
-                            : 'border-accent/30',
+                          item.value === 0 && 'border-line/60 bg-surface-raised/40',
                           actif && 'ring-1 ring-accent',
                         )}
                         style={
                           item.value > 0
-                            ? { background: `rgba(91,155,255,${0.18 + item.ratio * 0.62})` }
+                            ? {
+                                background: NIVEAUX[cran(item.value, bornes)].fond,
+                                borderColor: NIVEAUX[cran(item.value, bornes)].bord,
+                              }
                             : undefined
                         }
                       >
@@ -116,12 +157,14 @@ function Legende() {
   return (
     <p className="mt-3 flex items-center gap-2 text-[11px] text-content-faint">
       Faible
-      {[0.18, 0.35, 0.52, 0.68, 0.8].map((niveau) => (
+      {/* Les mêmes teintes que les cases, tirées de la même table : deux
+          listes écrites séparément finissent par diverger. */}
+      {NIVEAUX.map((niveau) => (
         <span
-          key={niveau}
+          key={niveau.fond}
           aria-hidden="true"
-          className="h-3 w-5 rounded-sm border border-accent/30"
-          style={{ background: `rgba(91,155,255,${niveau})` }}
+          className="h-3 w-5 rounded-sm border"
+          style={{ background: niveau.fond, borderColor: niveau.bord }}
         />
       ))}
       Forte

@@ -57,7 +57,7 @@ export function PhotosTab({
       <LocationPlanField
         src={locationPlanUrl}
         busy={busy}
-        disabled={creating}
+        enAttente={creating}
         onUpload={onUploadPlan}
         onRemove={onRemovePlan}
       />
@@ -66,13 +66,14 @@ export function PhotosTab({
         <p className="text-xs text-content-muted">
           Photos de la salle — six au maximum. La première l’illustre dans les résultats de
           recherche.
+          {creating && ' Elles partiront dès la salle créée.'}
         </p>
       </div>
 
       <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {photos.map((photo, index) => (
           <li
-            key={photo.id ?? photo.url ?? index}
+            key={photo}
             className={cn(
               'group relative overflow-hidden rounded-xl border',
               index === 0 ? 'border-accent' : 'border-line',

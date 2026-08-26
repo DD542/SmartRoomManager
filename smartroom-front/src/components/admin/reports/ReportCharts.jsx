@@ -33,12 +33,21 @@ const infobulle = (formatter) => (
 );
 
 /** A-02 — heures réservées par pas de temps (jour ou mois selon le filtre). */
+const PAS_AGREGATION = {
+  day: 'Agrégées par jour',
+  week: 'Agrégées par semaine',
+  month: 'Agrégées par mois',
+};
+
 export function PeriodHoursChart({ data = [], granularity = 'month' }) {
   return (
     <Card>
       <CardHeader
         title="Heures réservées"
-        subtitle={granularity === 'day' ? 'Agrégées par jour' : 'Agrégées par mois'}
+        // Le sous-titre suit la granularité réelle. Il ne connaissait que
+        // « jour » et « mois » : la semaine s'y annonçait comme un mois, et le
+        // graphique décrivait faussement ce qu'il montrait.
+        subtitle={PAS_AGREGATION[granularity] ?? 'Agrégées par période'}
       />
       {data.length === 0 ? (
         <Vide />

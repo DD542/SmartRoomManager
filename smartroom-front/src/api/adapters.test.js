@@ -222,7 +222,13 @@ describe('parc', () => {
 
     expect(salle.equipmentIds).toEqual(['eq-1']);
     expect(salle.equipment[0].label).toBe('Vidéo');
-    expect(salle.photos[0].url).toBe('/media/photos/a.png');
+    // Une adresse, pas un objet. Cette assertion disait `photos[0].url` et
+    // décrivait fidèlement l'adaptateur — sans jamais vérifier qu'un écran
+    // pouvait s'en servir. Les six qui consomment `photos` écrivent
+    // `src={room.photos?.[0]}` : toutes les photos de salle rendaient
+    // « [object Object] », et le test restait vert.
+    expect(salle.photos).toEqual(['/media/photos/a.png']);
+    expect(typeof salle.photos[0]).toBe('string');
   });
 
   it('accepte une salle sans équipement ni photo', () => {

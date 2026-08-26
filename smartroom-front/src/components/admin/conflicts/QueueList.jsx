@@ -41,7 +41,17 @@ export function QueueList({ items = [], counts = {}, tab, onTabChange, selectedI
         ))}
       </div>
 
-      <ul className="flex flex-col gap-2 p-3">
+      {items.length === 0 && (
+        // L'état vide vit *sous* les onglets, et non à leur place. Rendu par
+        // la page, il remplaçait la liste entière — onglets compris — et un
+        // onglet sans élément devenait un cul-de-sac : plus rien ne permettait
+        // de revenir à celui qui en avait.
+        <p className="px-3 py-8 text-center text-xs text-content-faint">
+          Aucun élément sur cet onglet. Les autres en contiennent peut-être.
+        </p>
+      )}
+
+      <ul className="flex flex-col gap-2 p-3 empty:hidden">
         {items.map((item, index) => {
           const meta = TYPE_META[item.type] ?? TYPE_META.validation;
           const Icone = meta.icon;

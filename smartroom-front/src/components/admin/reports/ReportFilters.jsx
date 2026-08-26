@@ -68,7 +68,10 @@ export function ReportFilters({ value, onChange, buildings = [], presets = [], c
               label="Pas d’agrégation"
               options={GRANULARITES}
               value={value.granularity}
-              onChange={(granularity) => modifier({ granularity })}
+              // Le choix devient explicite : à partir d'ici, la période ne le
+              // recalcule plus. Sans ce drapeau, changer de période effacerait
+              // une agrégation choisie à la main.
+              onChange={(granularity) => modifier({ granularity, granulariteChoisie: true })}
             />
           </div>
         </div>
