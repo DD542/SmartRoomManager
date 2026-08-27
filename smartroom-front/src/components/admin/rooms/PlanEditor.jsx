@@ -47,21 +47,32 @@ export function PlanEditor({ layout, selectedId, onSelect, onMove, onCommit, cla
     });
   };
 
+  // Derniere position calculee, hors etat React.
+  //
+  // `onCommit` lisait la position depuis l'etat du parent, qui n'avait pas
+  // encore recu le `onMove` de la meme frappe : la geometrie enregistree avait
+  // systematiquement un pas de retard sur celle affichee. Sept fleches
+  // deplacaient la salle a l'ecran et n'en enregistraient que six.
+  const derniere = useRef(null);
+
   const deplacer = (event) => {
     if (!glisse) return;
     const point = versPlan(event);
     if (!point) return;
     const salle = layout.placed.find((pose) => pose.room.id === glisse.roomId);
     if (!salle) return;
-    onMove(glisse.roomId, {
+    const suivante = {
       x: borner(aligner(point.x - glisse.dx), salle.room.plan.w),
       y: borner(aligner(point.y - glisse.dy), salle.room.plan.h),
-    });
+    };
+    derniere.current = suivante;
+    onMove(glisse.roomId, suivante);
   };
 
   const relacher = () => {
     if (!glisse) return;
-    onCommit(glisse.roomId);
+    onCommit(glisse.roomId, derniere.current ?? undefined);
+    derniere.current = null;
     setGlisse(null);
   };
 
@@ -71,11 +82,12 @@ export function PlanEditor({ layout, selectedId, onSelect, onMove, onCommit, cla
     ];
     if (!pas) return;
     event.preventDefault();
-    onMove(pose.room.id, {
+    const suivante = {
       x: borner(pose.room.plan.x + pas[0], pose.room.plan.w),
       y: borner(pose.room.plan.y + pas[1], pose.room.plan.h),
-    });
-    onCommit(pose.room.id);
+    };
+    onMove(pose.room.id, suivante);
+    onCommit(pose.room.id, suivante);
   };
 
   return (

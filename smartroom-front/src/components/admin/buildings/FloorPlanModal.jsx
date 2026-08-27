@@ -39,30 +39,47 @@ export function FloorPlanModal({ floor, open, onClose, onChanged }) {
 
   const pose = layout.data?.placed.find((item) => item.room.id === selection) ?? null;
 
-  /** Déplacement local, sans requête : le rendu doit suivre le curseur. */
+  /**
+   * Déplacement local, sans requête : le rendu doit suivre le curseur.
+   *
+   * La géométrie est écrite dans `room.plan`, là où l'éditeur la lit. Écrite
+   * à côté — dans `pose.x` — elle partait bien au serveur mais ne s'affichait
+   * jamais : la salle restait immobile pendant que sa position changeait.
+   */
   const bouger = (roomId, position) => {
     layout.setData((courant) => ({
       ...courant,
       placed: courant.placed.map((item) =>
-        item.roomId === roomId ? { ...item, ...position } : item,
+        item.room.id === roomId
+          ? { ...item, room: { ...item.room, plan: { ...item.room.plan, ...position } } }
+          : item,
       ),
     }));
   };
 
   const enregistrer = async (roomId, patch = {}) => {
-    const cible = layout.data?.placed.find((item) => item.roomId === roomId);
+    const cible = layout.data?.placed.find((item) => item.room.id === roomId);
     if (!cible) return;
 
     setEnvoi(true);
     try {
       await placeRoom(floor.id, roomId, {
-        x: cible.x,
-        y: cible.y,
+        // `patch` porte la geometrie que l'editeur vient de calculer quand
+        // elle vient d'un deplacement : l'etat local ne l'a pas encore recue.
+        x: cible.room.plan.x,
+        y: cible.room.plan.y,
         rotation: cible.rotation,
         entrance: cible.entrance ?? false,
         ...patch,
       });
-      await layout.reload();
+      // Seul le correctif est réappliqué localement : recharger apres chaque
+      // touche de direction rendrait le deplacement au clavier saccade.
+      layout.setData((courant) => ({
+        ...courant,
+        placed: courant.placed.map((item) =>
+          item.room.id === roomId ? { ...item, ...patch } : item,
+        ),
+      }));
     } catch (erreur) {
       toast.error('Placement refusé', erreur.message);
       await layout.reload();
@@ -99,7 +116,7 @@ export function FloorPlanModal({ floor, open, onClose, onChanged }) {
                 selectedId={selection}
                 onSelect={setSelection}
                 onMove={bouger}
-                onCommit={(roomId) => enregistrer(roomId)}
+                onCommit={(roomId, position) => enregistrer(roomId, position ?? {})}
               />
 
               <div className="rounded-xl border border-line bg-surface-raised p-3">
