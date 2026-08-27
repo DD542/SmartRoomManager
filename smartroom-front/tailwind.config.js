@@ -51,6 +51,10 @@ export default {
           from: { transform: 'translateY(100%)' },
           to: { transform: 'translateY(0)' },
         },
+        flottement: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-6px)' },
+        },
         shimmer: {
           '100%': { transform: 'translateX(100%)' },
         },
@@ -59,6 +63,7 @@ export default {
         'fade-in-up': 'fade-in-up 200ms cubic-bezier(0.16,1,0.3,1) both',
         'scale-in': 'scale-in 150ms cubic-bezier(0.16,1,0.3,1) both',
         'slide-up': 'slide-up 220ms cubic-bezier(0.16,1,0.3,1) both',
+        flottement: 'flottement 6s ease-in-out infinite',
       },
     },
   },

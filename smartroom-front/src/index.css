@@ -77,9 +77,35 @@
     @apply rounded-xl border border-line bg-surface;
   }
 
+  /* Apparition au défilement — voir `Reveal` et `useInView`.
+     L'état masqué vit ici plutôt que dans une classe utilitaire : le composant
+     bascule un attribut, le navigateur interpole, et rien ne passe par React
+     pendant l'animation. */
+  .reveal {
+    opacity: 0;
+    transform: translateY(22px);
+    transition:
+      opacity 620ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 620ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .reveal[data-visible='true'] {
+    opacity: 1;
+    transform: none;
+  }
+
+}
+
+/* Le défilement des ancres de la page publique glisse au lieu de sauter. */
+html {
+  scroll-behavior: smooth;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
   *,
   *::before,
   *::after {
@@ -87,6 +113,14 @@
     animation-delay: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  /* Une transition ramenée à 0,01 ms suffit à faire apparaître le contenu,
+     mais seulement si quelque chose la déclenche. Sans état masqué au départ,
+     rien ne dépend plus d'un observateur. */
+  .reveal {
+    opacity: 1;
+    transform: none;
   }
 }
 

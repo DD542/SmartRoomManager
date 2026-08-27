@@ -1,18 +1,61 @@
+import { useEffect, useState } from 'react';
 import { ArrowRight, Zap } from 'lucide-react';
 import { useAsync } from '../../hooks/useAsync';
+import { prefersReducedMotion, useInView } from '../../hooks/useInView';
 import { getPublicStats } from '../../api/stats';
 import { Button } from '../ui/Button';
 import { Skeleton } from '../ui/States';
 import { AppPreview } from './AppPreview';
 import { Reveal } from './Reveal';
 
+/**
+ * Chiffre qui monte de zéro à sa valeur, à l'entrée dans la fenêtre.
+ *
+ * Le compte est arrondi à chaque image et non interpolé en CSS : un nombre
+ * doit rester lisible pendant qu'il défile, et une transformation le rendrait
+ * flou. La durée est courte — au-delà d'une seconde, on attend un chiffre au
+ * lieu de lire une page.
+ */
+function Compteur({ valeur }) {
+  const [cible, vu] = useInView({ seuil: 0.4 });
+  const [affiche, setAffiche] = useState(0);
+
+  useEffect(() => {
+    if (!vu) return undefined;
+    if (valeur === 0 || prefersReducedMotion()) {
+      setAffiche(valeur);
+      return undefined;
+    }
+
+    const debut = performance.now();
+    const duree = 900;
+    let image = 0;
+
+    const avancer = (maintenant) => {
+      const avancement = Math.min(1, (maintenant - debut) / duree);
+      // Décélération cubique : rapide au départ, posée à l'arrivée.
+      setAffiche(Math.round(valeur * (1 - (1 - avancement) ** 3)));
+      if (avancement < 1) image = requestAnimationFrame(avancer);
+    };
+
+    image = requestAnimationFrame(avancer);
+    return () => cancelAnimationFrame(image);
+  }, [vu, valeur]);
+
+  return (
+    <dd ref={cible} className="font-mono text-2xl text-content">
+      {affiche}
+    </dd>
+  );
+}
+
 function StatBand({ stats, isLoading }) {
   // Les valeurs viennent du catalogue réel ; seuls les libellés sont ceux de la maquette.
   const items = stats
     ? [
-        { value: String(stats.rooms), label: 'Salles connectées' },
-        { value: String(stats.buildings), label: 'Bâtiments équipés' },
-        { value: String(stats.doubleBookings), label: 'Double réservation' },
+        { value: stats.rooms, label: 'Salles connectées' },
+        { value: stats.buildings, label: 'Bâtiments équipés' },
+        { value: stats.doubleBookings, label: 'Double réservation' },
       ]
     : [];
 
@@ -35,7 +78,7 @@ function StatBand({ stats, isLoading }) {
         // flex-col-reverse : la valeur s'affiche au-dessus, l'ordre du DOM reste terme puis définition.
         <div key={item.label} className="flex flex-col-reverse gap-1">
           <dt className="text-xs text-content-muted">{item.label}</dt>
-          <dd className="font-mono text-2xl text-content">{item.value}</dd>
+          <Compteur valeur={item.value} />
         </div>
       ))}
     </dl>

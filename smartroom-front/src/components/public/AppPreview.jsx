@@ -143,12 +143,15 @@ export function AppPreview() {
         <rect x="212" y="352" width="136" height="10" rx="5" fill="#222C3E" />
       </svg>
 
-      {/* Carte flottante : confirmation de réservation */}
+      {/* Carte flottante : confirmation de réservation.
+          Le flottement est porté par l'enveloppe et l'inclinaison par la carte :
+          deux `transform` sur le même nœud s'écraseraient, et le survol
+          effacerait le mouvement. */}
+      <div aria-hidden="true" className="absolute -right-2 top-10 hidden sm:block animate-flottement">
       <div
-        aria-hidden="true"
         style={carte(-5, -2, -10)}
-        className="absolute -right-2 top-10 hidden items-center gap-3 rounded-xl border border-line
-                   bg-surface-raised px-4 py-3 sm:flex"
+        className="flex items-center gap-3 rounded-xl border border-line
+                   bg-surface-raised px-4 py-3"
       >
         <span className="flex h-9 w-9 items-center justify-center rounded-full border border-success/40 bg-success-soft">
           <CheckCircle2 size={18} className="text-success" />
@@ -158,13 +161,19 @@ export function AppPreview() {
           <span className="block font-mono text-xs text-content-muted">Salle Turing — 14:00</span>
         </span>
       </div>
+      </div>
 
-      {/* Carte flottante : code d'accès */}
+      {/* Carte flottante : code d'accès. Décalée d'une demi-période pour que
+          les deux cartes ne montent pas ensemble. */}
       <div
         aria-hidden="true"
+        className="absolute -left-3 bottom-16 hidden sm:block animate-flottement"
+        style={{ animationDelay: '-3s' }}
+      >
+      <div
         style={carte(6, 3, 10)}
-        className="absolute -left-3 bottom-16 hidden items-center gap-3 rounded-xl border border-line
-                   bg-surface-raised px-4 py-3 sm:flex"
+        className="flex items-center gap-3 rounded-xl border border-line
+                   bg-surface-raised px-4 py-3"
       >
         <KeyRound size={16} className="text-accent" />
         <span>
@@ -173,6 +182,7 @@ export function AppPreview() {
           </span>
           <span className="block font-mono text-base tracking-[0.15em] text-content">A-4821</span>
         </span>
+      </div>
       </div>
     </div>
   );
