@@ -66,10 +66,10 @@ export default function AdminProfilePage() {
       // La barre haute affiche le nom et la photo : sans ce rafraîchissement,
       // l'avatar du menu resterait sur l'ancienne image jusqu'à rechargement.
       await refresh?.();
-      toast({ tone: 'success', title: succes });
+      toast.success(succes);
       return resultat;
     } catch (erreur) {
-      toast({ tone: 'danger', title: erreur.message ?? 'L’enregistrement a échoué.' });
+      toast.error(erreur.message ?? 'L’enregistrement a échoué.');
       throw erreur;
     } finally {
       setEnvoi(false);

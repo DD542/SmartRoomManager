@@ -8,6 +8,7 @@
  */
 
 import { describe, expect, it, vi } from 'vitest';
+import { HttpResponse, http } from 'msw';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { Avatar } from '../ui/Avatar';
@@ -15,6 +16,9 @@ import { AvatarField } from './AvatarField';
 import { AccountMenu } from '../admin/AccountMenu';
 import { SessionList } from '../admin/account/SessionList';
 import { AdminSessionContext } from '../../hooks/useAdminSession';
+import { ToastProvider } from '../../hooks/useToast';
+import { serveur } from '../../test/serveur';
+import AdminProfilePage from '../../pages/admin/account/AdminProfilePage';
 
 describe('Avatar', () => {
   it('montre les initiales quand aucune photo n’est déposée', () => {
@@ -185,5 +189,73 @@ describe('Liste des sessions', () => {
     const bouton = screen.getByRole('button', { name: /Fermer les 2 autres sessions/ });
     fireEvent.click(bouton);
     expect(fermer).toHaveBeenCalled();
+  });
+});
+
+describe('Écran de profil d’administration', () => {
+  const COMPTE = {
+    id: 'u-1',
+    first_name: 'Dylan',
+    last_name: 'Menga',
+    email: 'd.menga@ece.fr',
+    phone: null,
+    promotion: null,
+    department: 'Direction',
+    badge_number: '20841',
+    avatar_url: null,
+    status: 'actif',
+    preferences: null,
+  };
+
+  const monter = () =>
+    render(
+      <MemoryRouter>
+        <ToastProvider>
+          <AdminSessionContext.Provider
+            value={{
+              admin: { id: 'u-1', permissions: [] },
+              status: 'ouverte',
+              isRestoring: false,
+              isAuthenticated: true,
+              permissions: [],
+              login: vi.fn(),
+              logout: vi.fn(),
+              setPermissions: vi.fn(),
+              refresh: vi.fn().mockResolvedValue(null),
+            }}
+          >
+            <AdminProfilePage />
+          </AdminSessionContext.Provider>
+        </ToastProvider>
+      </MemoryRouter>,
+    );
+
+  it('confirme le dépôt de la photo au lieu d’afficher une erreur de code', async () => {
+    // L'écran appelait `toast({ tone, title })`, alors que `useToast()` rend un
+    // objet — `toast.success`, `toast.error`. L'écriture réussissait, puis
+    // l'annonce levait « toast is not a function » : l'erreur remontait dans le
+    // champ de photo, sous la forme d'un échec, à côté de la photo déposée.
+    const BASE = 'http://localhost:5180/api/v1';
+    serveur.use(
+      http.get(`${BASE}/users/me`, () => HttpResponse.json(COMPTE)),
+      http.get(`${BASE}/users/me/sessions`, () => HttpResponse.json([])),
+      http.get(`${BASE}/admin/permissions`, () => HttpResponse.json([])),
+      http.put(`${BASE}/users/me/avatar`, () =>
+        HttpResponse.json({ ...COMPTE, avatar_url: '/media/avatars/u-1.png' }),
+      ),
+    );
+
+    const { container } = monter();
+    await screen.findByText('Photo de profil');
+
+    const image = new File(['x'], 'moi.png', { type: 'image/png' });
+    Object.defineProperty(image, 'size', { value: 1024 });
+    fireEvent.change(container.querySelector('input[type="file"]'), {
+      target: { files: [image] },
+    });
+
+    expect(await screen.findByText('Photo mise à jour')).toBeTruthy();
+    // Et surtout : aucun message d'échec dans le champ.
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });

@@ -18,6 +18,7 @@ import { AlternativeList } from './conflicts/AlternativeList';
 import { YearOverview } from './rules/YearOverview';
 import { UserDetail } from './people/UserDetail';
 import { Pill } from '../ui/Badge';
+import { KpiTile } from '../stats/KpiTile';
 import { SANS_DATE, fmtDate, fmtDateLong, fmtRelative, fmtTime } from '../../utils/dates';
 
 describe('Liste des salles de repli', () => {
@@ -191,5 +192,23 @@ describe('Formateurs de date', () => {
     // Une valeur absente est un état ; une valeur illisible est un défaut, et
     // la masquer derrière un tiret le rendrait introuvable.
     expect(() => fmtDate('pas une date')).toThrow();
+  });
+});
+
+describe('Tuile de chiffre clé', () => {
+  it('n’abrège pas le libellé qui explique le chiffre', () => {
+    // « Occupation moyenne des salles expl… » : la tuile coupait son libellé
+    // sur une ligne, et le chiffre ne disait plus de quoi il parlait.
+    //
+    // L'abrègement est purement visuel — `text-overflow: ellipsis` laisse le
+    // texte entier dans le DOM — donc aucune assertion sur le contenu ne peut
+    // le voir. Le seul garde-fou mécanique porte sur la classe qui le
+    // produisait ; la vérification du rendu s'est faite à l'écran, à 1440 px
+    // comme à 375 px.
+    render(<KpiTile value="20 %" label="Occupation moyenne des salles exploitables" />);
+
+    const libelle = screen.getByText('Occupation moyenne des salles exploitables');
+    expect(libelle.className.split(' ')).not.toContain('truncate');
+    expect(libelle.className).not.toMatch(/line-clamp-/);
   });
 });

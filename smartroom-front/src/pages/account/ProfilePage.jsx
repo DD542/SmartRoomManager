@@ -41,7 +41,7 @@ export default function ProfilePage() {
     try {
       const maj = await action();
       setProfile((courant) => ({ ...courant, avatarUrl: maj.avatarUrl }));
-      toast({ tone: 'success', title: succes });
+      toast.success(succes);
     } finally {
       setPhotoEnCours(false);
     }
@@ -129,10 +129,7 @@ export default function ProfilePage() {
               onRevokeOthers={async () => {
                 const fermees = await revokeOtherSessions();
                 await sessions.reload();
-                toast({
-                  tone: 'success',
-                  title: `${fermees} appareil(s) déconnecté(s)`,
-                });
+                toast.success(`${fermees} appareil(s) déconnecté(s)`);
               }}
             />
           )}

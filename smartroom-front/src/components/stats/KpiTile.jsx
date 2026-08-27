@@ -47,7 +47,11 @@ export function KpiTile({ icon: Icon, value, unit, label, trend, tone = 'default
             </span>
           )}
         </p>
-        <p className="mt-0.5 truncate text-xs text-content-muted">{label}</p>
+        {/* Pas de `truncate` : le libellé porte le sens du chiffre, et
+            « Occupation moyenne des salles expl… » n'en dit plus rien. Il
+            passe à la ligne, la tuile s'étire, et la grille garde des
+            hauteurs égales par rangée. */}
+        <p className="mt-0.5 text-xs text-content-muted">{label}</p>
       </div>
     </div>
   );
