@@ -5,6 +5,7 @@ import {
   createRoom,
   getManagedRoom,
   listRoomFilters,
+  saveRoomAvailability,
   updateRoom,
   uploadRoomLocationPlan,
 } from '../../../api/admin/rooms';
@@ -139,6 +140,14 @@ export default function RoomEditPage() {
             manques.push('une photo');
           }
         }
+        // Les horaires et les durées de la salle, que `createRoom` ne porte
+        // pas : ils vivent dans une autre portée côté serveur.
+        try {
+          await saveRoomAvailability(creee.id, draft.rules);
+        } catch {
+          manques.push('la disponibilité');
+        }
+
         if (draft.pendingLocationPlan) {
           try {
             await uploadRoomLocationPlan(creee.id, draft.pendingLocationPlan.fichier);
@@ -159,6 +168,10 @@ export default function RoomEditPage() {
         return;
       }
       await updateRoom(id, draft);
+      // L'onglet « Disponibilité » modifiait un brouillon que rien n'envoyait :
+      // on changeait les horaires, l'écran annonçait « enregistrée », et rien
+      // ne bougeait.
+      await saveRoomAvailability(id, draft.rules);
       toast.success('Salle enregistrée', `${draft.name} a été mise à jour.`);
       await salle.reload();
     } catch (erreur) {

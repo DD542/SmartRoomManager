@@ -19,6 +19,7 @@ migration initiale, un conteneur nu suffit donc.
 from __future__ import annotations
 
 import os
+import tempfile
 from collections.abc import Iterator
 
 import pytest
@@ -46,6 +47,15 @@ def _appliquer_environnement(dsn: str) -> None:
     os.environ.setdefault("JWT_SECRET", "secret-de-test-suffisamment-long-pour-passer")
     os.environ.setdefault("ENVIRONMENT", "local")
     os.environ.setdefault("MAIL_ENABLED", "false")
+
+    # Magasin de médias isolé, comme la base l'est déjà.
+    #
+    # Sans cela, les tests écrivent et *suppriment* dans le dossier de
+    # développement : un dépôt de plan efface celui qu'il remplace, et lancer
+    # la suite retirait au jeu de démonstration des visuels que rien ne
+    # signalait ensuite — une salle se retrouvait « sans plan » sans que
+    # personne n'y ait touché.
+    os.environ["MEDIA_ROOT"] = tempfile.mkdtemp(prefix="smartroom-medias-")
 
     from app.core.config import get_settings
 

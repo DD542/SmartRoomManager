@@ -60,8 +60,28 @@ export async function listManagedRooms(filters = {}) {
   return parLibelle.map(decorer);
 }
 
+/**
+ * Fiche complète d'une salle, disponibilité comprise.
+ *
+ * Les horaires et les durées vivent dans deux référentiels distincts côté
+ * serveur : ils se configurent séparément, par portée. `adapt.roomRules` les
+ * recoud en la « règle de la salle » dont parlent les écrans — un adaptateur
+ * écrit et éprouvé, mais que rien n'appelait : l'onglet « Disponibilité »
+ * affichait donc les valeurs par défaut du brouillon, jamais celles de la
+ * salle ouverte.
+ *
+ * Les deux lectures tolèrent l'absence : une salle sans surcharge hérite du
+ * bâtiment ou du global, et le serveur répond alors 404 sur sa portée propre.
+ */
 export async function getManagedRoom(id, { signal } = {}) {
-  return decorer(adapt.room(await get(`/rooms/${id}`, { signal })));
+  const [brute, regles, horaires] = await Promise.all([
+    get(`/rooms/${id}`, { signal }),
+    get(`/rooms/${id}/booking-rules`, { signal }).catch(() => null),
+    get(`/rooms/${id}/opening-hours`, { signal }).catch(() => []),
+  ]);
+
+  const salle = decorer(adapt.room(brute));
+  return { ...salle, rules: adapt.roomRules(regles, (horaires ?? []).map(adapt.openingWindow)) };
 }
 
 /** Référentiels de la barre de filtres, mesurés sur le catalogue réel. */
@@ -167,6 +187,47 @@ export async function removeRoomPhoto(id, index) {
   }
 
   await del(`/rooms/${id}/photos/${cible.id}`);
+  return getManagedRoom(id);
+}
+
+/**
+ * Disponibilité d'une salle : ses horaires et ses règles de réservation.
+ *
+ * L'onglet « Disponibilité » du formulaire modifiait un brouillon que rien
+ * n'envoyait : `corps()` ne porte ni les jours de visite, ni l'amplitude, ni
+ * les durées. On changeait donc les horaires d'une salle, l'écran annonçait
+ * « enregistrée », et rien ne bougeait.
+ *
+ * Deux portées distinctes côté serveur, et c'est voulu : les horaires disent
+ * *quand* la salle ouvre, les règles *comment* on la réserve. Les écrire
+ * ensemble ici évite à l'appelant de connaître ce découpage.
+ *
+ * Le remplacement des horaires est total, jamais incrémental : la résolution
+ * se fait par portée entière, et un jour manquant hériterait du bâtiment —
+ * produisant une semaine dont un jour suivrait une autre amplitude.
+ */
+export async function saveRoomAvailability(id, regles) {
+  if (!regles) return null;
+
+  const jours = new Set(regles.visitDays ?? []);
+  const fenetres = [0, 1, 2, 3, 4, 5, 6].map((jour) => ({
+    weekday: jour,
+    is_open: jours.has(jour),
+    opens_at: `${regles.openTime ?? '08:00'}:00`,
+    closes_at: `${regles.closeTime ?? '20:00'}:00`,
+  }));
+
+  await put('/opening-hours/salle', fenetres, { params: { room_id: id } });
+  await put(
+    '/booking-rules/salle',
+    {
+      min_duration_min: Number(regles.minDurationMin ?? 30),
+      max_duration_min: Number(regles.maxDurationMin ?? 240),
+      buffer_min: Number(regles.bufferMin ?? 15),
+    },
+    { params: { room_id: id } },
+  );
+
   return getManagedRoom(id);
 }
 

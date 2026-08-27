@@ -1,12 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Map } from 'lucide-react';
 import { getPlanLayout, listPlans, placeRoom, unplaceRoom } from '../../../api/admin/plans';
+import {
+  listFloorsWithRooms,
+  listManagedBuildings,
+} from '../../../api/admin/buildings';
 import { useAsync } from '../../../hooks/useAsync';
 import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
 import { useToast } from '../../../hooks/useToast';
 import { PageHeader } from '../../../components/layout/PageHeader';
 import { Card, CardHeader } from '../../../components/ui/Card';
 import { Select } from '../../../components/ui/Form';
+import { Tabs } from '../../../components/ui/Tabs';
+import { LocationPlanBrowser } from '../../../components/admin/rooms/LocationPlanBrowser';
 import { AsyncBoundary, SkeletonCard } from '../../../components/ui/States';
 import { PlanEditor } from '../../../components/admin/rooms/PlanEditor';
 import { PlanRoomPanel } from '../../../components/admin/rooms/PlanRoomPanel';
@@ -25,9 +31,17 @@ export default function PlansPage() {
 
   const [planId, setPlanId] = useState(null);
   const [selection, setSelection] = useState(null);
+  const [vue, setVue] = useState('localisation');
+  const [batimentId, setBatimentId] = useState(null);
   const [envoi, setEnvoi] = useState(false);
 
   const plans = useAsync(listPlans, []);
+  const parc = useAsync(listManagedBuildings, []);
+  const etages = useAsync(
+    (options) =>
+      batimentId ? listFloorsWithRooms(batimentId, options ?? {}) : Promise.resolve([]),
+    [batimentId],
+  );
   const layout = useAsync(
     () => (planId ? getPlanLayout(planId) : Promise.resolve(null)),
     [planId],
@@ -36,6 +50,12 @@ export default function PlansPage() {
   useEffect(() => {
     if (!planId && plans.data?.length > 0) setPlanId(plans.data[0].id);
   }, [plans.data, planId]);
+
+  // Le premier bâtiment est retenu d'office : un sélecteur vide au chargement
+  // obligerait à un choix pour voir ce que l'écran a déjà de quoi montrer.
+  useEffect(() => {
+    if (!batimentId && parc.data?.length > 0) setBatimentId(parc.data[0].id);
+  }, [parc.data, batimentId]);
 
   const pose = layout.data?.placed.find((item) => item.room.id === selection) ?? null;
 
@@ -102,28 +122,73 @@ export default function PlansPage() {
     }
   };
 
+  const batimentChoisi = (parc.data ?? []).find((item) => item.id === batimentId) ?? null;
+
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
-        title="Gestion des plans"
-        subtitle="Plan officiel de l’étage et position des salles telles que les utilisateurs les voient."
+        title="Plans"
+        subtitle={
+          vue === 'localisation'
+            ? 'Les plans de localisation des salles, bâtiment par bâtiment.'
+            : 'Plan officiel de l’étage et position des salles telles que les utilisateurs les voient.'
+        }
         actions={
-          <Select
-            label="Plan"
-            options={(plans.data ?? []).map((plan) => ({
-              value: plan.id,
-              label: `${plan.label} — ${plan.sublabel}`,
-            }))}
-            value={planId ?? ''}
-            onChange={(event) => {
-              setPlanId(event.target.value);
-              setSelection(null);
-            }}
-            className="min-w-[16rem]"
-          />
+          vue === 'localisation' ? (
+            <Select
+              label="Bâtiment"
+              options={(parc.data ?? []).map((item) => ({ value: item.id, label: item.name }))}
+              value={batimentId ?? ''}
+              onChange={(event) => setBatimentId(event.target.value)}
+              className="min-w-[14rem]"
+            />
+          ) : (
+            <Select
+              label="Plan"
+              options={(plans.data ?? []).map((plan) => ({
+                value: plan.id,
+                label: `${plan.label} — ${plan.sublabel}`,
+              }))}
+              value={planId ?? ''}
+              onChange={(event) => {
+                setPlanId(event.target.value);
+                setSelection(null);
+              }}
+              className="min-w-[16rem]"
+            />
+          )
         }
       />
 
+      {/* Consulter d'abord, régler ensuite. La page portait le seul éditeur de
+          plan d'étage, et les plans de localisation — un par salle, déposés à
+          sa création — n'étaient consultables que fiche par fiche : trente
+          salles, trente allers-retours pour comparer deux niveaux. */}
+      <Tabs
+        tabs={[
+          { id: 'localisation', label: 'Plans de localisation' },
+          { id: 'etage', label: 'Plan d’étage et placement' },
+        ]}
+        value={vue}
+        onChange={setVue}
+        label="Vue des plans"
+      />
+
+      {vue === 'localisation' && (
+        <AsyncBoundary
+          status={batimentId ? etages.status : parc.status}
+          error={etages.error ?? parc.error}
+          onRetry={etages.reload}
+          skeleton={<SkeletonCard />}
+        >
+          <LocationPlanBrowser
+            floors={etages.data ?? []}
+            buildingName={batimentChoisi?.name ?? ''}
+          />
+        </AsyncBoundary>
+      )}
+
+      {vue === 'etage' && (
       <AsyncBoundary
         status={planId ? layout.status : 'chargement'}
         error={layout.error}
@@ -177,6 +242,7 @@ export default function PlansPage() {
           </div>
         )}
       </AsyncBoundary>
+      )}
     </div>
   );
 }
