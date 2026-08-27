@@ -43,7 +43,12 @@ export default function PlansPage() {
     [batimentId],
   );
   const layout = useAsync(
-    () => (planId ? getPlanLayout(planId) : Promise.resolve(null)),
+    () =>
+      planId
+        ? getPlanLayout(planId, {
+            hasPlan: plans.data?.find((item) => item.id === planId)?.hasPlan ?? true,
+          })
+        : Promise.resolve(null),
     [planId],
   );
 
@@ -224,7 +229,14 @@ export default function PlansPage() {
                   <PlanUpload
                     planId={planId}
                     document={layout.data.document}
-                    onUploaded={() => layout.reload()}
+                    // La liste des plans porte `hasPlan`, qui décide si le
+                    // document sera demandé. La recharger d'abord : sans cela,
+                    // le plan tout juste déposé resterait invisible, l'écran
+                    // le croyant toujours absent.
+                    onUploaded={async () => {
+                      await plans.reload();
+                      await layout.reload();
+                    }}
                   />
                 </div>
               </Card>

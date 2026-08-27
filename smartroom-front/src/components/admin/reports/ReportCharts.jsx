@@ -2,6 +2,7 @@ import {
   Bar,
   BarChart,
   Cell,
+  LabelList,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -99,7 +100,16 @@ export function TopRoomsChart({ data = [], limit = 6 }) {
         <div className="px-2 pb-4" style={{ height: Math.max(160, retenues.length * 38 + 24) }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={retenues} layout="vertical" margin={{ ...chartMargin, left: 8 }}>
-              <XAxis type="number" tickLine={false} axisLine={false} tick={AXIS} allowDecimals={false} />
+              <XAxis
+                type="number"
+                tickLine={false}
+                axisLine={false}
+                tick={AXIS}
+                allowDecimals={false}
+                // L'espace à droite laisse place au chiffre de la barre la plus
+                // longue, qui sortirait sinon du cadre.
+                domain={[0, (maximum) => Math.ceil((maximum * 1.08) / 10) * 10]}
+              />
               <YAxis
                 type="category"
                 dataKey="room"
@@ -114,10 +124,28 @@ export function TopRoomsChart({ data = [], limit = 6 }) {
               ])}
               <Bar dataKey="bookings" radius={[0, 6, 6, 0]} barSize={16} isAnimationActive={false}>
                 {retenues.map((salle, index) => (
-                  // La salle en tête est pleine, les suivantes restent lisibles
-                  // mais en retrait : le classement se lit sans compter.
-                  <Cell key={salle.roomId} fill={ACCENT} fillOpacity={index === 0 ? 1 : 0.5} />
+                  // Cinq crans d'opacité plutôt que deux : « la première pleine,
+                  // les autres à moitié » ne distinguait pas la deuxième de la
+                  // sixième.
+                  <Cell
+                    key={salle.roomId}
+                    fill={ACCENT}
+                    fillOpacity={1 - Math.min(index, 4) * 0.16}
+                  />
                 ))}
+                {/* Le chiffre au bout de chaque barre. Les salles les plus
+                    demandées se tiennent en quelques réservations — 46 contre
+                    42 sur une échelle qui monte à 60 : les barres se
+                    ressemblent, et sans valeur écrite, le graphique ne se lit
+                    pas du tout. */}
+                <LabelList
+                  dataKey="bookings"
+                  position="right"
+                  offset={8}
+                  fill="#B4C0D4"
+                  fontSize={11}
+                  fontFamily="ui-monospace, monospace"
+                />
               </Bar>
             </BarChart>
           </ResponsiveContainer>

@@ -19,12 +19,14 @@ export const listPlans = listFloorPlans;
  * État complet de l'éditeur : le plan, les salles déjà posées avec leur
  * géométrie, et celles de l'étage qui restent à placer.
  */
-export async function getPlanLayout(planId, { signal } = {}) {
+export async function getPlanLayout(planId, { signal, hasPlan = true } = {}) {
   if (!planId) throw new ApiError('Plan introuvable.', 404, 'introuvable');
 
   const [page, document] = await Promise.all([
     get('/rooms', { params: { floor_id: planId, size: 100 }, signal }),
-    getPlanDocumentForPlan(planId, { signal }),
+    // `exists` évite de demander un plan qu'on sait absent : la réponse serait
+    // un 404 légitime, mais que la console affiche en rouge.
+    getPlanDocumentForPlan(planId, { signal, exists: hasPlan }),
   ]);
 
   const salles = items(page).map(adapt.room);

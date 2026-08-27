@@ -32,7 +32,7 @@ def batiment_sortie(batiment: Building, floor_count: int = 0, room_count: int = 
     )
 
 
-def etage_sortie(etage: Floor, room_count: int = 0) -> FloorOut:
+def etage_sortie(etage: Floor, room_count: int = 0, has_plan: bool = False) -> FloorOut:
     return FloorOut(
         id=etage.id,
         building_id=etage.building_id,
@@ -40,6 +40,7 @@ def etage_sortie(etage: Floor, room_count: int = 0) -> FloorOut:
         label=etage.label,
         level=etage.level,
         room_count=room_count,
+        has_plan=has_plan,
     )
 
 

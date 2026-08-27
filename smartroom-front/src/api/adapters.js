@@ -120,6 +120,7 @@ export const floor = (data) => ({
   label: data.label,
   level: data.level,
   roomCount: data.room_count,
+  hasPlan: Boolean(data.has_plan),
 });
 
 export const equipment = (data) => ({

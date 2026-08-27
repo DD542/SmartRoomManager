@@ -39,6 +39,7 @@ export async function listFloorPlans({ signal } = {}) {
       id: etage.id,
       buildingId: batiment.id,
       label: `${batiment.name} — ${etage.label}`,
+      hasPlan: Boolean(etage.hasPlan),
       sublabel: [batiment.address, plural(etage.roomCount, 'salle')].filter(Boolean).join(' — '),
     })),
   );
@@ -115,8 +116,13 @@ const TYPES_ACCEPTES = [
   'application/pdf',
 ];
 
-export async function getPlanDocumentForPlan(planId, { signal } = {}) {
+export async function getPlanDocumentForPlan(planId, { signal, exists = true } = {}) {
   if (!planId) return null;
+  // Quand l'appelant sait déjà qu'aucun plan n'est déposé, on ne le demande
+  // pas : la réponse serait un 404 légitime côté serveur, mais la console du
+  // navigateur l'affiche en rouge, où il se lit comme une panne. L'écran des
+  // plans en produisait un par étage vide, à chaque rendu.
+  if (!exists) return null;
   // Seul le 404 signifie « aucun plan déposé » : c'est un état vide, pas une
   // panne, et l'écran doit le présenter comme tel. Tout autre échec — 500,
   // coupure réseau, jeton expiré — reste une erreur et remonte : l'avaler

@@ -612,6 +612,38 @@ def creer_regles(
     session.commit()
 
 
+def _popularite(salle: Room) -> float:
+    """Probabilité qu'un créneau donné de cette salle soit réservé.
+
+    Elle valait 0,16 pour toutes, si bien que l'écran « salles les plus
+    demandées » classait du bruit : trente salles se tenaient en dix pour cent,
+    et le graphique montrait six barres identiques. Un classement qui ne
+    distingue rien n'apprend rien.
+
+    Les poids ne sont pas arbitraires, ils décrivent un usage : les petites
+    salles de travail sont prises toute la journée par des binômes et des
+    revues, les amphithéâtres servent quelques fois par semaine pour des
+    événements. La visio-conférence ajoute une demande propre, la salle
+    devenant le seul endroit où tenir une réunion à distance.
+    """
+    if salle.capacity <= 10:
+        base = 0.26
+    elif salle.capacity <= 20:
+        base = 0.18
+    elif salle.capacity <= 35:
+        base = 0.11
+    else:
+        base = 0.05
+
+    equipements = {item.equipment.code for item in salle.room_equipments}
+    if "visio" in equipements:
+        base += 0.06
+    if "screen4k" in equipements or "projector" in equipements:
+        base += 0.03
+
+    return min(base, 0.34)
+
+
 def creer_reservations(
     session: Session, salles: dict[str, Room], utilisateurs: list[User]
 ) -> list[Booking]:
@@ -624,6 +656,7 @@ def creer_reservations(
     reservables = [s for s in salles.values() if s.status is RoomStatus.DISPONIBLE]
     reservations: list[Booking] = []
     maintenant = datetime.now(PARIS)
+    demande = {salle.id: _popularite(salle) for salle in reservables}
 
     jour = DEBUT_FENETRE
     while jour <= FIN_FENETRE:
@@ -635,7 +668,7 @@ def creer_reservations(
         for salle in reservables:
             heure = 8
             while heure < 19:
-                if ALEA.random() < 0.16:
+                if ALEA.random() < demande[salle.id]:
                     duree = ALEA.choice([60, 60, 90, 120])
                     debut = time(heure, ALEA.choice([0, 30]))
                     fin_prevue = debut.hour * 60 + debut.minute + duree

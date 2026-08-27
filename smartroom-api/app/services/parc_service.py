@@ -113,7 +113,13 @@ def get_building(session: Session, building_id: uuid.UUID) -> Building:
     return batiment
 
 
-def list_floors(session: Session, building_id: uuid.UUID) -> list[tuple[Floor, int]]:
+def list_floors(session: Session, building_id: uuid.UUID) -> list[tuple[Floor, int, bool]]:
+    """Étages d'un bâtiment, avec leur décompte de salles et la présence d'un plan.
+
+    `has_plan` évite à l'écran de demander un plan pour savoir s'il existe : la
+    réponse était un 404 par étage sans plan, légitime côté serveur mais bruyant
+    dans la console du navigateur, où il se lit comme une panne.
+    """
     get_building(session, building_id)
     salles = (
         select(func.count())
@@ -121,13 +127,20 @@ def list_floors(session: Session, building_id: uuid.UUID) -> list[tuple[Floor, i
         .where(Room.floor_id == Floor.id, Room.deleted_at.is_(None))
         .scalar_subquery()
     )
-    return list(
-        session.execute(
-            select(Floor, salles)
+    plan = (
+        select(func.count())
+        .select_from(FloorPlan)
+        .where(FloorPlan.floor_id == Floor.id)
+        .scalar_subquery()
+    )
+    return [
+        (etage, nombre, bool(plans))
+        for etage, nombre, plans in session.execute(
+            select(Floor, salles, plan)
             .where(Floor.building_id == building_id)
             .order_by(Floor.level)
         ).all()
-    )
+    ]
 
 
 def get_floor(session: Session, floor_id: uuid.UUID) -> Floor:

@@ -105,6 +105,9 @@ class FloorOut(ReadModel):
     label: str
     level: int
     room_count: int = 0
+    #: Un plan a-t-il été déposé sur cet étage. Évite à l'écran de le demander
+    #: pour l'apprendre : la réponse serait un 404 par étage sans plan.
+    has_plan: bool = False
 
 
 class PhotoOrderIn(ApiModel):
