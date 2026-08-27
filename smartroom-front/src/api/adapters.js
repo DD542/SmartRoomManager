@@ -197,6 +197,10 @@ export const room = (data) => {
           w: Number(data.placement.width),
           h: Number(data.placement.height),
           rotation: data.placement.rotation,
+          // Le côté par lequel on entre. Absent d'ici, il valait `undefined`
+          // jusqu'à l'écriture, qui le remplaçait par `false` : déplacer une
+          // salle effaçait son entrée sans que rien ne le dise.
+          entrance: Boolean(data.placement.is_entrance_marked),
         }
       : null,
     occupancyRate: (data.occupancy_percent ?? 0) / 100,

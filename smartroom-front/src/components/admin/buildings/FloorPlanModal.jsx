@@ -69,7 +69,7 @@ export function FloorPlanModal({ floor, open, onClose, onChanged }) {
         x: cible.room.plan.x,
         y: cible.room.plan.y,
         rotation: cible.rotation,
-        entrance: cible.entrance ?? false,
+        entrance: cible.entrance,
         ...patch,
       });
       // Seul le correctif est réappliqué localement : recharger apres chaque

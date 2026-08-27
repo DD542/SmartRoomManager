@@ -241,9 +241,32 @@ describe('parc', () => {
   it('convertit le placement sur le plan en nombres', () => {
     const salle = adapt.room({
       ...salleBrute,
-      placement: { pos_x: '10.5', pos_y: '20.0', width: '30.0', height: '15.0', rotation: 90 },
+      placement: {
+        pos_x: '10.5',
+        pos_y: '20.0',
+        width: '30.0',
+        height: '15.0',
+        rotation: 90,
+        is_entrance_marked: true,
+      },
     });
-    expect(salle.plan).toEqual({ x: 10.5, y: 20, w: 30, h: 15, rotation: 90 });
+    expect(salle.plan).toEqual({ x: 10.5, y: 20, w: 30, h: 15, rotation: 90, entrance: true });
+  });
+
+  it('porte le marqueur d’entrée, même absent de la réponse', () => {
+    // Il ne figurait pas dans l'adaptateur : `entrance` valait `undefined`
+    // jusqu'à l'écriture, qui le remplaçait par `false`. Déplacer une salle
+    // effaçait donc l'entrée marquée, sans erreur et sans que rien ne le dise.
+    const marquee = adapt.room({
+      ...salleBrute,
+      placement: { pos_x: '0', pos_y: '0', width: '10', height: '10', rotation: 0, is_entrance_marked: true },
+    });
+    const sans = adapt.room({
+      ...salleBrute,
+      placement: { pos_x: '0', pos_y: '0', width: '10', height: '10', rotation: 0 },
+    });
+    expect(marquee.plan.entrance).toBe(true);
+    expect(sans.plan.entrance).toBe(false);
   });
 
   it('transcrit un étage et un équipement', () => {

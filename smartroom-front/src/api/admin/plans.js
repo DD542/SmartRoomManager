@@ -48,6 +48,7 @@ export async function getPlanLayout(planId, { signal, hasPlan = true } = {}) {
         w: salle.plan.w,
         h: salle.plan.h,
         rotation: salle.plan.rotation,
+        entrance: salle.plan.entrance,
       })),
     // Une salle archivée n'est plus proposée au placement : elle ne doit plus
     // apparaître sur le plan que consultent les utilisateurs.
