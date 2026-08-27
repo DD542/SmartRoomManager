@@ -81,15 +81,13 @@ test.describe('parcours de réservation', () => {
   }) => {
     await seConnecter(page);
 
-    // Le tunnel démarre par le besoin. Les identifiants de salle changeant
-    // d'un seed à l'autre, le parcours passe par l'API pour choisir sa cible
-    // puis revient à l'interface — c'est l'interface qui est éprouvée, pas la
-    // capacité du test à deviner un identifiant.
-    const salles = await page.evaluate(async () => {
-      const reponse = await fetch('/api/v1/rooms?size=1', { credentials: 'include' });
-      return reponse.ok ? reponse.json() : null;
-    });
-    test.skip(!salles?.items?.length, 'Aucune salle : le jeu de démonstration manque.');
+    // Le parc est constaté par l'interface, et non par un appel direct à
+    // l'API : le jeton d'accès vit en mémoire du front, pas dans un cookie,
+    // si bien qu'un `fetch` lancé depuis la page repartait en 401. Le garde
+    // en concluait « aucune salle » et sautait le test à chaque exécution.
+    await page.goto('/app/salles');
+    const catalogue = page.locator('a[href^="/app/salles/"]');
+    await expect(catalogue.first()).toBeVisible({ timeout: 20_000 });
 
     await page.goto('/app/reservations');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
@@ -102,14 +100,24 @@ test.describe('parcours de réservation', () => {
     await page.goto('/app/reservation/besoin');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
-    // Le tunnel dépend de l'état du parc au moment de l'exécution ; le
-    // parcours s'arrête ici si aucun créneau n'est proposé, plutôt que de
-    // signaler un faux échec.
-    const poursuivre = page.getByRole('button', { name: /rechercher|continuer|suivant/i });
-    test.skip(
-      !(await poursuivre.first().isVisible().catch(() => false)),
-      'Le tunnel ne propose pas de suite dans cet état du parc.',
-    );
+    // Le bouton porte le nom qu'il porte à l'écran. Il était cherché sous
+    // « rechercher | continuer | suivant », qu'il n'a jamais eu : le test se
+    // déclarait alors sans suite possible et se sautait lui-même. Le tunnel
+    // est resté cassé sous ce saut — l'étape des salles refusait de charger,
+    // le brouillon partant avec un bâtiment de maquette — sans qu'aucune
+    // exécution ne le signale.
+    await page.getByRole('button', { name: /voir les salles disponibles/i }).click();
+
+    await expect(page).toHaveURL(/\/app\/reservation\/salles$/, { timeout: 20_000 });
+    await expect(page.getByRole('heading', { name: /salles éligibles/i })).toBeVisible();
+
+    // Assertion positive, et non l'absence d'un message d'erreur : « aucune
+    // erreur affichée » est vrai avant que la réponse n'arrive, et laisserait
+    // passer un chargement qui échoue une seconde plus tard. Le sous-titre ne
+    // porte le décompte que lorsque le classement a réellement abouti.
+    await expect(page.getByText(/résultats? pour votre besoin/i)).toBeVisible({
+      timeout: 20_000,
+    });
 
     expect(avant).toBeGreaterThanOrEqual(0);
   });

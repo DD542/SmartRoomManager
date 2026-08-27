@@ -6,7 +6,12 @@ const BookingContext = createContext(null);
 /** Brouillon du tunnel de réservation (U-02 → U-06). */
 const emptyDraft = {
   title: '',
-  buildingId: 'b-a',
+  // Aucune préférence de bâtiment au départ, et surtout pas `b-a` : cet
+  // identifiant venait des maquettes. Le parc réel ne le connaît pas, et
+  // l'API refusait la recherche — « Le bâtiment doit être un identifiant
+  // valide » — alors que l'écran affichait « Tous les bâtiments », faute de
+  // trouver ce bâtiment pour en montrer le nom.
+  buildingId: '',
   date: toDateInput(NOW),
   startTime: '14:00',
   endTime: '15:30',

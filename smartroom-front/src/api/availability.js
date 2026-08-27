@@ -146,7 +146,7 @@ export async function searchRooms({
     {
       slot: start && end ? adapt.slotIn(start, end) : null,
       attendees,
-      building_id: buildingId ?? null,
+      building_id: buildingId || null,
       equipment_ids: equipmentIds,
       accessible_only: accessibleOnly,
       equipment_strict: strictEquipment,

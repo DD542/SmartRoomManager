@@ -454,6 +454,19 @@ describe('disponibilité', () => {
     expect(resultats[0].eligible).toBe(false);
     expect(resultats[0].justification).toBe('Occupée');
   });
+
+  it('n’envoie pas un bâtiment vide à la recherche', async () => {
+    let recu = null;
+    serveur.use(
+      http.post(`${BASE}/availability/search`, async ({ request }) => {
+        recu = await request.json();
+        return HttpResponse.json([]);
+      }),
+    );
+
+    await availability.searchRooms({ attendees: 4, buildingId: '' });
+    expect(recu.building_id).toBeNull();
+  });
 });
 
 describe('réservations', () => {
@@ -779,6 +792,25 @@ describe('recommandation', () => {
     // toute salle à laquelle il manque un seul élément.
     expect(recu.equipment_strict).toBe(false);
     expect(recu.attendees).toBe(6);
+  });
+
+  it('traite « aucun bâtiment » comme une absence de filtre', async () => {
+    // La liste déroulante rend la chaîne vide quand rien n'est choisi.
+    // Envoyée telle quelle, l'API refusait la recherche pour identifiant
+    // invalide, et le tunnel s'arrêtait à l'étape des salles éligibles.
+    let recu = null;
+    serveur.use(
+      http.post(`${BASE}/recommendations`, async ({ request }) => {
+        recu = await request.json();
+        return HttpResponse.json([]);
+      }),
+    );
+
+    await recommendations.recommendRooms({ attendees: 6, buildingId: '' });
+    expect(recu.building_id).toBeNull();
+
+    await recommendations.recommendRooms({ attendees: 6, buildingId: 'b-1' });
+    expect(recu.building_id).toBe('b-1');
   });
 
   it('rend null quand aucune salle ne convient', async () => {

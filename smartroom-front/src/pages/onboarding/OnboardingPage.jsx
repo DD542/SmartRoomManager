@@ -30,7 +30,7 @@ export default function OnboardingPage() {
   const [preferences, setPreferences] = useState(
     () =>
       user?.preferences ?? {
-        preferredBuildingId: 'b-a',
+        preferredBuildingId: '',
         usualCapacity: '5-10',
         emailConfirmation: true,
         inAppAlerts: true,

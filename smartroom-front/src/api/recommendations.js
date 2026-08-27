@@ -10,7 +10,10 @@ import { abortable, post } from './client';
 const besoin = (need = {}) => ({
   slot: need.start && need.end ? adapt.slotIn(need.start, need.end) : null,
   attendees: need.attendees ?? 1,
-  building_id: need.buildingId ?? null,
+  // `|| null` et non `?? null` : la chaîne vide est le « aucun bâtiment »
+  // des listes déroulantes, et l'envoyer telle quelle fait refuser la
+  // requête pour identifiant invalide.
+  building_id: need.buildingId || null,
   equipment_ids: need.equipmentIds ?? need.equipment ?? [],
   accessible_only: need.accessibleOnly ?? false,
   // Le filtre strict écarterait toute salle à laquelle il manque un seul
