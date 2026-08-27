@@ -20,12 +20,25 @@ function BuildingCard({ building, selected, onSelect }) {
         selected ? 'border-accent bg-accent-soft' : 'border-line bg-surface hover:border-line-strong',
       )}
     >
-      <span
-        aria-hidden="true"
-        className="mb-3 flex h-20 items-end justify-start rounded-lg border border-line bg-surface-raised p-2"
-      >
-        <Building2 size={20} className="text-content-faint" />
-      </span>
+      {/* La photo du bâtiment, déposée par l'administration. L'écran affichait
+          une icône même quand elle existait : la donnée arrivait bien, elle
+          n'était simplement pas lue. L'icône reste, pour un bâtiment sans
+          photo — un cadre vide vaudrait moins qu'un symbole. */}
+      {building.imageUrl ? (
+        <img
+          src={building.imageUrl}
+          alt=""
+          className="mb-3 h-20 w-full rounded-lg border border-line object-cover
+                     transition duration-300 group-hover:brightness-110"
+        />
+      ) : (
+        <span
+          aria-hidden="true"
+          className="mb-3 flex h-20 items-end justify-start rounded-lg border border-line bg-surface-raised p-2"
+        >
+          <Building2 size={20} className="text-content-faint" />
+        </span>
+      )}
       <span className="block text-sm font-medium text-content">{building.name}</span>
       <span className="mt-0.5 block text-xs text-content-muted">{building.campus}</span>
       {selected && (
