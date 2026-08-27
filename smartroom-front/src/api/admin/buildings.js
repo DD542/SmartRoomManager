@@ -140,6 +140,7 @@ export async function listFloorsWithRooms(buildingId, { signal } = {}) {
 
   return etages.map((etage, index) => ({
     id: etage.id,
+    hasPlan: Boolean(etage.has_plan),
     buildingId: etage.building_id,
     code: etage.code,
     label: etage.label,

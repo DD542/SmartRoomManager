@@ -26,6 +26,7 @@ import { AsyncBoundary, EmptyState, SkeletonCard } from '../../../components/ui/
 import { SaveBar } from '../../../components/admin/SaveBar';
 import { BuildingCard } from '../../../components/admin/buildings/BuildingCard';
 import { FloorAccordion } from '../../../components/admin/buildings/FloorAccordion';
+import { FloorPlanModal } from '../../../components/admin/buildings/FloorPlanModal';
 
 /**
  * Gestion du parc immobilier : bâtiments, étages, et les salles qu'ils portent.
@@ -50,6 +51,7 @@ export default function BuildingsPage() {
   const [envoi, setEnvoi] = useState(false);
   const [creation, setCreation] = useState(false);
   const [etageEnCours, setEtageEnCours] = useState(null);
+  const [planOuvert, setPlanOuvert] = useState(null);
   const [fiche, setFiche] = useState(null);
 
   const batiments = parc.data ?? [];
@@ -214,6 +216,7 @@ export default function BuildingsPage() {
                     }, 'Étage supprimé').catch(() => {})
                   }
                   onOpenRoom={(salle) => navigate(`/admin/salles/${salle.id}`)}
+                  onOpenPlan={(etage) => setPlanOuvert(etage)}
                 />
               </AsyncBoundary>
             </Card>
@@ -238,6 +241,13 @@ export default function BuildingsPage() {
           setChoisiId(cree.id);
           setCreation(false);
         }}
+      />
+
+      <FloorPlanModal
+        floor={planOuvert}
+        open={Boolean(planOuvert)}
+        onClose={() => setPlanOuvert(null)}
+        onChanged={() => etages.reload()}
       />
 
       <ModaleEtage

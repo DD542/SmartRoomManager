@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, DoorOpen, MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, DoorOpen, Map, MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
 import { cn } from '../../../utils/cn';
 import { plural } from '../../../utils/format';
 import { Badge } from '../../ui/Badge';
@@ -23,6 +23,7 @@ export function FloorAccordion({
   onRenameFloor,
   onDeleteFloor,
   onOpenRoom,
+  onOpenPlan,
   busy = false,
 }) {
   const [ouvert, setOuvert] = useState(() => new Set());
@@ -71,6 +72,13 @@ export function FloorAccordion({
                 </span>
               </button>
 
+              {/* Le plan de l'étage et la position de ses salles : ce que les
+                  utilisateurs voient sur leur écran de plan. */}
+              <IconButton
+                icon={Map}
+                label={`Plan de ${etage.label}`}
+                onClick={() => onOpenPlan(etage)}
+              />
               <IconButton
                 icon={Pencil}
                 label={`Renommer ${etage.label}`}
