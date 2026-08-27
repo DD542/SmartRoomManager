@@ -146,46 +146,36 @@ EQUIPEMENTS = [
     ("aircon", "Climatisation", EquipmentCategory.AMENAGEMENT, "Snowflake", False),
 ]
 
-#: Trente salles, cinq par bâtiment. Les noms sont ceux de scientifiques : ils
-#: se retiennent mieux qu'un numéro, et c'est l'usage dans un établissement.
+#: Quinze salles pour six bâtiments : deux ou trois par adresse. Les noms sont
+#: ceux de scientifiques — ils se retiennent mieux qu'un numéro, et c'est
+#: l'usage dans un établissement.
+#:
+#: Le parc en comptait trente. Quinze suffisent à montrer ce qu'il faut : un
+#: amphi, des laboratoires, un sous-sol, une salle en maintenance, une salle
+#: archivée, et de quoi remplir chaque bâtiment.
 #:
 #: (nom, bâtiment, étage, capacité, surface, équipements, PMR, badge, statut)
 SALLES = [
     # --- Eiffel 1 : petites salles de travail, un amphi au rez-de-chaussée ---
     ("Salle Vinci", "EIF1", "2e", 12, 28, ["visio", "screen4k", "whiteboard", "sockets"], False, True, RoomStatus.DISPONIBLE),
-    ("Salle Turing", "EIF1", "1er", 8, 24, ["visio", "whiteboard"], False, True, RoomStatus.DISPONIBLE),
-    ("Salle Lovelace", "EIF1", "1er", 8, 20, ["screen4k", "sockets"], True, False, RoomStatus.DISPONIBLE),
     ("Salle Hopper", "EIF1", "RDC", 6, 16, ["whiteboard", "sockets"], True, False, RoomStatus.DISPONIBLE),
     ("Amphi Eiffel", "EIF1", "RDC", 90, 180, ["projector", "mic", "aircon"], True, True, RoomStatus.DISPONIBLE),
     # --- Eiffel 2 : réunions d'équipe ---------------------------------------
     ("Salle Curie", "EIF2", "1er", 20, 46, ["visio", "projector", "mic", "aircon"], True, True, RoomStatus.DISPONIBLE),
     ("Salle Pascal", "EIF2", "1er", 25, 52, ["projector", "aircon"], False, False, RoomStatus.DISPONIBLE),
     ("Salle Fermat", "EIF2", "RDC", 10, 26, ["screen4k", "whiteboard"], True, True, RoomStatus.DISPONIBLE),
-    ("Salle Germain", "EIF2", "RDC", 8, 22, ["whiteboard", "sockets"], False, True, RoomStatus.DISPONIBLE),
-    ("Salle Noether", "EIF2", "RDC", 6, 18, ["screen4k"], True, False, RoomStatus.DISPONIBLE),
     # --- Eiffel 3 : direction et conseils -----------------------------------
     ("Salle Conseil Alpha", "EIF3", "3e", 12, 30, ["visio", "screen4k", "whiteboard", "aircon"], False, True, RoomStatus.DISPONIBLE),
-    ("Salle Conseil Beta", "EIF3", "3e", 12, 30, ["visio", "screen4k", "aircon"], False, True, RoomStatus.DISPONIBLE),
     ("Salle Ampère", "EIF3", "2e", 30, 64, ["projector", "mic"], True, True, RoomStatus.MAINTENANCE),
-    ("Salle Volta", "EIF3", "2e", 16, 38, ["projector", "whiteboard"], True, True, RoomStatus.DISPONIBLE),
     ("Salle Joule", "EIF3", "1er", 10, 25, ["screen4k", "sockets"], False, True, RoomStatus.DISPONIBLE),
     # --- Eiffel 4 : travaux pratiques ---------------------------------------
     ("Labo Pasteur", "EIF4", "1er", 24, 60, ["projector", "aircon", "sockets"], True, True, RoomStatus.DISPONIBLE),
-    ("Labo Lavoisier", "EIF4", "1er", 24, 58, ["projector", "sockets"], True, True, RoomStatus.DISPONIBLE),
     ("Labo Becquerel", "EIF4", "RDC", 18, 44, ["screen4k", "sockets"], False, True, RoomStatus.MAINTENANCE),
-    ("Salle Fresnel", "EIF4", "RDC", 12, 30, ["whiteboard", "sockets"], True, False, RoomStatus.DISPONIBLE),
-    ("Salle Coulomb", "EIF4", "RDC", 8, 21, ["whiteboard"], False, False, RoomStatus.DISPONIBLE),
     # --- Eiffel 5 : espaces de projet, dont un sous-sol ----------------------
     ("Atelier Monge", "EIF5", "SS", 20, 70, ["projector", "sockets", "aircon"], False, True, RoomStatus.DISPONIBLE),
-    ("Atelier Fourier", "EIF5", "SS", 16, 55, ["screen4k", "sockets"], False, True, RoomStatus.DISPONIBLE),
-    ("Salle Laplace", "EIF5", "RDC", 10, 26, ["visio", "whiteboard"], True, True, RoomStatus.DISPONIBLE),
-    ("Salle Cauchy", "EIF5", "RDC", 8, 20, ["whiteboard", "sockets"], True, False, RoomStatus.DISPONIBLE),
     ("Salle Galois", "EIF5", "RDC", 6, 16, ["screen4k"], False, False, RoomStatus.ARCHIVEE),
     # --- Eiffel 6 : enseignement --------------------------------------------
     ("Salle Descartes", "EIF6", "2e", 35, 78, ["projector", "mic", "aircon"], True, True, RoomStatus.DISPONIBLE),
-    ("Salle Leibniz", "EIF6", "2e", 30, 70, ["projector", "mic"], True, True, RoomStatus.DISPONIBLE),
-    ("Salle Euler", "EIF6", "1er", 24, 55, ["projector", "whiteboard"], True, True, RoomStatus.DISPONIBLE),
-    ("Salle Gauss", "EIF6", "1er", 18, 42, ["screen4k", "whiteboard"], False, True, RoomStatus.DISPONIBLE),
     ("Salle Riemann", "EIF6", "RDC", 12, 30, ["visio", "screen4k"], True, True, RoomStatus.DISPONIBLE),
 ]
 
