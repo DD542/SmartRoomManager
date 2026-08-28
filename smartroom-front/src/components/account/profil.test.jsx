@@ -124,6 +124,20 @@ describe('Champ de photo de profil', () => {
     expect(dessine).toHaveBeenCalledWith(apercu, 0, 165, 750, 750, 0, 0, 512, 512);
   });
 
+  it('montre le rendu final aux deux tailles où la photo est vue', () => {
+    // Le cercle de cadrage fait 288 px : il flatte un plan large que la barre
+    // du haut réduit à un point. Sans ces témoins, on ajuste à l'aveugle.
+    const { container } = render(
+      <AvatarField name="Dylan Menga" src={null} onUpload={vi.fn()} onRemove={vi.fn()} />,
+    );
+
+    deposerFichier(container);
+    chargerApercu();
+
+    expect(screen.getByText('Barre du haut')).toBeTruthy();
+    expect(screen.getByText('Profil')).toBeTruthy();
+  });
+
   it('renonce sans rien envoyer', () => {
     const deposer = vi.fn();
     const { container } = render(

@@ -128,6 +128,34 @@ export function AvatarCropper({ file, onValidate, onCancel, busy = false }) {
           )}
         </div>
 
+        {/* Ce que donnera le cadrage, aux deux tailles où la photo est vue.
+            Sans cela, on ajuste à l'aveugle : le cercle de 288 px flatte un
+            plan large que la barre du haut réduit à un point. */}
+        <div className="flex items-end gap-3">
+          {[
+            { taille: 44, legende: 'Barre du haut' },
+            { taille: 112, legende: 'Profil' },
+          ].map(({ taille, legende }) => (
+            <figure key={taille} className="flex flex-col items-center gap-1">
+              <span
+                className="relative block overflow-hidden rounded-full border border-line bg-ink"
+                style={{ width: taille, height: taille }}
+              >
+                {source && cadre && (
+                  <img
+                    src={source}
+                    alt=""
+                    draggable={false}
+                    className="pointer-events-none absolute max-w-none select-none"
+                    style={apercu(cadre, largeur, hauteur, taille)}
+                  />
+                )}
+              </span>
+              <figcaption className="text-[10px] text-content-faint">{legende}</figcaption>
+            </figure>
+          ))}
+        </div>
+
         <label className="flex w-full max-w-xs items-center gap-3 text-xs text-content-muted">
           Zoom
           <input
