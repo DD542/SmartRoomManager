@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Annotated
 
 from pydantic import Field
@@ -16,6 +17,7 @@ from app.domain.types import (
     RuleViolation,
     ScoredRoom,
 )
+from app.models import Room
 
 
 class ViolationOut(ReadModel):
@@ -83,6 +85,14 @@ class RoomSummaryOut(ReadModel):
     is_accessible: bool
     is_available: bool
     occupancy_percent: int
+    #: Ce qu'il faut pour dessiner la carte, et que le domaine ne porte pas :
+    #: le score ne se sert ni d'une photo ni d'un libellé d'étage. Sans ces
+    #: champs, le tunnel de réservation rendait la même carte que le catalogue
+    #: avec un cadre d'image vide et « undefined m² ».
+    building_name: str | None = None
+    floor_label: str | None = None
+    area_m2: Decimal | None = None
+    photo_url: str | None = None
 
 
 class ScoreComponentOut(ReadModel):
@@ -93,6 +103,17 @@ class ScoreComponentOut(ReadModel):
     detail: str
 
 
+def _premiere_photo(salle: Room | None) -> str | None:
+    """La photo de couverture, c'est-à-dire celle de position 0.
+
+    L'ordre des photos est celui que l'administration a choisi : prendre la
+    première venue afficherait une salle sous un angle qu'elle n'a pas retenu.
+    """
+    if salle is None or not salle.photos:
+        return None
+    return min(salle.photos, key=lambda item: item.position).file_url
+
+
 class ScoredRoomOut(ReadModel):
     room: RoomSummaryOut
     score: int
@@ -101,7 +122,10 @@ class ScoredRoomOut(ReadModel):
     breakdown: list[ScoreComponentOut] = Field(default_factory=list)
 
     @classmethod
-    def of(cls, propose: ScoredRoom) -> ScoredRoomOut:
+    def of(cls, propose: ScoredRoom, vitrine: Room | None = None) -> ScoredRoomOut:
+        """`vitrine` est la ligne ORM de la salle, quand l'appelant l'a sous la
+        main : elle ne sert qu'à l'affichage, et son absence ne retire rien au
+        classement."""
         return cls(
             room=RoomSummaryOut(
                 id=propose.room.id,
@@ -113,6 +137,10 @@ class ScoredRoomOut(ReadModel):
                 is_accessible=propose.room.is_accessible,
                 is_available=propose.room.is_available,
                 occupancy_percent=round(propose.room.occupancy_rate * 100),
+                building_name=vitrine.floor.building.name if vitrine else None,
+                floor_label=vitrine.floor.label if vitrine else None,
+                area_m2=vitrine.area_m2 if vitrine else None,
+                photo_url=_premiere_photo(vitrine),
             ),
             score=propose.score.total,
             eligible=propose.eligible,

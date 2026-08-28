@@ -26,6 +26,8 @@ import { SANS_DATE, fmtDate, fmtDateLong, fmtRelative, fmtTime } from '../../uti
 import { AccessCodePanel } from '../ui/AccessCode';
 import { ToastProvider } from '../../hooks/useToast';
 import { serveur } from '../../test/serveur';
+import * as adapt from '../../api/adapters';
+import { RoomCard } from '../rooms/RoomCard';
 import BookingDetailPage from '../../pages/manage/BookingDetailPage';
 
 describe('Liste des salles de repli', () => {
@@ -370,5 +372,69 @@ describe('Détail de réservation — code d’accès', () => {
     monter();
 
     expect(await screen.findByText(/Accès libre/)).toBeTruthy();
+  });
+});
+
+describe('Carte de salle du tunnel de réservation', () => {
+  // La forme servie par `/recommendations`, passée par l'adaptateur.
+  const PROPOSEE = adapt.roomSummary({
+    id: 'r-7',
+    name: 'Salle Fermat',
+    capacity: 10,
+    building_id: 'b-1',
+    floor_level: 2,
+    equipment_ids: [],
+    is_accessible: true,
+    is_available: true,
+    occupancy_percent: 23,
+    building_name: 'Eiffel 1',
+    floor_label: '2e',
+    area_m2: '34.50',
+    photo_url: '/media/photos/fermat.jpg',
+  });
+
+  it('affiche le bâtiment, l’étage et la surface servis par le moteur', () => {
+    // Le résumé du classement ne portait ni bâtiment, ni étage, ni surface :
+    // la carte, écrite pour la fiche complète, affichait « • • undefined m² ».
+    render(
+      <MemoryRouter>
+        <RoomCard room={PROPOSEE} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText(/Eiffel 1 • 2e • 34.5 m²/)).toBeTruthy();
+    expect(screen.queryByText(/undefined/)).toBeNull();
+  });
+
+  it('affiche la photo de la salle proposée', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <RoomCard room={PROPOSEE} />
+      </MemoryRouter>,
+    );
+
+    expect(container.querySelector('img').getAttribute('src')).toBe('/media/photos/fermat.jpg');
+  });
+
+  it('remplace l’image manquante par un repère, sans cadre vide', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <RoomCard room={{ ...PROPOSEE, photos: [] }} />
+      </MemoryRouter>,
+    );
+
+    expect(container.querySelector('img')).toBeNull();
+    expect(screen.getByText('Salle Fermat')).toBeTruthy();
+  });
+
+  it('n’écrit pas de séparateur pour une information absente', () => {
+    render(
+      <MemoryRouter>
+        <RoomCard room={{ ...PROPOSEE, building: null, area: null }} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('2e')).toBeTruthy();
+    expect(screen.queryByText(/•/)).toBeNull();
   });
 });

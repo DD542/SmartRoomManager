@@ -5,7 +5,10 @@ export const fmtPercent = (ratio, digits = 0) =>
 
 export const fmtCapacity = (n) => `${n} pers.`;
 
-export const fmtArea = (n) => `${n} m²`;
+// `undefined m²` s'affichait tel quel sous chaque salle du tunnel de
+// réservation : le formateur rendait la chaîne sans regarder ce qu'il
+// formatait.
+export const fmtArea = (n) => (n == null || Number.isNaN(Number(n)) ? '—' : `${n} m²`);
 
 /** 'A-4821' -> 'A-****' pour le dashboard. */
 export const maskAccessCode = (code) => {

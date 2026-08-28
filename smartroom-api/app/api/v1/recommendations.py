@@ -23,6 +23,7 @@ from app.domain.types import ClaimantFile, SearchCriteria
 from app.models import AccessRequest, Booking, User
 from app.services import recommendation_service as reco
 from app.services.availability_service import FUSEAU, load_rules, charger_salle
+from app.api.v1.serializers import vitrines
 from app.services.recommendation_service import load_user_profile
 
 router = APIRouter(prefix="/recommendations", tags=["recommandation"])
@@ -47,7 +48,8 @@ def recommend(
     classement = reco.rank_rooms(
         session, _criteres(payload), user_id=principal.user.id, limit=payload.limit
     )
-    return [ScoredRoomOut.of(item) for item in classement]
+    salles = vitrines(session, (item.room.id for item in classement))
+    return [ScoredRoomOut.of(item, salles.get(item.room.id)) for item in classement]
 
 
 @router.post("/best", response_model=ScoredRoomOut | None, summary="Meilleure salle")
@@ -57,7 +59,9 @@ def recommend_best(
     """`null` plutôt qu'une liste vide : l'appelant veut une réponse, et
     « aucune salle ne convient » en est une."""
     meilleure = reco.best_room(session, _criteres(payload), user_id=principal.user.id)
-    return None if meilleure is None else ScoredRoomOut.of(meilleure)
+    if meilleure is None:
+        return None
+    return ScoredRoomOut.of(meilleure, vitrines(session, [meilleure.room.id]).get(meilleure.room.id))
 
 
 @router.post(

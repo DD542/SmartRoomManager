@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
-import { ChevronRight, DoorClosed } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { fmtDayMonth, fmtTime } from '../../utils/dates';
 import { BOOKING_STATUS_LABEL, fmtCapacity } from '../../utils/format';
 import { Badge } from '../ui/Badge';
 import { Table } from '../ui/Table';
 import { StaggerList } from '../ui/StaggerList';
+import { RoomThumb } from '../rooms/RoomThumb';
 
 export const STATUS_TONE = {
   confirmee: 'success',
@@ -22,35 +23,22 @@ export function BookingStatusBadge({ status }) {
 }
 
 /**
- * Vignette de la salle.
+ * Vignette de la salle dans la liste des réservations.
  *
- * Un `<img>` sans adresse rend un cadre vide que rien ne signale : c'est ce
- * qu'affichait la liste tant que la réservation ne portait pas la photo de sa
- * salle. Sans photo — salle sans visuel, image effacée — le repère prend sa
- * place, et le nom de la salle reste lisible à côté.
+ * Même repère que les cartes du catalogue : trois écrans avaient chacun leur
+ * `<img>` nu, et chacun rendait un cadre vide dès qu'une salle n'avait pas de
+ * photo — sans erreur nulle part.
  */
 function Vignette({ salle, taille = 'sm' }) {
-  const classe =
-    taille === 'sm' ? 'h-8 w-10 rounded-md' : 'h-12 w-14 rounded-lg';
-  const photo = salle?.photos?.[0];
-
-  if (!photo) {
-    return (
-      <span
-        aria-hidden="true"
-        className={`flex shrink-0 items-center justify-center border border-line bg-surface-raised ${classe}`}
-      >
-        <DoorClosed size={taille === 'sm' ? 13 : 16} className="text-content-faint" />
-      </span>
-    );
-  }
-
   return (
-    <img
-      src={photo}
-      alt=""
-      loading="lazy"
-      className={`shrink-0 border border-line object-cover ${classe}`}
+    <RoomThumb
+      room={salle}
+      iconSize={taille === 'sm' ? 13 : 16}
+      className={
+        taille === 'sm'
+          ? 'h-8 w-10 rounded-md border border-line'
+          : 'h-12 w-14 rounded-lg border border-line'
+      }
     />
   );
 }

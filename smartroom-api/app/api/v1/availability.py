@@ -23,6 +23,7 @@ from app.api.v1.schemas import (
     SlotOut,
     ViolationOut,
 )
+from app.api.v1.serializers import vitrines
 from app.core.errors import RuleViolationError
 from app.domain.types import SearchCriteria
 from app.services import availability_service as service
@@ -123,7 +124,8 @@ def search(
     classement = reco.rank_rooms(
         session, criteres, user_id=principal.user.id, limit=payload.limit
     )
-    return [ScoredRoomOut.of(item) for item in classement]
+    salles = vitrines(session, (item.room.id for item in classement))
+    return [ScoredRoomOut.of(item, salles.get(item.room.id)) for item in classement]
 
 
 def _rapport(rapport: service.SlotReport) -> SlotCheckOut:

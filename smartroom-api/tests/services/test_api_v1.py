@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import CONFLICTS_ARBITRATE
 from app.db.enums import BookingStatus
-from app.models import Booking
+from app.models import Booking, RoomPhoto
 from tests.services.conftest import accorder, charge, connecter, creneau
 
 
@@ -268,6 +268,62 @@ class TestRecommandation:
             "occupancy",
             "history",
         }
+
+    def test_la_salle_classee_porte_de_quoi_dessiner_sa_carte(
+        self, client, session, compte, salle, jour_ouvre
+    ):
+        """Photo, bâtiment, étage et surface, que le domaine ne connaît pas.
+
+        Le tunnel de réservation rend la carte du catalogue à partir de cette
+        réponse : sans ces champs, elle affichait un cadre d'image vide et
+        « undefined m² » sous chaque salle proposée.
+        """
+        session.add(
+            RoomPhoto(
+                room_id=salle.id,
+                file_url="/media/photos/vinci-2.jpg",
+                position=1,
+                alt_text="Vue de côté",
+            )
+        )
+        session.add(
+            RoomPhoto(
+                room_id=salle.id,
+                file_url="/media/photos/vinci-1.jpg",
+                position=0,
+                alt_text="Vue d'ensemble",
+            )
+        )
+        session.flush()
+        entetes = connecter(client, compte.email)
+
+        corps = client.post(
+            "/api/v1/recommendations",
+            headers=entetes,
+            json={"slot": charge(creneau(jour_ouvre, 10)), "attendees": 4, "limit": 20},
+        ).json()
+
+        vue = next(item["room"] for item in corps if item["room"]["id"] == str(salle.id))
+        # Celle de position 0 : l'ordre est celui qu'a choisi l'administration.
+        assert vue["photo_url"] == "/media/photos/vinci-1.jpg"
+        assert vue["building_name"] == salle.floor.building.name
+        assert vue["floor_label"] == salle.floor.label
+        assert float(vue["area_m2"]) == float(salle.area_m2)
+
+    def test_une_salle_sans_photo_le_dit_au_lieu_de_l_omettre(
+        self, client, compte, salle, jour_ouvre
+    ):
+        entetes = connecter(client, compte.email)
+
+        corps = client.post(
+            "/api/v1/recommendations",
+            headers=entetes,
+            json={"slot": charge(creneau(jour_ouvre, 10)), "attendees": 4, "limit": 20},
+        ).json()
+
+        vue = next(item["room"] for item in corps if item["room"]["id"] == str(salle.id))
+        assert vue["photo_url"] is None
+        assert vue["building_name"]
 
     def test_salle_prise_reste_classee_mais_marquee(
         self, client, session, compte, salle, jour_ouvre

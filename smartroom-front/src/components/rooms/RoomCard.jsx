@@ -7,8 +7,20 @@ import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Tooltip } from '../ui/Tooltip';
 import { equipmentIcon } from './equipmentIcons';
+import { RoomThumb } from './RoomThumb';
 
 const STATUS_TONE = { disponible: 'success', occupee: 'danger', maintenance: 'warning' };
+
+/**
+ * « Bâtiment • étage • surface », amputé de ce qui manque.
+ *
+ * Les trois parties étaient jointes par des séparateurs écrits en dur :
+ * une salle servie sans bâtiment ni surface affichait « • • undefined m² ».
+ */
+const situation = (room) =>
+  [room.building?.name, room.floor, room.area == null ? null : fmtArea(room.area)]
+    .filter(Boolean)
+    .join(' • ');
 
 export function EquipmentIcons({ equipment = [], className }) {
   return (
@@ -37,7 +49,7 @@ export function RoomCard({ room, tight = false, action, to, badge }) {
   return (
     <Card className="flex h-full flex-col overflow-hidden">
       <div className="relative">
-        <img src={room.photos?.[0]} alt="" className="h-32 w-full object-cover" loading="lazy" />
+        <RoomThumb room={room} className="h-32 w-full" iconSize={22} />
         <span className="absolute left-2 top-2">
           <Badge tone={STATUS_TONE[room.status] ?? 'default'} dot>
             {badge ?? ROOM_STATUS_LABEL[room.status]}
@@ -60,7 +72,7 @@ export function RoomCard({ room, tight = false, action, to, badge }) {
           </Link>
           <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-content-muted">
             <MapPin size={12} aria-hidden="true" />
-            {room.building?.name} • {room.floor} • {fmtArea(room.area)}
+            {situation(room)}
             {room.accessible && (
               <Tooltip label="Accessible PMR">
                 <Accessibility size={12} aria-hidden="true" className="text-content-muted" />
@@ -96,12 +108,7 @@ export function RecommendationCard({ entry, to, action }) {
   return (
     <Card tone="accent" className="overflow-hidden">
       <div className="flex flex-col gap-4 p-4 sm:flex-row">
-        <img
-          src={room.photos?.[0]}
-          alt=""
-          className="h-28 w-full rounded-lg object-cover sm:w-44"
-          loading="lazy"
-        />
+        <RoomThumb room={room} className="h-28 w-full rounded-lg sm:w-44" iconSize={24} />
 
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-accent">
@@ -113,7 +120,9 @@ export function RecommendationCard({ entry, to, action }) {
             <Badge tone="accent">{score} / 100</Badge>
           </div>
           <p className="mt-1 text-xs text-content-muted">
-            {room.building?.name} • {room.floor} • {fmtCapacity(room.capacity)}
+            {[room.building?.name, room.floor, fmtCapacity(room.capacity)]
+              .filter(Boolean)
+              .join(' • ')}
           </p>
           <p className="mt-2 text-xs leading-relaxed text-content-muted">{justification}</p>
           <EquipmentIcons equipment={room.equipment ?? []} className="mt-3" />

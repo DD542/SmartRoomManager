@@ -5,7 +5,10 @@ const SIZES = {
   sm: 'h-6 w-6 text-[10px]',
   md: 'h-8 w-8 text-xs',
   lg: 'h-11 w-11 text-sm',
-  xl: 'h-20 w-20 text-xl',
+  // 112 px et non 80 : la photo déposée fait au moins 750 px de côté, et
+  // l'écran de profil est le seul endroit où on la regarde vraiment. Un
+  // portrait de 80 px y paraissait flou faute de place, pas faute de pixels.
+  xl: 'h-28 w-28 text-2xl',
 };
 
 /**

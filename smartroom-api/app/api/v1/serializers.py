@@ -7,6 +7,12 @@ laisser diverger entre eux, ce qui ferait mentir un écran sur deux.
 
 from __future__ import annotations
 
+import uuid
+from collections.abc import Iterable
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session, joinedload, selectinload
+
 from app.api.v1.schemas import (
     BuildingOut,
     EquipmentOut,
@@ -108,3 +114,27 @@ def salle_sortie(salle: Room, occupation: int = 0, reservations: int = 0) -> Roo
         created_at=salle.created_at,
         updated_at=salle.updated_at,
     )
+
+
+def vitrines(session: Session, salles: Iterable[uuid.UUID]) -> dict[uuid.UUID, Room]:
+    """Les lignes ORM des salles classées, chargées en une requête.
+
+    Le classement est rendu par le domaine, qui ne connaît de la salle que ce
+    qui pèse dans le score : ni photo, ni libellé d'étage, ni surface. La carte
+    affichée, elle, montre les trois. Les charger salle par salle rendrait la
+    page proportionnellement lente au nombre de propositions ; les omettre
+    laissait un cadre d'image vide et « undefined m² ».
+    """
+    identifiants = list(salles)
+    if not identifiants:
+        return {}
+
+    lignes = session.scalars(
+        select(Room)
+        .where(Room.id.in_(identifiants))
+        .options(
+            joinedload(Room.floor).joinedload(Floor.building),
+            selectinload(Room.photos),
+        )
+    ).all()
+    return {salle.id: salle for salle in lignes}

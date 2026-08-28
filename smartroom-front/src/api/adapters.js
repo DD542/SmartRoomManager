@@ -219,6 +219,15 @@ export const roomSummary = (data) => ({
   accessible: data.is_accessible,
   status: data.is_available ? 'disponible' : 'maintenance',
   occupancyRate: (data.occupancy_percent ?? 0) / 100,
+  // Le tunnel de réservation rend `RoomCard`, écrite pour la fiche complète du
+  // catalogue : elle lit `building?.name`, `floor`, `area` et `photos[0]`.
+  // Servir un résumé plus pauvre sous la même forme donnait un cadre d'image
+  // vide et « undefined m² » sous chaque proposition.
+  building: data.building_name ? { id: data.building_id, name: data.building_name } : null,
+  buildingName: data.building_name ?? null,
+  floor: data.floor_label ?? null,
+  area: data.area_m2 == null ? null : Number(data.area_m2),
+  photos: data.photo_url ? [data.photo_url] : [],
 });
 
 /* -------------------------------------------------------------------------- */
