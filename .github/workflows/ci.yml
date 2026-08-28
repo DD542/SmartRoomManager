@@ -120,12 +120,30 @@ jobs:
             --cov=app.services --cov=app.api \
             --cov-report=xml
 
+      # Campagne de l'assistant. Séparée pour deux raisons : son seuil de
+      # couverture est différent — voir `.coveragerc.assistant` — et son échec
+      # doit se lire comme tel, sans faire douter de la couche métier.
+      #
+      # `IA_FORCER_REPLI` coupe toute inférence : aucun test n'appelle un
+      # modèle, et la chaîne n'a donc besoin d'aucun GPU.
+      - name: Tests de l'assistant
+        working-directory: smartroom-api
+        env:
+          IA_FORCER_REPLI: "true"
+        run: >-
+          pytest tests/ai
+          --cov-config=.coveragerc.assistant
+          --cov=app.ai --cov=app.api.v1.chat --cov=app.services.chat_service
+          --cov-report=xml:coverage-ia.xml
+
       - name: Conserver le rapport de couverture
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: couverture-back
-          path: smartroom-api/coverage.xml
+          path: |
+            smartroom-api/coverage.xml
+            smartroom-api/coverage-ia.xml
           retention-days: 7
 
   front:

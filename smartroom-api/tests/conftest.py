@@ -26,7 +26,11 @@ import pytest
 
 #: Image figée : une version majeure différente n'a pas les mêmes plans, et
 #: `EXCLUDE USING gist` n'est pas un détail de version.
-IMAGE_POSTGRES = "postgres:16-alpine"
+#:
+#: `pgvector/pgvector:pg16` et non `postgres:16-alpine` depuis la migration
+#: `0007_rag_pgvector` : sans l'extension, la migration échoue et aucun test
+#: d'intégration ne démarre.
+IMAGE_POSTGRES = "pgvector/pgvector:pg16"
 
 
 def _appliquer_environnement(dsn: str) -> None:
@@ -37,6 +41,12 @@ def _appliquer_environnement(dsn: str) -> None:
     de développement pendant que les tests écrivent dans le conteneur.
     """
     from sqlalchemy.engine import make_url
+
+    # Aucun test ne parle à un modèle. Une suite dont le résultat dépend de la
+    # présence d'Ollama sur la machine ne prouve rien : elle passerait ici et
+    # échouerait en intégration continue, ou l'inverse. Le repli forcé rend la
+    # couche IA entièrement déterministe pendant les tests.
+    os.environ["IA_FORCER_REPLI"] = "true"
 
     url = make_url(dsn)
     os.environ["POSTGRES_HOST"] = url.host or "127.0.0.1"
@@ -57,9 +67,13 @@ def _appliquer_environnement(dsn: str) -> None:
     # personne n'y ait touché.
     os.environ["MEDIA_ROOT"] = tempfile.mkdtemp(prefix="smartroom-medias-")
 
+    from app.ai.reglages import get_reglages_ia
     from app.core.config import get_settings
 
     get_settings.cache_clear()
+    # Même raison : les réglages IA sont mémoïsés, et un cache constitué avant
+    # la pose de `IA_FORCER_REPLI` laisserait les tests appeler le modèle.
+    get_reglages_ia.cache_clear()
 
     # Le moteur du module est reconstruit sur la nouvelle adresse. Les tâches
     # planifiées et les scripts passent par lui : le laisser pointer ailleurs

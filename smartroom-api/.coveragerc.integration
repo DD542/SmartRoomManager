@@ -5,6 +5,11 @@ source =
     app/api
 omit =
     app/api/v1/schemas/*
+    # Mesurés par `.coveragerc.assistant`, dont la campagne les traverse.
+    # Les laisser ici ferait tomber ce seuil sans que la couche métier ait
+    # bougé — un garde qui accuse le mauvais coupable finit par être ignoré.
+    app/api/v1/chat.py
+    app/services/chat_service.py
 
 [report]
 show_missing = True

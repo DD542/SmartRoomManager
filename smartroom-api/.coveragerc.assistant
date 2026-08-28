@@ -1,0 +1,23 @@
+[run]
+branch = True
+source =
+    app/ai
+    app/api/v1/chat.py
+    app/services/chat_service.py
+
+[report]
+show_missing = True
+skip_covered = False
+# 80 % et non 85 : les deux clients HTTP portent des branches de panne réseau
+# qu'un transport simulé ne reproduit pas toutes, et les couvrir au dernier
+# pour-cent reviendrait à tester `httpx`. Mesuré à 84 % au lot 6 ; le seuil
+# laisse la marge d'un correctif sans faire tomber la chaîne sur du bruit.
+fail_under = 80
+exclude_lines =
+    pragma: no cover
+    if TYPE_CHECKING:
+    raise NotImplementedError
+    ^\s*\.\.\.$
+
+[html]
+directory = htmlcov/assistant
