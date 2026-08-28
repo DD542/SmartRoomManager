@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Upload } from 'lucide-react';
 import {
   getDirections,
   getFloorPlan,
@@ -8,37 +7,26 @@ import {
 } from '../../api/buildings';
 import { listBookings } from '../../api/bookings';
 import { useAsync } from '../../hooks/useAsync';
-import { useAdminSession } from '../../hooks/useAdminSession';
 import { useAuth } from '../../hooks/useAuth';
 import { NOW, fmtDate, isSameDay, toDate } from '../../utils/dates';
-import { Card, CardHeader } from '../../components/ui/Card';
+import { Card } from '../../components/ui/Card';
 import { SegmentedControl } from '../../components/ui/Tabs';
 import { AsyncBoundary, Skeleton } from '../../components/ui/States';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { FloorPlan, FloorPlanLegend } from '../../components/rooms/FloorPlan';
 import { PdfPlanView } from '../../components/rooms/PdfPlanView';
-import { PlanUpload } from '../../components/rooms/PlanUpload';
 import { RoomPlanAside } from '../../components/rooms/RoomPlanAside';
 import { FloorRoomPicker, RoomLocationPlan } from '../../components/rooms/RoomLocationPlan';
 
 /** U-18 — Plan de localisation du bâtiment, avec panneau de détail de la salle. */
 export default function FloorPlanPage() {
   const { user } = useAuth();
-  const { permissions } = useAdminSession();
   // Aucun étage au départ, et surtout pas `plan-a` : cet identifiant venait des
   // maquettes. L'API le refusait — « L'étage doit être un identifiant valide » —
   // et l'écran s'ouvrait sur une erreur avant même que la liste soit chargée.
   // Le premier étage réel est choisi dès que la liste arrive.
   const [planId, setPlanId] = useState(null);
   const [selected, setSelected] = useState(null);
-
-  // Le dépôt du plan est une opération d'administration.
-  // Le dépôt du plan est une opération d'administration, gouvernée par la
-  // permission `rooms.manage` — la même que côté back. Elle s'appuyait
-  // auparavant sur `user.role === 'gestionnaire'` : aucune source ne produit
-  // cette valeur (l'adaptateur ne rend que `etudiant` ou `personnel`), et la
-  // zone d'import était donc invisible pour tout le monde.
-  const canManage = permissions.includes('rooms.manage');
 
   useEffect(() => {
     document.title = 'Plan du bâtiment — SmartRoom Manager';
@@ -148,23 +136,6 @@ export default function FloorPlanPage() {
                       : 'Aucun plan déposé pour ce bâtiment : schéma indicatif.'}
                 </p>
               </Card>
-
-              {canManage && (
-                <Card>
-                  <CardHeader
-                    title="Plan du bâtiment"
-                    icon={Upload}
-                    subtitle="Déposez le plan officiel : il remplacera le schéma pour tous les utilisateurs."
-                  />
-                  <div className="px-4 pb-4">
-                    <PlanUpload
-                      planId={planId}
-                      document={planDocument.data}
-                      onUploaded={(uploaded) => planDocument.setData(uploaded)}
-                    />
-                  </div>
-                </Card>
-              )}
             </div>
           )}
         </AsyncBoundary>
