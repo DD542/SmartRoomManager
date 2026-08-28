@@ -72,7 +72,7 @@ export function BookingDetail({ booking, onCancel }) {
 
       {booking.accessCode && (
         <DetailRow label="Code d’accès">
-          <AccessCode code={booking.accessCode} masked size="sm" />
+          <AccessCode code={booking.accessCode} size="sm" />
         </DetailRow>
       )}
 

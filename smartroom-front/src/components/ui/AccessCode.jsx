@@ -1,20 +1,20 @@
-import { useState } from 'react';
-import { Eye, EyeOff, KeyRound, Lock, RefreshCw } from 'lucide-react';
+import { KeyRound, Lock, RefreshCw } from 'lucide-react';
 import { cn } from '../../utils/cn';
-import { maskAccessCode } from '../../utils/format';
 import { Button } from './Button';
 
 /**
- * Code d'accès physique. Toujours en monospace, jamais tronqué, et masquable
- * sur les écrans où il reste visible longtemps (dashboard).
+ * Code d'accès physique, en monospace et jamais tronqué.
  *
- * L'affichage est une bascule : on révèle le code le temps de le lire, puis on
- * le remasque, par exemple avant de partager son écran.
+ * Il n'y a plus de bascule « Révéler / Masquer ». Elle promettait ce que
+ * personne ne détient : le clair n'existe qu'à l'émission, la base n'en garde
+ * qu'une empreinte et un indice — `E-****`. Les deux écrans qui l'affichaient
+ * masquaient donc un indice déjà masqué, et « Révéler » rendait le même
+ * `E-****`. Un bouton qui ne fait rien est pire qu'un bouton absent : on
+ * l'essaie, puis on doute du reste.
+ *
+ * Perdre son code se répare en en émettant un neuf, depuis la réservation.
  */
-export function AccessCode({ code, masked = false, size = 'lg', className }) {
-  const [revealed, setRevealed] = useState(!masked);
-  const display = revealed ? (code ?? '—') : maskAccessCode(code);
-
+export function AccessCode({ code, size = 'lg', className }) {
   return (
     <div className={cn('flex items-center gap-3', className)}>
       <div className="flex items-center gap-2 rounded-xl border border-line bg-ink px-3 py-2">
@@ -25,23 +25,9 @@ export function AccessCode({ code, masked = false, size = 'lg', className }) {
             size === 'lg' ? 'text-2xl' : 'text-sm',
           )}
         >
-          {display}
-        </span>
-        <span className="sr-only">
-          {revealed ? 'Code d’accès affiché' : 'Code d’accès masqué'}
+          {code ?? '—'}
         </span>
       </div>
-      {masked && (
-        <Button
-          variant="ghost"
-          size="sm"
-          icon={revealed ? EyeOff : Eye}
-          aria-pressed={revealed}
-          onClick={() => setRevealed((current) => !current)}
-        >
-          {revealed ? 'Masquer' : 'Révéler'}
-        </Button>
-      )}
     </div>
   );
 }

@@ -77,9 +77,29 @@ export function NextBookingCard({ booking, isLoading }) {
             </div>
           </dl>
 
-          <div className="mt-4">
-            <AccessCode code={booking.accessCode} masked size="sm" />
-          </div>
+          {/* L'indice seul : le code complet n'a été affiché qu'à l'émission.
+              Le perdre se répare en en émettant un neuf, depuis la
+              réservation — et c'est là qu'on l'envoie, plutôt que de proposer
+              une bascule « Révéler » qui rendrait le même `E-****`. */}
+          {booking.accessCode ? (
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <AccessCode code={booking.accessCode} size="sm" />
+              <Link
+                to={`/app/reservations/${booking.id}`}
+                className="text-xs text-accent hover:underline"
+              >
+                Code perdu ?
+              </Link>
+            </div>
+          ) : (
+            booking.room?.badgeRequired && (
+              <div className="mt-4">
+                <Button variant="secondary" size="sm" to={`/app/reservations/${booking.id}`}>
+                  Émettre le code d’accès
+                </Button>
+              </div>
+            )
+          )}
         </div>
 
         <div className="flex shrink-0 flex-col gap-2">

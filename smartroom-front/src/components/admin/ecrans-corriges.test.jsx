@@ -31,6 +31,7 @@ import { RoomCard } from '../rooms/RoomCard';
 import { FloorPlan } from '../rooms/FloorPlan';
 import { FloorRoomPicker, RoomLocationPlan } from '../rooms/RoomLocationPlan';
 import { SlotPanel } from '../bookings/SlotPanel';
+import { NextBookingCard } from '../home/NextBookingCard';
 import BookingDetailPage from '../../pages/manage/BookingDetailPage';
 
 // Le détail de réservation nomme le compte connecté quand il reçoit un 404 :
@@ -608,5 +609,56 @@ describe('Rail de vérification du créneau', () => {
 
     expect(screen.getByText('Conflit détecté')).toBeTruthy();
     expect(screen.getByText('Conflit potentiel')).toBeTruthy();
+  });
+});
+
+describe('Prochaine réservation du tableau de bord', () => {
+  const RESERVATION = {
+    id: 'bk-2',
+    title: 'Réunion',
+    start: new Date('2026-09-01T08:00:00Z'),
+    end: new Date('2026-09-01T08:30:00Z'),
+    status: 'confirmee',
+    accessCode: 'E-****',
+    room: { id: 'r-1', name: 'Salle Descartes', building: { name: 'Eiffel 6' }, floor: '2e étage', badgeRequired: true },
+  };
+
+  const rendreCarte = (booking) =>
+    render(
+      <MemoryRouter>
+        <NextBookingCard booking={booking} />
+      </MemoryRouter>,
+    );
+
+  it('ne propose plus de « révéler » un code que personne ne détient', () => {
+    // La bascule masquait un indice déjà masqué : « Révéler » rendait le même
+    // `E-****`. Un bouton qui ne fait rien est pire qu'un bouton absent.
+    rendreCarte(RESERVATION);
+
+    expect(screen.getByText('E-****')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Révéler|Masquer/ })).toBeNull();
+  });
+
+  it('mène à la réservation pour en émettre un neuf', () => {
+    rendreCarte(RESERVATION);
+
+    const lien = screen.getByRole('link', { name: 'Code perdu ?' });
+    expect(lien.getAttribute('href')).toBe('/app/reservations/bk-2');
+  });
+
+  it('propose d’émettre le code quand la salle en exige un et qu’il manque', () => {
+    rendreCarte({ ...RESERVATION, accessCode: null });
+
+    expect(screen.getByRole('link', { name: /Émettre le code d’accès/ })).toBeTruthy();
+  });
+
+  it('ne parle pas de code pour une salle sans badge', () => {
+    rendreCarte({
+      ...RESERVATION,
+      accessCode: null,
+      room: { ...RESERVATION.room, badgeRequired: false },
+    });
+
+    expect(screen.queryByText(/code d’accès/i)).toBeNull();
   });
 });
