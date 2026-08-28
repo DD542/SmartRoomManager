@@ -40,12 +40,19 @@ export function IdentitySection({
       <Card>
         <CardHeader title="Informations personnelles" icon={User} />
         <div className="grid gap-4 px-4 pb-4 sm:grid-cols-2">
-          <Input label="Prénom" value={profile.firstName} onChange={field('firstName')} />
-          <Input label="Nom" value={profile.lastName} onChange={field('lastName')} />
-          <Input label="E-mail" type="email" value={profile.email} onChange={field('email')} />
-          <Input label="Téléphone" value={profile.phone} onChange={field('phone')} />
-          <Input label="Promotion" value={profile.promotion} disabled />
-          <Input label="Département" value={profile.department} onChange={field('department')} />
+          {/* `?? ''` sur chaque champ : l'API rend `null` pour une valeur non
+              renseignée — téléphone, promotion, département —, et React refuse
+              `value={null}` sur un champ contrôlé. Il l'annonce en console à
+              chaque rendu, sans que l'écran cesse pour autant de fonctionner :
+              un avertissement qu'on finit par ne plus lire. La forme nulle
+              reste juste côté données ; c'est le formulaire qui traduit
+              « absent » en champ vide. */}
+          <Input label="Prénom" value={profile.firstName ?? ''} onChange={field('firstName')} />
+          <Input label="Nom" value={profile.lastName ?? ''} onChange={field('lastName')} />
+          <Input label="E-mail" type="email" value={profile.email ?? ''} onChange={field('email')} />
+          <Input label="Téléphone" value={profile.phone ?? ''} onChange={field('phone')} />
+          <Input label="Promotion" value={profile.promotion ?? ''} disabled />
+          <Input label="Département" value={profile.department ?? ''} onChange={field('department')} />
         </div>
       </Card>
 

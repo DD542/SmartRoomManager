@@ -13,6 +13,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { MemoryRouter } from 'react-router-dom';
 import { Avatar } from '../ui/Avatar';
 import { AvatarField } from './AvatarField';
+import { IdentitySection } from './ProfileSections';
 import { AccountMenu } from '../admin/AccountMenu';
 import { SessionList } from '../admin/account/SessionList';
 import { AdminSessionContext } from '../../hooks/useAdminSession';
@@ -383,3 +384,40 @@ describe('Cadrage de la photo de profil', () => {
     expect(screen.getByRole('img').className).toContain('object-top');
   });
 })
+
+describe('Informations personnelles', () => {
+  const PROFIL = {
+    firstName: 'Dylan',
+    lastName: 'Menga',
+    email: 'd.menga@ece.fr',
+    // L'API rend `null` pour ce qui n'est pas renseigné.
+    phone: null,
+    promotion: null,
+    department: null,
+    badgeNumber: null,
+    avatarUrl: null,
+  };
+
+  it('rend un champ vide pour une valeur absente, sans avertissement React', () => {
+    // « `value` prop on `input` should not be null » à chaque rendu de l'écran
+    // de profil : l'avertissement ne cassait rien, et c'est bien le problème —
+    // on finit par ne plus lire la console.
+    const plaintes = [];
+    const espion = vi.spyOn(console, 'error').mockImplementation((...args) => {
+      plaintes.push(String(args[0]));
+    });
+
+    render(
+      <IdentitySection
+        profile={PROFIL}
+        field={() => vi.fn()}
+        onUploadAvatar={vi.fn()}
+        onRemoveAvatar={vi.fn()}
+      />,
+    );
+
+    expect(plaintes.filter((item) => item.includes('should not be null'))).toEqual([]);
+    expect(screen.getByLabelText('Téléphone').value).toBe('');
+    espion.mockRestore();
+  });
+});

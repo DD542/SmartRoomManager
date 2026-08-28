@@ -57,7 +57,16 @@ export function AvatarField({ name, src, onUpload, onRemove, busy = false }) {
 
       <div className="min-w-0">
         <p className="text-sm font-medium text-content">Photo de profil</p>
-        <p className="text-xs text-content-muted">PNG, JPEG ou WebP, jusqu’à 5 Mo.</p>
+        <p className="text-xs text-content-muted">
+          PNG, JPEG ou WebP, jusqu’à 5 Mo. Vous la cadrerez avant l’envoi.
+        </p>
+        {/* Le compte d'administration n'est pas un second compte : c'est un
+            rôle attaché au même utilisateur, et la photo appartient à
+            l'utilisateur. Le dire évite de croire à une fuite d'un espace
+            vers l'autre. */}
+        <p className="text-xs text-content-faint">
+          Elle vous représente dans l’espace utilisateur comme dans l’administration.
+        </p>
         {erreur && (
           <p role="alert" className="mt-1 text-xs text-danger">
             {erreur}
