@@ -297,6 +297,24 @@ describe('parc', () => {
     expect(sans.room.photos).toEqual([]);
   });
 
+  it('porte l’étage et le plan de localisation de la salle', () => {
+    // Le détail cherchait l'étage dans un cache de module alimenté par la fiche
+    // de salle : sur un accès direct — un lien, un rechargement — ce cache est
+    // vide, et l'écran annonçait « aucun plan déposé » quoi qu'il en soit.
+    const reservation = adapt.booking({
+      id: 'bk-1',
+      room_id: 'r-1',
+      room_name: 'Salle Curie',
+      floor_id: 'f-9',
+      room_location_plan_url: '/media/reperes/curie.jpg',
+      slot: { starts_at: '2026-09-03T12:00:00Z', ends_at: '2026-09-03T13:00:00Z' },
+      status: 'confirmee',
+    });
+
+    expect(reservation.room.floorId).toBe('f-9');
+    expect(reservation.room.locationPlanUrl).toBe('/media/reperes/curie.jpg');
+  });
+
   it('transcrit un étage et un équipement', () => {
     expect(adapt.floor({ id: 'f-1', building_id: 'b-1', code: 'R2', label: '2e', level: 2, room_count: 4 }).label).toBe('2e');
     expect(adapt.equipment({ id: 'eq-1', code: 'video', label: 'Vidéo', category: 'audiovisuel', icon: 'projector' }).icon).toBe('projector');

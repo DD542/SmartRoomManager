@@ -76,7 +76,10 @@ export function Topbar() {
           className="ml-1 rounded-full"
           aria-label={`Profil de ${fullName(user)}`}
         >
-          <Avatar name={fullName(user)} />
+          {/* La photo du profil, quand il y en a une. L'`Avatar` sait retomber
+              sur les initiales ; ne pas lui passer l'adresse revenait à
+              n'afficher jamais que celles-ci, y compris après un dépôt. */}
+          <Avatar name={fullName(user)} src={user?.avatarUrl} />
         </button>
       </div>
     </header>

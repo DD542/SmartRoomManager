@@ -305,6 +305,11 @@ export const booking = (data) => ({
         // `photos[0]`. Vide plutôt qu'absente — la vignette doit pouvoir
         // décider d'afficher un repère de remplacement.
         photos: data.room_photo_url ? [data.room_photo_url] : [],
+        // L'étage vient de la réponse et non d'un cache de module : sur un
+        // accès direct au détail, ce cache est vide et l'écran ne savait pas
+        // quel plan demander.
+        floorId: data.floor_id ?? null,
+        locationPlanUrl: data.room_location_plan_url ?? null,
       }
     : null,
   building: data.building_name ? { name: data.building_name } : null,

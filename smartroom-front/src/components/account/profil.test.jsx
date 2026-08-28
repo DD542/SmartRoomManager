@@ -259,3 +259,14 @@ describe('Écran de profil d’administration', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 });
+
+describe('Barre haute de l’espace utilisateur', () => {
+  it('affiche la photo du compte plutôt que ses initiales', () => {
+    // La barre rendait `<Avatar name={…} />` sans adresse : la photo déposée
+    // n'apparaissait donc jamais, quel que soit le compte.
+    render(<Avatar name="Dylan Menga" src="/media/avatars/moi.jpg" />);
+
+    expect(screen.getByRole('img').getAttribute('src')).toBe('/media/avatars/moi.jpg');
+    expect(screen.queryByText('DM')).toBeNull();
+  });
+});

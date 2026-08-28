@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { CheckCircle2, History, MapPin, Pencil, Route, XCircle } from 'lucide-react';
 import { getBooking } from '../../api/bookings';
-import { getPlanDocument } from '../../api/buildings';
+import { getPlanDocumentForPlan } from '../../api/buildings';
 import { useAsync } from '../../hooks/useAsync';
 import { fmtDateLong, fmtTime, toDate } from '../../utils/dates';
 import { Badge } from '../../components/ui/Badge';
@@ -33,10 +33,25 @@ export default function BookingDetailPage() {
   const [params, setParams] = useSearchParams();
   const booking = useAsync(() => getBooking(id), [id]);
   const [cancelOpen, setCancelOpen] = useState(params.get('annuler') === '1');
+  // Le plan d'étage, demandé par l'identifiant que porte la réservation. Il ne
+  // sert que de repli : la salle a le plus souvent son propre plan de
+  // localisation, déposé par l'administration, qui montre exactement où elle
+  // se trouve.
   const planDocument = useAsync(
-    () => (booking.data?.roomId ? getPlanDocument(booking.data.roomId) : Promise.resolve(null)),
-    [booking.data?.roomId],
+    () =>
+      booking.data?.room?.floorId
+        ? getPlanDocumentForPlan(booking.data.room.floorId)
+        : Promise.resolve(null),
+    [booking.data?.room?.floorId],
   );
+
+  const planAffiche = booking.data?.room?.locationPlanUrl
+    ? {
+        type: 'image',
+        url: booking.data.room.locationPlanUrl,
+        name: `Plan de localisation — ${booking.data.room.name}`,
+      }
+    : planDocument.data;
 
   useEffect(() => {
     if (booking.data) document.title = `${booking.data.title} — SmartRoom Manager`;
@@ -121,7 +136,7 @@ export default function BookingDetailPage() {
                     <p className="mb-2 text-xs uppercase tracking-wide text-content-muted">
                       Localisation
                     </p>
-                    <PlanPreview document={planDocument.data} isLoading={planDocument.isLoading} />
+                    <PlanPreview document={planAffiche} isLoading={planDocument.isLoading && !planAffiche} />
                     <Button
                       variant="ghost"
                       size="sm"

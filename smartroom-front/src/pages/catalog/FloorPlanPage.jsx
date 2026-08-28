@@ -24,7 +24,11 @@ import { RoomPlanAside } from '../../components/rooms/RoomPlanAside';
 export default function FloorPlanPage() {
   const { user } = useAuth();
   const { permissions } = useAdminSession();
-  const [planId, setPlanId] = useState('plan-a');
+  // Aucun étage au départ, et surtout pas `plan-a` : cet identifiant venait des
+  // maquettes. L'API le refusait — « L'étage doit être un identifiant valide » —
+  // et l'écran s'ouvrait sur une erreur avant même que la liste soit chargée.
+  // Le premier étage réel est choisi dès que la liste arrive.
+  const [planId, setPlanId] = useState(null);
   const [selected, setSelected] = useState(null);
 
   // Le dépôt du plan est une opération d'administration.
@@ -40,8 +44,22 @@ export default function FloorPlanPage() {
   }, []);
 
   const plans = useAsync(listFloorPlans, []);
-  const plan = useAsync(() => getFloorPlan(planId), [planId]);
-  const planDocument = useAsync(() => getPlanDocumentForPlan(planId), [planId]);
+
+  // Le premier étage de la liste, une fois qu'elle est là. Sans étage, les deux
+  // chargements ci-dessous ne partent pas : demander un plan sans identifiant
+  // ne peut produire qu'un refus.
+  useEffect(() => {
+    if (planId === null && plans.data?.length) setPlanId(plans.data[0].id);
+  }, [planId, plans.data]);
+
+  const plan = useAsync(
+    () => (planId ? getFloorPlan(planId) : Promise.resolve(null)),
+    [planId],
+  );
+  const planDocument = useAsync(
+    () => (planId ? getPlanDocumentForPlan(planId) : Promise.resolve(null)),
+    [planId],
+  );
   const myBookings = useAsync(() => listBookings({ ownerId: user.id, status: 'confirmee' }), [user.id]);
   const directions = useAsync(
     () => (selected ? getDirections(selected.id) : Promise.resolve(null)),

@@ -74,6 +74,14 @@ class BookingOut(ReadModel):
     #:
     #: Gratuite : `Room.photos` est déjà chargée en `selectin` avec la salle.
     room_photo_url: str | None = None
+    #: Plan de localisation de la salle, et étage qui la porte.
+    #:
+    #: Le détail d'une réservation affiche « où est-ce ». Il cherchait l'étage
+    #: dans un cache de module alimenté par la fiche de salle : sur un accès
+    #: direct — un lien, un rechargement — ce cache est vide, et l'écran
+    #: annonçait « aucun plan déposé » quelle que soit la réalité.
+    room_location_plan_url: str | None = None
+    floor_id: uuid.UUID | None = None
     owner_name: str | None = None
     #: Forme masquée « A-**** ». Le code en clair ne quitte le serveur qu'une
     #: fois, à la création, et n'est stocké que haché.
@@ -103,6 +111,8 @@ class BookingOut(ReadModel):
             room_photo_url=(
                 salle.photos[0].file_url if salle is not None and salle.photos else None
             ),
+            room_location_plan_url=(salle.location_plan_url if salle is not None else None),
+            floor_id=(salle.floor_id if salle is not None else None),
             owner_name=(
                 f"{proprietaire.first_name} {proprietaire.last_name}"
                 if proprietaire is not None

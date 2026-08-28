@@ -54,7 +54,8 @@ export function PlanPreview({ document, isLoading, className, actionLabel = 'Ouv
       </button>
 
       <p className="mt-1.5 truncate text-[11px] text-content-faint" title={document.name}>
-        {document.name} · déposé le {fmtDate(document.updatedAt)}
+        {document.name}
+        {document.updatedAt ? ` · déposé le ${fmtDate(document.updatedAt)}` : ''}
       </p>
 
       <Button variant="secondary" size="sm" fullWidth icon={Map} className="mt-2" onClick={() => setOpen(true)}>
@@ -75,9 +76,13 @@ export function PlanPreview({ document, isLoading, className, actionLabel = 'Ouv
             className="w-full rounded-xl border border-line"
           />
         )}
-        <p className="mt-3 text-xs text-content-muted">
-          Déposé par {document.uploadedBy} le {fmtDate(document.updatedAt)} · {document.sizeKo} Ko
-        </p>
+        {/* Un plan de salle arrive sans métadonnées de dépôt : afficher
+            « déposé par undefined le Invalid Date » vaudrait moins que se taire. */}
+        {document.updatedAt && (
+          <p className="mt-3 text-xs text-content-muted">
+            Déposé par {document.uploadedBy} le {fmtDate(document.updatedAt)} · {document.sizeKo} Ko
+          </p>
+        )}
       </Modal>
     </div>
   );
