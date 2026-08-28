@@ -214,6 +214,30 @@ def check_in(
     return BookingOut.of(validee)
 
 
+@router.post(
+    "/{booking_id}/access-code",
+    response_model=AccessCodeOut,
+    summary="Émettre un nouveau code d'accès",
+    description=(
+        "Émet un code neuf et révoque le précédent. Le code en clair n'existe "
+        "qu'à cet instant : la base n'en garde qu'une empreinte et un indice "
+        "masqué, et aucune route ne peut donc relire un code déjà émis. "
+        "Réservé au propriétaire de la réservation, sur un créneau à venir dans "
+        "une salle qui demande un badge."
+    ),
+)
+def reissue_access_code(
+    booking_id: uuid.UUID,
+    session: SessionDep,
+    principal: CurrentPrincipal,
+) -> AccessCodeOut:
+    code = service.reissue_access_code(
+        session, booking_id, owner_id=principal.user.id
+    )
+    session.commit()
+    return AccessCodeOut(code=code.clear, hint=code.hint, expires_at=code.expires_at)
+
+
 @router.get(
     "/{booking_id}/alternatives",
     response_model=list[AlternativeOut],

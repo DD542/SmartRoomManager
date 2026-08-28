@@ -57,6 +57,7 @@ from app.db.enums import (
     UserStatus,
 )
 from app.db.session import SessionLocal, engine
+from app.services import booking_service
 from app.models import (
     AccessRequest,
     AdminAccount,
@@ -840,14 +841,11 @@ def creer_reservations(
                     responded_at=maintenant,
                 )
             )
-            session.add(
-                BookingAccessCode(
-                    booking_id=reservation.id,
-                    code_hash=CRYPT.hash(f"{ALEA.randint(1000, 9999)}"),
-                    code_hint="A-****",
-                    expires_at=reservation.time_range.upper,
-                )
-            )
+            # Par le service et non à la main : lui seul sait qu'une salle
+            # sans badge n'a pas de code, et que l'indice porte l'initiale du
+            # bâtiment. Le semis posait « A-**** » sur toutes les salles, y
+            # compris celles où aucun code n'a de sens.
+            booking_service.issue_access_code(session, reservation, now=maintenant)
 
     session.commit()
     return reservations
@@ -891,6 +889,10 @@ def creer_conflits(
         )
         session.add(existante)
         session.flush()
+        # Ces deux réservations-ci sont posées à la main, hors du semis
+        # général : sans cet appel, elles arrivaient à l'écran en salle à
+        # badge et sans le moindre code.
+        booking_service.issue_access_code(session, existante)
 
     session.add(
         AccessRequest(
@@ -919,17 +921,17 @@ def creer_conflits(
             Booking.status != BookingStatus.ANNULEE,
         )
     ).first():
-        session.add(
-            Booking(
-                room_id=curie.id,
-                owner_id=titulaire.id,
-                title="Entretien RH",
-                time_range=plage_precedente,
-                attendee_count=4,
-                status=BookingStatus.CONFIRMEE,
-            )
+        entretien = Booking(
+            room_id=curie.id,
+            owner_id=titulaire.id,
+            title="Entretien RH",
+            time_range=plage_precedente,
+            attendee_count=4,
+            status=BookingStatus.CONFIRMEE,
         )
+        session.add(entretien)
         session.flush()
+        booking_service.issue_access_code(session, entretien)
 
     session.add(
         AccessRequest(

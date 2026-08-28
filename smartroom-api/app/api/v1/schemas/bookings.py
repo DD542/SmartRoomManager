@@ -86,6 +86,11 @@ class BookingOut(ReadModel):
     #: Forme masquée « A-**** ». Le code en clair ne quitte le serveur qu'une
     #: fois, à la création, et n'est stocké que haché.
     access_code_hint: str | None = None
+    #: La salle demande-t-elle un code à sa porte ? L'écran ne peut pas le
+    #: déduire de l'indice ci-dessus : une réservation dont le code a été
+    #: révoqué en est dépourvue tout en restant en salle à badge, et c'est
+    #: précisément le cas où il faut proposer d'en émettre un.
+    room_badge_required: bool = False
 
     @classmethod
     def of(cls, reservation) -> BookingOut:
@@ -119,6 +124,7 @@ class BookingOut(ReadModel):
                 else None
             ),
             access_code_hint=actif.code_hint if actif is not None else None,
+            room_badge_required=salle.badge_required,
             slot=SlotOut.of(
                 TimeSlot(start=reservation.time_range.lower, end=reservation.time_range.upper)
             ),

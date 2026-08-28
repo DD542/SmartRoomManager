@@ -32,6 +32,7 @@ from app.core.errors import (
 )
 from app.core.security import TokenError, create_invitation_token, decode_invitation_token
 from app.db.enums import (
+    AuditAction,
     BookingEventType,
     BookingSource,
     BookingStatus,
@@ -47,6 +48,7 @@ from app.models import (
     BookingParticipant,
     User,
 )
+from app.services import audit_service
 from app.services.availability_service import (
     SlotReport,
     charger_salle,
@@ -198,6 +200,83 @@ def issue_access_code(
     )
     session.add(code)
     return IssuedCode(clear=clair, hint=code.code_hint, expires_at=code.expires_at)
+
+
+def reissue_access_code(
+    session: Session,
+    booking_id: uuid.UUID,
+    *,
+    owner_id: uuid.UUID,
+    now: datetime | None = None,
+) -> IssuedCode:
+    """Émet un nouveau code d'accès pour une réservation, et révoque l'ancien.
+
+    Le code en clair n'existe qu'à l'instant de son émission : la base n'en
+    garde qu'une empreinte et un indice masqué. Un utilisateur qui a perdu le
+    sien n'a donc aucun moyen de le relire — et l'écran lui proposait pourtant
+    de « révéler » ce que personne ne détenait plus.
+
+    Le réémettre est la seule réponse honnête. L'ancien est révoqué au même
+    instant : deux codes valables pour une même porte, c'est un code de trop.
+
+    Le propriétaire est vérifié dans la requête. Une réservation d'autrui est
+    introuvable, pas interdite.
+    """
+    now = en_utc(now or datetime.now(UTC))
+
+    reservation = session.scalars(
+        select(Booking).where(
+            Booking.id == booking_id,
+            Booking.owner_id == owner_id,
+            Booking.deleted_at.is_(None),
+        )
+    ).one_or_none()
+    if reservation is None:
+        raise NotFoundError("Réservation introuvable.")
+
+    if reservation.status is BookingStatus.ANNULEE:
+        raise RuleViolationError(
+            "Cette réservation est annulée : aucun code ne peut être émis.",
+            code="reservation_annulee",
+        )
+    if reservation.time_range.upper <= now:
+        raise RuleViolationError(
+            "Ce créneau est terminé : le code n'a plus d'usage.",
+            code="creneau_termine",
+        )
+
+    salle = charger_salle(session, reservation.room_id)
+    if not salle.badge_required:
+        raise RuleViolationError(
+            f"{salle.name} ne demande pas de code d'accès.", code="badge_non_requis"
+        )
+
+    ancien = session.scalars(
+        select(BookingAccessCode).where(
+            BookingAccessCode.booking_id == reservation.id,
+            BookingAccessCode.revoked_at.is_(None),
+        )
+    ).one_or_none()
+    if ancien is not None:
+        ancien.revoked_at = now
+        # Vidé avant l'insertion du nouveau : l'index d'unicité ne tolère qu'un
+        # code actif par réservation, et il est vérifié à la fin de l'instruction.
+        session.flush()
+
+    code = issue_access_code(session, reservation, now=now)
+    if code is None:  # pragma: no cover - `badge_required` est déjà vérifié
+        raise RuleViolationError("Aucun code n'a pu être émis.", code="code_indisponible")
+
+    audit_service.record(
+        session,
+        action=AuditAction.MODIFICATION,
+        target_type="booking",
+        target_label=f"{salle.name} — {reservation.title}",
+        target_id=reservation.id,
+        before={"Code d'accès": ancien.code_hint if ancien else "aucun"},
+        after={"Code d'accès": code.hint, "Émis le": now.isoformat()},
+    )
+    return code
 
 
 def create_booking(

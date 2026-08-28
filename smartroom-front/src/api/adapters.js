@@ -310,6 +310,9 @@ export const booking = (data) => ({
         // quel plan demander.
         floorId: data.floor_id ?? null,
         locationPlanUrl: data.room_location_plan_url ?? null,
+        // Propriété de la porte, et non de l'indice affiché : une
+        // réservation sans code actif reste en salle à badge.
+        badgeRequired: data.room_badge_required ?? false,
       }
     : null,
   building: data.building_name ? { name: data.building_name } : null,

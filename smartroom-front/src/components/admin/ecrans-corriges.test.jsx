@@ -11,7 +11,8 @@ import { describe, expect, it, vi } from 'vitest';
 // arrêtée, et ces interactions — un clic, une saisie — ne demandent pas la
 // simulation fine que la seconde apporterait.
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { HttpResponse, http } from 'msw';
 // Assertions DOM natives plutôt que `jest-dom` : la liste de dépendances du
 // projet est arrêtée, et `toBeTruthy` sur un nœud dit la même chose que
 // `toBeInTheDocument`.
@@ -22,6 +23,10 @@ import { Pill } from '../ui/Badge';
 import { KpiTile } from '../stats/KpiTile';
 import { BookingTable } from '../bookings/BookingTable';
 import { SANS_DATE, fmtDate, fmtDateLong, fmtRelative, fmtTime } from '../../utils/dates';
+import { AccessCodePanel } from '../ui/AccessCode';
+import { ToastProvider } from '../../hooks/useToast';
+import { serveur } from '../../test/serveur';
+import BookingDetailPage from '../../pages/manage/BookingDetailPage';
 
 describe('Liste des salles de repli', () => {
   const PROPOSITION = {
@@ -249,5 +254,121 @@ describe('Liste des réservations', () => {
     );
 
     expect(container.querySelector('img').getAttribute('src')).toBe('/media/photos/x.jpg');
+  });
+});
+
+describe('Encart du code d’accès', () => {
+  const monter = (props) =>
+    render(<AccessCodePanel onReissue={vi.fn()} canReissue {...props} />);
+
+  it('montre le code en clair une seule fois, à son émission', () => {
+    monter({ code: 'A-4821', hint: 'A-****', badgeRequired: true });
+
+    expect(screen.getByText('A-4821')).toBeTruthy();
+    expect(screen.getByText(/affiché qu’une fois/)).toBeTruthy();
+    // Rien à réémettre tant que le code est sous les yeux.
+    expect(screen.queryByRole('button', { name: /Émettre/ })).toBeNull();
+  });
+
+  it('propose une émission quand plus aucun code n’est actif', () => {
+    // L'écran affichait « cette réservation n’est plus active » — faux pour une
+    // réservation à venir dont le code avait simplement été révoqué, et sans
+    // aucun recours proposé.
+    monter({ code: null, hint: null, badgeRequired: true });
+
+    expect(screen.getByText(/Aucun code actif/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Émettre un code' })).toBeTruthy();
+  });
+
+  it('n’offre pas d’émission sur une réservation qui n’est plus active', () => {
+    // Le serveur refuse d'émettre pour un créneau terminé ou annulé : un bouton
+    // ne servirait qu'à produire une erreur.
+    monter({ code: null, hint: null, badgeRequired: true, canReissue: false });
+
+    expect(screen.queryByRole('button', { name: /Émettre/ })).toBeNull();
+  });
+
+  it('remplace un code encore valable sans jamais prétendre le relire', () => {
+    monter({ code: null, hint: 'A-****', badgeRequired: true });
+
+    expect(screen.getByText('A-****')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Émettre un nouveau code' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Révéler/ })).toBeNull();
+  });
+});
+
+describe('Détail de réservation — code d’accès', () => {
+  const BASE = 'http://localhost:5180/api/v1';
+
+  const RESERVATION = {
+    id: 'bk-9',
+    room_id: 'r-1',
+    room_name: 'Salle Curie',
+    building_name: 'Bâtiment A',
+    floor_label: '2e',
+    floor_id: null,
+    room_photo_url: null,
+    room_location_plan_url: null,
+    title: 'Entretien RH',
+    slot: { starts_at: '2026-09-03T12:00:00Z', ends_at: '2026-09-03T13:00:00Z' },
+    attendees: 2,
+    status: 'confirmee',
+    source: 'utilisateur',
+    is_forced: false,
+    checked_in_at: null,
+    access_code_hint: null,
+    room_badge_required: true,
+    events: [],
+    participants: [],
+  };
+
+  const monter = () =>
+    render(
+      <ToastProvider>
+        <MemoryRouter initialEntries={['/app/reservations/bk-9']}>
+          <Routes>
+            <Route path="/app/reservations/:id" element={<BookingDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      </ToastProvider>,
+    );
+
+  it('propose un code quand la salle en demande un et qu’aucun n’est actif', async () => {
+    // Le défaut : l'encart était conditionné à l'indice. Une salle passée sous
+    // badge après coup — ou un code révoqué — faisait disparaître toute
+    // mention du code côté utilisateur, alors que l'administration montrait
+    // bien la salle comme exigeant un badge.
+    serveur.use(http.get(`${BASE}/bookings/bk-9`, () => HttpResponse.json(RESERVATION)));
+
+    monter();
+
+    expect(await screen.findByRole('button', { name: 'Émettre un code' })).toBeTruthy();
+    expect(screen.queryByText(/n’est plus active/)).toBeNull();
+  });
+
+  it('affiche le code neuf rendu par le serveur, une seule fois', async () => {
+    serveur.use(
+      http.get(`${BASE}/bookings/bk-9`, () => HttpResponse.json(RESERVATION)),
+      http.post(`${BASE}/bookings/bk-9/access-code`, () =>
+        HttpResponse.json({ code: 'C-7310', hint: 'C-****', expires_at: null }),
+      ),
+    );
+
+    monter();
+    fireEvent.click(await screen.findByRole('button', { name: 'Émettre un code' }));
+
+    expect(await screen.findByText('C-7310')).toBeTruthy();
+  });
+
+  it('dit franchement qu’une salle sans badge n’a pas de code', async () => {
+    serveur.use(
+      http.get(`${BASE}/bookings/bk-9`, () =>
+        HttpResponse.json({ ...RESERVATION, room_badge_required: false }),
+      ),
+    );
+
+    monter();
+
+    expect(await screen.findByText(/Accès libre/)).toBeTruthy();
   });
 });

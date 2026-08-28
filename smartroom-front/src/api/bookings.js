@@ -205,6 +205,22 @@ export async function updateBooking(id, patchBody) {
   return adapt.booking(await patch(`/bookings/${id}`, corps));
 }
 
+/**
+ * Émet un nouveau code d'accès et révoque le précédent.
+ *
+ * Le code en clair n'existe qu'au moment de son émission : il n'est ni
+ * conservé, ni relisible. Le réémettre est donc le seul moyen d'en redonner un
+ * à qui l'a perdu.
+ */
+export async function reissueAccessCode(id) {
+  const data = await post(`/bookings/${id}/access-code`, {});
+  return {
+    code: data.code,
+    hint: data.hint,
+    expiresAt: data.expires_at ? new Date(data.expires_at) : null,
+  };
+}
+
 export async function cancelBooking(id, { reason, comment }) {
   const motif = [MOTIFS.find((item) => item.id === reason)?.label ?? reason, comment]
     .filter(Boolean)

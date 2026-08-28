@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { CheckCircle2, History, MapPin, Pencil, Route, XCircle } from 'lucide-react';
-import { getBooking } from '../../api/bookings';
+import { getBooking, reissueAccessCode } from '../../api/bookings';
 import { getPlanDocumentForPlan } from '../../api/buildings';
 import { useAsync } from '../../hooks/useAsync';
+import { useToast } from '../../hooks/useToast';
 import { fmtDateLong, fmtTime, toDate } from '../../utils/dates';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -31,6 +32,7 @@ export default function BookingDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
+  const toast = useToast();
   const booking = useAsync(() => getBooking(id), [id]);
   const [cancelOpen, setCancelOpen] = useState(params.get('annuler') === '1');
   // Le plan d'étage, demandé par l'identifiant que porte la réservation. Il ne
@@ -44,6 +46,24 @@ export default function BookingDetailPage() {
         : Promise.resolve(null),
     [booking.data?.room?.floorId],
   );
+
+  // Le code en clair, quand l'utilisateur vient d'en demander un neuf. Il ne
+  // vient jamais du chargement : le serveur ne le détient plus une fois émis.
+  const [codeEnClair, setCodeEnClair] = useState(null);
+  const [emission, setEmission] = useState(false);
+
+  const reemettre = async () => {
+    setEmission(true);
+    try {
+      const { code } = await reissueAccessCode(id);
+      setCodeEnClair(code);
+      toast.success('Nouveau code émis', 'Le précédent ne fonctionne plus.');
+    } catch (souci) {
+      toast.error('Émission refusée', souci.message);
+    } finally {
+      setEmission(false);
+    }
+  };
 
   const planAffiche = booking.data?.room?.locationPlanUrl
     ? {
@@ -125,11 +145,18 @@ export default function BookingDetailPage() {
 
               <div className="flex flex-col gap-4">
                 <Card>
-                  {data.accessCode ? (
-                    <AccessCodePanel code={data.accessCode} badgeRequired={data.room?.badgeRequired} />
+                  {data.room?.badgeRequired ? (
+                    <AccessCodePanel
+                      code={codeEnClair}
+                      hint={data.accessCode}
+                      badgeRequired
+                      canReissue={active}
+                      onReissue={reemettre}
+                      reissuing={emission}
+                    />
                   ) : (
                     <div className="p-6 text-center text-xs text-content-muted">
-                      Aucun code d’accès : cette réservation n’est plus active.
+                      Accès libre : cette salle ne demande pas de code à sa porte.
                     </div>
                   )}
                   <div className="border-t border-line px-4 py-3">
