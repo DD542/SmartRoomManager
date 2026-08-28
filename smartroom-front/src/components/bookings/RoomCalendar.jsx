@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -9,6 +9,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { NOW, mergeDateAndTime, toDate } from '../../utils/dates';
 import { Button, IconButton } from '../ui/Button';
 import { SegmentedControl } from '../ui/Tabs';
+import { useIsMobile } from '../../hooks/useMediaQuery';
 import './calendar.css';
 
 export const CALENDAR_VIEWS = [
@@ -17,6 +18,19 @@ export const CALENDAR_VIEWS = [
   { value: 'dayGridMonth', label: 'Mois' },
   { value: 'multiMonthYear', label: 'Année' },
 ];
+
+/**
+ * Vues proposées à une largeur donnée.
+ *
+ * Sous 768 px, la semaine tasse sept colonnes dans 360 px — chacune fait alors
+ * 45 px, moins qu'un doigt — et l'année en aligne douze mois : les deux
+ * débordaient ou devenaient illisibles. Elles ne sont pas cachées par pudeur,
+ * elles ne rendent rien d'exploitable à cette largeur.
+ */
+export const vuesDisponibles = (isMobile) =>
+  isMobile
+    ? CALENDAR_VIEWS.filter((vue) => vue.value !== 'timeGridWeek' && vue.value !== 'multiMonthYear')
+    : CALENDAR_VIEWS;
 
 const LEGEND = [
   { label: 'Libre', className: 'border-line bg-surface-raised' },
@@ -42,8 +56,22 @@ export function RoomCalendar({
   isLoading,
 }) {
   const ref = useRef(null);
-  const [view, setView] = useState('timeGridWeek');
+  const isMobile = useIsMobile();
+  // La semaine au bureau, le jour au téléphone : la vue par défaut suit la
+  // largeur au lieu de la contredire.
+  const [view, setView] = useState(() => (isMobile ? 'timeGridDay' : 'timeGridWeek'));
   const [title, setTitle] = useState('');
+
+  // Passage en portrait, ou rotation : une vue devenue indisponible doit céder
+  // la place, sinon le calendrier reste sur une grille qu'il ne sait plus
+  // dessiner à cette largeur.
+  useEffect(() => {
+    const proposees = vuesDisponibles(isMobile).map((vue) => vue.value);
+    if (!proposees.includes(view)) {
+      setView('timeGridDay');
+      ref.current?.getApi()?.changeView('timeGridDay');
+    }
+  }, [isMobile, view]);
 
   const visitDays = rules?.visitDays ?? [1, 2, 3, 4, 5];
   const isTimeGrid = view.startsWith('timeGrid');
@@ -90,7 +118,7 @@ export function RoomCalendar({
         <div className="flex flex-wrap items-center gap-2">
           <SegmentedControl
             label="Vue du calendrier"
-            options={CALENDAR_VIEWS}
+            options={vuesDisponibles(isMobile)}
             value={view}
             onChange={changeView}
           />
@@ -107,7 +135,7 @@ export function RoomCalendar({
         <FullCalendar
           ref={ref}
           plugins={[timeGridPlugin, dayGridPlugin, multiMonthPlugin, interactionPlugin]}
-          initialView="timeGridWeek"
+          initialView={isMobile ? 'timeGridDay' : 'timeGridWeek'}
           initialDate={toDate(anchorDate)}
           now={NOW}
           locale={frLocale}

@@ -7,10 +7,12 @@ import {
 } from '../../api/buildings';
 import { listBookings } from '../../api/bookings';
 import { useAsync } from '../../hooks/useAsync';
+import { useIsMobile } from '../../hooks/useMediaQuery';
 import { useAuth } from '../../hooks/useAuth';
 import { NOW, fmtDate, isSameDay, toDate } from '../../utils/dates';
 import { Card } from '../../components/ui/Card';
-import { SegmentedControl } from '../../components/ui/Tabs';
+import { Select } from '../../components/ui/Form';
+import { BottomSheet } from '../../components/ui/Modal';
 import { AsyncBoundary, Skeleton } from '../../components/ui/States';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { FloorPlan, FloorPlanLegend } from '../../components/rooms/FloorPlan';
@@ -25,6 +27,7 @@ export default function FloorPlanPage() {
   // maquettes. L'API le refusait — « L'étage doit être un identifiant valide » —
   // et l'écran s'ouvrait sur une erreur avant même que la liste soit chargée.
   // Le premier étage réel est choisi dès que la liste arrive.
+  const isMobile = useIsMobile();
   const [planId, setPlanId] = useState(null);
   const [selected, setSelected] = useState(null);
 
@@ -72,14 +75,20 @@ export default function FloorPlanPage() {
         title="Plan de localisation"
         subtitle="Repérez les salles libres et l’itinéraire depuis l’entrée."
         actions={
-          <SegmentedControl
+          // Une liste déroulante et non un contrôle segmenté : le parc compte
+          // treize étages, et treize onglets « Eiffel 3 — 1er étage » alignés
+          // débordaient de l'écran à toutes les largeurs sous 1280 px. Un
+          // contrôle segmenté vaut pour deux à cinq choix ; au-delà, c'est une
+          // liste.
+          <Select
             label="Étage affiché"
-            value={planId}
-            onChange={(value) => {
-              setPlanId(value);
+            value={planId ?? ''}
+            onChange={(event) => {
+              setPlanId(event.target.value);
               setSelected(null);
             }}
             options={(plans.data ?? []).map((item) => ({ value: item.id, label: item.label }))}
+            className="min-w-[14rem]"
           />
         }
       />
@@ -96,6 +105,23 @@ export default function FloorPlanPage() {
               {/* Le plan déposé pour la salle choisie l'emporte sur le schéma :
                   c'est l'image que montre déjà l'administration, et la seule
                   qui situe vraiment la salle dans le bâtiment. */}
+              {/* Sous 768 px, la liste des salles passe avant le plan : on
+                  choisit une salle pour obtenir son itinéraire, et chercher
+                  d'abord un rectangle au doigt dans un schéma de 100 unités
+                  n'est pas un geste de téléphone. */}
+              <div className="order-first md:order-none">
+                <p className="mb-2 text-xs text-content-muted md:hidden">
+                  {selected
+                    ? `Itinéraire vers ${selected.name} ci-dessous.`
+                    : 'Choisissez une salle pour afficher son plan et son itinéraire.'}
+                </p>
+                <FloorRoomPicker
+                  rooms={plan.data.rooms}
+                  selectedId={selected?.id}
+                  onSelect={setSelected}
+                />
+              </div>
+
               <RoomLocationPlan room={selected} onBack={() => setSelected(null)}>
                 {planDocument.data?.type === 'pdf' ? (
                   <PdfPlanView
@@ -116,12 +142,6 @@ export default function FloorPlanPage() {
                   />
                 )}
               </RoomLocationPlan>
-
-              <FloorRoomPicker
-                rooms={plan.data.rooms}
-                selectedId={selected?.id}
-                onSelect={setSelected}
-              />
 
               {plan.data.unplaced > 0 && (
                 <p className="rounded-lg border border-warning/40 bg-warning-soft px-3 py-2 text-xs text-content">
@@ -147,11 +167,28 @@ export default function FloorPlanPage() {
           )}
         </AsyncBoundary>
 
-        <RoomPlanAside
-          room={selected}
-          directions={directions.data?.steps ?? []}
-          onClose={() => setSelected(null)}
-        />
+        {/* Au bureau, le détail occupe la colonne de droite. Au téléphone, il
+            s'ouvre en feuille : posé sous le plan, il tombait après la liste,
+            la légende et l'encart des salles non posées — hors de l'écran. */}
+        {isMobile ? (
+          <BottomSheet
+            open={Boolean(selected)}
+            onClose={() => setSelected(null)}
+            title={selected?.name ?? 'Salle'}
+          >
+            <RoomPlanAside
+              room={selected}
+              directions={directions.data?.steps ?? []}
+              onClose={() => setSelected(null)}
+            />
+          </BottomSheet>
+        ) : (
+          <RoomPlanAside
+            room={selected}
+            directions={directions.data?.steps ?? []}
+            onClose={() => setSelected(null)}
+          />
+        )}
       </div>
     </div>
   );

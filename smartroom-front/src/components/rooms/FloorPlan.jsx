@@ -32,7 +32,9 @@ export function FloorPlan({
       <svg
         viewBox="0 0 100 100"
         preserveAspectRatio="xMidYMid meet"
-        className="h-[26rem] w-full"
+        // 18 rem au téléphone, 26 au-delà : 416 px de haut sur un écran de
+        // 667 px ne laissaient plus rien voir du reste de la page.
+        className="h-[18rem] w-full md:h-[26rem]"
         role="group"
         aria-label={
           hasImage

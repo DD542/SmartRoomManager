@@ -31,7 +31,18 @@ export function HoursBarChart({ data = [] }) {
           {/* Marges positives uniquement : une marge négative fait calculer à
               Recharts une largeur de bande nulle, et plus aucune barre ne sort. */}
           <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-            <XAxis dataKey="label" tickLine={false} axisLine={false} tick={AXIS} />
+            {/* `minTickGap` : à 360 px, douze libellés de mois se
+                chevauchaient jusqu'à devenir un trait gris. Recharts en
+                laisse alors tomber, ce qui reste lisible — un axe illisible
+                ne dit rien de plus qu'un axe clairsemé. */}
+            <XAxis
+              dataKey="label"
+              tickLine={false}
+              axisLine={false}
+              tick={AXIS}
+              minTickGap={16}
+              interval="preserveStartEnd"
+            />
             <YAxis tickLine={false} axisLine={false} tick={AXIS} width={32} allowDecimals={false} />
             <Tooltip
               // Bande de survol arrondie et discrète : sans arrondi ni retrait,
