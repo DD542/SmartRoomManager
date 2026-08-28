@@ -94,7 +94,10 @@ export default function CheckInPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-sm">
+    // Étroit au téléphone — l'écran se tient à une main devant la porte —, plus
+    // large ensuite : à 1280 px, une colonne de 24 rem au milieu d'un vide
+    // n'était pas « mobile-first », c'était mobile-seulement.
+    <div className="mx-auto w-full max-w-sm md:max-w-3xl">
       <AsyncBoundary
         status={booking.status}
         error={booking.error}
@@ -118,27 +121,33 @@ export default function CheckInPage() {
               />
             </header>
 
-            <div className="mt-4">
-              <CountdownRing remainingMin={checkWindow.data?.remainingMin ?? 10} />
-              <p className="mt-2 text-center text-xs text-content-muted">
-                {checkWindow.data?.open
-                  ? 'Fenêtre de validation ouverte'
-                  : `Validation ouverte ${checkWindow.data?.windowMin ?? 10} minutes avant le début`}
-              </p>
-            </div>
+            {/* Une colonne au téléphone, deux à partir de 768 px : le décompte
+                et le rappel du créneau à gauche, la saisie du code à droite. La
+                même page, jamais deux versions. */}
+            <div className="mt-4 md:grid md:grid-cols-2 md:items-start md:gap-6">
+              <section>
+                <CountdownRing remainingMin={checkWindow.data?.remainingMin ?? 10} />
+                <p className="mt-2 text-center text-xs text-content-muted">
+                  {checkWindow.data?.open
+                    ? 'Fenêtre de validation ouverte'
+                    : `Validation ouverte ${checkWindow.data?.windowMin ?? 10} minutes avant le début`}
+                </p>
 
-            <dl className="mt-5 divide-y divide-line rounded-xl border border-line bg-surface-raised">
-              <div className="flex items-center justify-between gap-3 px-3 py-2.5">
-                <dt className="text-xs text-content-muted">Salle</dt>
-                <dd className="text-sm text-content">{booking.data.room?.name}</dd>
-              </div>
-              <div className="flex items-center justify-between gap-3 px-3 py-2.5">
-                <dt className="text-xs text-content-muted">Créneau</dt>
-                <dd className="font-mono text-sm text-content">
-                  {fmtTime(booking.data.start)} - {fmtTime(booking.data.end)}
-                </dd>
-              </div>
-            </dl>
+                <dl className="mt-5 divide-y divide-line rounded-xl border border-line bg-surface-raised">
+                  <div className="flex items-center justify-between gap-3 px-3 py-2.5">
+                    <dt className="text-xs text-content-muted">Salle</dt>
+                    <dd className="text-sm text-content">{booking.data.room?.name}</dd>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 px-3 py-2.5">
+                    <dt className="text-xs text-content-muted">Créneau</dt>
+                    <dd className="font-mono text-sm text-content">
+                      {fmtTime(booking.data.start)} - {fmtTime(booking.data.end)}
+                    </dd>
+                  </div>
+                </dl>
+              </section>
+
+              <section>
 
             {booking.data.checkedIn ? (
               <Callout tone="success" icon={CheckCircle2} className="mt-5">
@@ -210,6 +219,8 @@ export default function CheckInPage() {
                 </button>
               </>
             )}
+              </section>
+            </div>
           </Card>
         )}
       </AsyncBoundary>

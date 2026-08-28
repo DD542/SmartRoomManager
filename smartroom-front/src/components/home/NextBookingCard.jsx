@@ -1,4 +1,4 @@
-import { CalendarDays, Clock, MapPin, Pencil, Route, XCircle } from 'lucide-react';
+import { CalendarDays, CircleCheck, Clock, MapPin, Pencil, Route, XCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { fmtCountdown, fmtDateLong, fmtTime, isSameDay, NOW, toDate } from '../../utils/dates';
 import { Badge } from '../ui/Badge';
@@ -38,6 +38,16 @@ export function NextBookingCard({ booking, isLoading }) {
 
   const start = toDate(booking.start);
   const dayLabel = isSameDay(start, NOW) ? "Aujourd'hui" : fmtDateLong(start);
+
+  // La validation de présence s'ouvre autour du début de la réunion. L'écran
+  // U-19 dit la fenêtre exacte, réglée par salle ; la carte n'a qu'à savoir
+  // quand la proposer — trente minutes avant, et tant que le créneau dure.
+  const fin = toDate(booking.end);
+  const validable =
+    !booking.checkedIn &&
+    booking.status === 'confirmee' &&
+    Date.now() > start.getTime() - 30 * 60_000 &&
+    Date.now() < fin.getTime();
 
   return (
     <Card className="flex h-full flex-col">
@@ -103,6 +113,14 @@ export function NextBookingCard({ booking, isLoading }) {
         </div>
 
         <div className="flex shrink-0 flex-col gap-2">
+          {/* Premier point d'entrée de U-19 : c'est ici qu'on regarde en
+              arrivant devant la salle. L'écran n'était atteignable que depuis
+              le détail de la réservation, deux gestes plus loin. */}
+          {validable && (
+            <Button size="sm" icon={CircleCheck} to={`/app/check-in/${booking.id}`}>
+              Valider ma présence
+            </Button>
+          )}
           <Button variant="secondary" size="sm" icon={Route} to="/app/plan">
             Voir l’itinéraire
           </Button>

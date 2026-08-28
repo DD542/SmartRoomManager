@@ -381,6 +381,12 @@ class Notification(TimestampMixin, Base):
         default=NotificationChannel.IN_APP,
     )
     body: Mapped[str | None] = mapped_column(Text, default=None)
+    #: Gabarit qui l'a produite — `reservation_rappel`, `reservation_annulation`.
+    #: L'écran en tire l'action à proposer : un rappel mène à la validation de
+    #: présence, une confirmation à la réservation. Sans lui, une notification
+    #: n'est qu'un texte : le champ `action` que la liste sait afficher n'était
+    #: alimenté par rien, et aucune notification n'a jamais été actionnable.
+    template_code: Mapped[str | None] = mapped_column(String(60), default=None)
     booking_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey(
             "bookings.id", ondelete="SET NULL", onupdate="CASCADE", name="fk_notifications_booking"

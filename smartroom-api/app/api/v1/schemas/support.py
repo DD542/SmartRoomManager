@@ -164,6 +164,8 @@ class NotificationOut(ReadModel):
     title: str
     body: str | None
     channel: NotificationChannel
+    #: Gabarit d'origine, dont l'écran tire l'action proposée.
+    template_code: str | None = None
     booking_id: uuid.UUID | None
     ticket_id: uuid.UUID | None
     read_at: datetime | None

@@ -969,6 +969,7 @@ def creer_support(
     salles: dict[str, Room],
     utilisateurs: list[User],
     administrateurs: dict[str, AdminAccount],
+    reservations: list[Booking] | None = None,
 ) -> None:
     categories = {}
     for code, libelle, icone, ordre in [
@@ -1385,16 +1386,34 @@ def creer_support(
             )
         )
 
+    # Les notifications portent leur gabarit d'origine et la réservation
+    # concernée : sans l'un ni l'autre, l'écran n'a rien à proposer et la liste
+    # n'affiche que du texte. Le rappel mène à la validation de présence, la
+    # confirmation à la réservation.
+    a_venir = [
+        item
+        for item in (reservations or [])
+        if item.owner_id == utilisateurs[0].id
+        and item.status is BookingStatus.CONFIRMEE
+        and item.time_range.lower > datetime.now(PARIS)
+    ][:3]
+
+    modeles = [
+        ("reservation_rappel", "Rappel : réunion dans 30 minutes"),
+        ("reservation_confirmation", "Réservation confirmée"),
+        ("reservation_annulation", "Créneau libéré"),
+    ]
     for index in range(6):
+        code, titre = modeles[index % len(modeles)]
+        cible = a_venir[index % len(a_venir)] if a_venir else None
         session.add(
             Notification(
                 user_id=utilisateurs[0].id,
                 channel=NotificationChannel.IN_APP,
-                title=ALEA.choice(
-                    ["Réservation confirmée", "Rappel : réunion dans 30 minutes",
-                     "Votre ticket a reçu une réponse", "Créneau libéré"]
-                ),
+                template_code=code,
+                title=titre,
                 body="Consultez le détail depuis votre espace.",
+                booking_id=cible.id if cible is not None else None,
                 sent_at=datetime.now(PARIS) - timedelta(hours=index * 7),
                 read_at=None if index < 3 else datetime.now(PARIS),
             )
@@ -1491,7 +1510,7 @@ def main() -> int:
         creer_regles(session, batiments, salles, administrateurs)
         reservations = creer_reservations(session, salles, utilisateurs)
         creer_conflits(session, salles, utilisateurs, administrateurs)
-        creer_support(session, salles, utilisateurs, administrateurs)
+        creer_support(session, salles, utilisateurs, administrateurs, reservations)
         creer_audit(session, administrateurs)
 
         # La vue matérialisée est vide tant qu'elle n'a pas été rafraîchie.

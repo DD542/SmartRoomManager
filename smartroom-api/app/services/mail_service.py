@@ -156,6 +156,9 @@ def notify(
         title=titre,
         body=corps,
         channel=NotificationChannel.IN_APP,
+        # Le gabarit d'origine : c'est lui qui dit ce que la notification
+        # propose de faire, et l'écran n'a pas à le deviner d'après son titre.
+        template_code=code,
         booking_id=booking_id,
         ticket_id=ticket_id,
     )

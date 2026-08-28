@@ -570,11 +570,33 @@ export const faqArticle = (data) => ({
   publishedAt: toDate(data.published_at),
 });
 
+/**
+ * Action proposée par une notification.
+ *
+ * L'écran des notifications sait afficher un lien d'action depuis toujours ;
+ * rien ne l'alimentait — `data.action` n'existait dans aucune réponse. Elle se
+ * déduit du gabarit d'origine et de ce que la notification référence : un
+ * rappel de réunion mène à la validation de présence, tout le reste à l'objet
+ * concerné.
+ */
+const actionNotification = (data) => {
+  if (data.booking_id && data.template_code === 'reservation_rappel') {
+    return { to: `/app/check-in/${data.booking_id}`, label: 'Valider ma présence' };
+  }
+  if (data.booking_id) {
+    return { to: `/app/reservations/${data.booking_id}`, label: 'Ouvrir la réservation' };
+  }
+  if (data.ticket_id) return { to: '/app/aide', label: 'Ouvrir la demande' };
+  return null;
+};
+
 export const notification = (data) => ({
   id: data.id,
   title: data.title,
   body: data.body,
   channel: data.channel,
+  templateCode: data.template_code ?? null,
+  action: actionNotification(data),
   bookingId: data.booking_id,
   ticketId: data.ticket_id,
   read: Boolean(data.read_at),
