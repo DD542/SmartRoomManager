@@ -269,6 +269,34 @@ describe('parc', () => {
     expect(sans.plan.entrance).toBe(false);
   });
 
+  it('porte la photo de la salle jusqu’à la liste des réservations', () => {
+    // L'écran affiche une vignette par ligne. Tant que l'adaptateur ne portait
+    // pas cette adresse, il rendait un `<img>` sans `src` : un carré vide, que
+    // ni la console ni le réseau ne signalaient.
+    const avec = adapt.booking({
+      id: 'bk-1',
+      room_id: 'r-1',
+      title: 'Point',
+      room_name: 'Salle Curie',
+      room_photo_url: '/media/photos/curie.jpg',
+      slot: { starts_at: '2026-09-03T12:00:00Z', ends_at: '2026-09-03T13:00:00Z' },
+      status: 'confirmee',
+    });
+    const sans = adapt.booking({
+      id: 'bk-2',
+      room_id: 'r-2',
+      title: 'Point',
+      room_name: 'Salle Hopper',
+      slot: { starts_at: '2026-09-03T12:00:00Z', ends_at: '2026-09-03T13:00:00Z' },
+      status: 'confirmee',
+    });
+
+    expect(avec.room.photos).toEqual(['/media/photos/curie.jpg']);
+    // Vide et non absente : la vignette doit pouvoir décider d'afficher un
+    // repère de remplacement plutôt qu'une image cassée.
+    expect(sans.room.photos).toEqual([]);
+  });
+
   it('transcrit un étage et un équipement', () => {
     expect(adapt.floor({ id: 'f-1', building_id: 'b-1', code: 'R2', label: '2e', level: 2, room_count: 4 }).label).toBe('2e');
     expect(adapt.equipment({ id: 'eq-1', code: 'video', label: 'Vidéo', category: 'audiovisuel', icon: 'projector' }).icon).toBe('projector');

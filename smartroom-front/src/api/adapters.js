@@ -301,6 +301,10 @@ export const booking = (data) => ({
         name: data.room_name,
         floor: data.floor_label,
         building: data.building_name ? { name: data.building_name } : null,
+        // Liste de chaînes, comme partout ailleurs : les écrans lisent
+        // `photos[0]`. Vide plutôt qu'absente — la vignette doit pouvoir
+        // décider d'afficher un repère de remplacement.
+        photos: data.room_photo_url ? [data.room_photo_url] : [],
       }
     : null,
   building: data.building_name ? { name: data.building_name } : null,

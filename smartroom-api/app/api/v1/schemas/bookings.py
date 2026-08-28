@@ -68,6 +68,12 @@ class BookingOut(ReadModel):
     room_name: str | None = None
     building_name: str | None = None
     floor_label: str | None = None
+    #: Première photo de la salle. La liste des réservations en affiche une
+    #: vignette ; sans elle, l'écran rendait une image sans adresse — un carré
+    #: vide, que rien ne signalait.
+    #:
+    #: Gratuite : `Room.photos` est déjà chargée en `selectin` avec la salle.
+    room_photo_url: str | None = None
     owner_name: str | None = None
     #: Forme masquée « A-**** ». Le code en clair ne quitte le serveur qu'une
     #: fois, à la création, et n'est stocké que haché.
@@ -93,6 +99,9 @@ class BookingOut(ReadModel):
             ),
             floor_label=(
                 salle.floor.label if salle is not None and salle.floor is not None else None
+            ),
+            room_photo_url=(
+                salle.photos[0].file_url if salle is not None and salle.photos else None
             ),
             owner_name=(
                 f"{proprietaire.first_name} {proprietaire.last_name}"

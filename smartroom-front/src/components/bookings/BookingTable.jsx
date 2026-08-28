@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, DoorClosed } from 'lucide-react';
 import { fmtDayMonth, fmtTime } from '../../utils/dates';
 import { BOOKING_STATUS_LABEL, fmtCapacity } from '../../utils/format';
 import { Badge } from '../ui/Badge';
@@ -21,13 +21,47 @@ export function BookingStatusBadge({ status }) {
   );
 }
 
+/**
+ * Vignette de la salle.
+ *
+ * Un `<img>` sans adresse rend un cadre vide que rien ne signale : c'est ce
+ * qu'affichait la liste tant que la réservation ne portait pas la photo de sa
+ * salle. Sans photo — salle sans visuel, image effacée — le repère prend sa
+ * place, et le nom de la salle reste lisible à côté.
+ */
+function Vignette({ salle, taille = 'sm' }) {
+  const classe =
+    taille === 'sm' ? 'h-8 w-10 rounded-md' : 'h-12 w-14 rounded-lg';
+  const photo = salle?.photos?.[0];
+
+  if (!photo) {
+    return (
+      <span
+        aria-hidden="true"
+        className={`flex shrink-0 items-center justify-center border border-line bg-surface-raised ${classe}`}
+      >
+        <DoorClosed size={taille === 'sm' ? 13 : 16} className="text-content-faint" />
+      </span>
+    );
+  }
+
+  return (
+    <img
+      src={photo}
+      alt=""
+      loading="lazy"
+      className={`shrink-0 border border-line object-cover ${classe}`}
+    />
+  );
+}
+
 const columns = [
   {
     key: 'room',
     label: 'Salle',
     render: (booking) => (
       <span className="flex items-center gap-2.5">
-        <img src={booking.room?.photos?.[0]} alt="" className="h-8 w-10 rounded-md object-cover" />
+        <Vignette salle={booking.room} />
         <Link
           to={`/app/reservations/${booking.id}`}
           className="text-sm text-content transition hover:text-accent"
@@ -81,7 +115,7 @@ export function BookingTable({ bookings = [], isMobile = false }) {
             to={`/app/reservations/${booking.id}`}
             className="flex items-center gap-3 rounded-xl border border-line bg-surface-raised p-3"
           >
-            <img src={booking.room?.photos?.[0]} alt="" className="h-12 w-14 rounded-lg object-cover" />
+            <Vignette salle={booking.room} taille="lg" />
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm text-content">{booking.room?.name}</span>
               <span className="mt-0.5 block font-mono text-xs text-content-muted">

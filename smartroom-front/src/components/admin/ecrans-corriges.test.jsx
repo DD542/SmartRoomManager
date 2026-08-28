@@ -11,6 +11,7 @@ import { describe, expect, it, vi } from 'vitest';
 // arrêtée, et ces interactions — un clic, une saisie — ne demandent pas la
 // simulation fine que la seconde apporterait.
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 // Assertions DOM natives plutôt que `jest-dom` : la liste de dépendances du
 // projet est arrêtée, et `toBeTruthy` sur un nœud dit la même chose que
 // `toBeInTheDocument`.
@@ -19,6 +20,7 @@ import { YearOverview } from './rules/YearOverview';
 import { UserDetail } from './people/UserDetail';
 import { Pill } from '../ui/Badge';
 import { KpiTile } from '../stats/KpiTile';
+import { BookingTable } from '../bookings/BookingTable';
 import { SANS_DATE, fmtDate, fmtDateLong, fmtRelative, fmtTime } from '../../utils/dates';
 
 describe('Liste des salles de repli', () => {
@@ -210,5 +212,42 @@ describe('Tuile de chiffre clé', () => {
     const libelle = screen.getByText('Occupation moyenne des salles exploitables');
     expect(libelle.className.split(' ')).not.toContain('truncate');
     expect(libelle.className).not.toMatch(/line-clamp-/);
+  });
+});
+
+describe('Liste des réservations', () => {
+  const RESERVATION = {
+    id: 'bk-1',
+    title: 'Point projet',
+    start: new Date('2026-09-03T12:00:00Z'),
+    end: new Date('2026-09-03T13:00:00Z'),
+    status: 'confirmee',
+    attendees: 4,
+    room: { id: 'r-1', name: 'Salle Curie', photos: [] },
+  };
+
+  it('affiche un repère quand la salle n’a pas de photo', () => {
+    // Un `<img>` sans adresse rendait un cadre vide, sans erreur nulle part.
+    const { container } = render(
+      <MemoryRouter>
+        <BookingTable bookings={[RESERVATION]} isMobile={false} />
+      </MemoryRouter>,
+    );
+
+    expect(container.querySelector('img')).toBeNull();
+    expect(screen.getByText('Salle Curie')).toBeTruthy();
+  });
+
+  it('affiche la photo de la salle quand elle existe', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <BookingTable
+          bookings={[{ ...RESERVATION, room: { ...RESERVATION.room, photos: ['/media/photos/x.jpg'] } }]}
+          isMobile={false}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(container.querySelector('img').getAttribute('src')).toBe('/media/photos/x.jpg');
   });
 });
