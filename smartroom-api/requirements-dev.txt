@@ -10,8 +10,8 @@ pytest-asyncio==1.2.0
 pytest-cov==7.0.0
 pytest-xdist==3.8.0
 
-# Client HTTP de `TestClient`, et client direct pour les appels concurrents.
-httpx==0.28.1
+# `httpx` est desormais une dependance de production : il porte le client
+# Ollama. Il reste le client de `TestClient` et des appels concurrents.
 
 # Conteneur PostgreSQL éphémère. Le pilote `psycopg` est celui de production :
 # tester sur psycopg2 reviendrait à éprouver une autre pile.

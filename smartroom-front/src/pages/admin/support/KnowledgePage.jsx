@@ -19,6 +19,7 @@ import { Card } from '../../../components/ui/Card';
 import { AsyncBoundary, EmptyState, SkeletonCard } from '../../../components/ui/States';
 import { ArticleEditor } from '../../../components/admin/support/ArticleEditor';
 import { ArticlesTable } from '../../../components/admin/support/ArticlesTable';
+import { AssistantDashboard } from '../../../components/admin/support/AssistantDashboard';
 import { ChatbotIntents } from '../../../components/admin/support/ChatbotIntents';
 import { plural } from '../../../utils/format';
 
@@ -138,6 +139,12 @@ export default function KnowledgePage() {
 
         <ChatbotIntents intents={intentions.data ?? []} />
       </div>
+
+      {/* L'observabilité de l'assistant vit ici plutôt que sur un écran à part :
+          les intentions du repli, les articles qu'il cite et ses chiffres se
+          règlent ensemble, et les séparer obligerait à naviguer entre deux
+          pages pour comprendre une même réponse. */}
+      <AssistantDashboard />
 
       <ArticleEditor
         open={Boolean(edition)}

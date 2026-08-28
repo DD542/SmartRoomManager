@@ -21,3 +21,25 @@ slowapi==0.1.10
 jinja2==3.1.6
 aiosmtplib==5.1.2
 apscheduler==3.11.3
+
+# Inference locale et distante. `httpx` quittait requirements-dev : il n'etait
+# qu'un client de test, il est desormais le client d'Ollama en production.
+httpx==0.28.1
+# Comptage des jetons du budget de contexte. Le fichier d'encodage est
+# telecharge au premier appel ; `app/ai/agent/contexte.py` retombe sur une
+# estimation par caracteres quand le reseau sortant est fermee.
+tiktoken==0.14.0
+
+# Base de connaissances vectorisee. `pgvector` fournit le type de colonne et
+# les operateurs de distance ; l'extension PostgreSQL correspondante est posee
+# par la migration 0007 et exige l'image `pgvector/pgvector:pg16`.
+pgvector==0.4.1
+# Normalisation des accents dans la resolution des noms de salles.
+Unidecode==1.4.0
+# Rapprochement approximatif des mots-cles par le moteur de repli : « anuler »,
+# « annule », « je veux annuler » doivent tomber sur la meme intention.
+rapidfuzz==3.14.3
+# Flux d'evenements de l'assistant. `EventSourceResponse` gere le format SSE,
+# les commentaires de maintien en vie et la deconnexion du client — trois
+# details qu'une implementation maison rate a coup sur.
+sse-starlette==3.0.2

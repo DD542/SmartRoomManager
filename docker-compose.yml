@@ -17,7 +17,11 @@ name: smartroom
 
 services:
   db:
-    image: postgres:16-alpine
+    # `pgvector/pgvector:pg16` et non `postgres:16-alpine` : la migration 0007
+    # crée l'extension `vector`, qui n'existe pas dans l'image officielle. Même
+    # version majeure, mêmes plans d'exécution, mêmes contraintes — seule
+    # l'extension s'ajoute.
+    image: pgvector/pgvector:pg16
     container_name: smartroom-db
     restart: unless-stopped
     environment:
@@ -84,6 +88,17 @@ services:
       # limiteur garde son propre test côté back, qui le réactive et vérifie
       # le refus ; `docker-compose.prod.yml` conserve la valeur de production.
       RATE_LIMIT_LOGIN: ${RATE_LIMIT_LOGIN:-100/minute}
+      # Assistant conversationnel. Depuis un conteneur, Ollama n'est pas sur
+      # `127.0.0.1` : `host.docker.internal` désigne la machine hôte, où il
+      # tourne. Le service `ollama` ci-dessous permet de le faire tourner dans
+      # la pile ; il n'est démarré que par le profil `ia`.
+      IA_OLLAMA_URL: ${IA_OLLAMA_URL:-http://host.docker.internal:11434}
+      IA_MODELE_RAISONNEMENT: ${IA_MODELE_RAISONNEMENT:-qwen2.5:7b}
+      IA_MODELE_RAPIDE: ${IA_MODELE_RAPIDE:-qwen2.5:3b}
+      IA_MODELE_VECTEURS: ${IA_MODELE_VECTEURS:-nomic-embed-text}
+    extra_hosts:
+      # Sous Linux, `host.docker.internal` n'existe pas sans cette ligne.
+      - "host.docker.internal:host-gateway"
     ports:
       - "8000:8000"
     volumes:
@@ -122,6 +137,39 @@ services:
       - node_modules_dev:/app/node_modules
     command: sh -c "npm ci && npm run dev -- --host 0.0.0.0"
 
+  # Inférence locale, optionnelle.
+  #
+  #   docker compose --profile ia up -d ollama
+  #   docker compose exec ollama ollama pull qwen2.5:7b
+  #   docker compose exec ollama ollama pull qwen2.5:3b
+  #   docker compose exec ollama ollama pull nomic-embed-text
+  #
+  # Sans profil, ce service ne démarre pas : la plupart du temps Ollama tourne
+  # déjà sur la machine hôte, et en démarrer un second dupliquerait plusieurs
+  # gigaoctets de poids en mémoire.
+  #
+  # Le conteneur n'a pas accès au GPU sans configuration supplémentaire —
+  # `deploy.resources.reservations.devices` et le runtime NVIDIA. Sur processeur,
+  # comptez plusieurs secondes par réponse : le repli déterministe reste alors
+  # le chemin nominal, et c'est précisément ce qu'il sert à couvrir.
+  ollama:
+    image: ollama/ollama:latest
+    container_name: smartroom-ollama
+    profiles: ["ia"]
+    restart: unless-stopped
+    environment:
+      OLLAMA_KEEP_ALIVE: "30m"
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list > /dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
   # Boîte aux lettres de développement : les courriels partent ici et ne
   # quittent jamais la machine. `MAIL_ENABLED=false` les écrit dans le journal ;
   # passer à `true` avec ce service permet de voir le rendu réel.
@@ -140,3 +188,7 @@ volumes:
     name: smartroom_media_dev
   node_modules_dev:
     name: smartroom_node_modules_dev
+  # Les poids pèsent plusieurs gigaoctets : un volume nommé évite de les
+  # retélécharger à chaque recréation du conteneur.
+  ollama_models:
+    name: smartroom_ollama_models

@@ -27,6 +27,7 @@ import argparse
 import random
 import sys
 import uuid
+from collections import defaultdict
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from zoneinfo import ZoneInfo
@@ -634,6 +635,49 @@ def _popularite(salle: Room) -> float:
     return min(base, 0.34)
 
 
+def _accorder_quota(session: Session, reservations: list[Booking], maintenant: datetime) -> None:
+    """Aligne le quota de l'établissement sur ce que le jeu vient de créer.
+
+    Le défaut de la colonne est de dix réservations actives par personne. Or ce
+    jeu répartit six cents créneaux sur cinq comptes : chacun en porte une
+    soixantaine à venir. Aucun compte de démonstration ne pouvait donc réserver
+    quoi que ce soit — ni par le tunnel, ni par l'assistant — et le refus était
+    exact, c'est la donnée qui contredisait la règle.
+
+    Deux façons de recoller : diluer les réservations, au prix de tableaux de
+    bord vides, ou accorder la règle au volume. La seconde est retenue, et le
+    calcul est fait ici plutôt qu'écrit en dur : si le volume du jeu change, la
+    règle suit sans que personne ait à y penser.
+
+    La marge de vingt laisse la place aux réservations créées pendant une
+    démonstration. Le plafond dur de cent vient de la contrainte
+    `ck_booking_rules_active_bookings` : si le jeu devenait assez dense pour le
+    heurter, la règle ne pourrait plus suivre le volume, et l'écart est alors
+    signalé plutôt que rogné en silence.
+    """
+    a_venir: dict[uuid.UUID, int] = defaultdict(int)
+    for reservation in reservations:
+        if reservation.status is not BookingStatus.ANNULEE and reservation.time_range.upper > maintenant:
+            a_venir[reservation.owner_id] += 1
+
+    charge_max = max(a_venir.values(), default=0)
+    voulu = max(10, charge_max + 20)
+    plafond = min(100, voulu)
+    if voulu > 100:
+        print(
+            f"Attention : un compte porte {charge_max} réservations à venir, et le "
+            "quota ne peut pas dépasser 100. Diluez le jeu sur davantage de comptes.",
+            file=sys.stderr,
+        )
+
+    regle = session.scalars(
+        select(BookingRule).where(BookingRule.scope == RuleScope.GLOBAL)
+    ).one_or_none()
+    if regle is not None:
+        regle.max_active_bookings = plafond
+    session.flush()
+
+
 def creer_reservations(
     session: Session, salles: dict[str, Room], utilisateurs: list[User]
 ) -> list[Booking]:
@@ -694,6 +738,8 @@ def creer_reservations(
         jour += timedelta(days=1)
 
     session.flush()
+
+    _accorder_quota(session, reservations, maintenant)
 
     # Quelques annulations motivées, pour que les statistiques d'annulation ne
     # soient pas vides.
@@ -1085,6 +1131,24 @@ def creer_support(
          "Vous pouvez annuler depuis le détail de la réservation, tant que le créneau n'a pas commencé.",
          ["Voir mes réservations", "Modifier plutôt"], False,
          ["annuler", "annulation", "supprimer"]),
+        # Ajoutée pour le moteur de repli : « quelles sont mes réservations »
+        # est l'un des trois parcours principaux, et aucune intention ne le
+        # couvrait — le robot répondait alors « je n'ai pas compris » à la
+        # question la plus courante qu'on lui pose.
+        ("mes_reservations", "Mes réservations",
+         "Voici vos réservations à venir :",
+         ["Annuler l'une d'elles", "Trouver une autre salle"], False,
+         # « mes réservations » en un seul mot-clé, et non « reservation » seul :
+         # ce dernier apparaît aussi dans « je veux annuler ma réservation », et
+         # captait alors une demande d'annulation. Mesuré : 52 contre 92 pour
+         # l'intention d'annulation, qui l'emporte comme il se doit.
+         ["mes reservations", "planning", "agenda", "reunions"]),
+        # Même raison : sans elle, une question sur les règles tombait sur la
+        # base de connaissances, qui répond moins précisément que le service.
+        ("regles", "Règles de réservation",
+         "Voici les règles applicables :",
+         ["Trouver une salle", "Parler à un humain"], False,
+         ["regle", "regles", "duree", "quota", "horaires", "preavis"]),
     ]
     for code, libelle, reponse, suggestions, escalade, mots in intentions:
         intention = ChatbotIntent(
@@ -1258,6 +1322,34 @@ def creer_audit(session: Session, administrateurs: dict[str, AdminAccount]) -> N
     session.commit()
 
 
+def _indexer_base_de_connaissances() -> str:
+    """Vectorise les articles fraîchement créés.
+
+    Sans cette passe, une installation neuve aurait une base de connaissances
+    lisible par le centre d'aide mais invisible pour l'assistant : la recherche
+    hybride n'aurait aucun fragment à interroger, et le robot répondrait « je
+    n'ai pas trouvé » à des questions dont la réponse est en base.
+
+    Ollama absent, les fragments sont tout de même écrits, sans vecteur : la
+    recherche lexicale les trouve, et `rattraper()` les vectorisera plus tard.
+    Un jeu de démonstration ne doit pas dépendre d'un modèle pour se poser.
+    """
+    import asyncio
+
+    from app.ai.rag import reindexer_tout
+
+    with SessionLocal() as session:
+        rapport = asyncio.run(reindexer_tout(session))
+        session.commit()
+
+    if rapport.sans_vecteurs:
+        return (
+            f"{rapport.fragments_ecrits} fragments indexés sans vecteur "
+            "(modèle injoignable) : recherche lexicale seule."
+        )
+    return f"{rapport.fragments_vectorises} fragments vectorisés."
+
+
 def main() -> int:
     analyseur = argparse.ArgumentParser(description="Peuple la base de démonstration.")
     analyseur.add_argument(
@@ -1287,11 +1379,14 @@ def main() -> int:
     with engine.begin() as connexion:
         connexion.exec_driver_sql("SELECT refresh_room_occupancy(false)")
 
+    fragments = _indexer_base_de_connaissances()
+
     print(
         f"Jeu de démonstration créé : {len(BATIMENTS)} bâtiments, {len(SALLES)} salles, "
         f"{len(utilisateurs)} utilisateurs, {len(reservations)} réservations "
         f"du {DEBUT_FENETRE} au {FIN_FENETRE}.\n"
         f"Fermeture globale le {JOUR_FERME}. Deux conflits en attente : #CONF-8492 et #CONF-8493.\n"
+        f"Base de connaissances : {fragments}\n"
         f"Mot de passe de tous les comptes : {MOT_DE_PASSE_DEMO}"
     )
     return 0

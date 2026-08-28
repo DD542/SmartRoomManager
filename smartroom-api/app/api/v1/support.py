@@ -35,6 +35,7 @@ from app.core.errors import NotFoundError
 from app.core.pagination import Page
 from app.db.enums import ArticleStatus, TicketStatus
 from app.models import AdminAccount, Ticket
+from app.ai.rag import indexation
 from app.services import support_service as service
 
 router = APIRouter(tags=["support"])
@@ -302,10 +303,11 @@ def admin_articles(
     status_code=status.HTTP_201_CREATED,
     summary="Créer un article",
 )
-def create_article(
+async def create_article(
     payload: FaqArticleIn, session: SessionDep, _admin=Support
 ) -> FaqArticleOut:
     article = service.upsert_article(session, payload)
+    await indexation.indexer_article(session, article)
     session.commit()
     return FaqArticleOut.model_validate(article)
 
@@ -315,13 +317,14 @@ def create_article(
     response_model=FaqArticleOut,
     summary="Modifier un article",
 )
-def update_article(
+async def update_article(
     article_id: uuid.UUID,
     payload: FaqArticlePatchIn,
     session: SessionDep,
     _admin=Support,
 ) -> FaqArticleOut:
     article = service.upsert_article(session, payload, article_id=article_id)
+    await indexation.indexer_article(session, article)
     session.commit()
     return FaqArticleOut.model_validate(article)
 
@@ -332,13 +335,16 @@ def update_article(
     summary="Publier ou dépublier un article",
     description="La première publication horodate `published_at`, définitivement.",
 )
-def set_article_status(
+async def set_article_status(
     article_id: uuid.UUID,
     payload: FaqArticleStatusIn,
     session: SessionDep,
     _admin=Support,
 ) -> FaqArticleOut:
     article = service.set_article_status(session, article_id, status=payload.status)
+    # Dépublier retire les fragments : sans cela, l'assistant continuerait de
+    # citer un article que le centre d'aide n'affiche plus.
+    await indexation.indexer_article(session, article)
     session.commit()
     return FaqArticleOut.model_validate(article)
 
@@ -348,9 +354,49 @@ def set_article_status(
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Supprimer un article",
 )
-def delete_article(article_id: uuid.UUID, session: SessionDep, _admin=Support) -> None:
+async def delete_article(article_id: uuid.UUID, session: SessionDep, _admin=Support) -> None:
+    # La contrainte `ON DELETE CASCADE` emporterait les fragments de toute
+    # façon ; l'appel explicite garde la trace dans le rapport d'indexation et
+    # ne dépend pas d'un détail de schéma.
+    await indexation.desindexer_article(session, article_id)
     service.delete_article(session, article_id)
     session.commit()
+
+
+@router.get(
+    "/admin/faq/index",
+    summary="État de l'index de la base de connaissances",
+    description=(
+        "Nombre de fragments, part vectorisée, modèle employé. Un écart entre "
+        "`fragments` et `vectorises` signale des articles écrits pendant une "
+        "absence du modèle : ils sont trouvables en recherche lexicale, et la "
+        "réindexation les complètera."
+    ),
+)
+def etat_index_faq(session: SessionDep, _admin=Support) -> dict:
+    return indexation.etat_index(session)
+
+
+@router.post(
+    "/admin/faq/reindex",
+    summary="Reconstruire l'index de la base de connaissances",
+    description=(
+        "Commande d'administration, pas de routine : chaque écriture d'article "
+        "met déjà l'index à jour. Sert après un changement de modèle de "
+        "vecteurs, ou pour rattraper des fragments écrits sans vecteur."
+    ),
+)
+async def reindexer_faq(session: SessionDep, _admin=Support) -> dict:
+    rapport = await indexation.reindexer_tout(session)
+    session.commit()
+    return {
+        "articles": rapport.articles,
+        "fragments_ecrits": rapport.fragments_ecrits,
+        "fragments_retires": rapport.fragments_retires,
+        "fragments_vectorises": rapport.fragments_vectorises,
+        "fragments_inchanges": rapport.fragments_inchanges,
+        "sans_vecteurs": rapport.sans_vecteurs,
+    }
 
 
 # --------------------------------------------------------------------------- #

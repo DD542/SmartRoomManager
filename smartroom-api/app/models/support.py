@@ -233,6 +233,14 @@ class FaqArticle(TimestampMixin, Base):
     published_at: Mapped[datetime | None] = mapped_column(default=None)
 
     category: Mapped["FaqCategory"] = relationship(back_populates="articles", lazy="joined")
+    #: Fragments vectorisés (`app/models/rag.py`). Paresseuse : aucun écran
+    #: n'affiche les fragments, seule l'indexation les manipule.
+    fragments: Mapped[list["FaqFragment"]] = relationship(
+        back_populates="article",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="FaqFragment.position",
+    )
     related_links: Mapped[list["FaqArticleLink"]] = relationship(
         back_populates="article",
         foreign_keys="FaqArticleLink.article_id",

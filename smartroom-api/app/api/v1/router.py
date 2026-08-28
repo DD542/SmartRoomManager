@@ -15,6 +15,7 @@ from app.api.v1 import (
     availability,
     bookings,
     buildings,
+    chat,
     equipments,
     notifications,
     recommendations,
@@ -36,6 +37,7 @@ v1_router.include_router(recommendations.router)
 v1_router.include_router(access_requests.router)
 v1_router.include_router(rules.router)
 v1_router.include_router(support.router)
+v1_router.include_router(chat.router)
 v1_router.include_router(notifications.router)
 v1_router.include_router(users.router)
 v1_router.include_router(stats.router)

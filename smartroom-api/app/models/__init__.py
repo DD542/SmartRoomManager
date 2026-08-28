@@ -40,6 +40,8 @@ from app.models.reservations import (
     OpeningHour,
     RecurrenceRule,
 )
+from app.models.chat import ChatConversation, ChatMessage, ChatRole, ChatTour
+from app.models.rag import FaqFragment
 from app.models.support import (
     AuditLog,
     ChatbotIntent,
@@ -93,7 +95,12 @@ __all__ = [
     "Ticket",
     "TicketMessage",
     "TicketResponseTemplate",
+    "ChatConversation",
+    "ChatMessage",
+    "ChatRole",
+    "ChatTour",
     "FaqCategory",
+    "FaqFragment",
     "FaqArticle",
     "FaqArticleLink",
     "ChatbotIntent",
