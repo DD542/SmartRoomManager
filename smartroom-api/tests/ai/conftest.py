@@ -98,6 +98,9 @@ def intentions(session: Session, marque: str) -> list[ChatbotIntent]:
          ["salle", "libre", "disponible"]),
         ("mes_reservations", "Mes réservations", "Voici vos réservations :",
          ["mes reservations", "planning"]),
+        ("a_propos", "Découvrir l'application",
+         "SmartRoom Manager gère la réservation des salles du campus.",
+         ["a quoi sert", "application", "smartroom", "presentation"]),
     ]
     for code, libelle, reponse, mots in jeux:
         intention = ChatbotIntent(

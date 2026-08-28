@@ -7,6 +7,7 @@ en vie tant que l'application tourne.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -18,6 +19,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.ai.providers.selection import SelecteurModeles
 from app.api.context import RequestContextMiddleware
 from app.api.errors import register_exception_handlers
 from app.api.v1.router import v1_router
@@ -74,6 +76,23 @@ TAGS = [
 ]
 
 
+async def _prechauffer() -> None:
+    """Charge les modèles d'inférence, sans jamais empêcher le démarrage.
+
+    Une absence d'Ollama est un état normal — l'assistant retombe alors sur son
+    moteur déterministe. Elle ne doit pas remonter en erreur de démarrage.
+    """
+    try:
+        charges = await SelecteurModeles().prechauffer()
+    except asyncio.CancelledError:
+        raise
+    except Exception as souci:  # pragma: no cover - filet de démarrage
+        logger.warning("Préchauffage abandonné : %s", souci)
+        return
+    if charges:
+        logger.info("Modèles préchauffés : %s", ", ".join(charges))
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     """Démarre les tâches planifiées, et les arrête sans en laisser d'orpheline."""
@@ -84,9 +103,16 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         settings.maintenance_interval_seconds,
         settings.stats_cache_seconds * 3,
     )
+
+    # En arrière-plan : l'API doit répondre avant que le modèle soit prêt, pas
+    # après. Sans cela, la première question d'une session attend le chargement
+    # des poids, dépasse le budget de premier jeton et part au repli.
+    prechauffage = asyncio.create_task(_prechauffer())
+
     try:
         yield
     finally:
+        prechauffage.cancel()
         # `wait=False` : l'extinction ne doit pas attendre la fin d'un
         # rafraîchissement de vue matérialisée qui peut durer.
         scheduler.shutdown(wait=False)

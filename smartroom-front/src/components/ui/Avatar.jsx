@@ -35,7 +35,11 @@ export function Avatar({ name = '', src = null, size = 'md', className, tone }) 
         alt={name || 'Photo de profil'}
         onError={() => setEchouee(true)}
         className={cn(
-          'inline-block shrink-0 rounded-full border border-line object-cover',
+          // `object-top` et non le centre : une photo de téléphone est un
+          // portrait, et le rognage centré d'un cadre carré coupait le visage
+          // pour garder le buste. On regardait une écharpe en croyant regarder
+          // quelqu'un.
+          'inline-block shrink-0 rounded-full border border-line object-cover object-top',
           SIZES[size] ?? SIZES.md,
           className,
         )}

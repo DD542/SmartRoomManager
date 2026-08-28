@@ -23,6 +23,7 @@ from app.ai.providers import Message, RoleMessage, TypeFragment, agreger
 from app.ai.providers.base import DelaiDepasse, ErreurFournisseur
 from app.ai.providers.distant import ClientDistant
 from app.ai.providers.ollama import ClientOllama
+from app.ai.providers.selection import SelecteurModeles
 
 OUTIL = {
     "name": "rechercher_salles",
@@ -239,6 +240,67 @@ class TestOllama:
         client = client_ollama(repondre)
         assert await client.prechauffer("qwen2.5:7b") is False
         await client.fermer()
+
+
+class TestPrechauffage:
+    """Le chargement des poids au démarrage.
+
+    Ollama garde les modèles `keep_alive`, puis les relit depuis le disque —
+    79 secondes mesurées au premier appel, contre un budget de premier jeton de
+    six. Sans préchauffage, toute première question part au repli déterministe
+    et l'assistant répond « je n'ai pas compris » à ce que le modèle traite
+    sans peine. `ClientOllama.prechauffer` existait ; rien ne l'appelait.
+    """
+
+    def _selecteur(self, gestionnaire, **reglages):
+        from app.ai.reglages import ReglagesIA
+
+        selecteur = SelecteurModeles(
+            ReglagesIA(
+                ollama_url="http://ollama.invalide",
+                modele_raisonnement="qwen2.5:7b",
+                modele_vecteurs="nomic-embed-text",
+                # La suite pose `IA_FORCER_REPLI` pour couper toute inférence :
+                # ces tests-ci éprouvent justement le chargement des modèles,
+                # et disent donc explicitement la configuration qu'ils veulent.
+                **{"forcer_repli": False, **reglages},
+            )
+        )
+        selecteur._local = client_ollama(gestionnaire)  # noqa: SLF001
+        return selecteur
+
+    @pytest.mark.asyncio
+    async def test_les_deux_modeles_utiles_sont_charges(self):
+        appels: list[str] = []
+
+        def repondre(requete: httpx.Request) -> httpx.Response:
+            if requete.url.path == "/api/tags":
+                return httpx.Response(200, json={"models": []})
+            appels.append(json.loads(requete.content)["model"])
+            return httpx.Response(200, json={"done": True})
+
+        selecteur = self._selecteur(repondre)
+        charges = await selecteur.prechauffer()
+
+        assert charges == ["qwen2.5:7b", "nomic-embed-text"]
+        # Le modèle rapide n'en est pas : trois modèles en mémoire saturent un
+        # poste ordinaire, et la mesure ne montre aucun gain.
+        assert appels == ["qwen2.5:7b", "nomic-embed-text"]
+
+    @pytest.mark.asyncio
+    async def test_un_ollama_absent_ne_leve_pas(self):
+        def repondre(requete: httpx.Request) -> httpx.Response:
+            raise httpx.ConnectError("injoignable", request=requete)
+
+        assert await self._selecteur(repondre).prechauffer() == []
+
+    @pytest.mark.asyncio
+    async def test_le_repli_force_ne_charge_rien(self):
+        def repondre(requete: httpx.Request) -> httpx.Response:
+            raise AssertionError("aucun appel attendu sous repli forcé")
+
+        selecteur = self._selecteur(repondre, forcer_repli=True)
+        assert await selecteur.prechauffer() == []
 
 
 class TestDistant:

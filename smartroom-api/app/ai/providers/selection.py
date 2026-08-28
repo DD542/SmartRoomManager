@@ -123,6 +123,38 @@ class SelecteurModeles:
 
         raise FournisseurIndisponible("Aucun fournisseur d'inférence disponible.")
 
+    async def prechauffer(self) -> list[str]:
+        """Charge les modèles locaux en mémoire, avant la première question.
+
+        Ollama ne garde les poids que `keep_alive` — trente minutes ici — et
+        les recharge depuis le disque ensuite. Mesuré sur le poste de
+        développement : 79 secondes pour le premier appel, 1,1 seconde pour les
+        suivants. Le budget de premier jeton étant de six secondes, **toute
+        première question d'une session partait au repli déterministe**, qui ne
+        connaît qu'une poignée d'intentions : l'assistant répondait « je n'ai
+        pas compris » à des questions que le modèle traite sans peine.
+
+        `ClientOllama.prechauffer` existait et se disait « appelé au démarrage
+        de l'application » ; rien ne l'appelait.
+
+        Deux modèles seulement : celui du raisonnement, et celui des vecteurs
+        dont chaque recherche documentaire a besoin. Le modèle rapide se
+        chargera à son premier usage — précharger trois modèles saturerait la
+        mémoire d'un poste ordinaire pour un gain que la mesure ne montre pas.
+        """
+        if self._reglages.forcer_repli:
+            return []
+
+        local = self._ollama()
+        if not isinstance(local, ClientOllama) or not await local.disponible():
+            return []
+
+        charges: list[str] = []
+        for modele in (self._reglages.modele_raisonnement, self._reglages.modele_vecteurs):
+            if modele and await local.prechauffer(modele):
+                charges.append(modele)
+        return charges
+
     async def diagnostic(self) -> dict[str, object]:
         """État des étages, pour le tableau de bord A-13 et le démarrage.
 

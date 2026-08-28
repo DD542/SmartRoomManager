@@ -73,13 +73,15 @@ export function Topbar() {
         <button
           type="button"
           onClick={() => navigate('/app/profil')}
-          className="ml-1 rounded-full"
+          className="ml-1 rounded-full ring-2 ring-line transition hover:ring-accent/60"
           aria-label={`Profil de ${fullName(user)}`}
         >
           {/* La photo du profil, quand il y en a une. L'`Avatar` sait retomber
               sur les initiales ; ne pas lui passer l'adresse revenait à
-              n'afficher jamais que celles-ci, y compris après un dépôt. */}
-          <Avatar name={fullName(user)} src={user?.avatarUrl} />
+              n'afficher jamais que celles-ci, y compris après un dépôt.
+              Taille `lg` et anneau : à 32 px, sans contour, la photo se perdait
+              dans la barre — on ne la remarquait pas. */}
+          <Avatar name={fullName(user)} src={user?.avatarUrl} size="lg" />
         </button>
       </div>
     </header>

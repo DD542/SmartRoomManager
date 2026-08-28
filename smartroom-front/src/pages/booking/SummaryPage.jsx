@@ -95,7 +95,7 @@ export default function SummaryPage() {
             <CardHeader title="Récapitulatif de la réservation" icon={ListChecks} />
             <div>
               <Row icon={DoorOpen} label="Salle">
-                {draft.room?.name} ({draft.room?.building?.name} — {draft.room?.floor} étage)
+                {draft.room?.name} ({draft.room?.building?.name} — {draft.room?.floor})
               </Row>
               <Row icon={CalendarDays} label="Date & heure">
                 <span className="capitalize">{fmtDateLong(start)}</span>

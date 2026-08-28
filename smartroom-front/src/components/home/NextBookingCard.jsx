@@ -61,7 +61,7 @@ export function NextBookingCard({ booking, isLoading }) {
           </Link>
           <p className="mt-1 flex items-center gap-1.5 text-xs text-content-muted">
             <MapPin size={13} aria-hidden="true" />
-            {booking.room?.building?.name ?? 'Bâtiment'} — {booking.room?.floor} étage
+            {booking.room?.building?.name ?? 'Bâtiment'} — {booking.room?.floor}
           </p>
 
           <dl className="mt-4 flex gap-6 border-t border-line pt-3">

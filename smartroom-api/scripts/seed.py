@@ -972,6 +972,11 @@ def creer_support(
 ) -> None:
     categories = {}
     for code, libelle, icone, ordre in [
+        # Ajoutée après coup : les vingt-deux articles décrivaient comment
+        # faire, aucun ne disait ce qu'est l'outil. « À quoi sert cette
+        # application ? » est pourtant la première question qu'on lui pose, et
+        # l'assistant répondait « je n'ai pas compris ».
+        ("decouvrir", "Découvrir SmartRoom Manager", "Sparkles", 0),
         ("reserver", "Réserver une salle", "CalendarPlus", 1),
         ("acces", "Codes d'accès", "KeyRound", 2),
         ("annulation", "Annulation et modification", "CalendarX2", 3),
@@ -989,6 +994,40 @@ def creer_support(
     # et un centre d'aide qui se trompe sur son propre produit vaut moins que
     # pas de centre d'aide.
     articles = [
+        ("decouvrir", "a-quoi-sert-smartroom-manager",
+         "À quoi sert SmartRoom Manager ?",
+         "Réserver une salle du campus, en connaître les règles, et y entrer.",
+         "SmartRoom Manager gère la réservation des salles du campus, de la recherche "
+         "jusqu’à l’entrée dans la salle. Vous décrivez votre besoin — date, créneau, "
+         "effectif, équipements — et l’application propose les salles compatibles, "
+         "classées par un score qui tient compte de leur capacité, de leur matériel et "
+         "de leur occupation réelle. Une fois le créneau confirmé, elle émet le code "
+         "d’accès de la porte et envoie la confirmation. Elle applique aussi les règles "
+         "du campus : durée minimale et maximale, préavis, battement entre deux "
+         "réunions, horizon de réservation et nombre de réservations actives. "
+         "L’administration y suit l’occupation du parc, arbitre les conflits de créneau "
+         "et tient à jour les salles, leurs équipements et leurs plans.",
+         ArticleStatus.PUBLIE),
+        ("decouvrir", "que-puis-je-demander-a-l-assistant",
+         "Que puis-je demander à l’assistant ?",
+         "Trouver une salle, lire vos réservations, connaître une règle, ouvrir un ticket.",
+         "L’assistant cherche une salle pour un effectif et un créneau donnés, liste vos "
+         "réservations à venir, rappelle une règle de réservation, situe une salle dans "
+         "le bâtiment et cite les articles de cette base de connaissances. Il peut "
+         "préparer une réservation ou une annulation, mais ne l’exécute jamais seul : "
+         "toute écriture vous est présentée pour confirmation, dans un tour dédié. "
+         "S’il ne sait pas répondre, il ouvre un ticket auprès du support plutôt que "
+         "d’inventer.",
+         ArticleStatus.PUBLIE),
+        ("decouvrir", "qui-peut-utiliser-l-application",
+         "Qui peut utiliser l’application ?",
+         "Étudiants et personnel, avec des droits différents.",
+         "Tout compte du campus peut réserver, consulter le plan des bâtiments et suivre "
+         "ses statistiques d’usage. Le personnel administratif dispose en plus d’un "
+         "espace d’administration : parc de salles, équipements, règles d’ouverture, "
+         "arbitrage des conflits et suivi du support. Les droits y sont attribués "
+         "permission par permission, et non par un rôle unique.",
+         ArticleStatus.PUBLIE),
         ("reserver", "reserver-une-salle-en-quatre-etapes",
          "Réserver une salle en quatre étapes",
          "Besoin, sélection, validation du créneau, confirmation.",
@@ -1217,6 +1256,15 @@ def creer_support(
          "Voici les règles applicables :",
          ["Trouver une salle", "Parler à un humain"], False,
          ["regle", "regles", "duree", "quota", "horaires", "preavis"]),
+        # Sans elle, « à quoi sert cette application » — première question de
+        # toute démonstration — tombait sous le seuil de rapprochement et
+        # recevait « je n'ai pas compris ». L'intention route vers la base de
+        # connaissances, qui porte désormais la réponse et la cite.
+        ("a_propos", "Découvrir l'application",
+         "SmartRoom Manager gère la réservation des salles du campus, "
+         "de la recherche jusqu'au code d'accès de la porte.",
+         ["Trouver une salle", "Quelles sont les règles ?", "Voir mes réservations"], False,
+         ["a quoi sert", "application", "smartroom", "presentation", "fonctionnalites"]),
     ]
     for code, libelle, reponse, suggestions, escalade, mots in intentions:
         intention = ChatbotIntent(

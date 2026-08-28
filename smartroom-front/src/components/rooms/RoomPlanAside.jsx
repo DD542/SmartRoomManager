@@ -5,6 +5,7 @@ import { Button, IconButton } from '../ui/Button';
 import { Card, CardHeader } from '../ui/Card';
 import { EmptyState } from '../ui/States';
 import { equipmentIcon } from './equipmentIcons';
+import { RoomThumb } from './RoomThumb';
 
 const STATUS_TONE = { disponible: 'success', occupee: 'danger', maintenance: 'warning' };
 
@@ -30,7 +31,7 @@ export function RoomPlanAside({ room, directions = [], onClose }) {
       />
       <div className="flex flex-col gap-3 px-4 pb-4">
         <div className="relative">
-          <img src={room.photos?.[0]} alt="" className="h-28 w-full rounded-xl object-cover" />
+          <RoomThumb room={room} className="h-28 w-full rounded-xl" iconSize={24} />
           <span className="absolute left-2 top-2">
             <Badge tone={STATUS_TONE[room.status] ?? 'default'} dot>
               {ROOM_STATUS_LABEL[room.status]}
@@ -40,7 +41,7 @@ export function RoomPlanAside({ room, directions = [], onClose }) {
 
         <div className="flex items-start justify-between gap-2">
           <h2 className="text-base font-semibold text-content">{room.name}</h2>
-          <span className="text-xs text-content-muted">{room.floor} étage</span>
+          <span className="text-xs text-content-muted">{room.floor}</span>
         </div>
         <p className="text-xs leading-relaxed text-content-muted">{room.description}</p>
 

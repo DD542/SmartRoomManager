@@ -29,6 +29,7 @@ import { serveur } from '../../test/serveur';
 import * as adapt from '../../api/adapters';
 import { RoomCard } from '../rooms/RoomCard';
 import { FloorPlan } from '../rooms/FloorPlan';
+import { FloorRoomPicker, RoomLocationPlan } from '../rooms/RoomLocationPlan';
 import BookingDetailPage from '../../pages/manage/BookingDetailPage';
 
 describe('Liste des salles de repli', () => {
@@ -478,5 +479,65 @@ describe('Plan d’étage', () => {
     );
 
     expect(screen.getByText('Entrée nord')).toBeTruthy();
+  });
+});
+
+describe('Plan de localisation côté utilisateur', () => {
+  const SALLE = {
+    id: 'r-3',
+    name: 'Salle Hopper',
+    floor: '2e étage',
+    locationPlanUrl: '/media/reperes/hopper.png',
+  };
+
+  it('montre le plan déposé pour la salle choisie', () => {
+    // L'administration consultait ces images ; l'écran utilisateur ne
+    // connaissait que le plan d'étage, rarement déposé, et retombait sur son
+    // schéma indicatif.
+    render(
+      <RoomLocationPlan room={SALLE} onBack={() => {}}>
+        <p>schéma indicatif</p>
+      </RoomLocationPlan>,
+    );
+
+    const image = screen.getByRole('img', { name: /Plan de localisation de Salle Hopper/ });
+    expect(image.getAttribute('src')).toBe('/media/reperes/hopper.png');
+    expect(screen.queryByText('schéma indicatif')).toBeNull();
+  });
+
+  it('laisse le schéma quand la salle n’a pas de plan', () => {
+    render(
+      <RoomLocationPlan room={{ ...SALLE, locationPlanUrl: null }}>
+        <p>schéma indicatif</p>
+      </RoomLocationPlan>,
+    );
+
+    expect(screen.getByText('schéma indicatif')).toBeTruthy();
+  });
+
+  it('laisse le schéma tant qu’aucune salle n’est choisie', () => {
+    render(
+      <RoomLocationPlan room={null}>
+        <p>schéma indicatif</p>
+      </RoomLocationPlan>,
+    );
+
+    expect(screen.getByText('schéma indicatif')).toBeTruthy();
+  });
+
+  it('permet d’atteindre une salle absente du schéma', () => {
+    // Une salle sans position n'est pas dessinée : sans cette liste, rien ne
+    // permettait de l'ouvrir.
+    const choisir = vi.fn();
+    render(
+      <FloorRoomPicker
+        rooms={[SALLE, { id: 'r-4', name: 'Salle Curie', locationPlanUrl: null }]}
+        onSelect={choisir}
+      />,
+    );
+
+    expect(screen.getByText(/2 salles — 1 plan déposé/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Salle Curie/ }));
+    expect(choisir).toHaveBeenCalledWith(expect.objectContaining({ id: 'r-4' }));
   });
 });

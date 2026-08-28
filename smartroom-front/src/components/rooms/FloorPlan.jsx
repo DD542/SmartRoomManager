@@ -93,7 +93,7 @@ export function FloorPlan({
                 className="cursor-pointer transition-[stroke-width]"
                 role="button"
                 tabIndex={0}
-                aria-label={`${room.name}, ${room.floor} étage, ${tone.label}, ${room.capacity} personnes`}
+                aria-label={`${room.name}, ${room.floor}, ${tone.label}, ${room.capacity} personnes`}
                 aria-pressed={selected}
                 onClick={() => onSelect?.(room)}
                 onKeyDown={(event) => {

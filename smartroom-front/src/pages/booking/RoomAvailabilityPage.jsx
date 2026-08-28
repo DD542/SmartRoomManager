@@ -73,7 +73,7 @@ export default function RoomAvailabilityPage() {
             <p className="mt-1 flex flex-wrap items-center gap-3 text-xs text-content-muted">
               <span className="flex items-center gap-1">
                 <MapPin size={12} aria-hidden="true" />
-                {room.data.building?.name} — {room.data.floor} étage
+                {room.data.building?.name} — {room.data.floor}
               </span>
               <span className="flex items-center gap-1">
                 <Users size={12} aria-hidden="true" />

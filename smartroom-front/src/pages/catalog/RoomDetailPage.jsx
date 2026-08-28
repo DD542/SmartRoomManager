@@ -93,7 +93,7 @@ export default function RoomDetailPage() {
                   </Badge>
                   <Badge tone="default">{fmtArea(data.area)}</Badge>
                   <Badge tone="default">
-                    {data.building?.name} — {data.floor} étage
+                    {data.building?.name} — {data.floor}
                   </Badge>
                   {data.accessible && (
                     <Badge tone="success" icon={Accessibility}>

@@ -270,3 +270,12 @@ describe('Barre haute de l’espace utilisateur', () => {
     expect(screen.queryByText('DM')).toBeNull();
   });
 });
+
+describe('Cadrage de la photo de profil', () => {
+  it('rogne par le haut plutôt que par le centre', () => {
+    // Une photo de téléphone est un portrait : le rognage centré d'un cadre
+    // carré coupait le visage pour garder le buste.
+    render(<Avatar name="Dylan Menga" src="/media/avatars/moi.jpg" />);
+    expect(screen.getByRole('img').className).toContain('object-top');
+  });
+})

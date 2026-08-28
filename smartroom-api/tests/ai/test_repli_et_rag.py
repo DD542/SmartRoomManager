@@ -50,6 +50,12 @@ class TestMoteurDeterministe:
             ("je veux anuler ma reservation", "annuler"),  # faute de frappe
             ("trouve une salle libre demain", "salle_libre"),
             ("quelles sont mes reservations", "mes_reservations"),
+            # Première question de toute démonstration, et la seule à laquelle
+            # le robot répondait « je n'ai pas compris » : aucune intention ne
+            # parlait du produit lui-même.
+            ("a quoi sert cette application", "a_propos"),
+            ("A QUOI SER CETTE APPLICARTION", "a_propos"),  # majuscules et fautes
+            ("que fait smartroom manager", "a_propos"),
         ],
     )
     async def test_les_parcours_principaux_sont_couverts(

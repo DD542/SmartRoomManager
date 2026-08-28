@@ -105,7 +105,7 @@ export default function BookingDetailPage() {
                       <h2 className="text-base font-semibold text-content">{data.room?.name}</h2>
                       <p className="mt-1 flex items-center gap-1.5 text-xs text-content-muted">
                         <MapPin size={12} aria-hidden="true" />
-                        {data.room?.building?.name} — {data.room?.floor} étage
+                        {data.room?.building?.name} — {data.room?.floor}
                       </p>
                     </div>
                     <div className="text-right">

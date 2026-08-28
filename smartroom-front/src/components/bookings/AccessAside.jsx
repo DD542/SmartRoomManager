@@ -13,7 +13,7 @@ export function AccessAside({ room, steps = [] }) {
         <div className="px-4 pb-4">
           <p className="text-sm text-content">{room?.building?.name}</p>
           <p className="mt-0.5 text-xs text-content-muted">
-            {room?.floor} étage — {room?.building?.campus}
+            {room?.floor} — {room?.building?.campus}
           </p>
           <ol className="mt-3 flex flex-col gap-1.5">
             {steps.map((step, index) => (

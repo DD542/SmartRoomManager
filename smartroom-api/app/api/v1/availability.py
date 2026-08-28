@@ -35,6 +35,16 @@ router = APIRouter(prefix="/availability", tags=["disponibilité"])
 #: Au-delà, le calcul reste rapide mais la réponse devient inexploitable côté écran.
 PERIODE_MAX_JOURS = 31
 
+#: Le calendrier, lui, n'est pas borné par le calcul mais par le volume rendu.
+#: L'écran de disponibilité d'une salle offre quatre vues, dont « mois » —
+#: six semaines, soit 42 jours — et « année ». Les refuser à 31 jours faisait
+#: échouer deux vues sur quatre, sans que rien ne le signale avant le clic.
+#: Une année d'une salle tient en quelques centaines de lignes ; la même plage
+#: sur un bâtiment entier en ramènerait des dizaines de milliers, d'où deux
+#: bornes plutôt qu'une moyenne qui trahirait les deux usages.
+CALENDRIER_MAX_JOURS_SALLE = 400
+CALENDRIER_MAX_JOURS_PARC = 62
+
 
 @router.get(
     "/rooms/{room_id}/free-slots",
@@ -166,9 +176,14 @@ def calendar(
 ) -> CalendarOut:
     if to_date <= from_date:
         raise RuleViolationError("La fin de la plage précède son début.", code="periode")
-    if (to_date - from_date).days > PERIODE_MAX_JOURS:
+
+    une_seule_salle = building_id is None and room_ids is not None and len(room_ids) == 1
+    plafond = CALENDRIER_MAX_JOURS_SALLE if une_seule_salle else CALENDRIER_MAX_JOURS_PARC
+    if (to_date - from_date).days > plafond:
         raise RuleViolationError(
-            f"Plage trop large : {PERIODE_MAX_JOURS} jours au maximum.", code="periode"
+            f"Plage trop large : {plafond} jours au maximum"
+            + ("." if une_seule_salle else " pour plusieurs salles."),
+            code="periode",
         )
 
     fenetre = TimeSlot(start=from_date, end=to_date)

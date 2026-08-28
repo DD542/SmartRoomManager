@@ -19,6 +19,7 @@ import { FloorPlan, FloorPlanLegend } from '../../components/rooms/FloorPlan';
 import { PdfPlanView } from '../../components/rooms/PdfPlanView';
 import { PlanUpload } from '../../components/rooms/PlanUpload';
 import { RoomPlanAside } from '../../components/rooms/RoomPlanAside';
+import { FloorRoomPicker, RoomLocationPlan } from '../../components/rooms/RoomLocationPlan';
 
 /** U-18 — Plan de localisation du bâtiment, avec panneau de détail de la salle. */
 export default function FloorPlanPage() {
@@ -97,24 +98,35 @@ export default function FloorPlanPage() {
         >
           {plan.data && (
             <div className="flex flex-col gap-3">
-              {planDocument.data?.type === 'pdf' ? (
-                <PdfPlanView
-                  document={planDocument.data}
-                  rooms={plan.data.rooms}
-                  mineIds={mineIds}
-                  selectedId={selected?.id}
-                  onSelect={setSelected}
-                />
-              ) : (
-                <FloorPlan
-                  plan={plan.data}
-                  rooms={plan.data.rooms}
-                  mineIds={mineIds}
-                  selectedId={selected?.id}
-                  onSelect={setSelected}
-                  document={planDocument.data}
-                />
-              )}
+              {/* Le plan déposé pour la salle choisie l'emporte sur le schéma :
+                  c'est l'image que montre déjà l'administration, et la seule
+                  qui situe vraiment la salle dans le bâtiment. */}
+              <RoomLocationPlan room={selected} onBack={() => setSelected(null)}>
+                {planDocument.data?.type === 'pdf' ? (
+                  <PdfPlanView
+                    document={planDocument.data}
+                    rooms={plan.data.rooms}
+                    mineIds={mineIds}
+                    selectedId={selected?.id}
+                    onSelect={setSelected}
+                  />
+                ) : (
+                  <FloorPlan
+                    plan={plan.data}
+                    rooms={plan.data.rooms}
+                    mineIds={mineIds}
+                    selectedId={selected?.id}
+                    onSelect={setSelected}
+                    document={planDocument.data}
+                  />
+                )}
+              </RoomLocationPlan>
+
+              <FloorRoomPicker
+                rooms={plan.data.rooms}
+                selectedId={selected?.id}
+                onSelect={setSelected}
+              />
 
               {plan.data.unplaced > 0 && (
                 <p className="rounded-lg border border-warning/40 bg-warning-soft px-3 py-2 text-xs text-content">

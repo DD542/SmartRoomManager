@@ -652,15 +652,55 @@ class TestCalendrier:
         # La salle ouvre de 08:00 à 20:00 : le matin et le soir sont fermés.
         assert len(corps["closed"]) == 2
 
-    def test_plage_trop_large_refusee(self, client, compte, jour_ouvre):
-        entetes = connecter(client, compte.email)
-        reponse = client.get(
+    def _plage(self, client, entetes, jour_ouvre, jours, **params):
+        depart = creneau(jour_ouvre, 8).start
+        return client.get(
             "/api/v1/availability/calendar",
             headers=entetes,
             params={
-                "from_date": creneau(jour_ouvre, 8).start.isoformat(),
-                "to_date": (creneau(jour_ouvre, 8).start + timedelta(days=60)).isoformat(),
+                "from_date": depart.isoformat(),
+                "to_date": (depart + timedelta(days=jours)).isoformat(),
+                **params,
             },
         )
+
+    def test_la_vue_mois_d_une_salle_est_servie(self, client, compte, salle, jour_ouvre):
+        """Six semaines : c'est la grille que rend la vue « mois » de l'écran.
+
+        La borne unique de 31 jours la refusait, et deux vues sur quatre —
+        mois et année — échouaient sur « Plage trop large » au premier clic.
+        """
+        entetes = connecter(client, compte.email)
+        reponse = self._plage(client, entetes, jour_ouvre, 42, room_ids=str(salle.id))
+        assert reponse.status_code == 200
+
+    def test_la_vue_annee_d_une_salle_est_servie(self, client, compte, salle, jour_ouvre):
+        entetes = connecter(client, compte.email)
+        reponse = self._plage(client, entetes, jour_ouvre, 371, room_ids=str(salle.id))
+        assert reponse.status_code == 200
+
+    def test_une_annee_sur_tout_le_parc_reste_refusee(self, client, compte, jour_ouvre):
+        """La même plage sans salle désignée porte sur tout le parc : des
+        dizaines de milliers de lignes que l'écran ne saurait pas montrer."""
+        entetes = connecter(client, compte.email)
+        reponse = self._plage(client, entetes, jour_ouvre, 371)
+
+        assert reponse.status_code == 422
+        assert reponse.json()["error"]["code"] == "periode"
+        assert "plusieurs salles" in reponse.json()["error"]["message"]
+
+    def test_deux_salles_relevent_de_la_borne_du_parc(
+        self, client, compte, salle, creer_salle, jour_ouvre
+    ):
+        autre = creer_salle("Seconde")
+        entetes = connecter(client, compte.email)
+        reponse = self._plage(
+            client, entetes, jour_ouvre, 371, room_ids=[str(salle.id), str(autre.id)]
+        )
+        assert reponse.status_code == 422
+
+    def test_plage_inversee_refusee(self, client, compte, salle, jour_ouvre):
+        entetes = connecter(client, compte.email)
+        reponse = self._plage(client, entetes, jour_ouvre, -1, room_ids=str(salle.id))
         assert reponse.status_code == 422
         assert reponse.json()["error"]["code"] == "periode"

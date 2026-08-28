@@ -81,7 +81,7 @@ export default function InvitationPage() {
                   </p>
                   <p className="flex items-center gap-2">
                     <MapPin size={13} aria-hidden="true" />
-                    {data.room?.building?.name} — {data.room?.floor} étage
+                    {data.room?.building?.name} — {data.room?.floor}
                   </p>
                   <p className="flex items-center gap-2">
                     <CalendarDays size={13} aria-hidden="true" />
