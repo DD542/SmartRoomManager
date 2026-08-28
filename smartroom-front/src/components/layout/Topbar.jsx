@@ -34,7 +34,10 @@ export function Topbar() {
   };
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 md:px-4">
+    // `z-topbar` : la barre reste au-dessus du contenu qui défile sous elle,
+    // et sous les tiroirs, modales et notifications. La marge haute couvre
+    // l'encoche quand l'application est installée en plein écran.
+    <header className="z-topbar flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 pt-[env(safe-area-inset-top)] md:px-4">
       <form role="search" onSubmit={onSubmit} className="relative min-w-0 flex-1 md:max-w-sm">
         <label htmlFor="recherche-globale" className="sr-only">
           Rechercher une salle, une réservation

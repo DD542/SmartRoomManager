@@ -3,6 +3,7 @@ import {
   BarChart3,
   CalendarCheck,
   CalendarPlus,
+  CircleCheck,
   DoorOpen,
   HelpCircle,
   LayoutDashboard,
@@ -14,18 +15,30 @@ import { cn } from '../../utils/cn';
 import { useAuth } from '../../hooks/useAuth';
 import { Tooltip } from '../ui/Tooltip';
 
+/**
+ * Destinations principales de l'espace utilisateur.
+ *
+ * Exportée : la barre latérale les montre en desktop, le tiroir mobile reprend
+ * celles que la barre d'onglets ne peut pas loger. Une seule liste, donc aucune
+ * destination ne peut disparaître d'un côté sans qu'on le voie de l'autre.
+ */
 export const NAV_ITEMS = [
   { to: '/app', label: 'Accueil', icon: LayoutDashboard, end: true },
   { to: '/app/salles', label: 'Explorer les salles', icon: DoorOpen },
   { to: '/app/reservations', label: 'Mes réservations', icon: CalendarCheck },
+  // U-19 n'était atteignable que depuis la barre mobile : en desktop, l'écran
+  // existait dans le routeur sans qu'aucun chemin d'interface n'y mène.
+  { to: '/app/check-in', label: 'Valider ma présence', icon: CircleCheck },
   { to: '/app/plan', label: 'Plan du bâtiment', icon: Map },
   { to: '/app/statistiques', label: 'Mes statistiques', icon: BarChart3 },
   { to: '/app/aide', label: 'Centre d’aide', icon: HelpCircle },
 ];
 
+// 44 px de côté : minimum recommandé par WCAG 2.1 (2.5.5). La barre reste
+// visible dès 768 px, où l'écran est très souvent tactile.
 const itemClass = ({ isActive }) =>
   cn(
-    'relative flex h-10 w-10 items-center justify-center rounded-xl border transition',
+    'relative flex h-11 w-11 items-center justify-center rounded-xl border transition',
     isActive
       ? 'border-accent/50 bg-accent-soft text-accent-bright'
       : 'border-transparent text-content-muted hover:bg-surface-raised hover:text-content',
@@ -41,7 +54,7 @@ export function Sidebar() {
       <NavLink
         to="/app"
         aria-label="SmartRoom Manager, retour à l’accueil"
-        className="mb-1 flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-sm font-semibold text-ink"
+        className="mb-1 flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-sm font-semibold text-ink"
       >
         SR
       </NavLink>
@@ -51,7 +64,7 @@ export function Sidebar() {
           type="button"
           onClick={() => navigate('/app/reservation/besoin')}
           aria-label="Nouvelle réservation"
-          className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-surface-raised text-accent transition hover:border-accent/50"
+          className="flex h-11 w-11 items-center justify-center rounded-xl border border-line bg-surface-raised text-accent transition hover:border-accent/50"
         >
           <CalendarPlus size={18} aria-hidden="true" />
         </button>
@@ -91,7 +104,7 @@ export function Sidebar() {
               navigate('/connexion');
             }}
             aria-label="Se déconnecter"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-transparent text-content-muted transition hover:bg-surface-raised hover:text-danger"
+            className="flex h-11 w-11 items-center justify-center rounded-xl border border-transparent text-content-muted transition hover:bg-surface-raised hover:text-danger"
           >
             <LogOut size={18} aria-hidden="true" />
           </button>

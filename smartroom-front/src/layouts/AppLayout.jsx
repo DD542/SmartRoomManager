@@ -1,15 +1,24 @@
-import { Outlet } from 'react-router-dom';
+import { useState } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from '../components/layout/Sidebar';
 import { Topbar } from '../components/layout/Topbar';
 import { MobileNav } from '../components/layout/MobileNav';
+import { NavDrawer } from '../components/layout/NavDrawer';
 import { PageTransition } from '../components/layout/PageTransition';
 import { ChatbotPanel } from '../components/support/ChatbotPanel';
 
 /**
- * Cadre de l'espace connecté : sidebar (≥768px), topbar, contenu, barre
- * d'onglets basse (<768px) et assistant SmartBot flottant (U-23).
+ * Cadre de l'espace connecté : barre latérale (≥768 px), barre haute, contenu,
+ * barre d'onglets basse et tiroir secondaire (<768 px), assistant SmartBot.
+ *
+ * L'ordre des enfants est aussi l'ordre de tabulation : lien d'évitement,
+ * navigation, contenu. Le tiroir est monté en dernier — il s'ouvre par-dessus
+ * et rend le focus à son bouton en se fermant.
  */
 export default function AppLayout() {
+  const [menuOuvert, setMenuOuvert] = useState(false);
+  const { pathname } = useLocation();
+
   return (
     <div className="flex h-full min-h-screen bg-ink">
       <a href="#contenu" className="sr-skip">
@@ -23,8 +32,14 @@ export default function AppLayout() {
             <Outlet />
           </PageTransition>
         </main>
-        <MobileNav />
+        <MobileNav onOpenMore={() => setMenuOuvert(true)} moreOpen={menuOuvert} />
       </div>
+
+      {/* `key` sur le chemin : l'état actif des liens est calculé au rendu, et
+          sans cela le tiroir rouvert garderait la surbrillance de l'écran
+          quitté — le même défaut que le tiroir de l'administration avait. */}
+      <NavDrawer key={pathname} open={menuOuvert} onClose={() => setMenuOuvert(false)} />
+
       <ChatbotPanel />
     </div>
   );

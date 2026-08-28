@@ -32,6 +32,26 @@ export default {
         xl: '12px',
         '2xl': '16px',
       },
+      // Échelle unique et documentée des plans d'affichage. Toute superposition
+      // se résout en plaçant l'élément ici, jamais en inventant une valeur dans
+      // un composant. L'ordre suit une règle simple : plus une surface exige
+      // une décision de l'utilisateur, plus elle monte.
+      //
+      // `chatbubble` passe volontairement SOUS `mobilenav` : la bulle flottait
+      // au-dessus de la barre d'onglets et rendait « Profil » intouchable au
+      // doigt. Déployé, le panneau remonte au-dessus des modales — c'est alors
+      // lui qui porte la conversation en cours.
+      zIndex: {
+        base: '0', //         contenu de page
+        sticky: '10', //      en-têtes de tableau collants, barres d'action
+        topbar: '20', //      barre supérieure
+        chatbubble: '25', //  bulle repliée de l'assistant
+        mobilenav: '30', //   barre d'onglets basse
+        drawer: '50', //      tiroirs et feuilles inférieures
+        modal: '60', //       modales
+        chatpanel: '70', //   assistant déployé
+        toast: '80', //       notifications éphémères
+      },
       transitionDuration: {
         DEFAULT: '200ms',
       },

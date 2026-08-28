@@ -16,7 +16,11 @@ const SIZES = {
   sm: 'h-8 px-3 text-xs gap-1.5',
   md: 'h-10 px-4 text-sm gap-2',
   lg: 'h-12 px-5 text-sm gap-2',
-  icon: 'h-9 w-9 justify-center',
+  // 36 px à l'œil, 44 px au doigt : la zone tactile est étendue par un
+  // pseudo-élément plutôt qu'en grossissant le bouton, qui déformerait les
+  // barres d'outils denses de l'administration. 44 px est le minimum
+  // recommandé par WCAG 2.1 (2.5.5).
+  icon: 'relative h-9 w-9 justify-center after:absolute after:-inset-1 after:content-[""]',
 };
 
 const base =
