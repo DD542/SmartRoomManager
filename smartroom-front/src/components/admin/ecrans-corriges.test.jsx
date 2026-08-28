@@ -33,6 +33,12 @@ import { FloorRoomPicker, RoomLocationPlan } from '../rooms/RoomLocationPlan';
 import { SlotPanel } from '../bookings/SlotPanel';
 import BookingDetailPage from '../../pages/manage/BookingDetailPage';
 
+// Le détail de réservation nomme le compte connecté quand il reçoit un 404 :
+// sans fournisseur d'authentification, le hook lève avant tout rendu.
+vi.mock('../../hooks/useAuth', () => ({
+  useAuth: () => ({ user: { id: 'u-1', email: 'd.menga@ece.fr' } }),
+}));
+
 describe('Liste des salles de repli', () => {
   const PROPOSITION = {
     kind: 'autre_salle_meme_creneau',

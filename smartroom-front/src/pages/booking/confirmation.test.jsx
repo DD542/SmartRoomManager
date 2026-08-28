@@ -81,6 +81,23 @@ describe('Écran de confirmation', () => {
     expect(screen.getByText(/Émettez-en un nouveau/)).toBeTruthy();
   });
 
+  it('dit quel compte est connecté quand la réservation n’est pas la sienne', async () => {
+    // Le serveur répond 404 — et non 403 — sur la réservation d'un tiers :
+    // dire « interdit » confirmerait son existence. La règle est bonne, mais
+    // « Réservation introuvable » laissait sans issue, alors que la cause
+    // ordinaire est deux comptes pour la même personne.
+    serveur.use(
+      http.get(`${BASE}/bookings/bk-4`, () =>
+        HttpResponse.json(erreur('introuvable', 'Réservation introuvable.'), { status: 404 }),
+      ),
+    );
+
+    monter({ code: 'E-7412' });
+
+    expect(await screen.findByText(/Aucune réservation de ce numéro pour d.menga@ece.fr/)).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Mes réservations' })).toBeTruthy();
+  });
+
   it('affiche le plan de la salle sans réclamer celui de l’étage', async () => {
     // L'écran ne connaissait que le plan d'étage, rarement déposé : il
     // annonçait « aucun plan » en ignorant celui de la salle, et laissait un

@@ -10,6 +10,7 @@ import { fmtDateLong, fmtTime } from '../../utils/dates';
 import { downloadIcs } from '../../utils/ics';
 import { AccessCode } from '../../components/ui/AccessCode';
 import { PlanPreview } from '../../components/rooms/PlanPreview';
+import { BookingUnavailable } from '../../components/bookings/BookingUnavailable';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { AsyncBoundary, Skeleton } from '../../components/ui/States';
@@ -67,6 +68,11 @@ export default function ConfirmedPage() {
         error={booking.error}
         onRetry={booking.reload}
         skeleton={<Skeleton className="h-96 w-full" />}
+        errorState={
+          booking.error?.status === 404 ? (
+            <BookingUnavailable email={user?.email} onRetry={booking.reload} />
+          ) : undefined
+        }
       >
         {booking.data && (
           <Card className="animate-scale-in p-6 text-center">

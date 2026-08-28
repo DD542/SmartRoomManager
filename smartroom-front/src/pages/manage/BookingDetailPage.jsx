@@ -4,6 +4,7 @@ import { CheckCircle2, History, MapPin, Pencil, Route, XCircle } from 'lucide-re
 import { getBooking, reissueAccessCode } from '../../api/bookings';
 import { getPlanDocumentForPlan } from '../../api/buildings';
 import { useAsync } from '../../hooks/useAsync';
+import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { fmtDateLong, fmtTime, toDate } from '../../utils/dates';
 import { Badge } from '../../components/ui/Badge';
@@ -16,6 +17,7 @@ import { PageHeader } from '../../components/layout/PageHeader';
 import { BookingStatusBadge } from '../../components/bookings/BookingTable';
 import { ParticipantList } from '../../components/bookings/ParticipantList';
 import { PlanPreview } from '../../components/rooms/PlanPreview';
+import { BookingUnavailable } from '../../components/bookings/BookingUnavailable';
 import CancelBookingModal from './CancelBookingModal';
 
 const HISTORY_TONE = {
@@ -33,6 +35,7 @@ export default function BookingDetailPage() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const toast = useToast();
+  const { user } = useAuth();
   const booking = useAsync(() => getBooking(id), [id]);
   const [cancelOpen, setCancelOpen] = useState(params.get('annuler') === '1');
   // Le plan d'étage, demandé par l'identifiant que porte la réservation. Il ne
@@ -89,6 +92,11 @@ export default function BookingDetailPage() {
         error={booking.error}
         onRetry={booking.reload}
         skeleton={<Skeleton className="h-96 w-full" />}
+        errorState={
+          booking.error?.status === 404 ? (
+            <BookingUnavailable email={user?.email} onRetry={booking.reload} />
+          ) : undefined
+        }
       >
         {data && (
           <>

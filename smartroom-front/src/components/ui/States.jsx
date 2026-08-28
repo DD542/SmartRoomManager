@@ -89,9 +89,21 @@ export function ErrorState({ error, onRetry, title = 'Impossible de charger ces 
  * Aiguillage des quatre états d'un écran. Les pages l'utilisent pour ne jamais
  * oublier un cas : chargement, erreur, vide, nominal.
  */
-export function AsyncBoundary({ status, error, onRetry, isEmpty, skeleton, empty, children }) {
+export function AsyncBoundary({
+  status,
+  error,
+  onRetry,
+  isEmpty,
+  skeleton,
+  empty,
+  //: Écran d'erreur de remplacement. Certains refus méritent mieux qu'un
+  //: message générique : un 404 sur une réservation, par exemple, dit surtout
+  //: que le compte connecté n'est pas celui qui l'a créée.
+  errorState,
+  children,
+}) {
   if (status === 'chargement') return skeleton ?? <Spinner className="px-6 py-12" />;
-  if (status === 'erreur') return <ErrorState error={error} onRetry={onRetry} />;
+  if (status === 'erreur') return errorState ?? <ErrorState error={error} onRetry={onRetry} />;
   if (isEmpty) return empty ?? <EmptyState title="Aucun résultat" />;
   return children;
 }
