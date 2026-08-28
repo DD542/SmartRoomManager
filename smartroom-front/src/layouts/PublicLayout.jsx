@@ -50,7 +50,7 @@ export default function PublicLayout() {
           un filet. Sans cela, le texte défilant vient buter dans les liens. */}
       <header
         className={cn(
-          'sticky top-0 z-40 border-b transition-colors duration-300',
+          'sticky top-0 z-topbar border-b transition-colors duration-300',
           defilee
             ? 'border-line bg-ink/95 backdrop-blur'
             : 'border-transparent bg-ink/80 backdrop-blur',

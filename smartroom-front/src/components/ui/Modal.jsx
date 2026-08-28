@@ -38,7 +38,7 @@ export function Modal({
   }[tone];
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
+    <div className="fixed inset-0 z-modal flex items-end justify-center p-0 sm:items-center sm:p-4">
       <div
         className="absolute inset-0 bg-ink/80"
         aria-hidden="true"
@@ -88,7 +88,7 @@ export function BottomSheet({ open, onClose, title, children, footer }) {
   if (!open) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end">
+    <div className="fixed inset-0 z-drawer flex items-end">
       <div className="absolute inset-0 bg-ink/80" aria-hidden="true" onClick={onClose} />
       <div
         ref={ref}

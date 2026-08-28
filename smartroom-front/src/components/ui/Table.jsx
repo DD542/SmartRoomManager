@@ -3,13 +3,22 @@ import { cn } from '../../utils/cn';
 import { IconButton } from './Button';
 
 /**
- * Tableau de données. Sous 768px, `MobileCards` prend le relais côté page :
- * le tableau lui-même reste scrollable horizontalement dans son conteneur.
+ * Tableau de données. Sous 768 px, les composants appelants rendent des cartes
+ * — `BookingTable` et `TicketTable` le font tous deux — et le tableau lui-même
+ * reste défilable horizontalement dans son conteneur.
+ *
+ * La largeur minimale est proportionnelle au nombre de colonnes, comme celle
+ * du tableau d'administration. Fixée à 640 px pour toutes, elle imposait un
+ * défilement horizontal à un tableau de trois colonnes qui tenait dans 288 px.
+ * Le plafond reste 640 : la règle ne peut que réduire.
  */
 export function Table({ columns = [], rows = [], caption, rowKey = (row) => row.id, onRowClick, className }) {
   return (
     <div className={cn('overflow-x-auto', className)}>
-      <table className="w-full min-w-[640px] border-collapse text-sm">
+      <table
+        className="w-full border-collapse text-sm"
+        style={{ minWidth: `${Math.min(640, columns.length * 96)}px` }}
+      >
         {caption && <caption className="sr-only">{caption}</caption>}
         <thead>
           <tr className="border-b border-line text-left">

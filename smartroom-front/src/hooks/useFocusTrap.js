@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { declarerSurfaceBloquante } from './useSurfaceBloquante';
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -41,7 +42,14 @@ export function useFocusTrap(active, onEscape) {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
+    // Une surface bloquante de plus : les panneaux flottants s'effacent le
+    // temps qu'elle vive. Le compte est tenu ici parce que toute modale,
+    // feuille ou tiroir passe par ce hook — le déclarer composant par composant
+    // laisserait le prochain l'oublier.
+    const relacher = declarerSurfaceBloquante();
+
     return () => {
+      relacher();
       document.removeEventListener('keydown', onKeyDown);
       document.body.style.overflow = previousOverflow;
       previous.current?.focus?.();

@@ -30,7 +30,7 @@ export function Tooltip({ label, side = 'top', children, className }) {
           role="tooltip"
           id={id}
           className={cn(
-            'absolute z-50 w-max max-w-[16rem] rounded-lg border border-line bg-surface-raised px-2 py-1 text-xs text-content',
+            'absolute z-sticky w-max max-w-[16rem] rounded-lg border border-line bg-surface-raised px-2 py-1 text-xs text-content',
             positions[side],
           )}
         >

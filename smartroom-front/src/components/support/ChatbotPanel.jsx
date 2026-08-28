@@ -4,6 +4,7 @@ import { confirmer, demander, relireConversation } from '../../api/assistant';
 import { isCancelled } from '../../api/client';
 import { IconButton } from '../ui/Button';
 import { CarteAssistant } from './ChatCards';
+import { useSurfaceBloquante } from '../../hooks/useSurfaceBloquante';
 
 /**
  * U-23 — Assistant conversationnel, monté dans AppLayout.
@@ -59,6 +60,14 @@ export function ChatbotPanel() {
 
   const liste = useRef(null);
   const controleur = useRef(null);
+
+  // Modale, feuille ou tiroir ouverts : le panneau se replie. Déployé
+  // par-dessus, il volerait des pixels à la décision demandée et capterait des
+  // clics qui ne lui étaient pas destinés.
+  const surfaceBloquante = useSurfaceBloquante();
+  useEffect(() => {
+    if (surfaceBloquante) setOuvert(false);
+  }, [surfaceBloquante]);
 
   useEffect(() => {
     liste.current?.scrollTo({ top: liste.current.scrollHeight, behavior: 'smooth' });
@@ -234,7 +243,11 @@ export function ChatbotPanel() {
         type="button"
         onClick={() => setOuvert(true)}
         aria-label="Ouvrir l’assistant"
-        className="fixed bottom-5 right-5 z-40 flex h-12 w-12 items-center justify-center rounded-full border border-accent/40 bg-accent text-ink shadow-lg transition hover:brightness-110"
+        // Zone d'exclusion : la bulle se pose au-dessus de la barre d'onglets
+        // (56 px) et de la marge du système, et non par-dessus. Elle reste en
+        // outre sous elle dans l'échelle des plans — un bouton flottant ne
+        // masque pas une destination.
+        className="fixed bottom-[calc(env(safe-area-inset-bottom)+4.5rem)] right-4 z-chatbubble flex h-12 w-12 items-center justify-center rounded-full border border-accent/40 bg-accent text-ink shadow-lg transition hover:brightness-110 md:bottom-5 md:right-5"
       >
         <Bot size={20} aria-hidden="true" />
       </button>
@@ -244,7 +257,12 @@ export function ChatbotPanel() {
   return (
     <section
       aria-label="Assistant SmartBot"
-      className="fixed bottom-5 right-5 z-40 flex h-[32rem] w-[min(24rem,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-2xl"
+      // Plein écran sous 768 px : à 360 px de large, un panneau flottant de
+      // 24 rem laissait 40 px de marge, recouvrait la barre d'onglets et
+      // n'affichait que quatre lignes de conversation au-dessus du clavier
+      // virtuel. À partir de 768 px, il redevient une fenêtre posée dans le
+      // coin, qui laisse voir l'écran de travail derrière.
+      className="fixed inset-0 z-chatpanel flex flex-col border-line bg-surface pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] md:inset-auto md:bottom-5 md:right-5 md:h-[32rem] md:w-[min(24rem,calc(100vw-2.5rem))] md:overflow-hidden md:rounded-2xl md:border md:pb-0 md:pt-0 md:shadow-2xl"
     >
       <header className="flex items-center gap-3 border-b border-line px-4 py-3">
         <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-accent/40 bg-accent-soft">
