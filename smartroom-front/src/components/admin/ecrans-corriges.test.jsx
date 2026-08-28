@@ -28,6 +28,7 @@ import { ToastProvider } from '../../hooks/useToast';
 import { serveur } from '../../test/serveur';
 import * as adapt from '../../api/adapters';
 import { RoomCard } from '../rooms/RoomCard';
+import { FloorPlan } from '../rooms/FloorPlan';
 import BookingDetailPage from '../../pages/manage/BookingDetailPage';
 
 describe('Liste des salles de repli', () => {
@@ -436,5 +437,46 @@ describe('Carte de salle du tunnel de réservation', () => {
 
     expect(screen.getByText('2e')).toBeTruthy();
     expect(screen.queryByText(/•/)).toBeNull();
+  });
+});
+
+describe('Plan d’étage', () => {
+  const SALLE = {
+    id: 'r-1',
+    name: 'Salle Vinci',
+    floor: '2e',
+    capacity: 12,
+    status: 'disponible',
+    plan: { x: 10, y: 10, w: 20, h: 15, rotation: 0, entrance: true },
+  };
+
+  const PLAN = {
+    id: 'f-1',
+    label: 'Eiffel 1 — 2e étage',
+    corridors: [],
+    entrance: null,
+    legend: [],
+    rooms: [SALLE],
+  };
+
+  it('se dessine sans entrée déclarée', () => {
+    // `getFloorPlan` rend toujours `entrance: null` — l'API n'a jamais servi
+    // d'entrée d'étage. Le composant la lisait sans vérifier : toute la page
+    // tombait sur « Cannot read properties of null (reading 'x') » dès qu'un
+    // étage n'avait pas d'image de plan déposée.
+    render(<FloorPlan plan={PLAN} rooms={[SALLE]} />);
+
+    expect(screen.getByRole('button', { name: /Salle Vinci/ })).toBeTruthy();
+  });
+
+  it('dessine l’entrée quand le plan en porte une', () => {
+    render(
+      <FloorPlan
+        plan={{ ...PLAN, entrance: { x: 5, y: 90, w: 8, h: 4, label: 'Entrée nord' } }}
+        rooms={[SALLE]}
+      />,
+    );
+
+    expect(screen.getByText('Entrée nord')).toBeTruthy();
   });
 });

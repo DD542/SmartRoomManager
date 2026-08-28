@@ -129,8 +129,13 @@ export function FloorPlan({
           );
         })}
 
-        {/* Repère d'entrée : schématique, on ne le superpose pas au plan officiel. */}
-        {!hasImage && (
+        {/* Repère d'entrée : schématique, on ne le superpose pas au plan officiel.
+            `plan.entrance` reste absent tant que l'API ne sert pas d'entrée pour
+            l'étage — elle n'en a jamais servi, seul le plan de démonstration en
+            portait une. Le lire sans vérifier faisait tomber la page entière sur
+            « Cannot read properties of null », dès qu'un étage n'avait pas
+            d'image de plan déposée. */}
+        {!hasImage && plan.entrance && (
           <>
             <rect
               x={plan.entrance.x}

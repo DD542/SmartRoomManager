@@ -67,14 +67,23 @@ export async function getFloorPlan(planId, { signal } = {}) {
     get(`/floors/${planId}/plan`, { signal }).catch(() => null),
   ]);
 
-  const placees = items(salles).map(adapt.room);
-  const [premiere] = placees;
+  const toutes = items(salles).map(adapt.room);
+  // Le plan dessine des rectangles à des coordonnées : une salle que
+  // l'administration n'a pas encore posée n'en a aucune. Le nom de la variable
+  // disait déjà « placées », mais rien ne filtrait — et le plan lisait
+  // `salle.plan.x` sur une salle sans position.
+  const placees = toutes.filter((salle) => salle.plan);
+  const [premiere] = placees.length ? placees : toutes;
 
   return {
     id: planId,
     buildingId: premiere?.buildingId ?? null,
     label: premiere ? `${premiere.buildingName} — ${premiere.floor}` : 'Plan',
     sublabel: `${placees.length} salles`,
+    //: Salles de l'étage restées hors du plan. Comptées et non tues : sans
+    //: cela, une salle absente du dessin passerait pour une salle absente du
+    //: parc.
+    unplaced: toutes.length - placees.length,
     corridors: [],
     entrance: null,
     landmarks: [],

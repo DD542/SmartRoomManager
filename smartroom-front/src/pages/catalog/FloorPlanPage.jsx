@@ -116,6 +116,16 @@ export default function FloorPlanPage() {
                 />
               )}
 
+              {plan.data.unplaced > 0 && (
+                <p className="rounded-lg border border-warning/40 bg-warning-soft px-3 py-2 text-xs text-content">
+                  {plan.data.unplaced} salle{plan.data.unplaced > 1 ? 's' : ''} de cet étage
+                  {plan.data.unplaced > 1 ? ' ne sont pas encore posées' : ' n’est pas encore posée'}
+                  {' '}sur le plan : elle{plan.data.unplaced > 1 ? 's' : ''} reste
+                  {plan.data.unplaced > 1 ? 'nt' : ''} réservable
+                  {plan.data.unplaced > 1 ? 's' : ''} depuis le catalogue.
+                </p>
+              )}
+
               <Card className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                 <FloorPlanLegend legend={plan.data.legend} />
                 <p className="text-[11px] text-content-faint">
