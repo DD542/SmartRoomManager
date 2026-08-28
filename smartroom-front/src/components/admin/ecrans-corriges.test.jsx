@@ -30,6 +30,7 @@ import * as adapt from '../../api/adapters';
 import { RoomCard } from '../rooms/RoomCard';
 import { FloorPlan } from '../rooms/FloorPlan';
 import { FloorRoomPicker, RoomLocationPlan } from '../rooms/RoomLocationPlan';
+import { SlotPanel } from '../bookings/SlotPanel';
 import BookingDetailPage from '../../pages/manage/BookingDetailPage';
 
 describe('Liste des salles de repli', () => {
@@ -539,5 +540,67 @@ describe('Plan de localisation côté utilisateur', () => {
     expect(screen.getByText(/2 salles — 1 plan déposé/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /Salle Curie/ }));
     expect(choisir).toHaveBeenCalledWith(expect.objectContaining({ id: 'r-4' }));
+  });
+});
+
+describe('Rail de vérification du créneau', () => {
+  const CONFLIT = adapt.conflict({
+    booking_id: 'bk-7',
+    title: 'Revue de sprint',
+    kind: 'chevauchement',
+    overlap_minutes: 30,
+    blocking: true,
+    message: 'Ce créneau recouvre une réservation existante.',
+    slot: { starts_at: '2026-09-02T12:00:00Z', ends_at: '2026-09-02T13:30:00Z' },
+  });
+
+  const CRENEAU = {
+    start: new Date('2026-09-02T13:00:00Z'),
+    end: new Date('2026-09-02T14:00:00Z'),
+  };
+
+  // Le rail porte des boutons-liens : sans routeur, ils lèvent avant même que
+  // le conflit soit rendu.
+  const rendre = (element) => render(<MemoryRouter>{element}</MemoryRouter>);
+
+  it('affiche un conflit au lieu d’emporter l’écran', () => {
+    // L'écran lisait `conflit.booking.id` — la forme des maquettes. Le premier
+    // conflit rencontré faisait tomber tout le tunnel de réservation sur
+    // « Cannot read properties of undefined (reading 'id') ».
+    rendre(<SlotPanel slot={CRENEAU} conflicts={[CONFLIT]} />);
+
+    expect(screen.getByText(/recouvre une réservation existante/)).toBeTruthy();
+    expect(screen.getByText('Conflit détecté')).toBeTruthy();
+  });
+
+  it('affiche un conflit qui n’oppose aucune réservation', () => {
+    // Fermeture, battement contre une plage close : `bookingId` est alors nul,
+    // et la clé doit tenir quand même.
+    const fermeture = adapt.conflict({
+      booking_id: null,
+      kind: 'fermeture',
+      blocking: true,
+      message: 'La salle est fermée sur ce créneau.',
+      slot: { starts_at: '2026-09-02T12:00:00Z', ends_at: '2026-09-02T13:30:00Z' },
+    });
+
+    rendre(<SlotPanel slot={CRENEAU} conflicts={[fermeture]} />);
+
+    expect(screen.getByText(/La salle est fermée/)).toBeTruthy();
+  });
+
+  it('sépare les conflits bloquants des simples avertissements', () => {
+    const battement = adapt.conflict({
+      booking_id: 'bk-9',
+      kind: 'battement',
+      blocking: false,
+      message: 'Il ne reste que 5 minutes entre deux réunions.',
+      slot: { starts_at: '2026-09-02T14:00:00Z', ends_at: '2026-09-02T15:00:00Z' },
+    });
+
+    rendre(<SlotPanel slot={CRENEAU} conflicts={[CONFLIT, battement]} />);
+
+    expect(screen.getByText('Conflit détecté')).toBeTruthy();
+    expect(screen.getByText('Conflit potentiel')).toBeTruthy();
   });
 });

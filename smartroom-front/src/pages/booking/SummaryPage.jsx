@@ -8,7 +8,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useBooking } from '../../hooks/useBooking';
 import { useToast } from '../../hooks/useToast';
 import { fmtDateLong, mergeDateAndTime } from '../../utils/dates';
-import { fullName, plural } from '../../utils/format';
+import { plural } from '../../utils/format';
 import { Button } from '../../components/ui/Button';
 import { Card, CardHeader, Callout } from '../../components/ui/Card';
 import { Checkbox } from '../../components/ui/Form';
@@ -68,10 +68,11 @@ export default function SummaryPage() {
         end,
         attendees: Number(draft.attendees),
         requiredEquipmentIds: draft.equipmentIds,
-        participants: [
-          { email: user.email, name: fullName(user), userId: user.id, organizer: true, status: 'accepte' },
-          ...draft.participants,
-        ],
+        // Les invités seulement : le serveur inscrit l'organisateur lui-même,
+        // à partir de la session. L'envoyer ici le posait deux fois, et la
+        // contrainte d'unicité refusait la réservation entière — « Cette
+        // valeur est déjà utilisée », après quatre étapes de tunnel.
+        participants: draft.participants,
       });
       toast.success('Réservation confirmée', `${booking.room.name}, code ${booking.accessCode}.`);
       navigate(`/app/reservation/${booking.id}/confirmee`, { replace: true });

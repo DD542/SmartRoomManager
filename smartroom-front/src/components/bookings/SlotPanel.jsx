@@ -7,6 +7,23 @@ import { Card, Callout } from '../ui/Card';
 import { Spinner } from '../ui/States';
 
 /**
+ * Clé d'un conflit dans la liste.
+ *
+ * L'écran lisait `conflit.booking.id` — la forme des maquettes. L'adaptateur
+ * rend `bookingId`, une chaîne, et rien d'autre : le premier conflit affiché
+ * emportait donc tout le tunnel sur « Cannot read properties of undefined ».
+ * Le défaut ne se voyait que sur un créneau en conflit, c'est-à-dire
+ * exactement quand cet écran sert à quelque chose.
+ *
+ * `bookingId` est absent des conflits qui n'opposent aucune réservation — une
+ * fermeture, un battement contre une plage close : la sorte et le créneau
+ * complètent donc la clé.
+ */
+const cle = (conflit) =>
+  [conflit.kind, conflit.bookingId ?? 'sans-reservation', conflit.start?.toISOString?.() ?? '']
+    .join('|');
+
+/**
  * U-04 — rail droit : créneau retenu, verdict du moteur de conflits,
  * alternatives cliquables et règles d'accès de la salle.
  */
@@ -52,13 +69,13 @@ export function SlotPanel({
         ))}
 
         {!checking && blocking.map((conflict) => (
-          <Callout key={conflict.booking.id} tone="danger" icon={AlertTriangle} title="Conflit détecté">
+          <Callout key={cle(conflict)} tone="danger" icon={AlertTriangle} title="Conflit détecté">
             {conflict.message}
           </Callout>
         ))}
 
         {!checking && soft.map((conflict) => (
-          <Callout key={conflict.booking.id} tone="warning" icon={AlertTriangle} title="Conflit potentiel">
+          <Callout key={cle(conflict)} tone="warning" icon={AlertTriangle} title="Conflit potentiel">
             {conflict.message}
           </Callout>
         ))}
