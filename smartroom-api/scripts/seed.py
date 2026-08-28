@@ -313,8 +313,17 @@ def visuel_plan(salle: str, batiment: str, etage: str, place: int) -> str:
         f'text-anchor="middle">Vous cherchez : {salle}</text>'
         "</svg>"
     )
-    ardoise = salle.lower().replace(" ", "-").replace("é", "e").replace("è", "e")
-    return _ecrire_svg("reperes", f"{ardoise}.svg", svg)
+    return _ecrire_svg("reperes", f"{_ardoise(salle)}.svg", svg)
+
+
+def _ardoise(salle: str) -> str:
+    """Nom de fichier du repère composé par le seed, pour une salle donnée.
+
+    Extrait de `visuel_plan` parce que `relever_visuels` a besoin de la même
+    règle : reconnaître un visuel du seed demande de savoir comment il le
+    nomme, et deux copies de cette règle finiraient par diverger.
+    """
+    return salle.lower().replace(" ", "-").replace("é", "e").replace("è", "e")
 
 
 def visuel(nom_salle: str, index: int) -> str:
@@ -336,6 +345,63 @@ def visuel(nom_salle: str, index: int) -> str:
 # --------------------------------------------------------------------------- #
 # Peuplement
 # --------------------------------------------------------------------------- #
+
+
+def relever_visuels(session: Session) -> dict[str, str]:
+    """Note les visuels **déposés par l'administration** avant de vider.
+
+    Le seed compose ses propres façades et ses propres plans, en SVG, sous des
+    noms fixes : `eif1.svg`, `salle-hopper.svg`. Tout le reste — un `.webp`, un
+    `.jpg`, un nom en empreinte — vient d'un téléversement, c'est-à-dire du
+    travail de quelqu'un.
+
+    Écrit après avoir perdu deux fois les photos du parc. Les fichiers, eux,
+    survivaient sous `MEDIA_ROOT` ; mais les lignes qui les désignaient
+    partaient avec le reste, et plus rien ne disait quelle image allait à quel
+    bâtiment. Un jeu de démonstration a le droit de refaire ses données ; il n'a
+    pas celui d'effacer ce qu'on lui a confié.
+
+    La clé est le code du bâtiment ou le nom de la salle : ce sont eux qui
+    survivent d'un jeu à l'autre, pas les identifiants.
+    """
+    releve: dict[str, str] = {}
+
+    for batiment in session.scalars(select(Building)):
+        if _est_depose(batiment.image_url, f"{batiment.code.lower()}.svg"):
+            releve[f"batiment:{batiment.code}"] = batiment.image_url
+
+    for salle in session.scalars(select(Room)):
+        if _est_depose(salle.location_plan_url, f"{_ardoise(salle.name)}.svg"):
+            releve[f"salle:{salle.name}"] = salle.location_plan_url
+
+    return releve
+
+
+def _est_depose(url: str | None, nom_du_seed: str) -> bool:
+    """Vrai si l'adresse ne désigne pas un visuel composé par le seed."""
+    return bool(url) and not url.endswith(nom_du_seed)
+
+
+def rendre_visuels(session: Session, releve: dict[str, str]) -> int:
+    """Repose les visuels relevés sur les bâtiments et salles homonymes."""
+    if not releve:
+        return 0
+
+    rendus = 0
+    for batiment in session.scalars(select(Building)):
+        url = releve.get(f"batiment:{batiment.code}")
+        if url:
+            batiment.image_url = url
+            rendus += 1
+
+    for salle in session.scalars(select(Room)):
+        url = releve.get(f"salle:{salle.name}")
+        if url:
+            salle.location_plan_url = url
+            rendus += 1
+
+    session.flush()
+    return rendus
 
 
 def vider(session: Session) -> None:
@@ -1357,14 +1423,20 @@ def main() -> int:
     )
     arguments = analyseur.parse_args()
 
+    visuels: dict[str, str] = {}
+
     with SessionLocal() as session:
         if arguments.reset:
+            # Relevé **avant** la purge : après, plus rien ne dit quelle image
+            # appartenait à quel bâtiment.
+            visuels = relever_visuels(session)
             vider(session)
         elif session.scalar(select(Building).limit(1)) is not None:
             print("La base contient déjà des données. Relancez avec --reset.", file=sys.stderr)
             return 1
 
         batiments, salles, _ = creer_parc(session)
+        rendus = rendre_visuels(session, visuels)
         utilisateurs, administrateurs = creer_comptes(session, batiments)
         creer_regles(session, batiments, salles, administrateurs)
         reservations = creer_reservations(session, salles, utilisateurs)
@@ -1387,7 +1459,8 @@ def main() -> int:
         f"du {DEBUT_FENETRE} au {FIN_FENETRE}.\n"
         f"Fermeture globale le {JOUR_FERME}. Deux conflits en attente : #CONF-8492 et #CONF-8493.\n"
         f"Base de connaissances : {fragments}\n"
-        f"Mot de passe de tous les comptes : {MOT_DE_PASSE_DEMO}"
+        + (f"Visuels déposés conservés : {rendus}.\n" if rendus else "")
+        + f"Mot de passe de tous les comptes : {MOT_DE_PASSE_DEMO}"
     )
     return 0
 
