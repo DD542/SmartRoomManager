@@ -28,6 +28,7 @@ import ExploreRoomsPage from './pages/catalog/ExploreRoomsPage';
 import RoomDetailPage from './pages/catalog/RoomDetailPage';
 import FloorPlanPage from './pages/catalog/FloorPlanPage';
 import CheckInPage from './pages/onsite/CheckInPage';
+import CheckInEntryPage from './pages/onsite/CheckInEntryPage';
 import NotificationsPage from './pages/account/NotificationsPage';
 import ProfilePage from './pages/account/ProfilePage';
 import HelpCenterPage from './pages/account/HelpCenterPage';
@@ -162,6 +163,8 @@ const routes = [
       { path: 'salles', element: <ExploreRoomsPage /> },
       { path: 'salles/:id', element: <RoomDetailPage /> },
       { path: 'plan', element: <FloorPlanPage /> },
+      // Sans identifiant : l'onglet mobile n'en a aucun à donner.
+      { path: 'check-in', element: <CheckInEntryPage /> },
       { path: 'check-in/:id', element: <CheckInPage /> },
 
       { path: 'notifications', element: <NotificationsPage /> },

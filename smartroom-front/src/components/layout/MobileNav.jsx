@@ -6,7 +6,10 @@ const ITEMS = [
   { to: '/app', label: 'Accueil', icon: LayoutDashboard, end: true },
   { to: '/app/salles', label: 'Salles', icon: DoorOpen },
   { to: '/app/reservations', label: 'Réservations', icon: CalendarCheck },
-  { to: '/app/check-in/bk-1001', label: 'Check-in', icon: CircleCheck },
+  // Sans identifiant : « bk-1001 » venait des maquettes, et chaque appui
+  // menait à « booking_id doit être un identifiant valide ». L'écran
+  // d'entrée cherche la réservation du moment.
+  { to: '/app/check-in', label: 'Check-in', icon: CircleCheck },
   { to: '/app/profil', label: 'Profil', icon: User },
 ];
 

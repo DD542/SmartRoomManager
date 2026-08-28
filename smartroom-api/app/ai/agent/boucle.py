@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 import time
 import uuid
 from collections.abc import AsyncIterator, Sequence
@@ -60,6 +61,9 @@ class JournalTour:
         self.mode = "modele"
         self.declencheur_repli: str | None = None
         self.iterations = 0
+        #: Relances après une annonce d'acte non tenue. Chiffre utile à A-13 :
+        #: s'il monte, c'est le prompt qu'il faut reprendre, pas la boucle.
+        self.relances = 0
         self.outils: list[dict] = []
         self.mesures: Mesures | None = None
         self.contexte: dict | None = None
@@ -73,6 +77,7 @@ class JournalTour:
             "repli": self.mode == "repli",
             "declencheur_repli": self.declencheur_repli,
             "iterations": self.iterations,
+            "relances": self.relances,
             "outils": [item["outil"] for item in self.outils],
             "duree_ms": int((time.perf_counter() - self.debut) * 1000),
             "modele": self.mesures.modele if self.mesures else None,
@@ -212,6 +217,8 @@ class Agent:
         reponse: list[str] = []
         debut_tour = time.perf_counter()
 
+        relance_faite = False
+
         for iteration in range(1, self._reglages.max_iterations + 1):
             journal.iterations = iteration
 
@@ -243,7 +250,18 @@ class Agent:
             journal.mesures = mesures
 
             if not appels:
-                break
+                # « Je recherche une salle… veuillez patienter un instant »,
+                # puis plus rien : le modèle annonce l'acte au lieu de le
+                # faire, et le tour s'achève sur une promesse que personne ne
+                # tient. Le texte est déjà parti à l'écran — on ne peut pas le
+                # reprendre —, alors on tient la promesse à sa place, une fois.
+                if relance_faite or not _annonce_sans_acte("".join(reponse)):
+                    break
+                relance_faite = True
+                journal.relances += 1
+                messages.append(Message(role=RoleMessage.ASSISTANT, contenu="".join(reponse)))
+                messages.append(Message(role=RoleMessage.SYSTEME, contenu=RAPPEL_ACTE))
+                continue
 
             if len(appels) > self._reglages.max_outils_par_tour:
                 appels = appels[: self._reglages.max_outils_par_tour]
@@ -506,6 +524,30 @@ class Agent:
 
         journal.contexte = {"intention": reponse.intention, "score": reponse.score}
         yield ev.Evenement(type=ev.TypeEvenement.FIN, donnees=journal.pour_journal())
+
+
+#: Ce que le modèle écrit quand il annonce au lieu d'agir. Le prompt le lui
+#: interdit déjà — « tu fais, puis tu dis le résultat » — mais un modèle de 7
+#: milliards de paramètres y retombe, surtout sur une question de suivi.
+_ANNONCE = re.compile(
+    r"(un instant|veuillez patienter|je vous (?:reviens|réponds) dans|"
+    r"je (?:vais|vais vous|recherche|cherche|regarde|consulte|vérifie|verifie))\b",
+    re.IGNORECASE,
+)
+
+RAPPEL_ACTE = (
+    "Tu viens d'annoncer une recherche sans l'exécuter. Appelle maintenant "
+    "l'outil correspondant, puis donne le résultat. N'annonce plus rien."
+)
+
+
+def _annonce_sans_acte(texte: str) -> bool:
+    """Le tour s'est-il achevé sur une promesse ?
+
+    Seul un tour sans aucun appel d'outil arrive ici : le texte est donc tout
+    ce que l'utilisateur a reçu. S'il annonce une action, elle n'a pas eu lieu.
+    """
+    return bool(texte.strip()) and _ANNONCE.search(texte) is not None
 
 
 def _est_ecriture(nom: str) -> bool:

@@ -62,10 +62,11 @@ const LEGENDE = [
 export async function getFloorPlan(planId, { signal } = {}) {
   if (!planId) throw new ApiError('Aucun plan sélectionné.', 404, 'introuvable');
 
-  const [salles, plan] = await Promise.all([
-    get('/rooms', { params: { floor_id: planId, size: 100 }, signal }),
-    get(`/floors/${planId}/plan`, { signal }).catch(() => null),
-  ]);
+  // Les salles seules : le plan déposé se demande par `getPlanDocumentForPlan`,
+  // que l'écran appelle déjà. Le demander ici aussi produisait deux requêtes
+  // pour une réponse, et deux 404 rouges dans la console pour un étage sans
+  // plan — état parfaitement normal — dont personne ne lisait le résultat.
+  const salles = await get('/rooms', { params: { floor_id: planId, size: 100 }, signal });
 
   const toutes = items(salles).map(adapt.room);
   // Le plan dessine des rectangles à des coordonnées : une salle que
@@ -89,7 +90,6 @@ export async function getFloorPlan(planId, { signal } = {}) {
     landmarks: [],
     legend: LEGENDE,
     rooms: placees,
-    document: plan ? document_(plan) : null,
   };
 }
 

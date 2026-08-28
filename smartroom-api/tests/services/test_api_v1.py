@@ -249,6 +249,58 @@ class TestReservation:
             assert item["justification"]
 
 
+class TestInvitations:
+    """Deux invitations pour une adresse, et l'invitation de soi-même.
+
+    `uq_booking_participants_email` les refusait en fin de course : l'écran
+    recevait « Cette valeur est déjà utilisée », qui ne dit ni quelle valeur ni
+    où la corriger — après quatre étapes de tunnel.
+    """
+
+    def _creer(self, client, entetes, salle, jour_ouvre, participants):
+        return client.post(
+            "/api/v1/bookings",
+            headers=entetes,
+            json={
+                "room_id": str(salle.id),
+                "slot": charge(creneau(jour_ouvre, 10)),
+                "title": "Atelier",
+                "attendees": 4,
+                "participants": participants,
+            },
+        )
+
+    def test_une_adresse_invitee_deux_fois_est_nommee(
+        self, client, compte, salle, jour_ouvre
+    ):
+        entetes = connecter(client, compte.email)
+        reponse = self._creer(
+            client, entetes, salle, jour_ouvre,
+            [["ana@ece.fr", "Ana"], ["ANA@ece.fr", "Ana bis"]],
+        )
+
+        assert reponse.status_code == 422
+        assert "ana@ece.fr" in reponse.json()["error"]["message"].lower()
+
+    def test_l_organisateur_ne_s_invite_pas(self, client, compte, salle, jour_ouvre):
+        entetes = connecter(client, compte.email)
+        reponse = self._creer(
+            client, entetes, salle, jour_ouvre, [[compte.email, "Moi"]]
+        )
+
+        assert reponse.status_code == 422
+        assert reponse.json()["error"]["code"] == "organisateur_invite"
+
+    def test_des_invites_distincts_passent(self, client, compte, salle, jour_ouvre):
+        entetes = connecter(client, compte.email)
+        reponse = self._creer(
+            client, entetes, salle, jour_ouvre,
+            [["ana@ece.fr", "Ana"], ["bo@ece.fr", "Bo"]],
+        )
+
+        assert reponse.status_code == 201
+
+
 class TestRecommandation:
     def test_classement_avec_le_detail_du_score(self, client, compte, salle, jour_ouvre):
         entetes = connecter(client, compte.email)

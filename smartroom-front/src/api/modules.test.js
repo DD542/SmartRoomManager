@@ -16,6 +16,7 @@ import { erreur, page, serveur } from '../test/serveur';
 import { setAccessToken } from './client';
 import * as auth from './auth';
 import * as rooms from './rooms';
+import * as buildings from './buildings';
 import * as availability from './availability';
 import * as bookings from './bookings';
 import * as checkin from './checkin';
@@ -352,6 +353,76 @@ describe('parc', () => {
     );
 
     expect(await equipment.listEquipment()).toHaveLength(1);
+  });
+});
+
+describe('plan d’étage', () => {
+  it('ne demande pas le plan déposé en même temps que les salles', async () => {
+    // Deux requêtes pour une réponse, et deux 404 rouges dans la console pour
+    // un étage sans plan — état normal — dont personne ne lisait le résultat :
+    // l'écran demande déjà le document par `getPlanDocumentForPlan`.
+    const chemins = [];
+    serveur.use(
+      http.get(`${BASE}/rooms`, ({ request }) => {
+        chemins.push(new URL(request.url).pathname);
+        return HttpResponse.json(page([]));
+      }),
+      http.get(`${BASE}/floors/:id/plan`, ({ request }) => {
+        chemins.push(new URL(request.url).pathname);
+        return HttpResponse.json(erreur('introuvable', 'Aucun plan.'), { status: 404 });
+      }),
+    );
+
+    await buildings.getFloorPlan('f-1');
+
+    expect(chemins).toEqual(['/api/v1/rooms']);
+  });
+
+  it('ne demande rien quand la liste dit qu’aucun plan n’est déposé', async () => {
+    let appele = false;
+    serveur.use(
+      http.get(`${BASE}/floors/:id/plan`, () => {
+        appele = true;
+        return HttpResponse.json({});
+      }),
+    );
+
+    expect(await buildings.getPlanDocumentForPlan('f-1', { exists: false })).toBeNull();
+    expect(appele).toBe(false);
+  });
+
+  it('écarte du plan les salles sans position', async () => {
+    // Le plan dessine des rectangles à des coordonnées : une salle que
+    // l'administration n'a pas posée n'en a aucune, et l'écran lisait
+    // `salle.plan.x` dessus.
+    const salle = (id, placement) => ({
+      id,
+      name: `Salle ${id}`,
+      floor_id: 'f-1',
+      building_id: 'b-1',
+      building_name: 'Eiffel 1',
+      floor_label: '2e étage',
+      capacity: 10,
+      area_m2: '30',
+      status: 'disponible',
+      is_accessible: true,
+      placement,
+    });
+    serveur.use(
+      http.get(`${BASE}/rooms`, () =>
+        HttpResponse.json(
+          page([
+            salle('r-1', { pos_x: 10, pos_y: 10, width: 20, height: 15, rotation: 0 }),
+            salle('r-2', null),
+          ]),
+        ),
+      ),
+    );
+
+    const plan = await buildings.getFloorPlan('f-1');
+
+    expect(plan.rooms.map((item) => item.id)).toEqual(['r-1']);
+    expect(plan.unplaced).toBe(1);
   });
 });
 

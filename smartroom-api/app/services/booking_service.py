@@ -344,7 +344,15 @@ def create_booking(
             is_organizer=True,
         )
     )
+    # L'organisateur est déjà dans la liste : s'inviter soi-même n'ajoute
+    # personne, et la contrainte d'unicité le refusait par un « Cette valeur est
+    # déjà utilisée » qui ne disait pas de quelle valeur il s'agissait.
     for email, nom in participants:
+        if email.strip().lower() == proprietaire.email.strip().lower():
+            raise RuleViolationError(
+                "Vous organisez déjà cette réunion : inutile de vous y inviter.",
+                code="organisateur_invite",
+            )
         session.add(
             BookingParticipant(
                 booking_id=reservation.id,

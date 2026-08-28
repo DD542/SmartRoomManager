@@ -53,6 +53,65 @@ def iso(moment: datetime) -> str:
     return moment.astimezone(UTC).isoformat().replace("+00:00", "Z")
 
 
+class TestPromesseNonTenue:
+    """« Je recherche une salle… veuillez patienter un instant », puis rien.
+
+    Le modèle annonce l'acte au lieu de le faire, et le tour s'achève sur une
+    promesse que personne ne tient — l'utilisateur attend une carte qui ne
+    viendra jamais. Le prompt l'interdit déjà ; un modèle de 7 milliards de
+    paramètres y retombe, surtout sur une question de suivi.
+    """
+
+    @pytest.mark.asyncio
+    async def test_une_annonce_sans_acte_est_relancee_une_fois(
+        self, session, principal, selecteur, faux_modele, magasin, salle
+    ):
+        faux_modele.programmer(
+            TourSimule(texte="Je recherche une salle. Veuillez patienter un instant."),
+            TourSimule(appels=(AppelOutil(nom="rechercher_salles", arguments={"capacite_min": 2}),)),
+            TourSimule(texte="Deux salles conviennent."),
+        )
+        agent = Agent(session, principal, selecteur=selecteur, magasin=magasin)
+
+        trace = await jouer(agent, "une salle pour 2 personnes")
+
+        assert fin(trace)["outils"] == ["rechercher_salles"]
+        # La promesse est déjà partie à l'écran : on ne la reprend pas, on la
+        # tient. Le texte final porte donc les deux.
+        assert "Deux salles conviennent." in texte(trace)
+        assert fin(trace)["relances"] == 1
+
+    @pytest.mark.asyncio
+    async def test_une_reponse_franche_n_est_pas_relancee(
+        self, session, principal, selecteur, faux_modele, magasin
+    ):
+        faux_modele.programmer(TourSimule(texte="Je ne peux pas faire cela."))
+        agent = Agent(session, principal, selecteur=selecteur, magasin=magasin)
+
+        trace = await jouer(agent, "bonjour")
+
+        assert faux_modele.tours_consommes == 1
+        assert fin(trace)["relances"] == 0
+
+    @pytest.mark.asyncio
+    async def test_la_relance_n_a_lieu_qu_une_fois(
+        self, session, principal, selecteur, faux_modele, magasin
+    ):
+        """Un modèle qui s'entête ne doit pas boucler : deux annonces de suite
+        s'arrêtent là où la première aurait dû aboutir."""
+        faux_modele.programmer(
+            TourSimule(texte="Je vais vérifier."),
+            TourSimule(texte="Un instant."),
+            TourSimule(texte="Toujours rien."),
+        )
+        agent = Agent(session, principal, selecteur=selecteur, magasin=magasin)
+
+        trace = await jouer(agent, "une salle pour 2 personnes")
+
+        assert faux_modele.tours_consommes == 2
+        assert fin(trace)["relances"] == 1
+
+
 class TestTourNominal:
     @pytest.mark.asyncio
     async def test_un_outil_de_lecture_puis_une_reponse(

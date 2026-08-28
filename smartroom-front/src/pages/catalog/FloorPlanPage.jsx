@@ -45,9 +45,16 @@ export default function FloorPlanPage() {
     () => (planId ? getFloorPlan(planId) : Promise.resolve(null)),
     [planId],
   );
+  // `exists` évite la requête quand la liste dit déjà qu'aucun plan n'est
+  // déposé : la réponse serait un 404 légitime, que la console affiche en
+  // rouge et qu'on lit comme une panne.
+  const etageChoisi = (plans.data ?? []).find((item) => item.id === planId);
   const planDocument = useAsync(
-    () => (planId ? getPlanDocumentForPlan(planId) : Promise.resolve(null)),
-    [planId],
+    () =>
+      planId
+        ? getPlanDocumentForPlan(planId, { exists: Boolean(etageChoisi?.hasPlan) })
+        : Promise.resolve(null),
+    [planId, etageChoisi?.hasPlan],
   );
   const myBookings = useAsync(() => listBookings({ ownerId: user.id, status: 'confirmee' }), [user.id]);
   const directions = useAsync(

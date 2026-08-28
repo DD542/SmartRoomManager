@@ -28,6 +28,23 @@ class BookingIn(ApiModel):
     attendees: Annotated[int, Field(ge=1, le=500)] = 1
     participants: list[tuple[str, str]] = Field(default_factory=list, max_length=50)
 
+    @model_validator(mode="after")
+    def _invites_distincts(self) -> BookingIn:
+        """Deux fois la même adresse, c'est une invitation, pas deux.
+
+        `uq_booking_participants_email` le refuse déjà, mais en fin de course :
+        l'écran recevait alors « Cette valeur est déjà utilisée », qui ne dit ni
+        quelle valeur ni où la corriger, sur un écran qui a mis quatre étapes à
+        se remplir.
+        """
+        vues: set[str] = set()
+        for adresse, _ in self.participants:
+            normalisee = adresse.strip().lower()
+            if normalisee in vues:
+                raise ValueError(f"{adresse} est invité deux fois.")
+            vues.add(normalisee)
+        return self
+
 
 class BookingPatchIn(ApiModel):
     slot: SlotIn | None = None
