@@ -50,28 +50,103 @@ describe('Champ de photo de profil', () => {
     return item;
   };
 
-  it('transmet le fichier choisi', async () => {
+  /** Le canevas n'existe pas dans jsdom : on lui prête juste ce qu'il faut. */
+  const canevasSimule = () => {
+    const dessine = vi.fn();
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage: dessine,
+    });
+    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation((rendre) =>
+      rendre(new Blob(['image'], { type: 'image/jpeg' })),
+    );
+    return dessine;
+  };
+
+  /** jsdom ne décode aucune image : on annonce ses dimensions à sa place. */
+  const chargerApercu = (largeur = 750, hauteur = 1080) => {
+    const apercu = screen.getByAltText('Photo à cadrer');
+    Object.defineProperty(apercu, 'naturalWidth', { value: largeur, configurable: true });
+    Object.defineProperty(apercu, 'naturalHeight', { value: hauteur, configurable: true });
+    fireEvent.load(apercu);
+    return apercu;
+  };
+
+  const deposerFichier = (container, item = fichier('moi.png', 'image/png')) => {
+    fireEvent.change(container.querySelector('input[type="file"]'), {
+      target: { files: [item] },
+    });
+  };
+
+  it('propose de cadrer la photo au lieu de l’envoyer telle quelle', () => {
+    // Une photo de téléphone est un portrait en pied : rognée au centre, elle
+    // gardait le buste et coupait le visage. Personne ne reconnaissait plus
+    // personne dans un rond de 44 px.
     const deposer = vi.fn().mockResolvedValue({});
     const { container } = render(
       <AvatarField name="Dylan Menga" src={null} onUpload={deposer} onRemove={vi.fn()} />,
     );
 
-    const champ = container.querySelector('input[type="file"]');
-    const image = fichier('moi.png', 'image/png');
-    fireEvent.change(champ, { target: { files: [image] } });
+    deposerFichier(container);
 
-    await waitFor(() => expect(deposer).toHaveBeenCalledWith(image));
+    expect(screen.getByText('Cadrer votre photo')).toBeTruthy();
+    expect(deposer).not.toHaveBeenCalled();
+  });
+
+  it('envoie un carré, et non le fichier d’origine', async () => {
+    canevasSimule();
+    const deposer = vi.fn().mockResolvedValue({});
+    const { container } = render(
+      <AvatarField name="Dylan Menga" src={null} onUpload={deposer} onRemove={vi.fn()} />,
+    );
+
+    deposerFichier(container);
+    chargerApercu();
+    fireEvent.click(screen.getByRole('button', { name: /Enregistrer cette photo/ }));
+
+    await waitFor(() => expect(deposer).toHaveBeenCalled());
+    const envoye = deposer.mock.calls[0][0];
+    expect(envoye.type).toBe('image/jpeg');
+    expect(envoye.name).toBe('photo-de-profil.jpg');
+  });
+
+  it('découpe le carré choisi dans l’image d’origine', async () => {
+    // Sans zoom : le carré centré d'un portrait 750 × 1080, celui-là même que
+    // `object-fit: cover` retenait déjà.
+    const dessine = canevasSimule();
+    const { container } = render(
+      <AvatarField name="Dylan Menga" src={null} onUpload={vi.fn()} onRemove={vi.fn()} />,
+    );
+
+    deposerFichier(container);
+    const apercu = chargerApercu();
+    fireEvent.click(screen.getByRole('button', { name: /Enregistrer cette photo/ }));
+
+    expect(dessine).toHaveBeenCalledWith(apercu, 0, 165, 750, 750, 0, 0, 512, 512);
+  });
+
+  it('renonce sans rien envoyer', () => {
+    const deposer = vi.fn();
+    const { container } = render(
+      <AvatarField name="Dylan Menga" src={null} onUpload={deposer} onRemove={vi.fn()} />,
+    );
+
+    deposerFichier(container);
+    fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
+
+    expect(screen.queryByText('Cadrer votre photo')).toBeNull();
+    expect(deposer).not.toHaveBeenCalled();
   });
 
   it('affiche le refus sans vider l’écran', async () => {
+    canevasSimule();
     const deposer = vi.fn().mockRejectedValue(new Error('Format refusé : PNG, JPEG ou WebP.'));
     const { container } = render(
       <AvatarField name="Dylan Menga" src={null} onUpload={deposer} onRemove={vi.fn()} />,
     );
 
-    fireEvent.change(container.querySelector('input[type="file"]'), {
-      target: { files: [fichier('doc.pdf', 'application/pdf')] },
-    });
+    deposerFichier(container, fichier('doc.pdf', 'application/pdf'));
+    chargerApercu();
+    fireEvent.click(screen.getByRole('button', { name: /Enregistrer cette photo/ }));
 
     const alerte = await screen.findByRole('alert');
     expect(alerte.textContent).toMatch(/Format refusé/);
@@ -248,11 +323,26 @@ describe('Écran de profil d’administration', () => {
     const { container } = monter();
     await screen.findByText('Photo de profil');
 
+    // Le dépôt passe désormais par le cadrage : jsdom n'ayant ni canevas ni
+    // décodeur d'image, on lui prête l'un et l'autre.
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage: vi.fn(),
+    });
+    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation((rendre) =>
+      rendre(new Blob(['image'], { type: 'image/jpeg' })),
+    );
+
     const image = new File(['x'], 'moi.png', { type: 'image/png' });
     Object.defineProperty(image, 'size', { value: 1024 });
     fireEvent.change(container.querySelector('input[type="file"]'), {
       target: { files: [image] },
     });
+
+    const apercu = screen.getByAltText('Photo à cadrer');
+    Object.defineProperty(apercu, 'naturalWidth', { value: 750, configurable: true });
+    Object.defineProperty(apercu, 'naturalHeight', { value: 1080, configurable: true });
+    fireEvent.load(apercu);
+    fireEvent.click(screen.getByRole('button', { name: /Enregistrer cette photo/ }));
 
     expect(await screen.findByText('Photo mise à jour')).toBeTruthy();
     // Et surtout : aucun message d'échec dans le champ.

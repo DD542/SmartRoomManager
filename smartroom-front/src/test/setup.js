@@ -39,7 +39,22 @@ function reconcilierAbortSignal() {
   };
 }
 
+/**
+ * `URL.createObjectURL` n'existe pas dans jsdom.
+ *
+ * Le recadrage de la photo de profil s'en sert pour afficher le fichier choisi
+ * avant de l'envoyer. Sans cette pièce, l'effet lève, React démonte l'arbre, et
+ * l'écran de cadrage n'apparaît jamais — un échec qui ne dit rien du produit.
+ */
+function fournirAdressesObjet() {
+  if (typeof URL.createObjectURL === 'function') return;
+  let compteur = 0;
+  URL.createObjectURL = () => `blob:essai/${(compteur += 1)}`;
+  URL.revokeObjectURL = () => {};
+}
+
 beforeAll(() => {
+  fournirAdressesObjet();
   // `error` et non `warn` : une requête non interceptée est un test qui parle
   // au réseau réel. Mieux vaut qu'il échoue bruyamment.
   serveur.listen({ onUnhandledRequest: 'error' });

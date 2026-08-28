@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Trash2, Upload } from 'lucide-react';
 import { TYPES_PHOTO } from '../../api/auth';
 import { Avatar } from '../ui/Avatar';
+import { AvatarCropper } from './AvatarCropper';
 import { Button } from '../ui/Button';
 
 /**
@@ -19,8 +20,11 @@ import { Button } from '../ui/Button';
 export function AvatarField({ name, src, onUpload, onRemove, busy = false }) {
   const champ = useRef(null);
   const [erreur, setErreur] = useState(null);
+  // La photo choisie attend son cadrage : rien n'est envoyé avant que
+  // l'utilisateur ait dit quel carré il veut voir.
+  const [aCadrer, setACadrer] = useState(null);
 
-  const choisir = async (event) => {
+  const choisir = (event) => {
     const fichier = event.target.files?.[0];
     // Le champ est remis à zéro tout de suite : sans cela, redéposer le même
     // fichier après un échec n'émettrait aucun événement.
@@ -28,15 +32,27 @@ export function AvatarField({ name, src, onUpload, onRemove, busy = false }) {
     if (!fichier) return;
 
     setErreur(null);
+    setACadrer(fichier);
+  };
+
+  const envoyer = async (cadree) => {
     try {
-      await onUpload(fichier);
+      await onUpload(cadree);
+      setACadrer(null);
     } catch (souci) {
+      setACadrer(null);
       setErreur(souci.message ?? 'Le dépôt a échoué.');
     }
   };
 
   return (
     <div className="flex flex-wrap items-center gap-4 p-4">
+      <AvatarCropper
+        file={aCadrer}
+        busy={busy}
+        onCancel={() => setACadrer(null)}
+        onValidate={envoyer}
+      />
       <Avatar name={name} src={src} size="xl" />
 
       <div className="min-w-0">
