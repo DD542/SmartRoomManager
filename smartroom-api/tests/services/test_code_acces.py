@@ -191,6 +191,17 @@ class TestParHttp:
         assert charge["access_code_hint"] is None
         assert charge["room_badge_required"] is True
 
+    def test_le_detail_dit_si_l_etage_porte_un_plan(self, client, compte, reservation):
+        """Sans cette réponse, l'écran demandait le plan à tout hasard : un 404
+        par étage sans plan, rouge dans la console, lu comme une panne."""
+        entetes = connecter(client, compte.email)
+
+        charge = client.get(
+            f"/api/v1/bookings/{reservation.id}", headers=entetes
+        ).json()
+
+        assert charge["floor_has_plan"] is False
+
     def test_un_tiers_recoit_introuvable(self, client, creer_compte, reservation):
         autre = creer_compte("Autre")
         entetes = connecter(client, autre.email)

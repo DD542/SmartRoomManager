@@ -108,6 +108,10 @@ class BookingOut(ReadModel):
     #: révoqué en est dépourvue tout en restant en salle à badge, et c'est
     #: précisément le cas où il faut proposer d'en émettre un.
     room_badge_required: bool = False
+    #: L'étage porte-t-il un plan déposé ? L'écran ne peut pas le deviner, et
+    #: le demander pour rien lui vaut un 404 — réponse juste, mais que la
+    #: console affiche en rouge et qu'on lit comme une panne.
+    floor_has_plan: bool = False
 
     @classmethod
     def of(cls, reservation) -> BookingOut:
@@ -142,6 +146,7 @@ class BookingOut(ReadModel):
             ),
             access_code_hint=actif.code_hint if actif is not None else None,
             room_badge_required=salle.badge_required,
+            floor_has_plan=salle.floor.plan is not None,
             slot=SlotOut.of(
                 TimeSlot(start=reservation.time_range.lower, end=reservation.time_range.upper)
             ),

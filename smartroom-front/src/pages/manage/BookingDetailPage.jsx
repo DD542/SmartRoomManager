@@ -42,9 +42,11 @@ export default function BookingDetailPage() {
   const planDocument = useAsync(
     () =>
       booking.data?.room?.floorId
-        ? getPlanDocumentForPlan(booking.data.room.floorId)
+        ? getPlanDocumentForPlan(booking.data.room.floorId, {
+            exists: Boolean(booking.data.room.floorHasPlan),
+          })
         : Promise.resolve(null),
-    [booking.data?.room?.floorId],
+    [booking.data?.room?.floorId, booking.data?.room?.floorHasPlan],
   );
 
   // Le code en clair, quand l'utilisateur vient d'en demander un neuf. Il ne

@@ -75,7 +75,13 @@ export default function SummaryPage() {
         participants: draft.participants,
       });
       toast.success('Réservation confirmée', `${booking.room.name}, code ${booking.accessCode}.`);
-      navigate(`/app/reservation/${booking.id}/confirmee`, { replace: true });
+      // Le code en clair voyage par l'état de navigation, et nulle part
+      // ailleurs : il n'existe qu'à cet instant, et l'écran de confirmation
+      // est le dernier endroit où il peut être lu.
+      navigate(`/app/reservation/${booking.id}/confirmee`, {
+        replace: true,
+        state: { code: booking.accessCode },
+      });
     } catch (err) {
       setError(err.message);
     } finally {

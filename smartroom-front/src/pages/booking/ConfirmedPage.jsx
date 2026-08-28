@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { CalendarPlus, CheckCircle2, Map } from 'lucide-react';
 import { getBooking } from '../../api/bookings';
-import { getPlanDocument } from '../../api/buildings';
+import { getPlanDocumentForPlan } from '../../api/buildings';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
@@ -21,13 +21,40 @@ import { AsyncBoundary, Skeleton } from '../../components/ui/States';
  */
 export default function ConfirmedPage() {
   const { id } = useParams();
+  const { state: etat } = useLocation();
   const { user } = useAuth();
   const toast = useToast();
   const booking = useAsync(() => getBooking(id), [id]);
+
+  // Le plan de l'étage ne sert que de repli, et n'est demandé que s'il existe :
+  // le réclamer à tout hasard valait un 404 par étage sans plan, rouge dans la
+  // console, où il se lit comme une panne.
   const planDocument = useAsync(
-    () => (booking.data?.roomId ? getPlanDocument(booking.data.roomId) : Promise.resolve(null)),
-    [booking.data?.roomId],
+    () =>
+      booking.data?.room?.floorId
+        ? getPlanDocumentForPlan(booking.data.room.floorId, {
+            exists: Boolean(booking.data.room.floorHasPlan),
+          })
+        : Promise.resolve(null),
+    [booking.data?.room?.floorId, booking.data?.room?.floorHasPlan],
   );
+
+  // La salle porte le plus souvent son propre plan de localisation, déposé par
+  // l'administration : c'est celui qui situe vraiment la salle, et l'écran
+  // n'en montrait aucun.
+  const planAffiche = booking.data?.room?.locationPlanUrl
+    ? {
+        type: 'image',
+        url: booking.data.room.locationPlanUrl,
+        name: `Plan de localisation — ${booking.data.room.name}`,
+      }
+    : planDocument.data;
+
+  // Le code en clair, tel que la création vient de le rendre. Il n'existe qu'à
+  // cet instant : la base n'en garde qu'une empreinte, et cet écran est le
+  // seul endroit où il peut encore être lu. Rechargée ou partagée, la page
+  // retombe sur l'indice.
+  const codeEnClair = etat?.code ?? null;
 
   useEffect(() => {
     document.title = 'Réservation confirmée — SmartRoom Manager';
@@ -70,18 +97,29 @@ export default function ConfirmedPage() {
               </div>
             </dl>
 
-            <div className="mt-4 rounded-xl border border-line bg-surface-raised px-4 py-3">
-              <p className="text-xs text-content-muted">Code d’accès</p>
-              <AccessCode code={booking.data.accessCode} size="sm" className="mt-1 justify-center" />
-            </div>
+            {(codeEnClair || booking.data.accessCode) && (
+              <div className="mt-4 rounded-xl border border-line bg-surface-raised px-4 py-3">
+                <p className="text-xs text-content-muted">Code d’accès</p>
+                <AccessCode
+                  code={codeEnClair ?? booking.data.accessCode}
+                  size="sm"
+                  className="mt-1 justify-center"
+                />
+                <p className="mt-1.5 text-xs text-content-muted">
+                  {codeEnClair
+                    ? 'Notez-le : il n’est affiché qu’une fois.'
+                    : 'Le code complet n’a été affiché qu’une fois. Émettez-en un nouveau depuis la réservation si vous l’avez perdu.'}
+                </p>
+              </div>
+            )}
 
             <div className="mt-3 text-left">
               <p className="mb-2 text-xs uppercase tracking-wide text-content-muted">
                 Plan de localisation
               </p>
               <PlanPreview
-                document={planDocument.data}
-                isLoading={planDocument.isLoading}
+                document={planAffiche}
+                isLoading={planDocument.isLoading && !planAffiche}
                 actionLabel="Ouvrir le plan"
               />
             </div>
