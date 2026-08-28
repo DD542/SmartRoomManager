@@ -58,9 +58,19 @@ export function Sidebar() {
       </Tooltip>
 
       <nav aria-label="Navigation principale" className="mt-2 flex flex-col items-center gap-1">
-        {NAV_ITEMS.map((item) => (
+        {/* Cascade de 35 ms : la barre se pose du haut vers le bas au lieu
+            d'apparaître d'un bloc. Le décalage est porté par une variable de
+            style et non par une classe, une classe Tailwind ne pouvant pas
+            dépendre d'un indice. */}
+        {NAV_ITEMS.map((item, index) => (
           <Tooltip key={item.to} label={item.label} side="right">
-            <NavLink to={item.to} end={item.end} className={itemClass} aria-label={item.label}>
+            <NavLink
+              to={item.to}
+              end={item.end}
+              className={(etat) => cn(itemClass(etat), 'animate-fade-in-up')}
+              style={{ animationDelay: `${index * 35}ms` }}
+              aria-label={item.label}
+            >
               <item.icon size={18} aria-hidden="true" />
             </NavLink>
           </Tooltip>

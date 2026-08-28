@@ -122,8 +122,17 @@ export function AdminNav({ onNavigate }) {
           const visibles = groupe.items.filter((item) => peut(item.permission));
           if (visibles.length === 0) return null;
 
+          // Cascade par groupe et non par entrée : dix-huit écrans en
+          // dix-huit temps traîneraient. Les quatre domaines se posent l'un
+          // après l'autre, chacun d'un bloc.
+          const rang = ADMIN_NAV.indexOf(groupe);
+
           return (
-            <div key={groupe.id} className="mt-4 first:mt-0">
+            <div
+              key={groupe.id}
+              className="mt-4 animate-fade-in-up first:mt-0"
+              style={{ animationDelay: `${rang * 60}ms` }}
+            >
               <p className="px-2 pb-1.5 text-[10px] uppercase tracking-wide text-content-faint">
                 {groupe.label}
               </p>

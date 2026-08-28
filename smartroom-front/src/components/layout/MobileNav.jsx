@@ -20,14 +20,17 @@ export function MobileNav() {
       aria-label="Navigation principale"
       className="sticky bottom-0 z-30 flex shrink-0 border-t border-line bg-surface md:hidden"
     >
-      {ITEMS.map((item) => (
+      {ITEMS.map((item, index) => (
         <NavLink
           key={item.to}
           to={item.to}
           end={item.end}
+          // Cascade de gauche à droite, comme la barre latérale du bureau
+          // descend de haut en bas : le même geste, adapté à l'axe de l'écran.
+          style={{ animationDelay: `${index * 30}ms` }}
           className={({ isActive }) =>
             cn(
-              'flex flex-1 flex-col items-center gap-1 py-2 text-[10px] transition',
+              'flex flex-1 animate-fade-in-up flex-col items-center gap-1 py-2 text-[10px] transition',
               isActive ? 'text-accent' : 'text-content-muted',
             )
           }

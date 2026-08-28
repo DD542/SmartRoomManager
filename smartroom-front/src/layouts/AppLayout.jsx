@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from '../components/layout/Sidebar';
 import { Topbar } from '../components/layout/Topbar';
 import { MobileNav } from '../components/layout/MobileNav';
+import { PageTransition } from '../components/layout/PageTransition';
 import { ChatbotPanel } from '../components/support/ChatbotPanel';
 
 /**
@@ -18,9 +19,9 @@ export default function AppLayout() {
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar />
         <main id="contenu" tabIndex={-1} className="flex-1 overflow-y-auto px-4 py-5 md:px-6 md:py-6">
-          <div className="mx-auto w-full max-w-6xl">
+          <PageTransition className="mx-auto w-full max-w-6xl">
             <Outlet />
-          </div>
+          </PageTransition>
         </main>
         <MobileNav />
       </div>

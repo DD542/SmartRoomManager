@@ -1,6 +1,7 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Stepper } from '../components/ui/Stepper';
 import { BookingProvider } from '../hooks/useBooking';
+import { PageTransition } from '../components/layout/PageTransition';
 
 export const WIZARD_STEPS = [
   { id: 'criteres', label: 'Critères', path: '/app/reservation/besoin' },
@@ -40,7 +41,12 @@ export default function WizardLayout() {
             if (position === 2) navigate('/app/reservation/salles');
           }}
         />
-        <Outlet />
+        {/* Chaque étape du tunnel glisse à la place de la précédente : le
+            repère visuel du passage compte plus ici qu'ailleurs, l'écran
+            changeant sans que l'adresse change de forme. */}
+        <PageTransition>
+          <Outlet />
+        </PageTransition>
       </div>
     </BookingProvider>
   );

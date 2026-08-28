@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { AdminNav, AdminSidebar } from '../components/admin/AdminSidebar';
 import { AdminTopbar } from '../components/admin/AdminTopbar';
 import { BottomSheet } from '../components/ui/Modal';
+import { PageTransition } from '../components/layout/PageTransition';
 
 /**
  * Cadre de l'espace d'administration : barre latérale groupée par domaine,
@@ -26,9 +27,9 @@ export default function AdminLayout() {
       <div className="flex min-w-0 flex-1 flex-col">
         <AdminTopbar onOpenMenu={() => setMenuOuvert(true)} />
         <main id="contenu-admin" tabIndex={-1} className="flex-1 overflow-y-auto px-4 py-5 md:px-6">
-          <div className="mx-auto w-full max-w-7xl">
+          <PageTransition className="mx-auto w-full max-w-7xl">
             <Outlet />
-          </div>
+          </PageTransition>
         </main>
       </div>
 
