@@ -1,10 +1,40 @@
 import { cn } from '../../utils/cn';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 /**
  * Onglets soulignés. Le motif ARIA complet (tablist/tab) est appliqué :
  * flèches gauche/droite pour naviguer au clavier.
  */
 export function Tabs({ tabs = [], value, onChange, className, label = 'Onglets' }) {
+  const enSelecteur = useMediaQuery('(max-width: 767px)');
+
+  // Sous 768 px, un sélecteur plutôt que des onglets. Cinq onglets y passaient
+  // à la ligne sur trois rangées, occupant le tiers de l'écran avant le
+  // moindre champ ; et une barre d'onglets qui se replie ne dit plus quelle
+  // section suit quelle autre. Le sélecteur, lui, tient sur une ligne et
+  // s'ouvre sur la liste complète — c'est le même choix, pris autrement.
+  if (enSelecteur) {
+    return (
+      <div className={cn('border-b border-line pb-3', className)}>
+        <label htmlFor="onglet-courant" className="sr-only">
+          {label}
+        </label>
+        <select
+          id="onglet-courant"
+          value={value}
+          onChange={(event) => onChange?.(event.target.value)}
+          className="h-11 w-full rounded-lg border border-line bg-surface-raised px-3 text-sm text-content focus:border-accent focus:outline-none"
+        >
+          {tabs.map((tab) => (
+            <option key={tab.id} value={tab.id}>
+              {tab.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  }
+
   const onKeyDown = (event) => {
     const index = tabs.findIndex((tab) => tab.id === value);
     if (event.key === 'ArrowRight') onChange?.(tabs[(index + 1) % tabs.length].id);

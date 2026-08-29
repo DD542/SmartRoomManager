@@ -12,6 +12,7 @@ import { useAsync } from '../../../hooks/useAsync';
 import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
 import { useToast } from '../../../hooks/useToast';
 import { PageHeader } from '../../../components/layout/PageHeader';
+import { PileInspecteur } from '../../../components/admin/PileInspecteur';
 import { Badge } from '../../../components/ui/Badge';
 import { Card } from '../../../components/ui/Card';
 import { AsyncBoundary, EmptyState, SkeletonCard } from '../../../components/ui/States';
@@ -93,8 +94,19 @@ export default function TicketsPage() {
         }
       />
 
-      <div className="grid gap-4 xl:grid-cols-[20rem_1fr_18rem]">
-        <AsyncBoundary
+      {/* Trois colonnes au grand écran, une pile en dessous : la file, puis le
+          fil ouvert avec son contexte, jamais les trois empilées. Sous
+          1280 px, la grille se défaisait et l'on descendait sous la file
+          entière pour lire une réponse, avant de remonter choisir le ticket
+          suivant. */}
+      <PileInspecteur
+        seuil="xl"
+        className="xl:grid-cols-[20rem_1fr_18rem]"
+        actif={Boolean(selectionId)}
+        onRetour={() => setSelectionId(null)}
+        libelleRetour="Retour à la file"
+        liste={
+          <AsyncBoundary
           status={file.status}
           error={file.error}
           onRetry={file.reload}
@@ -124,8 +136,9 @@ export default function TicketsPage() {
             />
           </Card>
         </AsyncBoundary>
-
-        {!selectionId ? (
+        }
+        detail={
+          !selectionId ? (
           <Card className="xl:col-span-2">
             <EmptyState
               icon={Inbox}
@@ -152,8 +165,9 @@ export default function TicketsPage() {
               </>
             )}
           </AsyncBoundary>
-        )}
-      </div>
+          )
+        }
+      />
     </div>
   );
 }
