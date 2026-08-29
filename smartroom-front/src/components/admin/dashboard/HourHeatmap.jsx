@@ -60,7 +60,11 @@ export function HourHeatmap({ heatmap, className }) {
   const libelleJour = (value) => WEEK_DAYS.find((jour) => jour.value === value)?.label ?? '';
 
   return (
-    <Card className={className}>
+    // `min-w-0` : sans lui, un enfant de grille refuse de descendre sous la
+    // largeur de son contenu — `overflow-x-auto` plus bas ne clippait alors
+    // rien du tout, et c'est la page entière qui défilait latéralement. C'est
+    // la cause du défilement constaté, pas la taille des cases.
+    <Card className={cn('min-w-0', className)}>
       <CardHeader
         title="Densité horaire"
         subtitle="Réservations par jour ouvré et par heure"
@@ -80,7 +84,12 @@ export function HourHeatmap({ heatmap, className }) {
             la contenir. Sous ce seuil les cases se resserrent, ce qu'une carte
             de densité supporte — la couleur porte l'information, et chaque case
             garde son libellé pour les lecteurs d'écran. */}
-        <table className="w-full border-separate border-spacing-1 text-xs sm:min-w-[520px]">
+        {/* Largeur minimale à toutes les largeurs, une fois le clipping
+            réparé : à 375 px, douze colonnes tassées donnaient des cases de
+            22 px que ni l'œil ni le doigt ne séparaient. Mieux vaut un
+            défilement horizontal franc, contenu dans la carte, que douze
+            colonnes illisibles. */}
+        <table className="w-full min-w-[520px] border-separate border-spacing-1 text-xs">
           <caption className="sr-only">
             Nombre de réservations par jour de la semaine et par heure d’ouverture
           </caption>

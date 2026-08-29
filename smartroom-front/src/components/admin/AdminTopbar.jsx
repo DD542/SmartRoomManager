@@ -31,7 +31,12 @@ export function AdminTopbar({ onOpenMenu }) {
   }, []);
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 md:px-4">
+    // `relative` : sans position, `z-index` n'a aucun effet — la regle est
+    // dans la specification CSS, et c'est ce qui faisait passer le menu de
+    // compte DERRIERE le contenu de la page. Le contenu, lui, porte une
+    // animation dont le `transform` final subsiste et cree un contexte
+    // d'empilement ; la barre haute doit donc en creer un, plus haut.
+    <header className="relative z-topbar flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 md:px-4">
       {/* Ouvre la navigation en feuille : sous 768 px la barre latérale est
           masquée, et sans ce bouton aucun écran d'administration n'est
           atteignable. */}

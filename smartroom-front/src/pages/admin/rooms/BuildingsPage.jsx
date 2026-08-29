@@ -18,6 +18,7 @@ import { useAsync } from '../../../hooks/useAsync';
 import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
 import { useToast } from '../../../hooks/useToast';
 import { PageHeader } from '../../../components/layout/PageHeader';
+import { PileInspecteur } from '../../../components/admin/PileInspecteur';
 import { Button, IconButton } from '../../../components/ui/Button';
 import { Card, CardHeader } from '../../../components/ui/Card';
 import { Input } from '../../../components/ui/Form';
@@ -102,7 +103,16 @@ export default function BuildingsPage() {
         }
       />
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,340px)_1fr]">
+      {/* Sous 1024 px, la fiche du bâtiment prend l'écran entier et se referme
+          par un bouton : posée sous la liste, elle obligeait à défiler sous six
+          cartes pour lire ce qu'on venait d'ouvrir. */}
+      <PileInspecteur
+        className="lg:grid-cols-[minmax(0,340px)_1fr]"
+        actif={Boolean(choisiId)}
+        onFermer={() => setChoisiId(null)}
+        titre={choisi?.name ?? 'Bâtiment'}
+        libelleFermer="Retour au parc"
+        liste={
         <Card>
           <CardHeader title="Le parc" subtitle={`${batiments.length} bâtiment(s)`} icon={Building2} />
           <AsyncBoundary
@@ -131,8 +141,9 @@ export default function BuildingsPage() {
             </div>
           </AsyncBoundary>
         </Card>
-
-        {choisi && fiche ? (
+        }
+        detail={
+          choisi && fiche ? (
           <div className="flex flex-col gap-5">
             <Card>
               <CardHeader
@@ -229,8 +240,9 @@ export default function BuildingsPage() {
               description="Choisissez un bâtiment pour voir ses niveaux et ses salles."
             />
           </Card>
-        )}
-      </div>
+          )
+        }
+      />
 
       <ModaleBatiment
         open={creation}

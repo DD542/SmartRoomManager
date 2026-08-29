@@ -131,6 +131,15 @@ function incoherence(regles) {
   if (regles.weeklyQuotaHours * 60 < regles.maxDurationMin) {
     return 'Le quota hebdomadaire est inférieur à la durée d’une seule réservation maximale.';
   }
-  if (regles.checkInWindowMin < 5) return 'La fenêtre de validation doit valoir au moins 5 min.';
+  // `checkinWindowMin` et non `checkInWindowMin` : le second n'existe dans
+  // aucune donnée, la comparaison valait donc toujours `undefined < 5`, soit
+  // faux — cette garde ne gardait rien.
+  if (regles.checkinWindowMin < 5) return 'La fenêtre de validation doit valoir au moins 5 min.';
+  if (regles.cancelDeadlineMin > regles.maxAdvanceDays * 24 * 60) {
+    return 'Le délai d’annulation dépasse l’horizon de réservation : aucune réservation ne pourrait être annulée.';
+  }
+  if (regles.minAdvanceMin > regles.maxAdvanceDays * 24 * 60) {
+    return 'Le préavis minimal dépasse l’horizon : plus aucune date ne serait réservable.';
+  }
   return null;
 }

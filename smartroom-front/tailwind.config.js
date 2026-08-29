@@ -47,6 +47,7 @@ export default {
         topbar: '20', //      barre supérieure
         chatbubble: '25', //  bulle repliée de l'assistant
         mobilenav: '30', //   barre d'onglets basse
+        menu: '40', //        menus contextuels ancres a leur declencheur
         drawer: '50', //      tiroirs et feuilles inférieures
         modal: '60', //       modales
         chatpanel: '70', //   assistant déployé

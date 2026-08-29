@@ -78,7 +78,7 @@ export function AccountMenu({ onLogout }) {
           id={identifiant}
           role="menu"
           aria-label="Mon compte"
-          className="absolute right-0 top-full z-sticky mt-2 w-64 animate-scale-in overflow-hidden rounded-xl border border-line bg-surface shadow-xl"
+          className="absolute right-0 top-full z-menu mt-2 w-64 animate-scale-in overflow-hidden rounded-xl border border-line bg-surface shadow-xl"
         >
           <div className="flex items-center gap-3 border-b border-line px-3 py-3">
             <Avatar name={nom} src={admin?.avatarUrl} size="lg" />

@@ -104,9 +104,9 @@
  * @property {'global'|string} scope      'global' ou identifiant de salle
  * @property {number} minDurationMin
  * @property {number} maxDurationMin
- * @property {number} maxConcurrentSlots  réservations simultanées par utilisateur
+ * @property {number} maxActiveBookings   réservations simultanées par utilisateur
  * @property {number} weeklyQuotaHours
- * @property {number} checkInWindowMin    délai de validation avant libération
+ * @property {number} checkinWindowMin    délai de validation avant libération
  * @property {number} bufferMin
  */
 
