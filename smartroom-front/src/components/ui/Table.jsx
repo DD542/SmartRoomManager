@@ -65,6 +65,36 @@ export function Table({ columns = [], rows = [], caption, rowKey = (row) => row.
   );
 }
 
+/**
+ * Fenêtre de pages autour de la page courante, bornée à sept boutons.
+ *
+ * Les rendre toutes semblait inoffensif tant qu'il y en avait cinq. À
+ * quarante, la rangée débordait de sa carte : le bouton « page suivante », posé
+ * en fin de rangée, sortait de l'écran, et l'écran des réservations n'avait
+ * plus aucun moyen d'avancer — les numéros visibles s'arrêtaient à 22 sur 40.
+ *
+ * `null` marque une coupure, rendue en points de suspension.
+ */
+export function fenetreDePages(page, pageCount, autour = 1) {
+  if (pageCount <= 7) return Array.from({ length: pageCount }, (_, index) => index + 1);
+
+  const pages = new Set([1, pageCount]);
+  for (let valeur = page - autour; valeur <= page + autour; valeur += 1) {
+    if (valeur > 1 && valeur < pageCount) pages.add(valeur);
+  }
+  // Les extrémités gardent une fenêtre pleine : sans cela, aller de la page 1
+  // à la page 3 demandait deux gestes au lieu d'un.
+  if (page <= 3) [2, 3, 4].forEach((valeur) => valeur < pageCount && pages.add(valeur));
+  if (page >= pageCount - 2) {
+    [pageCount - 3, pageCount - 2, pageCount - 1].forEach((valeur) => valeur > 1 && pages.add(valeur));
+  }
+
+  const triees = [...pages].sort((a, b) => a - b);
+  return triees.flatMap((valeur, index) =>
+    index > 0 && valeur - triees[index - 1] > 1 ? [null, valeur] : [valeur],
+  );
+}
+
 export function Pagination({ page = 1, pageCount = 1, total = 0, pageSize = 10, onChange, label = 'éléments' }) {
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, total);
@@ -84,22 +114,29 @@ export function Pagination({ page = 1, pageCount = 1, total = 0, pageSize = 10, 
           disabled={page <= 1}
           onClick={() => onChange?.(page - 1)}
         />
-        {Array.from({ length: pageCount }, (_, index) => index + 1).map((value) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => onChange?.(value)}
-            aria-current={value === page ? 'page' : undefined}
-            className={cn(
-              'h-8 min-w-8 rounded-lg border px-2 text-xs transition',
-              value === page
-                ? 'border-accent bg-accent text-ink'
-                : 'border-line bg-surface text-content-muted hover:text-content',
-            )}
-          >
-            {value}
-          </button>
-        ))}
+        {fenetreDePages(page, pageCount).map((valeur, index) =>
+          valeur === null ? (
+            <span key={`coupure-${index}`} aria-hidden="true" className="px-1 text-content-faint">
+              …
+            </span>
+          ) : (
+            <button
+              key={valeur}
+              type="button"
+              onClick={() => onChange?.(valeur)}
+              aria-current={valeur === page ? 'page' : undefined}
+              aria-label={`Page ${valeur}`}
+              className={cn(
+                'h-8 min-w-8 rounded-lg border px-2 text-xs transition',
+                valeur === page
+                  ? 'border-accent bg-accent text-ink'
+                  : 'border-line bg-surface text-content-muted hover:text-content',
+              )}
+            >
+              {valeur}
+            </button>
+          ),
+        )}
         <IconButton
           icon={ChevronRight}
           label="Page suivante"

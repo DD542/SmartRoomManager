@@ -8,41 +8,51 @@
 //   GET  /api/v1/admin/users                   organisateurs sélectionnables
 
 import * as adapt from '../adapters';
-import { abortable, collect, get, items, post } from '../client';
+import { abortable, collectAvecReste, get, items, post } from '../client';
 
 const iso = (valeur) => (valeur instanceof Date ? valeur.toISOString() : valeur);
 
+/**
+ * Les réservations de l'écran A-03, et le nombre de celles qui n'ont pas été
+ * chargées.
+ *
+ * Toutes les pages et non une seule : l'écran trie et pagine côté client sur
+ * l'ensemble chargé. Le plafond borne la dépense — mais il produisait un écran
+ * qui mentait sur son propre contenu, et une réservation créée à l'instant
+ * restait introuvable. Le reste remonte donc jusqu'à l'écran, qui le dit.
+ */
 export async function listAllBookings(filters = {}) {
-  // `collect` et non une page unique : l'écran pagine côté client sur
-  // l'ensemble chargé, et demander une seule page de cent lignes en cacherait
-  // silencieusement le reste — l'utilisateur croirait voir tout le parc.
-  // Le plafond de `collect` borne la dépense ; la taille de page maximale est
-  // de cent, la demander plus grande rend 422.
-  const lignes = (
-    await collect('/admin/bookings', {
-      params: {
-        room_id: filters.roomId,
-        building_id: filters.buildingId,
-        owner_id: filters.ownerId,
-        status: filters.status,
-        from_date: iso(filters.from),
-        to_date: iso(filters.to),
-      },
-      signal: abortable('admin:bookings'),
-      max: filters.max ?? 500,
-    })
-  ).map(adapt.booking);
+  const { lignes: brutes, reste } = await collectAvecReste('/admin/bookings', {
+    params: {
+      room_id: filters.roomId,
+      building_id: filters.buildingId,
+      owner_id: filters.ownerId,
+      status: filters.status,
+      from_date: iso(filters.from),
+      to_date: iso(filters.to),
+    },
+    signal: abortable('admin:bookings'),
+    //: Vingt pages de cent. Le parc en compte six cents ; le plafond n'est plus
+    //: la limite ordinaire de l'écran mais un garde-fou, et quand il joue
+    //: quand même, l'écran l'annonce.
+    max: filters.max ?? 2000,
+  });
+
+  const reservations = brutes.map(adapt.booking);
   const q = (filters.query ?? '').trim().toLowerCase();
   // Le terme libre est appliqué ici : la route filtre sur des identifiants, et
   // ajouter une recherche plein texte sur un titre saisi libre n'apporterait
   // rien qu'un filtre côté écran ne fasse aussi bien sur deux cents lignes.
-  return q
-    ? lignes.filter((item) =>
-        `${item.title} ${item.roomName ?? ''} ${item.owner?.firstName ?? ''}`
-          .toLowerCase()
-          .includes(q),
-      )
-    : lignes;
+  return {
+    reservations: q
+      ? reservations.filter((item) =>
+          `${item.title} ${item.roomName ?? ''} ${item.owner?.firstName ?? ''}`
+            .toLowerCase()
+            .includes(q),
+        )
+      : reservations,
+    reste,
+  };
 }
 
 export async function getAdminBooking(id, { signal } = {}) {

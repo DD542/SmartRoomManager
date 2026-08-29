@@ -180,7 +180,7 @@ export default function BookingDetailPage() {
                       fullWidth
                       icon={Route}
                       className="mt-2"
-                      to="/app/plan"
+                      to={`/app/plan?salle=${data.roomId ?? data.room?.id}`}
                     >
                       Voir le plan interactif
                     </Button>

@@ -15,6 +15,9 @@ import { BookingsTable } from './BookingsTable';
  */
 export function BookingsWorkspace({
   query,
+  //: Les réservations chargées, telles quelles : le calendrier les lit, la
+  //: table lit `rows`, qui en est la projection en lignes.
+  bookings = [],
   rows,
   table,
   view,
@@ -51,7 +54,7 @@ export function BookingsWorkspace({
             <BookingsTable table={table} onSelect={onSelect} selectedId={selection?.id} />
           ) : (
             <BookingCalendar
-              bookings={query.data ?? []}
+              bookings={bookings}
               onSelect={onSelect}
               isLoading={query.isLoading}
             />

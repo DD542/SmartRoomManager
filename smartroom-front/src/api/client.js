@@ -257,17 +257,34 @@ export function abortAll() {
  */
 export const items = (page) => (Array.isArray(page) ? page : (page?.items ?? []));
 
-/** Récupère toutes les pages d'une collection. À réserver aux ensembles bornés. */
-export async function collect(path, { params, signal, max = 500 } = {}) {
+/**
+ * Toutes les pages d'une collection, jusqu'à un plafond — et **ce que le
+ * plafond a laissé de côté**.
+ *
+ * Le compte restant n'est pas décoratif. L'écran « Toutes les réservations »
+ * chargeait 500 lignes sur 589 et n'en disait rien : la route rend les
+ * réservations par créneau croissant, les 89 abandonnées étaient donc les plus
+ * lointaines — exactement là où atterrit une réservation qu'on vient de
+ * créer. Elle n'apparaissait pas, et rien à l'écran ne distinguait « absente
+ * de la liste » de « jamais enregistrée ».
+ */
+export async function collectAvecReste(path, { params, signal, max = 500 } = {}) {
   const premiere = await get(path, { params: { ...params, size: 100 }, signal });
-  const tout = items(premiere);
+  const lignes = items(premiere);
 
   const pages = premiere?.pagination?.pages ?? 1;
-  for (let page = 2; page <= pages && tout.length < max; page += 1) {
+  for (let page = 2; page <= pages && lignes.length < max; page += 1) {
     const suivante = await get(path, { params: { ...params, size: 100, page }, signal });
-    tout.push(...items(suivante));
+    lignes.push(...items(suivante));
   }
-  return tout;
+
+  const total = premiere?.total ?? lignes.length;
+  return { lignes, total, reste: Math.max(0, total - lignes.length) };
+}
+
+/** La même chose, pour les appelants que le reste n'intéresse pas. */
+export async function collect(path, options) {
+  return (await collectAvecReste(path, options)).lignes;
 }
 
 /**

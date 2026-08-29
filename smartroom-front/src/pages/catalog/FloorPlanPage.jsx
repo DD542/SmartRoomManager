@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   getDirections,
   getFloorPlan,
@@ -6,6 +7,7 @@ import {
   listFloorPlans,
 } from '../../api/buildings';
 import { listBookings } from '../../api/bookings';
+import { getRoomLocation } from '../../api/rooms';
 import { useAsync } from '../../hooks/useAsync';
 import { useIsMobile } from '../../hooks/useMediaQuery';
 import { useAuth } from '../../hooks/useAuth';
@@ -37,12 +39,37 @@ export default function FloorPlanPage() {
 
   const plans = useAsync(listFloorPlans, []);
 
-  // Le premier étage de la liste, une fois qu'elle est là. Sans étage, les deux
-  // chargements ci-dessous ne partent pas : demander un plan sans identifiant
-  // ne peut produire qu'un refus.
+  // La salle demandée par le lien. « Voir l'itinéraire », sur une réservation,
+  // menait à `/app/plan` sans rien dire de la salle : l'écran ouvrait le
+  // premier étage du parc, aucune salle choisie. C'était un plan, pas un
+  // itinéraire — et il fallait retrouver soi-même son étage dans une liste de
+  // treize entrées pour obtenir ce que le bouton promettait.
+  const [parametres] = useSearchParams();
+  const salleDemandee = parametres.get('salle');
+  const cible = useAsync(
+    () => (salleDemandee ? getRoomLocation(salleDemandee) : Promise.resolve(null)),
+    [salleDemandee],
+  );
+
+  // L'étage ouvert : celui de la salle demandée, à défaut le premier de la
+  // liste. Un seul effet pour les deux — deux effets concurrents lisaient le
+  // même `planId` encore nul dans la même passe, et le repli écrasait aussitôt
+  // l'étage de la salle.
+  //
+  // Sans étage, les chargements ci-dessous ne partent pas : demander un plan
+  // sans identifiant ne peut produire qu'un refus.
   useEffect(() => {
-    if (planId === null && plans.data?.length) setPlanId(plans.data[0].id);
-  }, [planId, plans.data]);
+    if (planId !== null) return;
+    // Fiche de la salle encore en vol : on l'attend. Ouvrir le premier étage
+    // entre-temps ferait sauter l'écran d'un étage à l'autre.
+    if (salleDemandee && cible.status === 'chargement') return;
+    const vise = cible.data?.floorId ?? plans.data?.[0]?.id;
+    if (vise) setPlanId(vise);
+  }, [cible.data, cible.status, planId, plans.data, salleDemandee]);
+
+  //: Salle déjà ouverte à l'arrivée sur l'écran. Sans cette mémoire, refermer
+  //: le volet le rouvrirait au rendu suivant.
+  const [ouverteALArrivee, setOuverteALArrivee] = useState(null);
 
   const plan = useAsync(
     () => (planId ? getFloorPlan(planId) : Promise.resolve(null)),
@@ -59,6 +86,16 @@ export default function FloorPlanPage() {
         : Promise.resolve(null),
     [planId, etageChoisi?.hasPlan],
   );
+  // La salle demandée est choisie dès que son étage est chargé. Absente du
+  // dessin — une salle que l'administration n'a pas encore posée —, c'est sa
+  // fiche qui sert : l'itinéraire ne dépend pas d'un rectangle sur un schéma.
+  useEffect(() => {
+    if (!cible.data || ouverteALArrivee === cible.data.id) return;
+    if (!plan.data || plan.data.id !== cible.data.floorId) return;
+    setSelected(plan.data.rooms.find((item) => item.id === cible.data.id) ?? cible.data);
+    setOuverteALArrivee(cible.data.id);
+  }, [cible.data, ouverteALArrivee, plan.data]);
+
   const myBookings = useAsync(() => listBookings({ ownerId: user.id, status: 'confirmee' }), [user.id]);
   const directions = useAsync(
     () => (selected ? getDirections(selected.id) : Promise.resolve(null)),

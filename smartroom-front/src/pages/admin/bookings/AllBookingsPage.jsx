@@ -11,8 +11,10 @@ import { useDataTable } from '../../../hooks/useDataTable';
 import { useDebouncedValue } from '../../../hooks/useDebouncedValue';
 import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
 import { useSelectFilters } from '../../../hooks/useSelectFilters';
+import { plural } from '../../../utils/format';
 import { PageHeader } from '../../../components/layout/PageHeader';
 import { Button } from '../../../components/ui/Button';
+import { Callout } from '../../../components/ui/Card';
 import { SegmentedControl } from '../../../components/ui/Tabs';
 import { BulkActionBar } from '../../../components/admin/BulkActionBar';
 import { FilterBar } from '../../../components/admin/FilterBar';
@@ -54,15 +56,19 @@ export default function AllBookingsPage() {
   );
   const utilisateurs = useAsync(listBookableUsers, []);
 
-  const lignes = useMemo(() => (reservations.data ?? []).map(toRow), [reservations.data]);
+  // `reservations.data` porte deux choses : les lignes chargées et le nombre
+  // de celles que le plafond a laissées de côté.
+  const chargees = reservations.data?.reservations ?? [];
+  const reste = reservations.data?.reste ?? 0;
+  const lignes = useMemo(() => chargees.map(toRow), [chargees]);
   const table = useDataTable(lignes, { pageSize: 15, initialSort: { key: 'start', direction: 'desc' } });
 
   const { envoi, creer, annuler } = useBookingActions({ onDone: () => rafraichir() });
 
   const rafraichir = async () => {
-    const liste = await reservations.reload();
+    const reponse = await reservations.reload();
     if (selection) {
-      setSelection(liste?.find((item) => item.id === selection.id) ?? null);
+      setSelection(reponse?.reservations?.find((item) => item.id === selection.id) ?? null);
     }
     table.viderSelection();
   };
@@ -98,8 +104,16 @@ export default function AllBookingsPage() {
         />
       </FilterBar>
 
+      {reste > 0 && (
+        <Callout tone="warning">
+          {plural(reste, 'réservation')} au-delà du volume chargé ne {reste > 1 ? 'sont' : 'est'} pas
+          {' '}dans cette liste. Filtrez par salle, bâtiment ou période pour les atteindre.
+        </Callout>
+      )}
+
       <BookingsWorkspace
         query={reservations}
+        bookings={chargees}
         rows={lignes}
         table={table}
         view={affichage}

@@ -60,6 +60,18 @@ export async function getRoom(roomId, { signal } = {}) {
   return { ...salle, building: batiment, rules: regles };
 }
 
+/**
+ * La salle seule, sans son bâtiment ni ses règles.
+ *
+ * `getRoom` coud trois ressources : c'est ce qu'il faut à la fiche de salle, et
+ * trois fois trop pour situer une salle dans un bâtiment. Le plan n'a besoin
+ * que de son étage — et un échec sur les règles lui ferait perdre l'itinéraire
+ * qu'il sait déjà tracer.
+ */
+export async function getRoomLocation(roomId, { signal } = {}) {
+  return adapt.room(await get(`/rooms/${roomId}`, { signal }));
+}
+
 /** Valeurs proposées par les filtres, mesurées sur le parc réel. */
 export async function getRoomFilters({ signal } = {}) {
   const data = await get('/rooms/filters', { signal });

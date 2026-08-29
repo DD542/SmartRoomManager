@@ -141,7 +141,12 @@ export default function ConfirmedPage() {
               >
                 Ajouter à mon agenda
               </Button>
-              <Button variant="secondary" fullWidth icon={Map} to="/app/plan">
+              <Button
+                variant="secondary"
+                fullWidth
+                icon={Map}
+                to={`/app/plan?salle=${booking.data.roomId ?? booking.data.room?.id}`}
+              >
                 Voir le plan interactif
               </Button>
               <Button variant="ghost" size="sm" to="/app">

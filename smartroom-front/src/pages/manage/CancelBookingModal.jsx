@@ -94,7 +94,12 @@ export default function CancelBookingModal({ booking, open, onClose, onCancelled
             setReason(event.target.value);
             setError(null);
           }}
-          options={(reasons.data ?? []).map((item) => ({ value: item, label: item }))}
+          // Les motifs arrivent déjà sous la forme qu'attend `Select` :
+          // `{ id, label }`. Les réemballer en `{ value: item, label: item }`
+          // mettait l'objet entier dans les deux champs — React refuse un objet
+          // comme enfant, et l'écran d'annulation tombait sur l'écran d'erreur
+          // du routeur avant même d'être visible.
+          options={reasons.data ?? []}
         />
 
         <Textarea

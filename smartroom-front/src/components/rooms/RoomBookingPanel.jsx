@@ -42,7 +42,7 @@ export function RoomBookingPanel({ room, nextSlot, onBook }) {
         <Button fullWidth icon={CalendarPlus} disabled={unavailable} onClick={onBook}>
           {unavailable ? 'Salle indisponible' : 'Réserver cette salle'}
         </Button>
-        <Button variant="secondary" fullWidth icon={Map} to="/app/plan">
+        <Button variant="secondary" fullWidth icon={Map} to={`/app/plan?salle=${room.id}`}>
           Voir sur le plan
         </Button>
       </div>

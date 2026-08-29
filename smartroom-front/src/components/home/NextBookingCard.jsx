@@ -121,7 +121,14 @@ export function NextBookingCard({ booking, isLoading }) {
               Valider ma présence
             </Button>
           )}
-          <Button variant="secondary" size="sm" icon={Route} to="/app/plan">
+          {/* La salle voyage dans l'adresse : un itinéraire sans destination
+              n'est qu'un plan. */}
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={Route}
+            to={`/app/plan?salle=${booking.roomId ?? booking.room?.id}`}
+          >
             Voir l’itinéraire
           </Button>
           <Button variant="secondary" size="sm" icon={Pencil} to={`/app/reservations/${booking.id}/modifier`}>
