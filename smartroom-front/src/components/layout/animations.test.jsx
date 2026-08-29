@@ -29,10 +29,12 @@ describe('Transition d’écran', () => {
     return <Link to={suivant}>continuer</Link>;
   }
 
-  it('rejoue l’apparition à chaque changement d’écran', () => {
-    // Même route, paramètre différent : React Router réutilise l'élément sans
-    // le remonter. Un second montage ne peut donc venir que de la clé posée
-    // sur le chemin — celle qui fait rejouer l'animation.
+  it('ne démonte pas ses enfants quand le chemin change', () => {
+    // La première version portait une `key` sur le chemin. React remontait
+    // alors tout le sous-arbre à chaque navigation : le tunnel de réservation
+    // monte son brouillon dans `WizardLayout`, qui repartait vide à chaque
+    // étape — l'écran suivant ne trouvait plus de besoin exprimé et renvoyait
+    // à la première étape. Plus aucune réservation n'aboutissait.
     const monte = vi.fn();
 
     render(
@@ -47,7 +49,32 @@ describe('Transition d’écran', () => {
 
     expect(monte).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole('link', { name: 'continuer' }));
-    expect(monte).toHaveBeenCalledTimes(2);
+    expect(monte).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejoue l’animation sur place à chaque changement d’écran', () => {
+    const animation = { cancel: vi.fn(), play: vi.fn() };
+    // jsdom ne connaît pas l'API des animations : on la lui prête le temps du
+    // test, puisque c'est elle qui remplace le remontage.
+    Element.prototype.getAnimations = vi.fn(() => [animation]);
+
+    render(
+      <MemoryRouter initialEntries={['/salle/1']}>
+        <PageTransition>
+          <Routes>
+            <Route path="/salle/:id" element={<Link to="/salle/2">continuer</Link>} />
+          </Routes>
+        </PageTransition>
+      </MemoryRouter>,
+    );
+
+    animation.cancel.mockClear();
+    animation.play.mockClear();
+    fireEvent.click(screen.getByRole('link', { name: 'continuer' }));
+
+    expect(animation.cancel).toHaveBeenCalled();
+    expect(animation.play).toHaveBeenCalled();
+    delete Element.prototype.getAnimations;
   });
 
   it('pose l’animation sur le contenu, et rien sur l’enveloppe', () => {
