@@ -77,7 +77,12 @@ export function HourHeatmap({ heatmap, className }) {
         }
       />
 
-      <div className="overflow-x-auto px-4 pb-4">
+      {/* Aucun défilement : douze colonnes et cinq lignes tiennent dans
+          360 px si on cesse de leur imposer une largeur. Une carte de densité
+          se lit d'un coup d'œil — celle qu'il faut faire défiler ne dit plus
+          où sont les pics, qui sont précisément ce qu'on y cherche. Les cases
+          rétrécissent, l'information reste entière. */}
+      <div className="px-3 pb-4 sm:px-4">
         {/* La largeur minimale ne s'applique qu'à partir de 640 px. Imposée à
             520 sur un écran de 375, elle faisait défiler la page entière de
             155 px : le conteneur `overflow-x-auto` ci-dessus ne suffisait pas à
@@ -89,22 +94,29 @@ export function HourHeatmap({ heatmap, className }) {
             22 px que ni l'œil ni le doigt ne séparaient. Mieux vaut un
             défilement horizontal franc, contenu dans la carte, que douze
             colonnes illisibles. */}
-        <table className="w-full min-w-[520px] border-separate border-spacing-1 text-xs">
+        <table className="w-full table-fixed border-separate border-spacing-0.5 text-xs sm:border-spacing-1">
           <caption className="sr-only">
             Nombre de réservations par jour de la semaine et par heure d’ouverture
           </caption>
           <thead>
             <tr>
-              <th scope="col" className="w-10">
+              {/* Colonne des jours : étroite au téléphone, où chaque pixel
+                  qu'elle prend est un pixel de moins pour les douze heures. */}
+              <th scope="col" className="w-7 sm:w-10">
                 <span className="sr-only">Jour</span>
               </th>
               {hours.map((hour) => (
                 <th
                   key={hour}
                   scope="col"
-                  className="pb-1 font-mono text-[10px] font-normal text-content-faint"
+                  className="pb-1 font-mono text-[9px] font-normal text-content-faint sm:text-[10px]"
                 >
-                  {hour}h
+                  {/* « 8 » et non « 8h » sous 640 px : la lettre ajoutait
+                      six pixels par colonne, soit soixante-douze sur douze
+                      colonnes — la moitié de ce qui manquait. L'unité est
+                      dans le titre de la carte. */}
+                  <span className="sm:hidden">{hour}</span>
+                  <span className="hidden sm:inline">{hour}h</span>
                 </th>
               ))}
             </tr>
@@ -130,7 +142,10 @@ export function HourHeatmap({ heatmap, className }) {
                         onFocus={() => setSurvolee({ day, hour, value: item.value })}
                         onBlur={() => setSurvolee(null)}
                         className={cn(
-                          'h-7 w-full rounded-md border transition duration-200',
+                          // 20 px de haut au telephone : a 360 px une case fait 15 px de large, et
+                          // une case deux fois plus haute que large ne se lit plus
+                          // comme une densite mais comme une barre.
+                          'h-5 w-full rounded border transition duration-200 sm:h-7 sm:rounded-md',
                           'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent',
                           item.value === 0 && 'border-line/60 bg-surface-raised/40',
                           actif && 'ring-1 ring-accent',

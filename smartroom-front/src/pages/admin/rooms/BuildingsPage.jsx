@@ -18,7 +18,7 @@ import { useAsync } from '../../../hooks/useAsync';
 import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
 import { useToast } from '../../../hooks/useToast';
 import { PageHeader } from '../../../components/layout/PageHeader';
-import { PileInspecteur } from '../../../components/admin/PileInspecteur';
+import { PileInspecteur, useIsMobileOuTablette } from '../../../components/admin/PileInspecteur';
 import { Button, IconButton } from '../../../components/ui/Button';
 import { Card, CardHeader } from '../../../components/ui/Card';
 import { Input } from '../../../components/ui/Form';
@@ -48,6 +48,8 @@ export default function BuildingsPage() {
   const navigate = useNavigate();
 
   const parc = useAsync(listManagedBuildings, []);
+  // Sous 1024 px, la fiche s'ouvre en boîte de dialogue par-dessus la liste.
+  const enDialogue = useIsMobileOuTablette();
   const [choisiId, setChoisiId] = useState(null);
   const [envoi, setEnvoi] = useState(false);
   const [creation, setCreation] = useState(false);
@@ -58,11 +60,14 @@ export default function BuildingsPage() {
   const batiments = parc.data ?? [];
   const choisi = batiments.find((item) => item.id === choisiId) ?? null;
 
-  // Le premier bâtiment est retenu d'office : un panneau de détail vide au
-  // chargement obligerait à un clic pour voir ce que l'écran a déjà chargé.
+  // Le premier bâtiment est retenu d'office **au bureau seulement** : le
+  // panneau de détail y occupe une colonne qui resterait vide, et il faudrait
+  // un clic pour voir ce que l'écran a déjà chargé. Au téléphone, ce même
+  // choix ouvrait la fiche d'Eiffel 1 avant qu'on ait rien demandé — on
+  // arrivait sur un bâtiment au lieu du parc.
   useEffect(() => {
-    if (!choisiId && batiments.length > 0) setChoisiId(batiments[0].id);
-  }, [batiments, choisiId]);
+    if (!enDialogue && !choisiId && batiments.length > 0) setChoisiId(batiments[0].id);
+  }, [batiments, choisiId, enDialogue]);
 
   const etages = useAsync(
     (options) => (choisiId ? listFloorsWithRooms(choisiId, options ?? {}) : Promise.resolve([])),
@@ -108,6 +113,7 @@ export default function BuildingsPage() {
           cartes pour lire ce qu'on venait d'ouvrir. */}
       <PileInspecteur
         className="lg:grid-cols-[minmax(0,340px)_1fr]"
+        enDialogue={enDialogue}
         actif={Boolean(choisiId)}
         onFermer={() => setChoisiId(null)}
         titre={choisi?.name ?? 'Bâtiment'}

@@ -9,7 +9,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { CHAMPS_REGLES, RulesForm } from './rules/RulesForm';
 import { PileInspecteur } from './PileInspecteur';
 
@@ -102,15 +102,18 @@ describe('A-06 — fiche de bâtiment au téléphone', () => {
   const LISTE = <p key="l">le parc</p>;
   const DETAIL = <p key="d">la fiche</p>;
 
-  it('montre les deux au bureau', () => {
+  it('montre les deux côte à côte au bureau', () => {
     largeur(1440);
     render(<PileInspecteur liste={LISTE} detail={DETAIL} actif titre="Eiffel 1" />);
 
     expect(screen.getByText('le parc')).toBeTruthy();
     expect(screen.getByText('la fiche')).toBeTruthy();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('ouvre la fiche devant la liste, avec un bouton pour fermer', () => {
+  it('ouvre la fiche en boîte de dialogue par-dessus la liste', () => {
+    // La liste reste : c'est elle le point de départ, la fiche n'est qu'un
+    // détour. Une pile qui la remplaçait faisait perdre sa position au retour.
     largeur(390);
     const fermer = vi.fn();
     render(
@@ -124,20 +127,34 @@ describe('A-06 — fiche de bâtiment au téléphone', () => {
       />,
     );
 
-    expect(screen.queryByText('le parc')).toBeNull();
-    expect(screen.getByText('Eiffel 1')).toBeTruthy();
+    expect(screen.getByText('le parc')).toBeTruthy();
 
-    const bouton = screen.getByRole('button', { name: /Retour au parc/ });
+    const boite = screen.getByRole('dialog');
+    expect(boite.getAttribute('aria-modal')).toBe('true');
+    expect(within(boite).getByText('la fiche')).toBeTruthy();
+
+    const bouton = within(boite).getByRole('button', { name: /Retour au parc/ });
     expect(bouton.className).toContain('min-h-[44px]');
     fireEvent.click(bouton);
     expect(fermer).toHaveBeenCalled();
   });
 
-  it('montre la liste tant que rien n’est choisi', () => {
+  it('se ferme aussi sur Échap', () => {
+    largeur(390);
+    const fermer = vi.fn();
+    render(<PileInspecteur liste={LISTE} detail={DETAIL} actif titre="Eiffel 1" onFermer={fermer} />);
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(fermer).toHaveBeenCalled();
+  });
+
+  it('n’ouvre rien tant qu’aucun bâtiment n’est choisi', () => {
+    // Le parc s'affiche d'abord : arriver sur la fiche d'Eiffel 1 sans l'avoir
+    // demandée était le défaut constaté.
     largeur(390);
     render(<PileInspecteur liste={LISTE} detail={DETAIL} actif={false} />);
 
     expect(screen.getByText('le parc')).toBeTruthy();
-    expect(screen.queryByText('la fiche')).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });
