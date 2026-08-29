@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Search, Settings } from 'lucide-react';
+import { Bell, Search } from 'lucide-react';
 import { countUnread } from '../../api/notifications';
 import { useAuth } from '../../hooks/useAuth';
 import { fullName } from '../../utils/format';
@@ -72,12 +72,16 @@ export function Topbar() {
             />
           )}
         </span>
-        <IconButton icon={Settings} label="Paramètres" onClick={() => navigate('/app/profil')} />
+        {/* L'avatar est la seule porte vers le profil. Un engrenage voisin y
+            menait aussi : deux commandes cote a cote pour une meme
+            destination, et l'utilisateur hesite entre elles au lieu de
+            choisir. Les reglages vivent dans le profil, ou l'on va deja pour
+            changer sa photo ou son delai de rappel. */}
         <button
           type="button"
           onClick={() => navigate('/app/profil')}
           className="ml-1 rounded-full ring-2 ring-line transition hover:ring-accent/60"
-          aria-label={`Profil de ${fullName(user)}`}
+          aria-label={`Profil et paramètres de ${fullName(user)}`}
         >
           {/* La photo du profil, quand il y en a une. L'`Avatar` sait retomber
               sur les initiales ; ne pas lui passer l'adresse revenait à
