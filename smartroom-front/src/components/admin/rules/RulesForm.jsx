@@ -145,7 +145,7 @@ export function RulesForm({ draft, onChange, scopeLabel }) {
 
             {/* Une colonne au téléphone, deux dès 640 px : dix champs sur deux
                 colonnes étroites donnaient des libellés coupés en trois lignes. */}
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2 [&>*]:min-w-0">
               {groupe.champs.map((champ) => (
                 <Input
                   key={champ.id}

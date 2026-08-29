@@ -34,7 +34,7 @@ export function GeneralTab({ draft, onChange, buildings = [], floors = [], error
         onChange={(event) => onChange({ name: event.target.value })}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 [&>*]:min-w-0">
         <Select
           label="Bâtiment"
           required
@@ -69,7 +69,7 @@ export function GeneralTab({ draft, onChange, buildings = [], floors = [], error
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-3 [&>*]:min-w-0">
         <Input
           type="number"
           min={1}

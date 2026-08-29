@@ -21,7 +21,7 @@ export function ClaimantCompare({ claimants = [] }) {
   const quotaMin = Math.min(...claimants.map((c) => c.remainingQuotaH));
 
   return (
-    <ul className="grid gap-3 sm:grid-cols-2">
+    <ul className="grid gap-3 sm:grid-cols-2 [&>*]:min-w-0">
       {claimants.map((claimant) => {
         const antérieur = claimant.userId === plusAncien.userId;
         const quotaSerre = claimant.remainingQuotaH === quotaMin && claimants.length > 1;

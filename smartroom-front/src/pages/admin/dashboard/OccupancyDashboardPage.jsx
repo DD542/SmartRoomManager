@@ -68,7 +68,7 @@ export default function OccupancyDashboardPage() {
           <div className="flex flex-col gap-4">
             <Indicateurs kpis={data.kpis} deltas={data.deltas} jours={jours} />
 
-            <div className="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
+            <div className="grid gap-4 xl:grid-cols-[1.6fr_1fr] [&>*]:min-w-0">
               <OccupancyTrend data={data.trend} days={jours} />
               <AlertList alerts={data.alerts} />
             </div>
@@ -87,7 +87,7 @@ function Indicateurs({ kpis, deltas, jours }) {
   const ecartNoShow = deltas?.noShowRate ?? 0;
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 [&>*]:min-w-0">
       <KpiTile
         icon={GaugeCircle}
         tone="accent"
@@ -137,12 +137,12 @@ function Indicateurs({ kpis, deltas, jours }) {
 function DashboardSkeleton() {
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 [&>*]:min-w-0">
         {[0, 1, 2, 3].map((index) => (
           <KpiTileSkeleton key={index} />
         ))}
       </div>
-      <div className="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
+      <div className="grid gap-4 xl:grid-cols-[1.6fr_1fr] [&>*]:min-w-0">
         <OccupancyTrendSkeleton />
         <SkeletonCard />
       </div>

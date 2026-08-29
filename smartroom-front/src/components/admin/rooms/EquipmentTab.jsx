@@ -33,7 +33,7 @@ export function EquipmentTab({ draft, onChange, catalog = [], categories = [] })
             <legend className="mb-2 text-xs uppercase tracking-wide text-content-muted">
               {categorie.label}
             </legend>
-            <ul className="grid gap-2 sm:grid-cols-2">
+            <ul className="grid gap-2 sm:grid-cols-2 [&>*]:min-w-0">
               {items.map((item) => {
                 const actif = draft.equipmentIds.includes(item.id);
                 const Icone = equipmentIcon(item.icon);

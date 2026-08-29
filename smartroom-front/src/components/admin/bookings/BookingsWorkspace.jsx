@@ -24,7 +24,7 @@ export function BookingsWorkspace({
   onReset,
 }) {
   return (
-    <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
+    <div className="grid gap-4 lg:grid-cols-[1fr_20rem] [&>*]:min-w-0">
       <AsyncBoundary
         status={query.status}
         error={query.error}

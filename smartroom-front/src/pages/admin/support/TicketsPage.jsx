@@ -93,7 +93,7 @@ export default function TicketsPage() {
         }
       />
 
-      <div className="grid gap-4 xl:grid-cols-[20rem_1fr_18rem]">
+      <div className="grid gap-4 xl:grid-cols-[20rem_1fr_18rem] [&>*]:min-w-0">
         <AsyncBoundary
           status={file.status}
           error={file.error}

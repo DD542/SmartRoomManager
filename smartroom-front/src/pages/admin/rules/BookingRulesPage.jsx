@@ -95,7 +95,7 @@ export default function BookingRulesPage() {
         skeleton={<SkeletonCard />}
       >
         {draft && (
-          <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
+          <div className="grid gap-4 lg:grid-cols-[1fr_20rem] [&>*]:min-w-0">
             <RulesForm
               draft={draft}
               scopeLabel={libellePortee}

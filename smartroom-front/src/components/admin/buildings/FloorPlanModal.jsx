@@ -109,7 +109,7 @@ export function FloorPlanModal({ floor, open, onClose, onChanged }) {
         skeleton={<SkeletonCard />}
       >
         {layout.data && (
-          <div className="grid gap-4 lg:grid-cols-[1fr_18rem]">
+          <div className="grid gap-4 lg:grid-cols-[1fr_18rem] [&>*]:min-w-0">
             <div className="flex flex-col gap-4">
               <PlanEditor
                 layout={layout.data}

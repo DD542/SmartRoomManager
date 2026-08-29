@@ -39,7 +39,7 @@ export function YearOverview({ year, days = {}, closures = [] }) {
         }
       />
 
-      <div className="grid gap-3 px-4 pb-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-3 px-4 pb-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 [&>*]:min-w-0">
         {Array.from({ length: 12 }, (_, mois) => {
           const reference = new Date(Number(year), mois, 1);
           return (

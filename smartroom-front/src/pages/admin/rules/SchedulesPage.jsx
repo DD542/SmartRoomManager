@@ -98,7 +98,7 @@ export default function SchedulesPage() {
         skeleton={<SkeletonCard />}
       >
         <div className="flex flex-col gap-4">
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid gap-4 xl:grid-cols-2 [&>*]:min-w-0">
             <WeeklyGrid days={grille.data?.days ?? []} onChange={modifierJour} busy={envoi} />
             <ClosureList
               closures={fermetures.data ?? []}

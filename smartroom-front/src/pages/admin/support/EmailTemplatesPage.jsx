@@ -115,7 +115,7 @@ export default function EmailTemplatesPage() {
         skeleton={<SkeletonCard />}
       >
         {courant && draft && (
-          <div className="grid gap-4 lg:grid-cols-[1fr_22rem]">
+          <div className="grid gap-4 lg:grid-cols-[1fr_22rem] [&>*]:min-w-0">
             <TemplateEditor
               template={courant}
               draft={draft}

@@ -217,7 +217,7 @@ export default function RoomEditPage() {
         onRetry={salle.reload}
         skeleton={<SkeletonCard />}
       >
-        <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
+        <div className="grid gap-4 lg:grid-cols-[1fr_20rem] [&>*]:min-w-0">
           <Card>
             <div className="border-b border-line px-3 pt-3">
               <Tabs tabs={ONGLETS} value={onglet} onChange={setOnglet} label="Sections de la salle" />

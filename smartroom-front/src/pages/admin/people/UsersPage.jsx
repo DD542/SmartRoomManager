@@ -83,7 +83,7 @@ export default function UsersPage() {
         />
       </FilterBar>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_22rem]">
+      <div className="grid gap-4 lg:grid-cols-[1fr_22rem] [&>*]:min-w-0">
         <AsyncBoundary
           status={utilisateurs.status}
           error={utilisateurs.error}

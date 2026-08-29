@@ -41,7 +41,7 @@ export function AvailabilityTab({ draft, onChange }) {
         </div>
       </fieldset>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 [&>*]:min-w-0">
         <Input
           type="time"
           label="Ouverture"
@@ -56,7 +56,7 @@ export function AvailabilityTab({ draft, onChange }) {
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-3 [&>*]:min-w-0">
         <Input
           type="number"
           min={15}

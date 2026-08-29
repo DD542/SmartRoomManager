@@ -35,7 +35,7 @@ export function LocationPlanBrowser({ floors = [], buildingName = '' }) {
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,18rem)_1fr]">
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,18rem)_1fr] [&>*]:min-w-0">
       <Card>
         <CardHeader
           title="Salles"

@@ -90,7 +90,7 @@ export default function KnowledgePage() {
         ))}
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
+      <div className="grid gap-4 xl:grid-cols-[1.6fr_1fr] [&>*]:min-w-0">
         <AsyncBoundary
           status={articles.status}
           error={articles.error}

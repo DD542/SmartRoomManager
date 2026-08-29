@@ -90,7 +90,7 @@ export default function AdminProfilePage() {
         skeleton={<SkeletonCard />}
       >
         {compte && (
-          <div className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
+          <div className="grid gap-5 xl:grid-cols-[1.4fr_1fr] [&>*]:min-w-0">
             <div className="flex flex-col gap-5">
               <Card>
                 <CardHeader title="Identité" icon={User} />
@@ -116,7 +116,7 @@ export default function AdminProfilePage() {
                   }
                 />
 
-                <div className="grid gap-4 border-t border-line px-4 py-4 sm:grid-cols-2">
+                <div className="grid gap-4 border-t border-line px-4 py-4 sm:grid-cols-2 [&>*]:min-w-0">
                   <Input
                     label="Prénom"
                     value={compte.firstName ?? ''}
@@ -245,7 +245,7 @@ function MotDePasse({ busy, onSubmit }) {
           value={actuel}
           onChange={(event) => setActuel(event.target.value)}
         />
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 [&>*]:min-w-0">
           <Input
             label="Nouveau mot de passe"
             type="password"

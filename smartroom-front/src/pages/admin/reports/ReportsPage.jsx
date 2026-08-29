@@ -126,7 +126,7 @@ export default function ReportsPage() {
           <div className="flex flex-col gap-4">
             <Totaux totals={rapport.data.totals} />
 
-            <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
+            <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr] [&>*]:min-w-0">
               <PeriodHoursChart
                 data={rapport.data.byPeriod}
                 granularity={rapport.data.granularity}
@@ -155,7 +155,7 @@ export default function ReportsPage() {
 
 function Totaux({ totals }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 [&>*]:min-w-0">
       <KpiTile
         icon={CalendarClock}
         tone="accent"
@@ -177,12 +177,12 @@ function Totaux({ totals }) {
 function RapportSkeleton() {
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 [&>*]:min-w-0">
         {[0, 1, 2, 3].map((index) => (
           <KpiTileSkeleton key={index} />
         ))}
       </div>
-      <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
+      <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr] [&>*]:min-w-0">
         <SkeletonCard />
         <SkeletonCard />
       </div>

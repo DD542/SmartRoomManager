@@ -82,7 +82,7 @@ export function ClosureModal({ open, onClose, onSubmit, buildings = [], rooms = 
           onChange={(event) => modifier({ label: event.target.value })}
         />
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2 [&>*]:min-w-0">
           <Input
             type="date"
             label="Du"

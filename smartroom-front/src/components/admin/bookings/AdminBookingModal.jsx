@@ -114,7 +114,7 @@ export function AdminBookingModal({ open, onClose, onSubmit, rooms = [], users =
           onChange={(event) => modifier({ roomId: event.target.value })}
         />
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-3 [&>*]:min-w-0">
           <Input
             type="date"
             label="Date"
@@ -159,7 +159,7 @@ export function AdminBookingModal({ open, onClose, onSubmit, rooms = [], users =
               value={form.ownerId}
               onChange={(event) => modifier({ ownerId: event.target.value })}
             />
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2 [&>*]:min-w-0">
               <Input
                 label="Objet"
                 placeholder="Réunion administrative"

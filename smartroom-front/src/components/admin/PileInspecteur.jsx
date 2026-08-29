@@ -38,14 +38,17 @@ export function PileInspecteur({
     // Un fragment et non un tableau : un tableau d'éléments réclamerait des
     // clés, et React s'en plaindrait à chaque rendu pour deux enfants fixes.
     return (
-      <div className={cn('grid gap-5', className)}>
+      // `[&>*]:min-w-0` : mesure a l'appui, un enfant de grille sans cette
+      // permission refuse de descendre sous la largeur de son contenu et fait
+      // defiler la page entiere de 178 px.
+      <div className={cn('grid gap-5 [&>*]:min-w-0', className)}>
         {liste}
         {detail}
       </div>
     );
   }
 
-  if (!actif) return <div className="grid gap-5">{liste}</div>;
+  if (!actif) return <div className="grid gap-5 [&>*]:min-w-0">{liste}</div>;
 
   return (
     <div className="flex flex-col gap-3">

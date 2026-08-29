@@ -47,7 +47,7 @@ function EtatFournisseurs({ etat }) {
   return (
     <Card>
       <CardHeader title="État de la couche" icon={Cpu} />
-      <div className="grid gap-3 px-4 pb-4 sm:grid-cols-3">
+      <div className="grid gap-3 px-4 pb-4 sm:grid-cols-3 [&>*]:min-w-0">
         <div className="rounded-xl border border-line bg-surface-raised p-3">
           <p className="flex items-center gap-2 text-sm text-content">
             <Badge tone={ollama.joignable ? 'success' : 'neutral'}>
@@ -152,7 +152,7 @@ export function AssistantDashboard() {
         ) : (
           statistiques.data && (
             <>
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 [&>*]:min-w-0">
                 <KpiTile
                   icon={Gauge}
                   tone="accent"
@@ -178,7 +178,7 @@ export function AssistantDashboard() {
                 />
               </div>
 
-              <div className="grid gap-4 lg:grid-cols-2">
+              <div className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
                 <Card>
                   <CardHeader
                     title="Outils les plus appelés"

@@ -176,7 +176,7 @@ export default function BuildingsPage() {
                 }
               />
 
-              <div className="grid gap-4 border-t border-line px-4 py-4 sm:grid-cols-2">
+              <div className="grid gap-4 border-t border-line px-4 py-4 sm:grid-cols-2 [&>*]:min-w-0">
                 <Input
                   label="Nom"
                   value={fiche.name ?? ''}

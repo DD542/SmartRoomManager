@@ -69,7 +69,7 @@ export default function ConflictQueuePage() {
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-[22rem_1fr]">
+      <div className="grid gap-4 lg:grid-cols-[22rem_1fr] [&>*]:min-w-0">
         <AsyncBoundary
           status={file.status}
           error={file.error}
