@@ -1,5 +1,5 @@
 import { Accessibility, KeyRound } from 'lucide-react';
-import { Badge } from '../../ui/Badge';
+import { Badge, OccupancyBar } from '../../ui/Badge';
 import { CompactGauge } from '../CompactGauge';
 import { DataTable } from '../DataTable';
 import { EquipmentIcons } from '../../rooms/RoomCard';
@@ -7,20 +7,10 @@ import { fmtArea, ROOM_STATUS_LABEL } from '../../../utils/format';
 
 const STATUT_TON = { disponible: 'success', maintenance: 'warning', archivee: 'muted' };
 
-/**
- * A-03 — colonnes du parc, et ce qu'il advient de chacune quand l'écran
- * rétrécit.
- *
- * Le nom, la capacité et le statut identifient une salle : sans eux la ligne
- * ne veut plus rien dire, ils survivent donc jusqu'à la carte. L'occupation,
- * les équipements et le mode d'accès se consultent, ils se replient. Le
- * nombre de réservations est un confort de grand écran.
- */
 const colonnes = [
   {
     key: 'name',
     label: 'Salle',
-    priority: 'primary',
     render: (row) => (
       <span className="flex flex-col">
         <span className="text-content">{row.name}</span>
@@ -30,39 +20,15 @@ const colonnes = [
       </span>
     ),
   },
-  {
-    key: 'capacity',
-    label: 'Capacité',
-    priority: 'primary',
-    align: 'right',
-    render: (row) => `${row.capacity} pl.`,
-  },
-  {
-    key: 'status',
-    label: 'Statut',
-    priority: 'primary',
-    render: (row) => (
-      <Badge tone={STATUT_TON[row.status] ?? 'default'} dot>
-        {ROOM_STATUS_LABEL[row.status] ?? row.status}
-      </Badge>
-    ),
-  },
-  {
-    key: 'occupancyRate',
-    label: 'Occupation',
-    priority: 'secondary',
-    render: (row) => <CompactGauge rate={row.occupancyRate} label={`Occupation de ${row.name}`} />,
-  },
+  { key: 'capacity', label: 'Capacité', align: 'right', render: (row) => `${row.capacity} pl.` },
   {
     key: 'equipmentCount',
     label: 'Équipements',
-    priority: 'secondary',
     render: (row) => <EquipmentIcons equipment={row.equipment ?? []} />,
   },
   {
     key: 'access',
     label: 'Accès',
-    priority: 'secondary',
     sortable: false,
     render: (row) => (
       <span className="flex items-center gap-1.5 text-content-muted">
@@ -72,7 +38,21 @@ const colonnes = [
       </span>
     ),
   },
-  { key: 'bookingCount', label: 'Réservations', priority: 'tertiary', align: 'right' },
+  {
+    key: 'occupancyRate',
+    label: 'Occupation',
+    render: (row) => <CompactGauge rate={row.occupancyRate} label={`Occupation de ${row.name}`} />,
+  },
+  { key: 'bookingCount', label: 'Réservations', align: 'right' },
+  {
+    key: 'status',
+    label: 'Statut',
+    render: (row) => (
+      <Badge tone={STATUT_TON[row.status] ?? 'default'} dot>
+        {ROOM_STATUS_LABEL[row.status] ?? row.status}
+      </Badge>
+    ),
+  },
 ];
 
 /** Aplatit les objets imbriqués pour que le tri par colonne porte sur du texte. */
@@ -83,22 +63,60 @@ export const toRoomRow = (room) => ({
 });
 
 /**
- * A-03 — catalogue administrable.
+ * A-05 — catalogue administrable.
  *
- * La bascule en cartes était écrite ici, en double du tableau. Elle vit
- * désormais dans `DataTable`, qui la déduit des rangs déclarés ci-dessus :
- * cet écran ne décrit plus que ses colonnes.
+ * Sous 768 px, la page rend des cartes : sept colonnes ne se consultent pas au
+ * doigt sur un défilement horizontal.
  */
 export function RoomsTable({ table, onSelect, selectedId }) {
   return (
-    <DataTable
-      columns={colonnes}
-      table={table}
-      selectable
-      rowLabel="salles"
-      rowName={(row) => row.name}
-      onRowClick={onSelect}
-      isRowActive={(row) => row.id === selectedId}
-    />
+    <>
+      <div className="hidden lg:block">
+        <DataTable
+          columns={colonnes}
+          table={table}
+          selectable
+          rowLabel="salles"
+          rowName={(row) => row.name}
+          onRowClick={onSelect}
+        />
+      </div>
+
+      <ul className="flex flex-col gap-2 p-3 lg:hidden">
+        {table.rows.map((row, index) => (
+          <li key={row.id} className="animate-fade-in-up" style={{ animationDelay: `${Math.min(index, 12) * 40}ms` }}>
+            <button
+              type="button"
+              onClick={() => onSelect?.(row)}
+              aria-current={selectedId === row.id ? 'true' : undefined}
+              className={`w-full rounded-xl border p-3 text-left transition ${
+                selectedId === row.id ? 'border-accent bg-accent-soft' : 'border-line bg-surface-raised'
+              }`}
+            >
+              <span className="flex items-baseline justify-between gap-2">
+                <span className="truncate text-sm text-content">{row.name}</span>
+                <span className="shrink-0 font-mono text-[11px] text-content-muted">
+                  {row.capacity} pl.
+                </span>
+              </span>
+              <span className="mt-0.5 block text-[11px] text-content-faint">
+                {row.buildingName} · {row.floor} · {fmtArea(row.area)}
+              </span>
+              <span className="mt-2 block">
+                <OccupancyBar rate={row.occupancyRate} />
+              </span>
+              <span className="mt-2 flex items-center justify-between gap-2">
+                <Badge tone={STATUT_TON[row.status] ?? 'default'} dot>
+                  {ROOM_STATUS_LABEL[row.status] ?? row.status}
+                </Badge>
+                <span className="text-[11px] text-content-muted">
+                  {row.bookingCount} réservation(s)
+                </span>
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }

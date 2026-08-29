@@ -5,7 +5,6 @@ import { useAsync } from '../../../hooks/useAsync';
 import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
 import { useToast } from '../../../hooks/useToast';
 import { PageHeader } from '../../../components/layout/PageHeader';
-import { PileInspecteur } from '../../../components/admin/PileInspecteur';
 import { Badge } from '../../../components/ui/Badge';
 import { Card, CardHeader } from '../../../components/ui/Card';
 import { AsyncBoundary, EmptyState, SkeletonCard } from '../../../components/ui/States';
@@ -70,13 +69,8 @@ export default function ConflictQueuePage() {
         }
       />
 
-      <PileInspecteur
-        className="lg:grid-cols-[22rem_1fr]"
-        actif={Boolean(selectionId)}
-        onRetour={() => setSelectionId(null)}
-        libelleRetour="Retour à la file"
-        liste={
-          <AsyncBoundary
+      <div className="grid gap-4 lg:grid-cols-[22rem_1fr]">
+        <AsyncBoundary
           status={file.status}
           error={file.error}
           onRetry={file.reload}
@@ -96,9 +90,8 @@ export default function ConflictQueuePage() {
             />
           </Card>
         </AsyncBoundary>
-        }
-        detail={
-          !selectionId ? (
+
+        {!selectionId ? (
           <Card>
             <EmptyState
               icon={Inbox}
@@ -115,9 +108,8 @@ export default function ConflictQueuePage() {
           >
             {item && <Detail item={item} onDecide={decider} loading={envoi} />}
           </AsyncBoundary>
-          )
-        }
-      />
+        )}
+      </div>
     </div>
   );
 }

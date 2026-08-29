@@ -1,26 +1,8 @@
 import { useRef, useState } from 'react';
 import { cn } from '../../../utils/cn';
-import { useMediaQuery } from '../../../hooks/useMediaQuery';
 
 /** Pas de la grille magnétique, en unités du viewBox (soit 2 % du plan). */
 export const PAS = 2;
-
-/**
- * Largeur en dessous de laquelle le plan se consulte sans se modifier.
- *
- * Décision assumée, et non un oubli. Le canevas demande de saisir un
- * rectangle de cinq unités sur cent et de le poser au pas de 2 % : à 360 px de
- * large, la cible fait 18 px et se déplace par bonds de 7 px, sous le seuil
- * tactile et sans repère suffisant pour viser. Un doigt masque en outre la
- * salle qu'il déplace.
- *
- * L'adapter demanderait un autre mode de saisie — poignées agrandies, zoom,
- * coordonnées au clavier — c'est-à-dire un second éditeur à écrire et à
- * maintenir, pour un geste qu'on fait une fois par salle, assis. Le reste de
- * l'écran — arbre des bâtiments, dépôt du plan, propriétés — reste utilisable
- * partout ; seul le glisser-déposer s'arrête ici, et il le dit.
- */
-export const EDITION_MIN_PX = 1024;
 
 const aligner = (valeur) => Math.round(valeur / PAS) * PAS;
 
@@ -35,8 +17,6 @@ const aligner = (valeur) => Math.round(valeur / PAS) * PAS;
 export function PlanEditor({ layout, selectedId, onSelect, onMove, onCommit, className }) {
   const svgRef = useRef(null);
   const [glisse, setGlisse] = useState(null);
-  // Limite assumée : voir la note de l'export `EDITION_MIN_PX`.
-  const editable = useMediaQuery(`(min-width: ${EDITION_MIN_PX}px)`);
 
   const versPlan = (event) => {
     const cadre = svgRef.current?.getBoundingClientRect();
@@ -119,9 +99,9 @@ export function PlanEditor({ layout, selectedId, onSelect, onMove, onCommit, cla
         className="h-[28rem] w-full touch-none"
         role="group"
         aria-label={`Éditeur du plan — ${layout.label}`}
-        onPointerMove={editable ? deplacer : undefined}
-        onPointerUp={editable ? relacher : undefined}
-        onPointerLeave={editable ? relacher : undefined}
+        onPointerMove={deplacer}
+        onPointerUp={relacher}
+        onPointerLeave={relacher}
       >
         <defs>
           <pattern id="grille-editeur" width={PAS} height={PAS} patternUnits="userSpaceOnUse">
@@ -153,21 +133,11 @@ export function PlanEditor({ layout, selectedId, onSelect, onMove, onCommit, cla
             pose={pose}
             actif={selectedId === pose.room.id}
             enCours={glisse?.roomId === pose.room.id}
-            onPointerDown={editable ? (event) => demarrer(event, pose) : () => onSelect(pose.room.id)}
-            onKeyDown={editable ? (event) => auClavier(event, pose) : undefined}
+            onPointerDown={(event) => demarrer(event, pose)}
+            onKeyDown={(event) => auClavier(event, pose)}
           />
         ))}
       </svg>
-
-      {!editable && (
-        // Dit ce qui est possible ici, et où faire le reste. Un écran qui
-        // refuse sans expliquer se lit comme une panne.
-        <p className="mt-3 rounded-lg border border-warning/40 bg-warning-soft px-3 py-2 text-xs text-content">
-          Le plan se consulte à cette largeur : toucher une salle affiche ses
-          propriétés. Le déplacement demande un écran d’au moins{' '}
-          {EDITION_MIN_PX} px.
-        </p>
-      )}
 
       <p className="mt-2 text-[11px] text-content-faint">
         Glissez une salle pour la déplacer, ou sélectionnez-la et utilisez les flèches du clavier.

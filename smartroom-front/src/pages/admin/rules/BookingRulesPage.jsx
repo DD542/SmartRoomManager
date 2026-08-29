@@ -94,9 +94,6 @@ export default function BookingRulesPage() {
         onRetry={regles.reload}
         skeleton={<SkeletonCard />}
       >
-        {/* Le panneau d'impact est collant au bureau, simple section empilée
-            en dessous : superposé au contenu sur un écran étroit, il masquait
-            les réglages qu'il commente. */}
         {draft && (
           <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
             <RulesForm
