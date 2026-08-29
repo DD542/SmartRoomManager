@@ -9,7 +9,7 @@ import { AccountMenu } from './AccountMenu';
 import { plural } from '../../utils/format';
 
 /** Barre haute de l'administration : recherche, file d'arbitrage, audit, compte. */
-export function AdminTopbar({ onOpenMenu }) {
+export function AdminTopbar({ onOpenMenu, menuOuvert = false }) {
   const navigate = useNavigate();
   const { logout } = useAdminSession();
   const { peut } = usePermission();
@@ -31,12 +31,20 @@ export function AdminTopbar({ onOpenMenu }) {
   }, []);
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 md:px-4">
+    // `z-topbar` et marge d'encoche : mêmes fondations que l'espace
+    // utilisateur, pas une seconde échelle.
+    <header className="z-topbar flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 pt-[env(safe-area-inset-top)] md:px-4">
       {/* Ouvre la navigation en feuille : sous 768 px la barre latérale est
           masquée, et sans ce bouton aucun écran d'administration n'est
           atteignable. */}
       <span className="md:hidden">
-        <IconButton icon={Menu} label="Ouvrir la navigation" onClick={onOpenMenu} />
+        <IconButton
+          icon={Menu}
+          label="Ouvrir la navigation"
+          onClick={onOpenMenu}
+          aria-haspopup="dialog"
+          aria-expanded={menuOuvert}
+        />
       </span>
 
       <form
