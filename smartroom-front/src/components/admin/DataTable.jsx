@@ -74,6 +74,10 @@ export function DataTable({
   selectable = false,
   rowLabel = 'éléments',
   rowName,
+  //: Ligne actuellement ouverte dans un panneau voisin. Distincte de la
+  //: sélection multiple : l'une désigne ce qu'on regarde, l'autre ce sur quoi
+  //: on va agir. Les confondre ferait croire qu'ouvrir une fiche la coche.
+  isRowActive,
 }) {
   const enCartes = useMediaQuery('(max-width: 767px)');
   const large = useMediaQuery('(min-width: 1280px)');
@@ -113,7 +117,11 @@ export function DataTable({
           {table.rows.map((row, index) => (
             <li
               key={row.id}
-              className="animate-fade-in-up rounded-xl border border-line bg-surface-raised p-3"
+              aria-current={isRowActive?.(row) ? 'true' : undefined}
+              className={cn(
+                'animate-fade-in-up rounded-xl border p-3',
+                isRowActive?.(row) ? 'border-accent bg-accent-soft' : 'border-line bg-surface-raised',
+              )}
               style={{ animationDelay: `${Math.min(index, 12) * 30}ms` }}
             >
               <div className="flex items-start gap-3">
@@ -282,10 +290,11 @@ export function DataTable({
                   }
                   tabIndex={onRowClick ? 0 : undefined}
                   aria-label={onRowClick ? `Ouvrir ${nommer(row)}` : undefined}
+                  aria-current={isRowActive?.(row) ? 'true' : undefined}
                   className={cn(
                     'animate-fade-in-up border-b border-line/60 transition last:border-0',
                     onRowClick && 'cursor-pointer hover:bg-surface-raised',
-                    table.selection.includes(row.id) && 'bg-accent-soft',
+                    (table.selection.includes(row.id) || isRowActive?.(row)) && 'bg-accent-soft',
                   )}
                   style={{ animationDelay: `${Math.min(index, 12) * 30}ms` }}
                 >

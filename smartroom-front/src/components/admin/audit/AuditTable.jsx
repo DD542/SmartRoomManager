@@ -17,6 +17,7 @@ const colonnes = [
   {
     key: 'at',
     label: 'Horodatage',
+    priority: 'primary',
     render: (row) => (
       <span className="font-mono text-xs text-content-muted">
         {fmtDate(row.at)} · {fmtTime(row.at)}
@@ -26,6 +27,7 @@ const colonnes = [
   {
     key: 'authorName',
     label: 'Auteur',
+    priority: 'primary',
     render: (row) => (
       <span className="flex items-center gap-2">
         <Avatar name={row.authorName ?? 'Système'} size="sm" />
@@ -36,6 +38,7 @@ const colonnes = [
   {
     key: 'action',
     label: 'Action',
+    priority: 'primary',
     render: (row) => (
       <Badge tone={ACTION_TON[row.action] ?? 'default'} dot>
         {actionLabels[row.action] ?? row.action}
@@ -45,6 +48,7 @@ const colonnes = [
   {
     key: 'target',
     label: 'Cible',
+    priority: 'primary',
     render: (row) => (
       <span className="flex items-center gap-1.5">
         <span className="truncate text-content">{row.target}</span>
@@ -54,7 +58,7 @@ const colonnes = [
       </span>
     ),
   },
-  { key: 'ip', label: 'Adresse IP', align: 'right', render: (row) => (
+  { key: 'ip', label: 'Adresse IP', priority: 'secondary', align: 'right', render: (row) => (
     <span className="font-mono text-xs text-content-faint">{row.ip}</span>
   ) },
 ];
@@ -64,38 +68,19 @@ const colonnes = [
  *
  * Le journal est immuable : aucune ligne n'est modifiable ni supprimable, seul
  * un signalement peut s'y ajouter. C'est ce qui rend l'audit opposable.
+ *
+ * Quatre colonnes sur cinq sont de premier rang : un journal se lit pour
+ * savoir qui a fait quoi, à quoi, et quand — retirer l'un des quatre le rend
+ * muet. Seule l'adresse IP se replie.
  */
 export function AuditTable({ table, onSelect }) {
   return (
-    <>
-      <div className="hidden lg:block">
-        <DataTable columns={colonnes} table={table} rowLabel="actions" onRowClick={onSelect} />
-      </div>
-
-      <ul className="flex flex-col gap-2 p-3 lg:hidden">
-        {table.rows.map((row, index) => (
-          <li key={row.id} className="animate-fade-in-up" style={{ animationDelay: `${Math.min(index, 12) * 40}ms` }}>
-            <button
-              type="button"
-              onClick={() => onSelect?.(row)}
-              className="w-full rounded-xl border border-line bg-surface-raised p-3 text-left"
-            >
-              <span className="flex items-baseline justify-between gap-2">
-                <span className="truncate text-sm text-content">{row.target}</span>
-                <span className="shrink-0 font-mono text-[11px] text-content-faint">
-                  {fmtDate(row.at)}
-                </span>
-              </span>
-              <span className="mt-1.5 flex items-center gap-2 text-[11px] text-content-muted">
-                <Badge tone={ACTION_TON[row.action] ?? 'default'} dot>
-                  {actionLabels[row.action] ?? row.action}
-                </Badge>
-                {row.authorName ?? 'Système'}
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    </>
+    <DataTable
+      columns={colonnes}
+      table={table}
+      rowLabel="actions"
+      rowName={(row) => row.target}
+      onRowClick={onSelect}
+    />
   );
 }

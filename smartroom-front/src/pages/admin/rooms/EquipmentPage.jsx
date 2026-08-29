@@ -76,6 +76,7 @@ export default function EquipmentPage() {
     {
       key: 'label',
       label: 'Équipement',
+      priority: 'primary',
       render: (row) => {
         const Icone = equipmentIcon(row.icon);
         return (
@@ -95,10 +96,11 @@ export default function EquipmentPage() {
         );
       },
     },
-    { key: 'categoryLabel', label: 'Catégorie' },
+    { key: 'categoryLabel', label: 'Catégorie', priority: 'secondary' },
     {
       key: 'roomCount',
       label: 'Salles équipées',
+      priority: 'primary',
       align: 'right',
       render: (row) =>
         row.roomCount === 0 ? (
@@ -110,6 +112,7 @@ export default function EquipmentPage() {
     {
       key: 'filterable',
       label: 'Filtre de recherche',
+      priority: 'primary',
       sortable: false,
       render: (row) => (
         <Switch
@@ -122,6 +125,7 @@ export default function EquipmentPage() {
     {
       key: 'actions',
       label: '',
+      priority: 'primary',
       sortable: false,
       align: 'right',
       render: (row) => (
@@ -163,51 +167,11 @@ export default function EquipmentPage() {
         }
       >
         <Card className="overflow-hidden">
-          <div className="hidden lg:block">
-            <DataTable columns={colonnes} table={table} rowLabel="équipements" />
-          </div>
-
-          {/* Sous 1024 px : cinq colonnes, dont une portant une description,
-              demandaient 627 px dans un conteneur de 321. La carte reprend les
-              mêmes données et les mêmes actions, empilées. */}
-          <ul className="flex flex-col gap-2 p-3 lg:hidden">
-            {table.rows.map((row) => {
-              const Icone = equipmentIcon(row.icon);
-              return (
-                <li
-                  key={row.id}
-                  className="rounded-xl border border-line bg-surface-raised p-3"
-                >
-                  <div className="flex items-start gap-2.5">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line bg-surface">
-                      <Icone size={15} aria-hidden="true" className="text-content-muted" />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm text-content">{row.label}</p>
-                      {row.description && (
-                        <p className="truncate text-[11px] text-content-faint">{row.description}</p>
-                      )}
-                      <p className="mt-0.5 text-[11px] text-content-muted">
-                        {row.categoryLabel} · {plural(row.roomCount, 'salle équipée', 'salles équipées')}
-                      </p>
-                    </div>
-                    <IconButton
-                      icon={Pencil}
-                      label={`Modifier ${row.label}`}
-                      onClick={() => setEdition(row)}
-                    />
-                  </div>
-                  <div className="mt-2.5 border-t border-line pt-2.5">
-                    <Switch
-                      label={`Proposer « ${row.label} » comme filtre`}
-                      checked={row.filterable}
-                      onChange={() => basculerFiltre(row)}
-                    />
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+          {/* Une seule table pour trois formes : la bascule en cartes vivait
+              ici, en double du tableau. `DataTable` la déduit du rang des
+              colonnes — le commutateur de filtre et le bouton de modification
+              sont de premier rang, ils suivent partout. */}
+          <DataTable columns={colonnes} table={table} rowLabel="équipements" rowName={(row) => row.label} />
         </Card>
       </AsyncBoundary>
 

@@ -17,6 +17,7 @@ const colonnes = [
   {
     key: 'name',
     label: 'Utilisateur',
+    priority: 'primary',
     render: (row) => (
       <span className="flex items-center gap-2.5">
         <Avatar name={row.name} size="sm" />
@@ -27,12 +28,13 @@ const colonnes = [
       </span>
     ),
   },
-  { key: 'promotion', label: 'Promotion' },
-  { key: 'department', label: 'Département' },
-  { key: 'bookings', label: 'Réservations', align: 'right' },
+  { key: 'promotion', label: 'Promotion', priority: 'secondary' },
+  { key: 'department', label: 'Département', priority: 'tertiary' },
+  { key: 'bookings', label: 'Réservations', priority: 'primary', align: 'right' },
   {
     key: 'noShowRate',
     label: 'No-show',
+    priority: 'secondary',
     align: 'right',
     render: (row) => (
       <span className={row.noShowRate >= 0.2 ? 'text-danger' : 'text-content'}>
@@ -43,11 +45,13 @@ const colonnes = [
   {
     key: 'reliabilityScore',
     label: 'Fiabilité',
+    priority: 'primary',
     render: (row) => <Fiabilite score={row.reliabilityScore} />,
   },
   {
     key: 'remainingCreditsH',
     label: 'Crédits',
+    priority: 'secondary',
     render: (row) => (
       <CompactGauge
         rate={Math.min(1, row.remainingCreditsH / Math.max(1, row.quotaHours))}
@@ -58,6 +62,7 @@ const colonnes = [
   {
     key: 'status',
     label: 'Statut',
+    priority: 'primary',
     render: (row) => (
       <Badge tone={row.status === 'actif' ? 'success' : 'danger'} dot>
         {row.status === 'actif' ? 'Actif' : 'Suspendu'}
@@ -78,41 +83,25 @@ export const toUserRow = (user) => ({
 });
 
 /**
- * A-11 — annuaire administrable.
+ * A-10 — annuaire administrable.
  *
- * Sous 768 px, la page rend des cartes : huit colonnes ne se consultent pas au
- * doigt sur un défilement horizontal.
+ * Le nom, le nombre de réservations, la fiabilité et le statut identifient un
+ * compte et disent s'il pose problème : ils survivent jusqu'à la carte. La
+ * promotion, le taux d'absence et les crédits se replient. Le département est
+ * un confort de grand écran.
+ *
+ * La bascule en cartes vivait ici, en double du tableau ; elle est portée par
+ * `DataTable`, qui la déduit des rangs déclarés plus haut.
  */
 export function UsersTable({ table, onSelect, selectedId }) {
   return (
-    <>
-      <div className="hidden lg:block">
-        <DataTable columns={colonnes} table={table} rowLabel="utilisateurs" onRowClick={onSelect} />
-      </div>
-
-      <ul className="flex flex-col gap-2 p-3 lg:hidden">
-        {table.rows.map((row, index) => (
-          <li key={row.id} className="animate-fade-in-up" style={{ animationDelay: `${Math.min(index, 12) * 40}ms` }}>
-            <button
-              type="button"
-              onClick={() => onSelect?.(row)}
-              aria-current={selectedId === row.id ? 'true' : undefined}
-              className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition ${
-                selectedId === row.id ? 'border-accent bg-accent-soft' : 'border-line bg-surface-raised'
-              }`}
-            >
-              <Avatar name={row.name} />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm text-content">{row.name}</span>
-                <span className="block truncate text-[11px] text-content-faint">
-                  {row.promotion} · {row.bookings} réservation(s)
-                </span>
-              </span>
-              <Fiabilite score={row.reliabilityScore} />
-            </button>
-          </li>
-        ))}
-      </ul>
-    </>
+    <DataTable
+      columns={colonnes}
+      table={table}
+      rowLabel="utilisateurs"
+      rowName={(row) => row.name}
+      onRowClick={onSelect}
+      isRowActive={(row) => row.id === selectedId}
+    />
   );
 }

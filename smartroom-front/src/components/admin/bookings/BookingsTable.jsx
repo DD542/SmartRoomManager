@@ -10,6 +10,7 @@ const colonnes = [
   {
     key: 'start',
     label: 'Créneau',
+    priority: 'primary',
     render: (row) => (
       <span className="flex flex-col">
         <span className="font-mono text-xs text-content">{fmtDate(row.start)}</span>
@@ -19,17 +20,19 @@ const colonnes = [
       </span>
     ),
   },
-  { key: 'title', label: 'Objet' },
-  { key: 'roomName', label: 'Salle' },
+  { key: 'title', label: 'Objet', priority: 'primary' },
+  { key: 'roomName', label: 'Salle', priority: 'primary' },
   {
     key: 'ownerName',
     label: 'Organisateur',
+    priority: 'secondary',
     render: (row) => row.ownerName ?? <span className="text-content-faint">—</span>,
   },
-  { key: 'source', label: 'Source', render: (row) => <SourceBadge source={row.source} /> },
+  { key: 'source', label: 'Source', priority: 'tertiary', render: (row) => <SourceBadge source={row.source} /> },
   {
     key: 'status',
     label: 'Statut',
+    priority: 'primary',
     render: (row) => (
       <Badge tone={STATUT_TON[row.status] ?? 'default'} dot>
         {BOOKING_STATUS_LABEL[row.status] ?? row.status}
@@ -39,6 +42,7 @@ const colonnes = [
   {
     key: 'attendance',
     label: 'Présence',
+    priority: 'secondary',
     render: (row) => <AttendanceBadge attendance={row.attendance} />,
   },
 ];
@@ -51,56 +55,23 @@ export const toRow = (booking) => ({
 });
 
 /**
- * A-03 — table des réservations.
+ * A-18 — table des réservations.
  *
- * Sous 768 px, la page rend des cartes : sept colonnes ne se consultent pas au
- * doigt sur un défilement horizontal.
+ * Créneau, objet, salle et statut : c'est ce qu'on lit pour décider s'il faut
+ * ouvrir la ligne. L'organisateur et la présence se replient, la source est un
+ * confort de grand écran — elle départage deux réservations identiques, ce qui
+ * n'arrive qu'à l'examen.
  */
 export function BookingsTable({ table, onSelect, selectedId }) {
   return (
-    <>
-      <div className="hidden lg:block">
-        <DataTable
-          columns={colonnes}
-          table={table}
-          selectable
-          rowLabel="réservations"
-          rowName={(row) => `${row.title} — ${row.roomName}`}
-          onRowClick={onSelect}
-        />
-      </div>
-
-      <ul className="flex flex-col gap-2 p-3 lg:hidden">
-        {table.rows.map((row, index) => (
-          <li key={row.id} className="animate-fade-in-up" style={{ animationDelay: `${Math.min(index, 12) * 40}ms` }}>
-            <button
-              type="button"
-              onClick={() => onSelect?.(row)}
-              aria-current={selectedId === row.id ? 'true' : undefined}
-              className={`w-full rounded-xl border p-3 text-left transition ${
-                selectedId === row.id ? 'border-accent bg-accent-soft' : 'border-line bg-surface-raised'
-              }`}
-            >
-              <span className="flex items-baseline justify-between gap-2">
-                <span className="truncate text-sm text-content">{row.title}</span>
-                <span className="shrink-0 font-mono text-[11px] text-content-muted">
-                  {fmtDate(row.start)}
-                </span>
-              </span>
-              <span className="mt-0.5 block font-mono text-[11px] text-content-muted">
-                {fmtTime(row.start)} – {fmtTime(row.end)} · {row.roomName}
-              </span>
-              <span className="mt-2 flex flex-wrap items-center gap-1.5">
-                <SourceBadge source={row.source} />
-                <Badge tone={STATUT_TON[row.status] ?? 'default'} dot>
-                  {BOOKING_STATUS_LABEL[row.status] ?? row.status}
-                </Badge>
-                <AttendanceBadge attendance={row.attendance} />
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    </>
+    <DataTable
+      columns={colonnes}
+      table={table}
+      selectable
+      rowLabel="réservations"
+      rowName={(row) => `${row.title} — ${row.roomName}`}
+      onRowClick={onSelect}
+      isRowActive={(row) => row.id === selectedId}
+    />
   );
 }
