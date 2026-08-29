@@ -55,3 +55,49 @@ describe('Grilles de l’administration', () => {
     expect(total).toBeGreaterThan(30);
   });
 });
+
+/**
+ * Toute valeur de plan employée dans le code doit exister dans l'échelle.
+ *
+ * Une classe `z-…` inconnue de Tailwind ne produit **rien** : pas d'erreur,
+ * pas d'avertissement, aucun `z-index`. L'élément retombe alors dans l'ordre
+ * du document, et un menu se retrouve derrière la page. C'est exactement ce
+ * qui s'est produit : la configuration avait gagné les plans, le serveur de
+ * développement tournait encore avec l'ancienne — et rien ne le signalait.
+ *
+ * Ce contrôle ne remplace pas le redémarrage du serveur après une
+ * modification de `tailwind.config.js`. Il attrape l'autre moitié du
+ * problème : une faute de frappe ou un plan employé avant d'être déclaré.
+ */
+describe('Échelle des plans d’affichage', () => {
+  const config = readFileSync('tailwind.config.js', 'utf-8');
+  const bloc = /zIndex:\s*\{([^}]*)\}/s.exec(config);
+  const declares = new Set(
+    [...(bloc?.[1] ?? '').matchAll(/(\w+):\s*'(\d+)'/g)].map((m) => m[1]),
+  );
+
+  // Uniquement dans les chaînes de classes : ailleurs, `z-index` d'un
+  // commentaire ou d'une propriété de style ferait un faux positif.
+  const employes = new Set(
+    RACINES.flatMap(fichiers).flatMap((chemin) => {
+      const source = readFileSync(chemin, 'utf-8');
+      const classes = [...source.matchAll(/className=(?:"([^"]*)"|\{`([^`]*)`\})/g)].map(
+        (m) => m[1] ?? m[2] ?? '',
+      );
+      return classes.flatMap((valeur) =>
+        [...valeur.matchAll(/(?:^|[\s:])z-([a-z][a-z-]*)/g)].map((m) => m[1]),
+      );
+    }),
+  );
+
+  it('déclare tous les plans employés dans l’administration', () => {
+    const inconnus = [...employes].filter((nom) => !declares.has(nom));
+    expect(inconnus).toEqual([]);
+  });
+
+  it('porte bien les plans attendus', () => {
+    ['base', 'sticky', 'topbar', 'menu', 'drawer', 'modal', 'toast'].forEach((plan) =>
+      expect(declares.has(plan)).toBe(true),
+    );
+  });
+});
