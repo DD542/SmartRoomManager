@@ -48,7 +48,7 @@ from app.models import (
     BookingParticipant,
     User,
 )
-from app.services import audit_service
+from app.services import audit_service, mail_service
 from app.services.availability_service import (
     SlotReport,
     charger_salle,
@@ -279,6 +279,56 @@ def reissue_access_code(
     return code
 
 
+def _prevenir(
+    session: Session,
+    reservation: Booking,
+    code_gabarit: str,
+    *,
+    code_acces: str | None = None,
+) -> None:
+    """Notifie l'organisateur d'un événement de sa réservation.
+
+    Ici et non dans la route : la création passe par deux chemins — l'écran de
+    réservation et l'écran d'administration —, l'annulation par trois. Un
+    gabarit déclenché depuis la route aurait manqué les autres, et c'est
+    exactement ce qui s'était produit : les gabarits « confirmation » et
+    « annulation » étaient actifs, décrits par leur propre déclencheur, et
+    aucune ligne de code ne les appelait. L'administration les montrait activés
+    depuis l'écran A-16, l'écran d'annulation proposait de prévenir les
+    participants — et rien ne partait jamais.
+
+    La notification est écrite dans la même transaction que l'événement : un
+    ROLLBACK emporte les deux, un COMMIT les garde ensemble.
+    """
+    if reservation.owner_id is None:
+        # Un blocage administratif n'a pas d'organisateur : personne à prévenir.
+        return
+
+    proprietaire = session.get(User, reservation.owner_id)
+    if proprietaire is None:
+        return
+
+    salle = charger_salle(session, reservation.room_id)
+    variables = {
+        "salle": salle.name,
+        "batiment": f"{salle.floor.building.name} — {salle.floor.label}",
+        "lien_reservation": mail_service.lien_reservation(reservation.id),
+        **mail_service.date_et_creneau(
+            reservation.time_range.lower, reservation.time_range.upper
+        ),
+    }
+    if code_acces is not None:
+        variables["code_acces"] = code_acces
+
+    mail_service.notify(
+        session,
+        user=proprietaire,
+        code=code_gabarit,
+        variables=variables,
+        booking_id=reservation.id,
+    )
+
+
 def create_booking(
     session: Session,
     *,
@@ -364,6 +414,15 @@ def create_booking(
 
     _journaliser(session, reservation, BookingEventType.CREATION, "Réservation créée", owner_id)
     code = issue_access_code(session, reservation, now=now)
+    # Le clair n'existe qu'ici, et le courriel de confirmation est le seul
+    # endroit où l'utilisateur pourra le relire : l'écran ne le montre qu'une
+    # fois, la base n'en garde que l'empreinte.
+    _prevenir(
+        session,
+        reservation,
+        "reservation_confirmation",
+        code_acces=code.clear if code else None,
+    )
     session.flush()
     return reservation, code
 
@@ -518,6 +577,7 @@ def cancel_booking(
         "Annulée" if dans_les_temps else "Annulée hors délai",
         actor_id,
     )
+    _prevenir(session, reservation, "reservation_annulation")
     session.flush()
     return reservation
 

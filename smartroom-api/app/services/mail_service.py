@@ -12,11 +12,14 @@ prévenir vaut mieux que la faire échouer.
 from __future__ import annotations
 
 import logging
+import threading
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import aiosmtplib
-from jinja2 import TemplateError
+from jinja2 import TemplateError, meta
 from jinja2.sandbox import SandboxedEnvironment
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -33,6 +36,33 @@ settings = get_settings()
 #: reste désactivé : ces gabarits produisent du texte, pas du HTML, et
 #: échapper transformerait « L'Atelier » en « L&#39;Atelier ».
 JINJA = SandboxedEnvironment(autoescape=False, trim_blocks=True, lstrip_blocks=True)
+
+FUSEAU = ZoneInfo(settings.timezone)
+
+_JOURS = ("lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche")
+_MOIS = (
+    "janvier", "février", "mars", "avril", "mai", "juin",
+    "juillet", "août", "septembre", "octobre", "novembre", "décembre",
+)
+
+
+def date_et_creneau(debut: datetime, fin: datetime) -> dict[str, str]:
+    """`date` et `creneau` en français, en heure locale.
+
+    Ici et non chez l'appelant : deux gabarits déclenchés par deux traitements
+    différents parlent de la même réservation, et « jeudi 26 mars 2026 » d'un
+    côté contre « 2026-03-26T14:00:00+01:00 » de l'autre se lit comme deux
+    systèmes distincts.
+    """
+    local_debut = debut.astimezone(FUSEAU)
+    local_fin = fin.astimezone(FUSEAU)
+    return {
+        "date": (
+            f"{_JOURS[local_debut.weekday()]} {local_debut.day} "
+            f"{_MOIS[local_debut.month - 1]} {local_debut.year}"
+        ),
+        "creneau": f"{local_debut:%H:%M} - {local_fin:%H:%M}",
+    }
 
 
 @dataclass(frozen=True, slots=True)
@@ -91,11 +121,13 @@ async def send(message: Message) -> None:
     journal vaut mieux qu'un envoi silencieusement perdu.
     """
     if not settings.mail_enabled:
+        # Le destinataire et l'objet, jamais le corps : un courriel de
+        # confirmation porte le code d'accès de la porte, et le journal n'est
+        # pas un endroit où le déposer.
         logger.info(
-            "Courriel non envoyé (MAIL_ENABLED=false) → %s : %s\n%s",
+            "Courriel non envoyé (MAIL_ENABLED=false) → %s : %s",
             message.to,
             message.subject,
-            message.body,
         )
         return
 
@@ -145,8 +177,14 @@ def notify(
         logger.info("Gabarit « %s » absent ou désactivé, notification ignorée.", code)
         return None
 
-    valeurs = {item.code: item.sample_value for item in known_variables(session)}
-    valeurs.update({"prenom": user.first_name, "nom": user.last_name, **variables})
+    # Aucune valeur d'exemple ici. Les seeder « pour ne rien laisser vide »
+    # remplissait les trous avec la fiche de démonstration : le rappel avant
+    # réunion annonçait à chaque utilisateur le code d'accès « A-4821 » et le
+    # créneau « 14:00 - 15:30 », plausibles et faux. Un champ sans valeur reste
+    # vide — visible, donc corrigeable. Les exemples servent à `preview`, qui
+    # n'envoie rien.
+    valeurs = {"prenom": user.first_name, "nom": user.last_name, **variables}
+    _alerter_variables_manquantes(code, gabarit, valeurs)
 
     titre = render(gabarit.subject, valeurs)
     corps = render(gabarit.body, valeurs)
@@ -169,20 +207,66 @@ def notify(
     return notification
 
 
+def _alerter_variables_manquantes(
+    code: str, gabarit: EmailTemplate, valeurs: dict[str, Any]
+) -> None:
+    """Journalise les variables que le gabarit attend et que l'appelant n'a pas.
+
+    Un trou dans un courriel ne lève rien : il se lit chez le destinataire, des
+    jours plus tard. Le signaler ici est le dernier moment où quelqu'un peut
+    encore le voir.
+    """
+    attendues: set[str] = set()
+    for source in (gabarit.subject, gabarit.body):
+        try:
+            attendues |= meta.find_undeclared_variables(JINJA.parse(source))
+        except TemplateError:
+            return
+    manquantes = sorted(attendues - valeurs.keys())
+    if manquantes:
+        logger.warning(
+            "Gabarit « %s » : variables sans valeur, rendues vides → %s",
+            code,
+            ", ".join(manquantes),
+        )
+
+
 #: Les envois sont différés hors de la transaction : expédier avant le COMMIT
 #: annoncerait une réservation qu'un `ROLLBACK` ferait disparaître.
+#:
+#: La file est commune au processus, et les routes synchrones tournent dans un
+#: pool de fils : le verrou garantit qu'une prise de file ne perde pas un
+#: message déposé au même instant. Un message peut donc partir avec
+#: l'expédition d'une autre requête — sans conséquence, chacun ayant son
+#: propre destinataire.
 _en_attente: list[Message] = []
+_verrou = threading.Lock()
 
 
 def pending() -> list[Message]:
-    return list(_en_attente)
+    with _verrou:
+        return list(_en_attente)
 
 
 def flush() -> list[Message]:
     """Vide la file et rend les messages à expédier."""
-    messages = list(_en_attente)
-    _en_attente.clear()
+    with _verrou:
+        messages = list(_en_attente)
+        del _en_attente[:]
     return messages
+
+
+async def expedier() -> None:
+    """Vide la file et remet chaque message au transport.
+
+    Appelée après le COMMIT — en tâche de fond de la requête qui a écrit, et
+    par l'ordonnanceur pour ce que produisent ses propres traitements. Sans
+    cette seconde voie, une confirmation attendait le prochain passage de
+    maintenance : cinq minutes par défaut, et rien du tout si l'ordonnanceur
+    était arrêté.
+    """
+    for message in flush():
+        await send(message)
 
 
 def queue_password_reset(session: Session, compte: User, jeton: str) -> Message:
@@ -206,6 +290,16 @@ def queue_password_reset(session: Session, compte: User, jeton: str) -> Message:
     )
     _en_attente.append(message)
     return message
+
+
+def lien_reservation(booking_id: Any) -> str:
+    """Adresse de la réservation dans l'écran de gestion.
+
+    Le chemin est celui du routeur du front, `/app/reservations/:id` : un
+    courriel qui invite à « gérer sa réservation » et dépose sur une page
+    inexistante ne vaut pas mieux qu'un courriel sans lien.
+    """
+    return f"{_origine()}/app/reservations/{booking_id}"
 
 
 def _origine() -> str:

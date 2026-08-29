@@ -18,7 +18,13 @@ config = context.config
 config.set_main_option("sqlalchemy.url", get_settings().database_url)
 
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # `disable_existing_loggers=False` : par défaut, `fileConfig` **désactive**
+    # tous les journaux déjà créés. Dans un processus qui migre puis sert — la
+    # suite de tests, un point d'entrée de conteneur qui enchaîne les deux —,
+    # chaque `logging.getLogger(__name__)` de l'application se retrouve muet,
+    # sans erreur ni trace. Un journal qui disparaît en silence est pire que
+    # pas de journal du tout : on continue de compter dessus.
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 target_metadata = Base.metadata
 

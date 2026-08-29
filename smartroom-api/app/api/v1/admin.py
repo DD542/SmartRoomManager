@@ -9,7 +9,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import Range
 
@@ -32,6 +32,7 @@ from app.core.pagination import Page, paginate
 from app.db.enums import BookingSource, BookingStatus
 from app.models import AdminAccount, Booking, Floor, Room
 from app.services import booking_service as service
+from app.services import mail_service
 
 router = APIRouter(prefix="/admin", tags=["administration"])
 
@@ -89,6 +90,7 @@ def list_bookings(
 def create_for_user(
     payload: AdminBookingIn,
     session: SessionDep,
+    background: BackgroundTasks,
     admin: AdminAccount = Depends(require_permission(CONFLICTS_ARBITRATE)),
 ) -> BookingOut:
     """`ignore_rules` lève durée, capacité, horaires, quota et fermeture.
@@ -109,6 +111,9 @@ def create_for_user(
         ignore_rules=payload.ignore_rules,
     )
     session.commit()
+    # Réserver pour un tiers sans le prévenir revient à poser un rendez-vous
+    # dans son agenda en silence.
+    background.add_task(mail_service.expedier)
     return BookingOut.of(reservation)
 
 
@@ -121,12 +126,14 @@ def cancel_any(
     booking_id: uuid.UUID,
     payload: CancelIn,
     session: SessionDep,
+    background: BackgroundTasks,
     admin: AdminAccount = Depends(require_permission(CONFLICTS_ARBITRATE)),
 ) -> BookingOut:
     annulee = service.cancel_booking(
         session, booking_id, reason=payload.reason, actor_id=admin.user_id
     )
     session.commit()
+    background.add_task(mail_service.expedier)
     return BookingOut.of(annulee)
 
 

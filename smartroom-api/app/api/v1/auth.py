@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Cookie, Depends, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Cookie, Depends, Request, Response, status
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 from app.api.deps import CurrentPrincipal, SessionDep
@@ -243,7 +243,10 @@ def me(principal: CurrentPrincipal) -> SessionOut:
 )
 @limiter.limit(settings.rate_limit_reset)
 def forgot_password(
-    request: Request, payload: ForgotPasswordIn, session: SessionDep
+    request: Request,
+    payload: ForgotPasswordIn,
+    session: SessionDep,
+    background: BackgroundTasks,
 ) -> dict[str, str]:
     resultat = auth_service.request_password_reset(session, email=payload.email)
     session.commit()
@@ -254,6 +257,9 @@ def forgot_password(
 
         mail_service.queue_password_reset(session, compte, jeton)
         session.commit()
+        # Un lien de réinitialisation qui attend le prochain passage de
+        # maintenance expire pour partie avant d'arriver.
+        background.add_task(mail_service.expedier)
 
     return {"status": "accepted"}
 

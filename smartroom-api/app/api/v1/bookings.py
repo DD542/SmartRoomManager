@@ -10,7 +10,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, BackgroundTasks, Query, status
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import Range
 
@@ -46,6 +46,7 @@ from app.db.enums import BookingStatus, ParticipantResponse
 from app.domain.types import TimeSlot
 from app.models import Booking
 from app.services import booking_service as service
+from app.services import mail_service
 from app.services import recommendation_service as reco
 from app.services import recurrence_service as recurrence
 
@@ -125,7 +126,13 @@ def get_booking(
     },
 )
 def create(
-    payload: BookingIn, session: SessionDep, principal: CurrentPrincipal
+    payload: BookingIn,
+    session: SessionDep,
+    principal: CurrentPrincipal,
+    #: L'expédition a lieu après la réponse : la confirmation ne doit pas
+    #: faire attendre l'utilisateur derrière un relais SMTP lent, et un relais
+    #: injoignable ne doit pas transformer une réservation écrite en erreur.
+    background: BackgroundTasks,
 ) -> BookingCreatedOut:
     """Crée pour le compte connecté. Les règles ne se forcent pas ici.
 
@@ -143,6 +150,7 @@ def create(
         participants=payload.participants,
     )
     session.commit()
+    background.add_task(mail_service.expedier)
 
     return BookingCreatedOut(
         booking=BookingOut.of(reservation),
@@ -182,6 +190,7 @@ def cancel(
     payload: CancelIn,
     session: SessionDep,
     principal: CurrentPrincipal,
+    background: BackgroundTasks,
 ) -> BookingOut:
     """Le motif est obligatoire : c'est lui qui distingue un désistement d'un
     abandon dans la frise, et qui alimente le taux d'absence du compte."""
@@ -192,6 +201,7 @@ def cancel(
         session, booking_id, reason=payload.reason, actor_id=principal.user.id
     )
     session.commit()
+    background.add_task(mail_service.expedier)
     return BookingOut.of(annulee)
 
 
@@ -317,6 +327,7 @@ def create_recurring(
     payload: RecurrenceIn,
     session: SessionDep,
     principal: CurrentPrincipal,
+    background: BackgroundTasks,
     skip_conflicts: bool = Query(default=True),
 ) -> SeriesCreatedOut:
     """Une série dont deux dates butent sur un conflit produit quand même les autres.
@@ -340,6 +351,7 @@ def create_recurring(
         skip_conflicts=skip_conflicts,
     )
     session.commit()
+    background.add_task(mail_service.expedier)
 
     return SeriesCreatedOut(
         rule_id=regle.id,

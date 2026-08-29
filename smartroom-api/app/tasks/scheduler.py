@@ -54,7 +54,11 @@ def send_reminders(session: Session, now: datetime | None = None) -> int:
 
     imminentes = session.scalars(
         select(Booking)
-        .options(selectinload(Booking.owner), selectinload(Booking.room))
+        .options(
+            selectinload(Booking.owner),
+            selectinload(Booking.room),
+            selectinload(Booking.access_codes),
+        )
         .where(
             Booking.status == BookingStatus.CONFIRMEE,
             Booking.deleted_at.is_(None),
@@ -75,6 +79,10 @@ def send_reminders(session: Session, now: datetime | None = None) -> int:
         deja = session.scalars(
             select(Notification).where(
                 Notification.booking_id == reservation.id,
+                # Le rappel seul : depuis que la création écrit sa propre
+                # notification, une réservation posée dans la fenêtre de rappel
+                # aurait supprimé le sien.
+                Notification.template_code == GABARIT_RAPPEL,
                 Notification.sent_at >= depuis,
             )
         ).first()
@@ -82,6 +90,19 @@ def send_reminders(session: Session, now: datetime | None = None) -> int:
             continue
 
         salle = session.get(Room, reservation.room_id)
+        # Le gabarit demande `salle`, `creneau` et `code_acces` ; ce traitement
+        # envoyait `titre`, `debut` et `minutes`. Les trois trous étaient
+        # comblés par les valeurs d'exemple : chaque rappel annonçait le code
+        # « A-4821 » et le créneau « 14:00 - 15:30 » de la fiche de
+        # démonstration.
+        #
+        # Le clair du code n'existe plus — la base n'en garde que l'empreinte.
+        # C'est donc l'indice qui part, celui-là même qu'affiche l'écran de la
+        # réservation, et rien d'autre : inventer un code serait pire que ne
+        # pas en donner.
+        actif = next(
+            (item for item in reservation.access_codes if item.revoked_at is None), None
+        )
         mail_service.notify(
             session,
             user=reservation.owner,
@@ -90,8 +111,12 @@ def send_reminders(session: Session, now: datetime | None = None) -> int:
             variables={
                 "titre": reservation.title,
                 "salle": salle.name if salle else "",
-                "debut": reservation.time_range.lower.isoformat(),
                 "minutes": settings.reminder_lead_minutes,
+                "code_acces": actif.code_hint if actif is not None else "",
+                "lien_reservation": mail_service.lien_reservation(reservation.id),
+                **mail_service.date_et_creneau(
+                    reservation.time_range.lower, reservation.time_range.upper
+                ),
             },
         )
         envoyes += 1
@@ -114,22 +139,12 @@ def release_and_close(session: Session, now: datetime | None = None) -> tuple[in
     return len(liberees), closes
 
 
-async def _expedier() -> None:
-    """Vide la file de courriels accumulée par les traitements.
-
-    Les envois ont lieu **après** le COMMIT : expédier avant annoncerait une
-    réservation qu'un `ROLLBACK` ferait disparaître.
-    """
-    for message in mail_service.flush():
-        await mail_service.send(message)
-
-
 async def _tache_reservations() -> None:
     with _session() as session:
         liberees, closes = await asyncio.to_thread(release_and_close, session)
         rappels = await asyncio.to_thread(send_reminders, session)
 
-    await _expedier()
+    await mail_service.expedier()
 
     if liberees or closes or rappels:
         logger.info(
