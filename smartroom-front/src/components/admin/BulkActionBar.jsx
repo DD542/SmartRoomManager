@@ -17,7 +17,16 @@ export function BulkActionBar({
   if (count === 0) return null;
 
   return (
-    <div className="sticky bottom-4 z-sticky mx-auto flex w-fit max-w-full flex-wrap items-center gap-2 rounded-xl border border-line bg-surface-raised px-3 py-2">
+    // Collée au bas de la zone de contenu, marge du système comprise : sur un
+    // téléphone à barre gestuelle, la rangée d'actions passait sous
+    // l'indicateur d'accueil. `w-full` sous 640 px — une barre « au plus juste »
+    // y devenait trois lignes centrées, dont on ne savait plus laquelle
+    // portait quoi.
+    <div
+      role="toolbar"
+      aria-label="Actions sur la sélection"
+      className="sticky bottom-[calc(env(safe-area-inset-bottom)+1rem)] z-sticky mx-auto flex w-full flex-wrap items-center gap-2 rounded-xl border border-line bg-surface-raised px-3 py-2 sm:w-fit sm:max-w-full"
+    >
       <span className="rounded-lg bg-accent px-2 py-1 font-mono text-xs text-ink">{count}</span>
       {/* Le libellé complet est fourni par l'écran : accoler « s » à
           « réservation sélectionné » produirait un accord faux. */}

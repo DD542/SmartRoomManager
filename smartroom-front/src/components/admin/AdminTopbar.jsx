@@ -6,6 +6,8 @@ import { useAdminSession } from '../../hooks/useAdminSession';
 import { usePermission } from '../../hooks/usePermission';
 import { IconButton } from '../ui/Button';
 import { AccountMenu } from './AccountMenu';
+import { SegmentedControl } from '../ui/Tabs';
+import { useDensite } from '../../hooks/useDensite';
 import { plural } from '../../utils/format';
 
 /** Barre haute de l'administration : recherche, file d'arbitrage, audit, compte. */
@@ -13,6 +15,7 @@ export function AdminTopbar({ onOpenMenu, menuOuvert = false }) {
   const navigate = useNavigate();
   const { logout } = useAdminSession();
   const { peut } = usePermission();
+  const { densite, definirDensite } = useDensite();
   const [query, setQuery] = useState('');
   const [enAttente, setEnAttente] = useState(0);
 
@@ -109,6 +112,21 @@ export function AdminTopbar({ onOpenMenu, menuOuvert = false }) {
           {/* L'avatar était un simple carré de couleur, sans action ni nom
               accessible : le seul point de la barre qui parle du compte ne
               menait nulle part. */}
+          {/* Densité des tableaux : réservée au bureau, où le choix a un sens.
+              Sous 1024 px, les listes sont en cartes ou en colonnes de premier
+              rang — resserrer n'y gagnerait rien. */}
+          <div className="hidden lg:block">
+            <SegmentedControl
+              label="Densité des tableaux"
+              value={densite}
+              onChange={definirDensite}
+              options={[
+                { value: 'confortable', label: 'Confortable' },
+                { value: 'compact', label: 'Compact' },
+              ]}
+            />
+          </div>
+
           <AccountMenu
             onLogout={() => {
               logout();
