@@ -76,8 +76,6 @@ export default function ExceptionalAccessPage() {
       <PageHeader
         title="Demande d’accès exceptionnel"
         subtitle="Justifiez votre demande de réservation hors des jours d’ouverture."
-        backTo={draft.roomId ? `/app/reservation/salles/${draft.roomId}` : '/app/reservations'}
-        backLabel="Retour au calendrier"
       />
 
       <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">

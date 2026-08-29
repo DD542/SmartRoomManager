@@ -84,8 +84,6 @@ export default function RecurringBookingPage() {
       <PageHeader
         title="Réservation récurrente"
         subtitle={describeRule(rule, occurrences)}
-        backTo={`/app/reservation/salles/${draft.roomId}`}
-        backLabel="Retour au calendrier"
       />
 
       <div className="grid gap-4 lg:grid-cols-[380px_1fr]">

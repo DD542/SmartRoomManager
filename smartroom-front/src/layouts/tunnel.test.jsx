@@ -17,7 +17,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
 import { PageTransition } from '../components/layout/PageTransition';
 import { useBooking } from '../hooks/useBooking';
-import WizardLayout from './WizardLayout';
+import WizardLayout, { retourDe } from './WizardLayout';
 
 function EtapeBesoin() {
   const { update } = useBooking();
@@ -61,5 +61,45 @@ describe('Tunnel de réservation', () => {
     fireEvent.click(screen.getByRole('link', { name: 'Étape suivante' }));
 
     expect(screen.getByText('besoin conservé : Atelier data pour 8')).toBeTruthy();
+  });
+});
+
+describe('Retour dans le tunnel', () => {
+  const CHEMINS = [
+    ['/app/reservation/besoin', '/app', 'Quitter la réservation'],
+    ['/app/reservation/salles', '/app/reservation/besoin', 'Retour au besoin'],
+    ['/app/reservation/salles/r-1', '/app/reservation/salles', 'Retour aux salles'],
+    ['/app/reservation/recapitulatif', '/app/reservation/salles/r-1', 'Retour au créneau'],
+    ['/app/reservation/conflit', '/app/reservation/salles/r-1', 'Retour au créneau'],
+    ['/app/reservation/recurrente', '/app/reservation/salles/r-1', 'Retour au créneau'],
+    ['/app/reservation/acces-exceptionnel', '/app/reservation/salles/r-1', 'Retour au créneau'],
+  ];
+
+  it.each(CHEMINS)('depuis %s, ramène à %s', (depuis, vers, libelle) => {
+    expect(retourDe(depuis, 'r-1')).toEqual({ to: vers, label: libelle });
+  });
+
+  it('ramène aux salles quand aucune n’est encore choisie', () => {
+    // Récapitulatif atteint par lien profond, brouillon vide : renvoyer vers
+    // `/salles/undefined` produirait un 422 au lieu d'un retour.
+    expect(retourDe('/app/reservation/recapitulatif', undefined)).toEqual({
+      to: '/app/reservation/salles',
+      label: 'Retour aux salles',
+    });
+  });
+
+  it('affiche le retour sur la première étape du tunnel', () => {
+    render(
+      <MemoryRouter initialEntries={['/app/reservation/besoin']}>
+        <Routes>
+          <Route path="/app/reservation" element={<WizardLayout />}>
+            <Route path="besoin" element={<p>étape</p>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const retour = screen.getByRole('link', { name: /Quitter la réservation/ });
+    expect(retour.getAttribute('href')).toBe('/app');
   });
 });
