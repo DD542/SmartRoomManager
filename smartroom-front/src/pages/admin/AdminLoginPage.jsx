@@ -99,7 +99,11 @@ export default function AdminLoginPage() {
                   onClick={() => setVisible((current) => !current)}
                   aria-label={visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                   aria-pressed={visible}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1.5 text-content-muted transition hover:text-content"
+                  // 28 px mesures : sous les 44 px exiges, et c'est la commande
+                  // qu'on cherche du pouce quand le mot de passe part de travers.
+                  // La zone est etendue par un pseudo-element, le bouton garde sa
+                  // taille dans le champ.
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1.5 text-content-muted transition after:absolute after:-inset-2 after:content-[''] hover:text-content"
                 >
                   {visible ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
                 </button>

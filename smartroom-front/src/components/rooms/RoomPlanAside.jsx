@@ -52,7 +52,12 @@ export function RoomPlanAside({ room, directions = [], onClose }) {
 
         <div>
           <p className="text-xs uppercase tracking-wide text-content-muted">Équipements</p>
-          <ul className="mt-2 grid grid-cols-2 gap-2">
+          {/* Colonnes qui se comptent d'après la place disponible, et non
+              d'après un point de rupture : ce panneau vit tantôt dans une
+              colonne de 320 px, tantôt dans une feuille de 360, tantôt dans
+              une feuille de 768. Deux colonnes imposées y coupaient
+              « Vidéoprojecteur » en deux. */}
+          <ul className="mt-2 grid gap-2 [grid-template-columns:repeat(auto-fit,minmax(8.5rem,1fr))]">
             {(room.equipment ?? []).map((item) => {
               const Icon = equipmentIcon(item.icon);
               return (

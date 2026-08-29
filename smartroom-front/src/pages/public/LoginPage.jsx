@@ -107,7 +107,11 @@ export default function LoginPage() {
               onClick={() => setShowPassword((current) => !current)}
               aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
               aria-pressed={showPassword}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1.5 text-content-muted transition hover:text-content"
+              // 28 px mesures : sous les 44 px exiges, et c'est la commande
+              // qu'on cherche du pouce quand le mot de passe part de travers.
+              // La zone est etendue par un pseudo-element, le bouton garde sa
+              // taille dans le champ.
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1.5 text-content-muted transition after:absolute after:-inset-2 after:content-[''] hover:text-content"
             >
               {showPassword ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
             </button>
@@ -122,7 +126,10 @@ export default function LoginPage() {
           />
           <Link
             to="/mot-de-passe-oublie"
-            className="text-xs font-medium text-accent transition hover:text-accent-hover"
+            // `py-3` : mesure a 16 px de haut, ce lien est une commande du
+            // formulaire et non un mot dans une phrase — l'exception des liens
+            // en ligne de WCAG 2.5.5 ne s'y applique pas.
+            className="inline-flex min-h-[44px] items-center py-3 text-xs font-medium text-accent transition hover:text-accent-hover"
           >
             Mot de passe oublié ?
           </Link>
