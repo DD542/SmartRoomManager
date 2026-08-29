@@ -53,7 +53,7 @@ export function PeriodHoursChart({ data = [], granularity = 'month' }) {
       {data.length === 0 ? (
         <Vide />
       ) : (
-        <div className="h-56 px-2 pb-4">
+        <div className="h-48 px-2 pb-4 sm:h-56 xl:h-64">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} margin={chartMargin}>
               <XAxis dataKey="label" tickLine={false} axisLine={false} tick={AXIS} minTickGap={8} />

@@ -26,7 +26,7 @@ export function HoursBarChart({ data = [] }) {
   return (
     <Card>
       <CardHeader title="Heures réservées par mois" />
-      <div className="h-56 px-2 pb-4">
+      <div className="h-48 px-2 pb-4 sm:h-56 xl:h-64">
         <ResponsiveContainer width="100%" height="100%">
           {/* Marges positives uniquement : une marge négative fait calculer à
               Recharts une largeur de bande nulle, et plus aucune barre ne sort. */}

@@ -17,12 +17,17 @@ export function PermissionMatrix({ groups = [], admins = [], onToggle, busy = fa
   return (
     // Seule table de l'administration qui reste une table sous 1024 px, et
     // c'est délibéré : la matrice existe pour comparer les comptes entre eux
-    // sur une même ligne. La replier en cartes détruirait précisément la
-    // lecture qu'elle sert. WCAG 1.4.10 exclut d'ailleurs les tableaux de
-    // données de la règle de non-défilement bidirectionnel. Le défilement
-    // reste enfermé dans ce conteneur — la page, elle, ne défile jamais
-    // latéralement — et chaque colonne contient des interrupteurs focusables,
-    // ce qui la rend parcourable au clavier seul.
+    // sur une même ligne. La replier en cartes — une par compte — rendrait
+    // l'attribution plus simple et la comparaison impossible ; or c'est la
+    // comparaison qu'on vient chercher ici. WCAG 1.4.10 exclut d'ailleurs les
+    // tableaux de données de la règle de non-défilement bidirectionnel. Le
+    // défilement reste enfermé dans ce conteneur — la page, elle, ne défile
+    // jamais latéralement — et chaque colonne contient des interrupteurs
+    // focusables, ce qui la rend parcourable au clavier seul.
+    //
+    // Ce qui manquait vraiment : en défilant vers la droite, le nom de la
+    // permission sortait de l'écran. On cochait alors une case sans plus
+    // savoir laquelle. La première colonne est donc collée à gauche.
     <div className="overflow-x-auto">
       {/* La largeur minimale ne s'applique qu'à partir de 640 px. Imposée en
           dessous, elle faisait défiler la page entière : un conteneur
@@ -35,7 +40,10 @@ export function PermissionMatrix({ groups = [], admins = [], onToggle, busy = fa
         </caption>
         <thead>
           <tr className="border-b border-line">
-            <th scope="col" className="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-content-muted">
+            <th
+              scope="col"
+              className="sticky left-0 z-sticky bg-surface px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-content-muted"
+            >
               Permission
             </th>
             {admins.map((admin) => (
@@ -73,7 +81,7 @@ function Groupe({ groupe, admins, onToggle, busy }) {
         <th
           scope="colgroup"
           colSpan={admins.length + 1}
-          className="bg-surface-raised px-3 py-1.5 text-left text-[11px] font-medium uppercase tracking-wide text-content-muted"
+          className="sticky left-0 z-sticky bg-surface-raised px-3 py-1.5 text-left text-[11px] font-medium uppercase tracking-wide text-content-muted"
         >
           {groupe.label}
         </th>
@@ -81,7 +89,10 @@ function Groupe({ groupe, admins, onToggle, busy }) {
 
       {groupe.permissions.map((permission) => (
         <tr key={permission.id} className="border-b border-line/60 last:border-0">
-          <th scope="row" className="px-3 py-2.5 text-left font-normal text-content">
+          <th
+            scope="row"
+            className="sticky left-0 z-sticky bg-surface px-3 py-2.5 text-left font-normal text-content"
+          >
             {permission.label}
             <span className="ml-2 font-mono text-[10px] text-content-faint">{permission.id}</span>
           </th>
