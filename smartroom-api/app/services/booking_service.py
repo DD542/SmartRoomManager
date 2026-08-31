@@ -279,6 +279,42 @@ def reissue_access_code(
     return code
 
 
+def _inviter(session: Session, reservation: Booking, participant: BookingParticipant) -> str:
+    """Émet le jeton de réponse d'un participant et prépare son courriel.
+
+    Les deux ensemble, et jamais l'un sans l'autre : le jeton était bien créé
+    et rendu à l'écran, la description de la route annonçait même qu'il
+    « part dans le courriel » — et rien ne l'envoyait. Un invité ne recevait
+    donc aucune invitation, et l'organisateur l'apprenait en réunion.
+
+    Le jeton expire avec le créneau : répondre à une réunion passée n'a aucun
+    sens, ce qui dispense d'une table de révocation.
+    """
+    jeton = create_invitation_token(
+        booking_id=reservation.id,
+        participant_id=participant.id,
+        expires_at=reservation.time_range.upper,
+    )
+
+    proprietaire = session.get(User, reservation.owner_id) if reservation.owner_id else None
+    salle = charger_salle(session, reservation.room_id)
+    mail_service.queue_invitation(
+        email=participant.email,
+        nom=participant.display_name or participant.email,
+        organisateur=(
+            f"{proprietaire.first_name} {proprietaire.last_name}"
+            if proprietaire
+            else "L'administration"
+        ),
+        titre=reservation.title,
+        salle=salle.name,
+        debut=reservation.time_range.lower,
+        fin=reservation.time_range.upper,
+        jeton=jeton,
+    )
+    return jeton
+
+
 def _prevenir(
     session: Session,
     reservation: Booking,
@@ -403,14 +439,17 @@ def create_booking(
                 "Vous organisez déjà cette réunion : inutile de vous y inviter.",
                 code="organisateur_invite",
             )
-        session.add(
-            BookingParticipant(
-                booking_id=reservation.id,
-                email=email,
-                display_name=nom,
-                is_organizer=False,
-            )
+        invite = BookingParticipant(
+            booking_id=reservation.id,
+            email=email,
+            display_name=nom,
+            is_organizer=False,
         )
+        session.add(invite)
+        # `flush` avant l'invitation : le jeton porte l'identifiant du
+        # participant, que la base attribue à l'écriture.
+        session.flush()
+        _inviter(session, reservation, invite)
 
     _journaliser(session, reservation, BookingEventType.CREATION, "Réservation créée", owner_id)
     code = issue_access_code(session, reservation, now=now)
@@ -754,12 +793,7 @@ def add_participant(
     session.add(participant)
     session.flush()
 
-    jeton = create_invitation_token(
-        booking_id=booking_id,
-        participant_id=participant.id,
-        expires_at=reservation.time_range.upper,
-    )
-    return participant, jeton
+    return participant, _inviter(session, reservation, participant)
 
 
 def remove_participant(

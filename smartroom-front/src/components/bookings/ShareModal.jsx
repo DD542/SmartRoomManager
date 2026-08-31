@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CalendarArrowDown, Check, Copy, Share2, ShieldCheck } from 'lucide-react';
 import {
   fichiersDePartage,
@@ -32,32 +32,56 @@ import { Modal } from '../ui/Modal';
 export function ShareModal({ booking, open, onClose }) {
   const [copie, setCopie] = useState(false);
   const [echec, setEchec] = useState(null);
+  //: Préparés à l'ouverture, pas au clic. Voir `partagerNativement`.
+  const [fichiers, setFichiers] = useState([]);
+
+  useEffect(() => {
+    if (!open || !booking) return undefined;
+
+    let vivant = true;
+    fichiersDePartage(booking).then((liste) => {
+      if (vivant) setFichiers(liste);
+    });
+    return () => {
+      vivant = false;
+    };
+  }, [open, booking]);
 
   if (!booking) return null;
 
   const resume = resumePartage(booking);
   const liens = liensDePartage(booking);
 
-  const partagerNativement = async () => {
+  /**
+   * Ouvre la feuille de partage du système.
+   *
+   * **Aucune attente avant l'appel.** `share()` exige une activation par un
+   * geste, et cette activation ne survit pas à un `await` : la version
+   * précédente préparait les pièces jointes — dont une requête réseau pour le
+   * plan — puis appelait `share()`, qui refusait avec `NotAllowedError`. Le
+   * partage échouait donc systématiquement, et l'écran répondait « Le partage
+   * n'a pas abouti » sans autre explication.
+   *
+   * Les fichiers sont préparés à l'ouverture de la fenêtre ; s'ils ne sont pas
+   * encore prêts, le texte part seul plutôt que rien.
+   */
+  const partagerNativement = () => {
     setEchec(null);
-    const fichiers = await fichiersDePartage(booking);
     const charge = { title: booking.title || 'Réservation', text: resume };
+    // `canShare` avant `share` : un navigateur qui accepte le texte mais
+    // refuse les fichiers rejetterait l'appel entier.
+    const avecFichiers = fichiers.length > 0 && navigator.canShare?.({ files: fichiers });
 
-    try {
-      // `canShare` avant `share` : un navigateur qui accepte le texte mais
-      // refuse les fichiers rejetterait l'appel entier, et l'utilisateur
-      // n'aurait rien partagé du tout.
-      if (fichiers.length > 0 && navigator.canShare?.({ files: fichiers })) {
-        await navigator.share({ ...charge, files: fichiers });
-      } else {
-        await navigator.share(charge);
-      }
-      onClose();
-    } catch (erreur) {
-      // Fermer la feuille de partage n'est pas un échec : c'est un choix.
-      if (erreur?.name === 'AbortError') return;
-      setEchec('Le partage n’a pas abouti. Le résumé reste copiable ci-dessous.');
-    }
+    Promise.resolve(navigator.share(avecFichiers ? { ...charge, files: fichiers } : charge))
+      .then(() => onClose())
+      .catch((erreur) => {
+        // Fermer la feuille de partage n'est pas un échec : c'est un choix.
+        if (erreur?.name === 'AbortError') return;
+        setEchec(
+          'Votre navigateur a refusé le partage. Le résumé reste copiable ci-dessous, ' +
+            'et les trois boutons du bas ouvrent l’application voulue.',
+        );
+      });
   };
 
   const copier = async () => {

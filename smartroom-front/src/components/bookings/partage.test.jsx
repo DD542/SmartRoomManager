@@ -106,6 +106,28 @@ describe('Fenêtre de partage', () => {
     });
   });
 
+  it('appelle le partage sans attendre, pendant le geste', async () => {
+    // `share()` exige une activation par un geste, et cette activation ne
+    // survit pas à un `await`. La version précédente préparait les pièces
+    // jointes — dont une requête réseau pour le plan — puis appelait
+    // `share()`, qui refusait avec `NotAllowedError`. Le partage échouait
+    // systématiquement.
+    const partager = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'share', { value: partager, configurable: true });
+    Object.defineProperty(navigator, 'canShare', {
+      value: () => false,
+      configurable: true,
+    });
+
+    render(<ShareModal booking={RESERVATION} open onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /Partager…/ }));
+
+    // Aucun `await` entre le clic et l'appel : l'assertion tient sans céder
+    // la main, ce qui est précisément ce que le navigateur exige.
+    expect(partager).toHaveBeenCalledTimes(1);
+    expect(partager.mock.calls[0][0].text).toContain('Salle Joule');
+  });
+
   it('ne rend rien sans réservation', () => {
     const { container } = render(<ShareModal booking={null} open onClose={vi.fn()} />);
     expect(container.textContent).toBe('');

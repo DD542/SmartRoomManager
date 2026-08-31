@@ -407,6 +407,7 @@ def add_participant(
     payload: ParticipantIn,
     session: SessionDep,
     principal: CurrentPrincipal,
+    background: BackgroundTasks,
 ) -> ParticipantInvitedOut:
     reservation = _charger(session, booking_id)
     assert_owner_or_admin(principal, reservation.owner_id)
@@ -415,6 +416,9 @@ def add_participant(
         session, booking_id, email=payload.email, display_name=payload.display_name
     )
     session.commit()
+    # L'invitation part après le COMMIT : annoncer une réunion qu'un ROLLBACK
+    # ferait disparaître serait pire que ne rien annoncer.
+    background.add_task(mail_service.expedier)
 
     return ParticipantInvitedOut(
         participant=ParticipantOut(

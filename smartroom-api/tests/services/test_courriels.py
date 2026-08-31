@@ -176,6 +176,85 @@ class TestConfirmation:
         assert notification.user_id == compte.id
 
 
+class TestInvitations:
+    def test_un_participant_invite_a_la_creation_recoit_son_courriel(
+        self, client, compte, salle, jour_ouvre, gabarits, expedies
+    ):
+        """Le jeton etait cree, rendu a l'ecran, et n'allait nulle part.
+
+        La description de la route l'annonçait pourtant : « Renvoie le jeton
+        d'invitation, qui part dans le courriel ». Rien ne l'envoyait, et
+        l'organisateur l'apprenait en réunion.
+        """
+        entetes = connecter(client, compte.email)
+
+        reponse = client.post(
+            "/api/v1/bookings",
+            headers=entetes,
+            json={
+                "room_id": str(salle.id),
+                "slot": charge(creneau(jour_ouvre, 10)),
+                "attendees": 3,
+                # La route reçoit des couples `[adresse, nom]`, pas des objets.
+                "participants": [["invite@ece.fr", "Alice"]],
+            },
+        )
+        assert reponse.status_code == 201, reponse.text
+
+        destinataires = [message.to for message in courriels(expedies)]
+        assert "invite@ece.fr" in destinataires
+
+    def test_l_invitation_porte_le_lien_de_reponse(
+        self, client, compte, salle, jour_ouvre, gabarits, expedies
+    ):
+        entetes = connecter(client, compte.email)
+        creee = client.post(
+            "/api/v1/bookings",
+            headers=entetes,
+            json={
+                "room_id": str(salle.id),
+                "slot": charge(creneau(jour_ouvre, 11)),
+                "attendees": 2,
+            },
+        ).json()
+        expedies.clear()
+        mail_service.flush()
+
+        reponse = client.post(
+            f"/api/v1/bookings/{creee['booking']['id']}/participants",
+            headers=entetes,
+            json={"email": "bob@ece.fr", "display_name": "Bob"},
+        )
+        assert reponse.status_code == 201, reponse.text
+
+        [message] = courriels(expedies)
+        jeton = reponse.json()["invitation_token"]
+        assert message.to == "bob@ece.fr"
+        assert f"/invitation/{jeton}" in message.body
+        assert salle.name in message.body
+
+    def test_l_invitation_ne_porte_pas_le_code_d_acces(
+        self, client, compte, salle, jour_ouvre, gabarits, expedies
+    ):
+        """Un invité n'est pas l'organisateur : il n'a pas à ouvrir la porte."""
+        entetes = connecter(client, compte.email)
+        creee = client.post(
+            "/api/v1/bookings",
+            headers=entetes,
+            json={
+                "room_id": str(salle.id),
+                "slot": charge(creneau(jour_ouvre, 12)),
+                "attendees": 2,
+                "participants": [["carol@ece.fr", "Carol"]],
+            },
+        ).json()
+
+        clair = creee["access_code"]["code"]
+        pour_invitee = [m for m in courriels(expedies) if m.to == "carol@ece.fr"]
+        assert pour_invitee, "aucune invitation"
+        assert all(clair not in message.body for message in pour_invitee)
+
+
 class TestAnnulation:
     def test_l_annulation_prepare_un_courriel(
         self, client, compte, salle, jour_ouvre, gabarits, expedies

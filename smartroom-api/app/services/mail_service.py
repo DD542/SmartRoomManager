@@ -203,7 +203,7 @@ def notify(
     session.add(notification)
     session.flush()
 
-    _en_attente.append(Message(to=user.email, subject=titre, body=corps))
+    _deposer(Message(to=user.email, subject=titre, body=corps))
     return notification
 
 
@@ -288,7 +288,7 @@ def queue_password_reset(session: Session, compte: User, jeton: str) -> Message:
             "votre mot de passe reste inchangé."
         ),
     )
-    _en_attente.append(message)
+    _deposer(message)
     return message
 
 
@@ -300,6 +300,56 @@ def lien_reservation(booking_id: Any) -> str:
     inexistante ne vaut pas mieux qu'un courriel sans lien.
     """
     return f"{_origine()}/app/reservations/{booking_id}"
+
+
+def queue_invitation(
+    *,
+    email: str,
+    nom: str,
+    organisateur: str,
+    titre: str,
+    salle: str,
+    debut,
+    fin,
+    jeton: str,
+) -> Message:
+    """Prépare l'invitation d'un participant.
+
+    Comme la réinitialisation de mot de passe, ce message ne passe pas par un
+    gabarit modifiable, et pour la même raison : il porte le seul lien qui
+    permet de répondre. Un gabarit désactivé par inadvertance — cas prévu et
+    silencieux — rendrait toutes les invitations muettes, et l'organisateur
+    n'apprendrait qu'en réunion que personne n'a été prévenu.
+
+    Aucune notification applicative n'est écrite : un invité n'a pas
+    nécessairement de compte, et `notify` exige un utilisateur.
+    """
+    lien = f"{_origine()}/invitation/{jeton}"
+    horaire = date_et_creneau(debut, fin)
+
+    return _deposer(
+        Message(
+            to=email,
+            subject=f"{organisateur} vous invite : {titre}",
+            body=(
+                f"Bonjour {nom},\n\n"
+                f"{organisateur} vous invite à « {titre} ».\n\n"
+                f"Salle {salle}\n"
+                f"{horaire['date']}, {horaire['creneau']}\n\n"
+                "Pour accepter ou décliner :\n"
+                f"{lien}\n\n"
+                "Ce lien vous est personnel et cesse de fonctionner à la fin de la "
+                "réunion — répondre à une réunion passée n'aurait aucun sens."
+            ),
+        )
+    )
+
+
+def _deposer(message: Message) -> Message:
+    """Dépose un message dans la file, sous verrou."""
+    with _verrou:
+        _en_attente.append(message)
+    return message
 
 
 def _origine() -> str:
