@@ -41,7 +41,9 @@ const active = (enabled, clientId = 'abc.apps.googleusercontent.com') =>
   );
 
 describe('Quand le serveur n’a pas configuré Google', () => {
-  it('n’affiche rien du tout', async () => {
+  it('n’affiche rien du tout, séparateur compris', async () => {
+    // Le « ou » appartient au bouton : posé à côté, il restait seul au milieu
+    // de la page — un séparateur qui n'introduit rien.
     active(false);
     const { container } = render(<BoutonGoogle onCredential={vi.fn()} />);
 
@@ -59,6 +61,14 @@ describe('Quand le serveur n’a pas configuré Google', () => {
 });
 
 describe('Quand elle est configurée', () => {
+  it('ramène le séparateur avec le bouton', async () => {
+    active(true);
+    poserGoogle();
+    render(<BoutonGoogle onCredential={vi.fn()} />);
+
+    expect(await screen.findByText('ou')).toBeTruthy();
+  });
+
   it('laisse Google dessiner son propre bouton', async () => {
     // Leurs conditions d'utilisation l'imposent, et lui seul ouvre la fenêtre
     // de choix de compte dans les conditions que la bibliothèque attend.

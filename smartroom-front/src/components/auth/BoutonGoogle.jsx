@@ -46,6 +46,10 @@ function chargerScript() {
  * est configurée. Un bouton présent qui échoue à chaque clic est pire que pas
  * de bouton : il fait croire à une panne là où il n'y a qu'une option non
  * activée.
+ *
+ * Le séparateur « ou » fait partie du composant, et non de l'écran qui
+ * l'appelle : posé à côté, il restait seul au milieu de la page quand la
+ * connexion Google n'était pas configurée — un « ou » qui n'introduit rien.
  */
 export function BoutonGoogle({ onCredential, onError, disabled = false }) {
   const cible = useRef(null);
@@ -111,22 +115,31 @@ export function BoutonGoogle({ onCredential, onError, disabled = false }) {
 
   if (etat === 'erreur') {
     return (
-      <p className="text-center text-xs text-content-faint">
+      <p className="mt-5 text-center text-xs text-content-faint">
         Connexion Google indisponible sur ce poste.
       </p>
     );
   }
 
   return (
-    <div className="flex justify-center">
-      {etat === 'chargement' && <Spinner label="Chargement de la connexion Google…" />}
-      {/* Le conteneur reste monté pendant le chargement : Google y dessine son
-          bouton, et le retirer du DOM entre-temps lui ferait perdre sa cible. */}
-      <div
-        ref={cible}
-        className={disabled ? 'pointer-events-none opacity-50' : undefined}
-        style={etat === 'pret' ? undefined : { display: 'none' }}
-      />
-    </div>
+    <>
+      <div className="my-5 flex items-center gap-3" aria-hidden="true">
+        <span className="h-px flex-1 bg-line" />
+        <span className="text-xs text-content-muted">ou</span>
+        <span className="h-px flex-1 bg-line" />
+      </div>
+
+      <div className="flex justify-center">
+        {etat === 'chargement' && <Spinner label="Chargement de la connexion Google…" />}
+        {/* Le conteneur reste monté pendant le chargement : Google y dessine
+            son bouton, et le retirer du DOM entre-temps lui ferait perdre sa
+            cible. */}
+        <div
+          ref={cible}
+          className={disabled ? 'pointer-events-none opacity-50' : undefined}
+          style={etat === 'pret' ? undefined : { display: 'none' }}
+        />
+      </div>
+    </>
   );
 }

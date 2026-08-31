@@ -163,12 +163,8 @@ export default function LoginPage() {
         </Button>
       </form>
 
-      <div className="my-5 flex items-center gap-3" aria-hidden="true">
-        <span className="h-px flex-1 bg-line" />
-        <span className="text-xs text-content-muted">ou</span>
-        <span className="h-px flex-1 bg-line" />
-      </div>
-
+      {/* Le séparateur « ou » appartient au bouton : sans connexion Google
+          configurée, il n'introduirait rien. */}
       <BoutonGoogle
         onCredential={onGoogle}
         onError={setError}
