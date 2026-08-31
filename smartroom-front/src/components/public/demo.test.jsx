@@ -3,64 +3,130 @@
  *
  * Section de démonstration de la page d'accueil.
  *
- * Une vidéo sur une page publique coûte à qui ne la regarde pas : 1,7 Mo
- * téléchargés à chaque ouverture si rien ne l'en empêche, et l'attention
- * déplacée hors du texte si elle démarre seule. Ces deux choses se vérifient
- * ici, parce qu'elles se perdent au premier remaniement.
+ * La vidéo démarre seule et sans son. Trois choses se perdent au premier
+ * remaniement et se vérifient donc ici : qu'elle reste muette, qu'elle ne se
+ * télécharge pas chez qui ne descendra jamais jusqu'à elle, et qu'il reste un
+ * moyen de la lancer quand le navigateur refuse de le faire.
  *
- * Vérifié aussi dans un navigateur : après le clic, la vidéo est lue
- * (readyState 4, 1280 × 720, 8 s), le rapport 16:9 tient à 360 comme à
- * 1280 px, et la page ne déborde pas.
+ * Vérifié aussi dans un navigateur : la lecture part à l'entrée dans la
+ * fenêtre — 1280 × 720, 8 s —, le rapport 16:9 tient à 360 comme à 1280 px, et
+ * la page ne déborde pas.
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { LandingDemo } from './LandingDemo';
 
+const VRAI_MATCH_MEDIA = window.matchMedia;
+
+/** Réglage système : par défaut, l'animation est acceptée. */
+const animationsReduites = (reduites) => {
+  window.matchMedia = vi.fn().mockImplementation((query) => ({
+    matches: query.includes('prefers-reduced-motion') ? reduites : false,
+    media: query,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
+};
+
+let lecture;
+
+beforeEach(() => {
+  animationsReduites(false);
+  // jsdom n'implémente ni `play` ni `pause`. Le remplacement se fait sur le
+  // prototype : l'effet du composant s'exécute au montage, bien avant qu'un
+  // test puisse toucher à l'élément rendu.
+  lecture = vi.fn().mockResolvedValue(undefined);
+  HTMLMediaElement.prototype.play = lecture;
+  HTMLMediaElement.prototype.pause = vi.fn();
+});
+
+afterEach(() => {
+  window.matchMedia = VRAI_MATCH_MEDIA;
+  vi.restoreAllMocks();
+});
+
+const monter = () => {
+  const rendu = render(<LandingDemo />);
+  return { ...rendu, video: rendu.container.querySelector('video') };
+};
+
 describe('Démonstration filmée', () => {
-  it('ne télécharge rien avant qu’on le demande', () => {
-    const { container } = render(<LandingDemo />);
-    const video = container.querySelector('video');
+  it('démarre seule, sans son, et en boucle', async () => {
+    const { video } = monter();
 
-    expect(video.getAttribute('preload')).toBe('none');
-    // Ni `autoplay` ni `loop` : la vidéo attend un geste.
-    expect(video.hasAttribute('autoplay')).toBe(false);
-    expect(video.hasAttribute('loop')).toBe(false);
+    expect(lecture).toHaveBeenCalled();
+    expect(video.hasAttribute('muted') || video.muted).toBe(true);
+    expect(video.hasAttribute('loop')).toBe(true);
+    // Sans `playsinline`, Safari sur iPhone ouvre le lecteur plein écran au
+    // lieu de jouer dans la page.
+    expect(video.hasAttribute('playsinline')).toBe(true);
   });
 
-  it('annonce ce que coûte le clic', () => {
-    render(<LandingDemo />);
+  it('retire l’affiche une fois la lecture obtenue', async () => {
+    // Sans quoi elle masquerait une vidéo en marche. La promesse de `play()`
+    // se résout au tour suivant : l'affiche est donc là, puis ne l'est plus.
+    monter();
+    expect(screen.getByRole('button', { name: /Lancer la démonstration/ })).toBeTruthy();
 
-    expect(screen.getByText('Lancer la démonstration')).toBeTruthy();
-    expect(screen.getByText(/téléchargée qu’à la lecture/)).toBeTruthy();
+    await vi.waitFor(() =>
+      expect(screen.queryByRole('button', { name: /Lancer la démonstration/ })).toBeNull(),
+    );
   });
 
-  it('rend ses contrôles au premier clic', () => {
-    const { container } = render(<LandingDemo />);
-    const video = container.querySelector('video');
-    // jsdom n'implémente pas la lecture : sans cela, `play()` lève.
-    video.play = vi.fn();
+  it('ne télécharge la piste qu’au moment de la lire', () => {
+    // `metadata` : un visiteur qui ne descend jamais jusqu’ici ne paie pas
+    // les 1,7 Mo.
+    const { video } = monter();
 
-    expect(video.hasAttribute('controls')).toBe(false);
-    fireEvent.click(screen.getByRole('button'));
+    expect(video.getAttribute('preload')).toBe('metadata');
+  });
 
-    expect(video.hasAttribute('controls')).toBe(true);
-    expect(screen.queryByRole('button')).toBeNull();
+  it('laisse de quoi la lancer quand le navigateur refuse', async () => {
+    // Mode économie d’énergie, réglage de l’utilisateur : `play()` est
+    // rejetée. Une vidéo qui ne part pas et qu’on ne peut pas lancer serait un
+    // cadre noir.
+    HTMLMediaElement.prototype.play = vi.fn().mockRejectedValue(new Error('refus'));
+    monter();
+
+    const bouton = await screen.findByRole('button', { name: /Lancer la démonstration/ });
+    fireEvent.click(bouton);
+
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(2);
+    expect(screen.getByRole('button', { name: /Lancer la démonstration/ })).toBeTruthy();
+  });
+
+  it('survit à un `play()` qui ne rend pas de promesse', () => {
+    // La spécification ne l'a imposé que tardivement. Enchaîner un `.then`
+    // dessus casserait le montage du composant, donc la page d'accueil.
+    HTMLMediaElement.prototype.play = vi.fn().mockReturnValue(undefined);
+
+    expect(() => monter()).not.toThrow();
+  });
+
+  it('respecte la demande de moins d’animation', () => {
+    // Qui a demandé moins d’animation ne reçoit pas une vidéo qui démarre
+    // seule : il reçoit l’affiche et son bouton.
+    animationsReduites(true);
+    monter();
+
+    expect(lecture).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /Lancer la démonstration/ })).toBeTruthy();
   });
 
   it('garde sa place avant d’être chargée', () => {
     // `aspect-video` : sans hauteur réservée, la page sauterait au démarrage
     // de la lecture — et ce saut se produit sous le doigt du visiteur.
-    const { container } = render(<LandingDemo />);
+    const { container } = monter();
 
     expect(container.querySelector('.aspect-video')).toBeTruthy();
   });
 
   it('porte un nom pour qui ne voit pas l’image', () => {
-    const { container } = render(<LandingDemo />);
+    const { video } = monter();
 
-    expect(container.querySelector('video').getAttribute('aria-label')).toBe(
-      'Démonstration de SmartRoom Manager',
+    expect(video.getAttribute('aria-label')).toBe(
+      'Démonstration de SmartRoom Manager, sans son',
     );
   });
 });

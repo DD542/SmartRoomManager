@@ -1,6 +1,25 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Play } from 'lucide-react';
+import { prefersReducedMotion } from '../../hooks/useInView';
 import { Reveal } from './Reveal';
+
+/**
+ * Demande la lecture, et note si elle a été obtenue.
+ *
+ * `play()` rend une promesse — mais la spécification ne l'a imposé que
+ * tardivement, et rien n'oblige un environnement à la fournir : jsdom rend
+ * `undefined`. Enchaîner un `.then` dessus casse alors le montage du
+ * composant. Sans promesse, on ne peut pas savoir si la lecture a démarré :
+ * l'affiche reste, avec son bouton, ce qui est le bon défaut — un cadre noir
+ * qu'on ne peut pas lancer serait le mauvais.
+ */
+function demander(element, noter) {
+  const lecture = element.play();
+  if (!lecture?.then) return;
+  // Refus du navigateur — économie d'énergie, réglage utilisateur : l'affiche
+  // et son bouton restent.
+  lecture.then(() => noter(true)).catch(() => noter(false));
+}
 
 /**
  * P-01 — ancre #demo : la démonstration filmée du produit.
@@ -10,24 +29,83 @@ import { Reveal } from './Reveal';
  * sections suivantes détaillent. Une démonstration placée en fin de page
  * n'est vue que par ceux qui étaient déjà convaincus.
  *
- * **Aucune lecture automatique.** Une vidéo qui démarre seule consomme le
- * forfait de qui n'a rien demandé, et déplace l'attention hors du texte que
- * le visiteur est en train de lire. Elle n'est chargée qu'au premier clic :
- * `preload="none"` évite 1,7 Mo à chaque ouverture de la page d'accueil, dont
- * la plupart des visiteurs ne regarderont jamais la vidéo.
+ * **Lecture automatique, sans son.** Trois conditions pour qu'elle parte
+ * vraiment, et non pour qu'elle soit seulement demandée :
  *
- * L'affiche est une image fixe du produit dessinée en CSS plutôt qu'un fichier
- * de plus : c'est une surface de clic, pas une photographie.
+ *   1. `muted` — aucun navigateur ne lance une vidéo sonore sans geste, et
+ *      une page d'accueil qui parle toute seule serait de toute façon fermée.
+ *   2. `playsInline` — sans lui, Safari sur iPhone ouvre le lecteur plein
+ *      écran au lieu de jouer dans la page.
+ *   3. Un geste de repli : si le navigateur refuse quand même — mode économie
+ *      d'énergie, réglage de l'utilisateur —, `play()` est rejetée et
+ *      l'affiche reste, avec son bouton. Une vidéo qui ne part pas et qu'on ne
+ *      peut pas lancer serait un cadre noir.
+ *
+ * La lecture suit le regard : elle démarre à l'entrée dans la fenêtre et
+ * s'arrête à la sortie. Faire tourner huit secondes en boucle sous une section
+ * qu'on ne regarde pas consomme de la batterie et du forfait pour rien.
+ *
+ * `prefers-reduced-motion` est respecté : qui a demandé moins d'animation ne
+ * reçoit pas une vidéo qui démarre seule, mais l'affiche et son bouton.
  */
 export function LandingDemo() {
   const video = useRef(null);
-  const [demarree, setDemarree] = useState(false);
+  //: Décidé une fois au montage : ce réglage ne change pas en cours de visite,
+  //: et le relire à chaque rendu ferait dépendre le comportement du hasard des
+  //: re-rendus.
+  const [automatique] = useState(() => !prefersReducedMotion());
+  const [enLecture, setEnLecture] = useState(false);
 
-  const lancer = () => {
-    setDemarree(true);
-    // Le rendu qui suit retire l'affiche ; la lecture part au tour d'après,
-    // quand l'élément porte enfin ses contrôles.
-    queueMicrotask(() => video.current?.play());
+  useEffect(() => {
+    const element = video.current;
+    if (!automatique || !element) return undefined;
+
+    const lancer = () => demander(element, setEnLecture);
+
+    if (typeof IntersectionObserver === 'undefined') {
+      lancer();
+      return undefined;
+    }
+
+    // Déjà à l'écran au montage : on lance sans attendre l'observateur.
+    // Celui-ci ne répond qu'après une peinture, et il en existe qui n'arrivent
+    // jamais — onglet ouvert en arrière-plan, fenêtre jamais composée. La
+    // vidéo resterait alors figée sous son affiche alors qu'elle occupe
+    // l'écran. `useInView` prend déjà la même précaution, pour la même raison.
+    const cadre = element.getBoundingClientRect();
+    const hauteur = window.innerHeight || document.documentElement.clientHeight;
+    if (cadre.top < hauteur && cadre.bottom > 0) lancer();
+
+    const observateur = new IntersectionObserver(
+      (entrees) => {
+        entrees.forEach((entree) => {
+          if (entree.isIntersecting) lancer();
+          else element.pause();
+        });
+      },
+      // Un tiers visible : assez pour dire qu'on la regarde, pas assez pour
+      // qu'elle démarre au moment où son premier pixel affleure l'écran.
+      { threshold: 0.35 },
+    );
+    observateur.observe(element);
+
+    // Onglet ouvert en arrière-plan : le document est « hidden », et le
+    // navigateur refuse d'y démarrer une lecture — mesuré, `play()` est
+    // rejetée. Sans ce rattrapage, la page revenue au premier plan garderait
+    // son affiche figée sur une vidéo qui aurait dû tourner.
+    const reprendre = () => {
+      if (document.visibilityState === 'visible' && element.paused) lancer();
+    };
+    document.addEventListener('visibilitychange', reprendre);
+
+    return () => {
+      observateur.disconnect();
+      document.removeEventListener('visibilitychange', reprendre);
+    };
+  }, [automatique]);
+
+  const lancerALaMain = () => {
+    if (video.current) demander(video.current, setEnLecture);
   };
 
   return (
@@ -42,7 +120,7 @@ export function LandingDemo() {
           className="mt-3 max-w-2xl text-sm leading-relaxed text-content-muted"
         >
           Du besoin exprimé au code d’accès reçu : le parcours complet, filmé dans
-          l’application.
+          l’application. La séquence tourne en boucle, sans son.
         </Reveal>
 
         <Reveal delay={160} className="mt-8">
@@ -53,29 +131,31 @@ export function LandingDemo() {
               <video
                 ref={video}
                 className="h-full w-full"
-                preload="none"
-                controls={demarree}
+                // `metadata` et non `auto` : la piste ne se télécharge qu'à la
+                // lecture, donc à l'entrée dans la fenêtre. Un visiteur qui ne
+                // descend jamais jusqu'ici ne paie pas les 1,7 Mo.
+                preload="metadata"
+                muted
+                loop
                 playsInline
-                aria-label="Démonstration de SmartRoom Manager"
+                controls
+                aria-label="Démonstration de SmartRoom Manager, sans son"
               >
                 <source src="/demo.mp4" type="video/mp4" />
                 Votre navigateur ne sait pas lire cette vidéo.
               </video>
             </div>
 
-            {!demarree && (
+            {!enLecture && (
               <button
                 type="button"
-                onClick={lancer}
+                onClick={lancerALaMain}
                 className="group absolute inset-0 flex flex-col items-center justify-center gap-3 bg-surface transition hover:bg-surface-raised"
               >
                 <span className="flex h-16 w-16 items-center justify-center rounded-full border border-accent bg-accent-soft transition duration-300 group-hover:scale-110">
                   <Play size={26} aria-hidden="true" className="ml-1 text-accent" />
                 </span>
                 <span className="text-sm text-content">Lancer la démonstration</span>
-                <span className="text-xs text-content-faint">
-                  La vidéo n’est téléchargée qu’à la lecture.
-                </span>
               </button>
             )}
           </div>
