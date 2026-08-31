@@ -37,6 +37,15 @@ const colonnes = [
     ),
   },
   {
+    key: 'createdAt',
+    label: 'Créée le',
+    render: (row) => (
+      <span className="font-mono text-[11px] text-content-faint">
+        {row.createdAt ? fmtDate(row.createdAt) : '—'}
+      </span>
+    ),
+  },
+  {
     key: 'attendance',
     label: 'Présence',
     render: (row) => <AttendanceBadge attendance={row.attendance} />,

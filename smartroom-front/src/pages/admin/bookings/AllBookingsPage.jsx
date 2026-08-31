@@ -80,7 +80,15 @@ export default function AllBookingsPage() {
   const chargees = reservations.data?.reservations ?? [];
   const reste = reservations.data?.reste ?? 0;
   const lignes = useMemo(() => chargees.map(toRow), [chargees]);
-  const table = useDataTable(lignes, { pageSize: 15, initialSort: { key: 'start', direction: 'desc' } });
+  // Tri par date d'écriture, la plus récente en tête. Le créneau ordonnait
+  // jusqu'ici, et une réservation posée à l'instant pour la semaine prochaine
+  // se retrouvait page 12 : on ouvre cette liste pour voir ce qui vient de se
+  // passer, pas ce qui est le plus lointain. Le créneau reste triable d'un
+  // clic sur sa colonne.
+  const table = useDataTable(lignes, {
+    pageSize: 15,
+    initialSort: { key: 'createdAt', direction: 'desc' },
+  });
 
   const { envoi, creer, annuler } = useBookingActions({ onDone: () => rafraichir() });
 

@@ -79,6 +79,12 @@ class BookingOut(ReadModel):
     checked_in_at: datetime | None
     cancelled_at: datetime | None
     cancel_reason: str | None
+    #: Date d'écriture, distincte du créneau : une réservation posée
+    #: aujourd'hui pour dans trois mois est récente, et une réservation créée
+    #: l'an dernier pour demain ne l'est pas. L'écran d'administration trie
+    #: dessus par défaut — c'est ce qu'on vient de faire qu'on cherche en
+    #: ouvrant la liste.
+    created_at: datetime
 
     #: Dénormalisés parce que toute liste de réservations les affiche : sans
     #: eux, l'écran ferait une requête par ligne pour nommer la salle.
@@ -157,6 +163,7 @@ class BookingOut(ReadModel):
             checked_in_at=reservation.checked_in_at,
             cancelled_at=reservation.cancelled_at,
             cancel_reason=reservation.cancel_reason,
+            created_at=reservation.created_at,
         )
 
 

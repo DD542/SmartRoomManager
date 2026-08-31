@@ -300,6 +300,10 @@ export const booking = (data) => ({
   checkedIn: Boolean(data.checked_in_at),
   cancelledAt: toDate(data.cancelled_at),
   cancelReason: data.cancel_reason,
+  //: Date d'écriture, distincte du créneau : une réservation posée
+  //: aujourd'hui pour dans trois mois est récente ; une réservation créée
+  //: l'an dernier pour demain ne l'est pas.
+  createdAt: toDate(data.created_at),
   roomName: data.room_name,
   // Les écrans lisent `booking.room?.building?.name` et `booking.room?.floor`.
   // Le détail complet de la salle n'a pas sa place dans une liste de

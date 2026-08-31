@@ -18,6 +18,13 @@ export function useDataTable(rows = [], { pageSize = 20, initialSort = null } = 
       if (va == null) return 1;
       if (vb == null) return -1;
       if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * sens;
+      // Les dates avant le repli textuel. `String(new Date(...))` donne
+      // « Tue Sep 01 2026 … » : comparées ainsi, les lignes se rangeaient par
+      // nom de jour de la semaine, puis par mois en anglais. La colonne
+      // « Créneau » de l'administration triait donc faux depuis toujours, et
+      // le désordre passait inaperçu parce que le premier écran restait
+      // plausible.
+      if (va instanceof Date && vb instanceof Date) return (va - vb) * sens;
       return String(va).localeCompare(String(vb), 'fr') * sens;
     });
   }, [rows, sort]);
