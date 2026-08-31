@@ -128,6 +128,49 @@ describe('Fenêtre de partage', () => {
     expect(partager.mock.calls[0][0].text).toContain('Salle Joule');
   });
 
+  it('copie le résumé et nomme la cause quand le navigateur refuse', async () => {
+    // Un refus laissait l'utilisateur devant un message et rien de fait. Il
+    // voulait envoyer un texte : il l'a maintenant dans le presse-papiers.
+    const ecrit = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText: ecrit }, configurable: true });
+    Object.defineProperty(navigator, 'canShare', { value: () => false, configurable: true });
+    Object.defineProperty(navigator, 'share', {
+      value: () => Promise.reject(Object.assign(new Error('refus'), { name: 'NotAllowedError' })),
+      configurable: true,
+    });
+
+    render(<ShareModal booking={RESERVATION} open onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /Partager…/ }));
+
+    // Le nom de l'erreur est affiché : c'est la seule chose qui distingue un
+    // navigateur incapable de partager d'un réglage qui l'en empêche.
+    expect(await screen.findByText(/NotAllowedError/)).toBeTruthy();
+    expect(ecrit).toHaveBeenCalledWith(expect.stringContaining('Salle Joule'));
+
+    // Et le bouton disparaît : le proposer encore enverrait l'utilisateur
+    // droit sur le même mur.
+    expect(screen.queryByRole('button', { name: /Partager…/ })).toBeNull();
+    expect(screen.getByRole('button', { name: /Copier le résumé/ })).toBeTruthy();
+  });
+
+  it('ne signale rien quand l’utilisateur ferme la feuille lui-même', async () => {
+    // `AbortError` n'est pas un échec : c'est un choix.
+    const ecrit = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText: ecrit }, configurable: true });
+    Object.defineProperty(navigator, 'canShare', { value: () => false, configurable: true });
+    Object.defineProperty(navigator, 'share', {
+      value: () => Promise.reject(Object.assign(new Error('annule'), { name: 'AbortError' })),
+      configurable: true,
+    });
+
+    render(<ShareModal booking={RESERVATION} open onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /Partager…/ }));
+    await Promise.resolve();
+
+    expect(screen.queryByText(/refusé le partage/)).toBeNull();
+    expect(ecrit).not.toHaveBeenCalled();
+  });
+
   it('ne rend rien sans réservation', () => {
     const { container } = render(<ShareModal booking={null} open onClose={vi.fn()} />);
     expect(container.textContent).toBe('');

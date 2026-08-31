@@ -34,6 +34,11 @@ export function ShareModal({ booking, open, onClose }) {
   const [echec, setEchec] = useState(null);
   //: Préparés à l'ouverture, pas au clic. Voir `partagerNativement`.
   const [fichiers, setFichiers] = useState([]);
+  //: Le navigateur a refusé la feuille de partage. Mesuré sur Brave pour
+  //: ordinateur : `navigator.share` existe, et rejette `NotAllowedError`. Un
+  //: bouton principal qui échoue une fois échouera toutes les suivantes — il
+  //: cède alors la place à ce qui marche.
+  const [partageRefuse, setPartageRefuse] = useState(false);
 
   useEffect(() => {
     if (!open || !booking) return undefined;
@@ -77,10 +82,31 @@ export function ShareModal({ booking, open, onClose }) {
       .catch((erreur) => {
         // Fermer la feuille de partage n'est pas un échec : c'est un choix.
         if (erreur?.name === 'AbortError') return;
-        setEchec(
-          'Votre navigateur a refusé le partage. Le résumé reste copiable ci-dessous, ' +
-            'et les trois boutons du bas ouvrent l’application voulue.',
-        );
+
+        // Un refus laisse l'utilisateur devant un message et rien de fait. Le
+        // résumé est donc copié dans la foulée : il voulait envoyer un texte à
+        // quelqu'un, il l'a, et il lui reste à choisir où le coller. Le nom de
+        // l'erreur est écrit — « NotAllowedError », « NotSupportedError » — car
+        // c'est la seule chose qui distingue un navigateur qui ne sait pas
+        // partager d'un réglage qui l'en empêche.
+        setPartageRefuse(true);
+        navigator.clipboard
+          ?.writeText(resume)
+          .then(() =>
+            setEchec(
+              `Votre navigateur ne permet pas la feuille de partage du système ` +
+                `(${erreur?.name ?? 'erreur inconnue'}) — c’est le cas de Brave et de ` +
+                'Firefox sur ordinateur. Le résumé vient d’être copié : collez-le où ' +
+                'vous voulez, ou passez par les boutons ci-dessous.',
+            ),
+          )
+          .catch(() =>
+            setEchec(
+              `Votre navigateur ne permet pas la feuille de partage du système ` +
+                `(${erreur?.name ?? 'erreur inconnue'}). Le résumé reste sélectionnable ` +
+                'ci-dessus, et les boutons ci-dessous ouvrent l’application voulue.',
+            ),
+          );
       });
   };
 
@@ -146,13 +172,17 @@ export function ShareModal({ booking, open, onClose }) {
         {echec && <Callout tone="warning">{echec}</Callout>}
 
         <div className="flex flex-col gap-2">
-          {partageNatifDisponible() && (
+          {/* Retiré après un refus : le proposer encore en action principale
+              enverrait l'utilisateur droit sur le même mur. */}
+          {partageNatifDisponible() && !partageRefuse && (
             <Button icon={Share2} fullWidth onClick={partagerNativement}>
               Partager…
             </Button>
           )}
           <Button
-            variant="secondary"
+            // Devient l'action principale quand la feuille du système est
+            // refusée : c'est alors le geste qui aboutit.
+            variant={partageRefuse ? 'primary' : 'secondary'}
             icon={copie ? Check : Copy}
             fullWidth
             onClick={copier}
