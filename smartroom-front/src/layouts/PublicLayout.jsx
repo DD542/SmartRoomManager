@@ -5,6 +5,7 @@ import { Button } from '../components/ui/Button';
 import { cn } from '../utils/cn';
 
 const LINKS = [
+  { href: '#demo', label: 'Démo' },
   { href: '#fonctionnalites', label: 'Fonctionnalités' },
   { href: '#fonctionnement', label: 'Comment ça marche' },
   { href: '#faq', label: 'FAQ' },
