@@ -3,9 +3,15 @@
  *
  * Vues du calendrier selon la largeur.
  *
- * Sous 768 px, la semaine tasse sept colonnes dans 360 px et l'année en aligne
- * douze mois : les deux débordaient. Ce test monte réellement le composant —
- * un import manquant ne se voit pas à la compilation, seulement au rendu.
+ * La semaine et l'année étaient retirées sous 768 px : elles débordaient, et
+ * sept colonnes dans 360 px en faisaient 45 chacune. Le calendrier défile
+ * maintenant dans sa propre boîte, avec une largeur minimale par vue —
+ * mesuré à 360 px : cinq colonnes de 98 px, zéro débordement de page. Les
+ * quatre vues sont donc proposées à toute largeur, et l'écran de réservation
+ * n'en offre plus deux sur quatre au téléphone.
+ *
+ * Ce test monte réellement le composant : un import manquant ne se voit pas à
+ * la compilation, seulement au rendu.
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -25,15 +31,14 @@ const largeur = (mobile) => {
 afterEach(() => vi.restoreAllMocks());
 
 describe('Vues proposées', () => {
-  it('retire la semaine et l’année sous 768 px', () => {
-    expect(vuesDisponibles(true).map((vue) => vue.value)).toEqual([
+  it('les propose toutes, à toute largeur', () => {
+    expect(vuesDisponibles()).toEqual(CALENDAR_VIEWS);
+    expect(CALENDAR_VIEWS.map((vue) => vue.value)).toEqual([
       'timeGridDay',
+      'timeGridWeek',
       'dayGridMonth',
+      'multiMonthYear',
     ]);
-  });
-
-  it('les propose toutes au-delà', () => {
-    expect(vuesDisponibles(false)).toEqual(CALENDAR_VIEWS);
   });
 });
 
@@ -43,7 +48,9 @@ describe('Calendrier d’une salle', () => {
     render(<RoomCalendar bookings={[]} anchorDate="2026-09-01" />);
 
     expect(screen.getByRole('radio', { name: 'Jour' }).getAttribute('aria-checked')).toBe('true');
-    expect(screen.queryByRole('radio', { name: 'Semaine' })).toBeNull();
+    // La vue par défaut suit la largeur ; le choix, lui, reste entier.
+    expect(screen.getByRole('radio', { name: 'Semaine' })).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'Année' })).toBeTruthy();
   });
 
   it('s’ouvre sur la semaine au-delà', () => {
