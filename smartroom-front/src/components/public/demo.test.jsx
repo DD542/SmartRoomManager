@@ -65,10 +65,11 @@ describe('Démonstration filmée', () => {
     expect(video.hasAttribute('loop')).toBe(false);
   });
 
-  it('ouvre sur la première séquence', () => {
+  it('ouvre sur la première séquence de la suite', () => {
+    // L'ordre de lecture n'est pas celui des noms de fichiers.
     const { video } = monter();
 
-    expect(video.querySelector('source').getAttribute('src')).toBe('/demo1.mp4');
+    expect(video.querySelector('source').getAttribute('src')).toBe('/demo3.mp4');
     expect(screen.getByText('Séquence 1 sur 7')).toBeTruthy();
   });
 
@@ -77,7 +78,7 @@ describe('Démonstration filmée', () => {
 
     fireEvent.ended(video);
 
-    expect(container.querySelector('source').getAttribute('src')).toBe('/demo2.mp4');
+    expect(container.querySelector('source').getAttribute('src')).toBe('/demo1.mp4');
     expect(screen.getByText('Séquence 2 sur 7')).toBeTruthy();
   });
 
@@ -88,8 +89,28 @@ describe('Démonstration filmée', () => {
       fireEvent.ended(container.querySelector('video'));
     }
 
-    expect(container.querySelector('source').getAttribute('src')).toBe('/demo1.mp4');
+    expect(container.querySelector('source').getAttribute('src')).toBe('/demo3.mp4');
     expect(screen.getByText('Séquence 1 sur 7')).toBeTruthy();
+  });
+
+  it('suit l’ordre demandé, et non celui des noms de fichiers', () => {
+    const { container } = monter();
+    const lues = [container.querySelector('source').getAttribute('src')];
+
+    for (let passage = 0; passage < 6; passage += 1) {
+      fireEvent.ended(container.querySelector('video'));
+      lues.push(container.querySelector('source').getAttribute('src'));
+    }
+
+    expect(lues).toEqual([
+      '/demo3.mp4',
+      '/demo1.mp4',
+      '/demo2.mp4',
+      '/demo4.mp4',
+      '/demo5.mp4',
+      '/demo6.mp4',
+      '/demo7.mp4',
+    ]);
   });
 
   it('laisse sauter directement à une séquence', () => {

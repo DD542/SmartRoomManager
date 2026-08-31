@@ -16,9 +16,11 @@ import { Reveal } from './Reveal';
  * premier plan serait un mauvais échange.
  */
 const SEQUENCES = [
+  // L'ordre de lecture n'est pas celui des noms de fichiers : la troisième
+  // séquence ouvre la démonstration, et les deux premières la suivent.
+  '/demo3.mp4',
   '/demo1.mp4',
   '/demo2.mp4',
-  '/demo3.mp4',
   '/demo4.mp4',
   '/demo5.mp4',
   '/demo6.mp4',
