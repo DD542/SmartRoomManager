@@ -59,13 +59,42 @@ import KnowledgePage from './pages/admin/support/KnowledgePage';
 import EmailTemplatesPage from './pages/admin/support/EmailTemplatesPage';
 import AdminProfilePage from './pages/admin/account/AdminProfilePage';
 import BuildingsPage from './pages/admin/rooms/BuildingsPage';
+import { Spinner } from './components/ui/States';
 import RootRedirect from './pages/RootRedirect';
 import AuditLogPage from './pages/admin/audit/AuditLogPage';
 
-/** Garde d'authentification : mémorise l'URL demandée pour y revenir après connexion. */
-function RequireAuth({ children }) {
-  const { isAuthenticated, needsOnboarding } = useAuth();
+/**
+ * Écran d'attente des gardes, le temps que la session soit reprise.
+ *
+ * Neutre et sans marque : il ne s'affiche qu'une fraction de seconde, et il
+ * doit pouvoir précéder aussi bien l'espace utilisateur que l'administration.
+ */
+function RepriseDeSession() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-ink">
+      <Spinner label="Reprise de la session…" />
+    </div>
+  );
+}
+
+/**
+ * Garde d'authentification : mémorise l'URL demandée pour y revenir après
+ * connexion.
+ *
+ * Exportée pour être montée seule dans les tests : c'est une décision à trois
+ * issues — attendre, rediriger, laisser passer — et la vérifier à travers
+ * l'application entière demanderait de simuler tout le reste.
+ */
+export function RequireAuth({ children }) {
+  const { isAuthenticated, isRestoring, needsOnboarding } = useAuth();
   const location = useLocation();
+
+  // La reprise est en vol : rediriger maintenant enverrait à l'écran de
+  // connexion quelqu'un qui a une session valide, pour l'en faire revenir une
+  // seconde plus tard. Chaque rechargement d'une page profonde traversait donc
+  // l'écran de connexion, visiblement, et perdait l'état des composants au
+  // passage.
+  if (isRestoring) return <RepriseDeSession />;
 
   if (!isAuthenticated) {
     // La chaîne de requête fait partie de la destination : sans elle, un lien
@@ -81,9 +110,11 @@ function RequireAuth({ children }) {
 
 
 /** Garde de l'espace d'administration : session distincte de celle de /app. */
-function RequireAdmin({ children }) {
-  const { isAuthenticated } = useAdminSession();
+export function RequireAdmin({ children }) {
+  const { isAuthenticated, isRestoring } = useAdminSession();
   const location = useLocation();
+
+  if (isRestoring) return <RepriseDeSession />;
 
   if (!isAuthenticated) {
     const from = `${location.pathname}${location.search}`;
