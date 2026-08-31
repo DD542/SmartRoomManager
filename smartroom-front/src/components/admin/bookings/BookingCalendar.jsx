@@ -5,6 +5,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import multiMonthPlugin from '@fullcalendar/multimonth';
 import frLocale from '@fullcalendar/core/locales/fr';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useIsMobile } from '../../../hooks/useMediaQuery';
 import { NOW } from '../../../utils/dates';
 import { Button, IconButton } from '../../ui/Button';
 import { SegmentedControl } from '../../ui/Tabs';
@@ -28,7 +29,8 @@ const VUES = [
  */
 export function BookingCalendar({ bookings = [], onSelect, isLoading }) {
   const ref = useRef(null);
-  const [vue, setVue] = useState('timeGridWeek');
+  const compact = useIsMobile();
+  const [vue, setVue] = useState(compact ? 'timeGridDay' : 'timeGridWeek');
   const [titre, setTitre] = useState('');
 
   const evenements = useMemo(
@@ -82,7 +84,10 @@ export function BookingCalendar({ bookings = [], onSelect, isLoading }) {
         <FullCalendar
           ref={ref}
           plugins={[timeGridPlugin, dayGridPlugin, multiMonthPlugin]}
-          initialView="timeGridWeek"
+          // La journée au téléphone, la semaine au-delà : sept colonnes dans
+          // 360 px ne se lisent pas, et personne n'ouvre un calendrier pour
+          // faire défiler une grille illisible.
+          initialView={compact ? 'timeGridDay' : 'timeGridWeek'}
           // Sans `initialDate` et `now`, le calendrier s'ouvrirait sur la date
           // système alors que toute la maquette vit au 26 mars 2026.
           initialDate={NOW}

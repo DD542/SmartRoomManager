@@ -70,21 +70,14 @@ export const toRoomRow = (room) => ({
  */
 export function RoomsTable({ table, onSelect, selectedId }) {
   return (
-    <>
-      <div className="hidden lg:block">
-        <DataTable
-          columns={colonnes}
-          table={table}
-          selectable
-          rowLabel="salles"
-          rowName={(row) => row.name}
-          onRowClick={onSelect}
-        />
-      </div>
-
-      <ul className="flex flex-col gap-2 p-3 lg:hidden">
-        {table.rows.map((row, index) => (
-          <li key={row.id} className="animate-fade-in-up" style={{ animationDelay: `${Math.min(index, 12) * 40}ms` }}>
+    <DataTable
+      columns={colonnes}
+      table={table}
+      selectable
+      rowLabel="salles"
+      rowName={(row) => row.name}
+      onRowClick={onSelect}
+      carte={(row) => (
             <button
               type="button"
               onClick={() => onSelect?.(row)}
@@ -114,9 +107,7 @@ export function RoomsTable({ table, onSelect, selectedId }) {
                 </span>
               </span>
             </button>
-          </li>
-        ))}
-      </ul>
-    </>
+      )}
+    />
   );
 }

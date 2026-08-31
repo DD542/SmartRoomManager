@@ -71,3 +71,23 @@
 .smartroom-calendar .fc .fc-highlight {
   border-radius: 6px;
 }
+
+/* Au téléphone, le calendrier défile dans sa propre boîte.
+
+   Sans cela, sept colonnes de jour dans 360 px élargissaient la page entière :
+   la barre haute et le titre de l'écran sortaient par la gauche dès qu'on
+   faisait glisser le calendrier, et on ne les retrouvait qu'en revenant au
+   bord. Une grille large est normale ; une page large ne l'est pas.
+
+   La largeur minimale garde des colonnes lisibles plutôt que sept bandes de
+   quarante pixels où plus aucun intitulé ne tient. */
+@media (max-width: 767px) {
+  .smartroom-calendar {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  .smartroom-calendar .fc-view-harness {
+    min-width: 34rem;
+  }
+}

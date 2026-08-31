@@ -77,17 +77,15 @@ export function ArticlesTable({ table, busy = false, onEdit, onToggleStatus, onD
   ];
 
   return (
-    <>
-      <div className="hidden lg:block">
-        <DataTable columns={colonnes} table={table} rowLabel="articles" />
-      </div>
-
-      {/* Sous 1024 px : cinq colonnes dont un extrait et trois actions
-          demandaient 783 px dans un conteneur de 321. La carte porte les mêmes
-          informations et les mêmes trois actions. */}
-      <ul className="flex flex-col gap-2 p-3 lg:hidden">
-        {table.rows.map((row) => (
-          <li key={row.id} className="rounded-xl border border-line bg-surface-raised p-3">
+    <DataTable
+      columns={colonnes}
+      table={table}
+      rowLabel="articles"
+      /* Sous 1024 px : cinq colonnes dont un extrait et trois actions
+         demandaient 783 px dans un conteneur de 321. La carte porte les mêmes
+         informations et les mêmes trois actions. */
+      carte={(row) => (
+          <div className="rounded-xl border border-line bg-surface-raised p-3">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-sm text-content">{row.title}</p>
@@ -126,9 +124,8 @@ export function ArticlesTable({ table, busy = false, onEdit, onToggleStatus, onD
                 />
               </span>
             </div>
-          </li>
-        ))}
-      </ul>
-    </>
+          </div>
+      )}
+    />
   );
 }

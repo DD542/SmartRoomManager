@@ -163,21 +163,17 @@ export default function EquipmentPage() {
         }
       >
         <Card className="overflow-hidden">
-          <div className="hidden lg:block">
-            <DataTable columns={colonnes} table={table} rowLabel="équipements" />
-          </div>
-
-          {/* Sous 1024 px : cinq colonnes, dont une portant une description,
-              demandaient 627 px dans un conteneur de 321. La carte reprend les
-              mêmes données et les mêmes actions, empilées. */}
-          <ul className="flex flex-col gap-2 p-3 lg:hidden">
-            {table.rows.map((row) => {
+          <DataTable
+            columns={colonnes}
+            table={table}
+            rowLabel="équipements"
+            /* Sous 1024 px : cinq colonnes, dont une portant une description,
+               demandaient 627 px dans un conteneur de 321. La carte reprend
+               les mêmes données et les mêmes actions, empilées. */
+            carte={(row) => {
               const Icone = equipmentIcon(row.icon);
               return (
-                <li
-                  key={row.id}
-                  className="rounded-xl border border-line bg-surface-raised p-3"
-                >
+                <div className="rounded-xl border border-line bg-surface-raised p-3">
                   <div className="flex items-start gap-2.5">
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line bg-surface">
                       <Icone size={15} aria-hidden="true" className="text-content-muted" />
@@ -204,10 +200,10 @@ export default function EquipmentPage() {
                       onChange={() => basculerFiltre(row)}
                     />
                   </div>
-                </li>
+                </div>
               );
-            })}
-          </ul>
+            }}
+          />
         </Card>
       </AsyncBoundary>
 

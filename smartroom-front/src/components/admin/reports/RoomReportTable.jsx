@@ -58,22 +58,17 @@ export function RoomReportTable({ rows = [], className }) {
           />
         </div>
       ) : (
-        <>
-          <div className="hidden lg:block">
-            <DataTable
-              columns={COLONNES}
-              table={table}
-              rowLabel="salles"
-              onRowClick={(row) => navigate(`/admin/salles/${row.roomId}`)}
-            />
-          </div>
-          <ul className="flex flex-col gap-2 px-4 pb-4 lg:hidden">
-            {lignes.map((salle, index) => (
-              <li
-                key={salle.id}
-                className="animate-fade-in-up rounded-xl border border-line bg-surface-raised p-3"
-                style={{ animationDelay: `${Math.min(index, 12) * 40}ms` }}
-              >
+        <DataTable
+          columns={COLONNES}
+          table={table}
+          rowLabel="salles"
+          onRowClick={(row) => navigate(`/admin/salles/${row.roomId}`)}
+          /* Les cartes lisaient `lignes` — le parc entier — pendant que le
+             tableau lisait la page courante. Au téléphone, quatorze salles
+             défilaient donc sans pagination, et le pied de page annonçait
+             « 1 à 10 sur 14 » depuis la moitié masquée de l'écran. */
+          carte={(salle) => (
+              <div className="rounded-xl border border-line bg-surface-raised p-3">
                 <div className="flex items-baseline justify-between gap-2">
                   <p className="truncate text-sm text-content">{salle.room}</p>
                   <p className="shrink-0 font-mono text-xs text-content-muted">{salle.hours} h</p>
@@ -88,10 +83,9 @@ export function RoomReportTable({ rows = [], className }) {
                     {fmtPercent(salle.noShow)} de no-show
                   </span>
                 </p>
-              </li>
-            ))}
-          </ul>
-        </>
+              </div>
+          )}
+        />
       )}
     </Card>
   );

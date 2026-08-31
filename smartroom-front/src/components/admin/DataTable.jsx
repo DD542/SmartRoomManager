@@ -7,11 +7,19 @@ import { Pagination } from '../ui/Table';
  * Tableau d'administration : tri par colonne, sélection multiple et pagination.
  * L'état vient de useDataTable ; ce composant ne fait que l'afficher.
  *
- * Sous 1024 px, les pages rendent des cartes à la place. Le basculement était
+ * Sous 1024 px, le tableau cède la place à des cartes : sept colonnes ne se
+ * consultent pas au doigt sur un défilement horizontal. Le basculement était
  * réglé sur 768 px : entre les deux, la barre latérale prenait déjà 240 px et
  * il restait moins de 530 px pour un tableau large de 720 — la ligne défilait
  * horizontalement dans sa carte, et les dernières colonnes ne se voyaient
  * jamais.
+ *
+ * **Les cartes sont rendues ici**, par `carte`, et non par chaque écran.
+ * Chacun les posait à côté d'un `<div className="hidden lg:block">` qui
+ * enfermait le tableau *et sa pagination*. Au téléphone, la pagination
+ * disparaissait donc avec le tableau : on voyait quinze lignes sur 589, et
+ * aucun moyen d'atteindre les autres. Six écrans avaient le défaut, chacun
+ * pour la même raison, parce que chacun refaisait le même montage.
  */
 export function DataTable({
   columns = [],
@@ -20,6 +28,9 @@ export function DataTable({
   selectable = false,
   rowLabel = 'éléments',
   rowName,
+  //: Contenu d'une carte, sous 1024 px. Reçoit la ligne ; l'enveloppe `<li>`,
+  //: sa clé et sa cascade d'apparition sont posées ici.
+  carte,
 }) {
   // Nom annoncé par la case de sélection. Sans lui, un lecteur d'écran lisait
   // « Sélectionner cb79005a-dc84-40ba… » : l'identifiant technique ne désigne
@@ -35,7 +46,7 @@ export function DataTable({
 
   return (
     <div>
-      <div className="overflow-x-auto">
+      <div className={cn('overflow-x-auto', carte && 'hidden lg:block')}>
         {/* Largeur minimale proportionnelle au nombre de colonnes. Fixée à
             720 px pour toutes, elle imposait un défilement horizontal aux
             tableaux de trois colonnes — le catalogue d'équipements tenait dans
@@ -151,6 +162,20 @@ export function DataTable({
           </tbody>
         </table>
       </div>
+
+      {carte && (
+        <ul className="flex flex-col gap-2 p-3 lg:hidden">
+          {table.rows.map((row, index) => (
+            <li
+              key={row.id}
+              className="animate-fade-in-up"
+              style={{ animationDelay: `${Math.min(index, 12) * 40}ms` }}
+            >
+              {carte(row)}
+            </li>
+          ))}
+        </ul>
+      )}
 
       <Pagination
         page={table.page}

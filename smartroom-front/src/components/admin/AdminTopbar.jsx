@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Bell, FileClock, Menu, Search } from 'lucide-react';
+import { AlertTriangle, Bell, FileClock, Menu } from 'lucide-react';
 import { countQueue } from '../../api/admin/conflicts';
 import { useAdminSession } from '../../hooks/useAdminSession';
 import { usePermission } from '../../hooks/usePermission';
 import { IconButton } from '../ui/Button';
+import { BarreRecherche } from '../layout/BarreRecherche';
 import { AccountMenu } from './AccountMenu';
 import { plural } from '../../utils/format';
 
@@ -54,33 +55,19 @@ export function AdminTopbar({ onOpenMenu }) {
         Menu
       </button>
 
-      <form
-        role="search"
-        className="relative min-w-0 flex-1 md:max-w-md"
+      <BarreRecherche
+        id="recherche-admin"
+        label="Rechercher une réservation, une salle ou un utilisateur"
+        placeholder="Rechercher une réservation, une salle, un utilisateur…"
+        value={query}
+        onChange={setQuery}
         onSubmit={(event) => {
           event.preventDefault();
           if (query.trim().length >= 2) {
             navigate(`/admin/reservations?q=${encodeURIComponent(query.trim())}`);
           }
         }}
-      >
-        <label htmlFor="recherche-admin" className="sr-only">
-          Rechercher une réservation, une salle ou un utilisateur
-        </label>
-        <Search
-          size={15}
-          aria-hidden="true"
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-content-faint"
-        />
-        <input
-          id="recherche-admin"
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Rechercher une réservation, une salle, un utilisateur…"
-          className="h-9 w-full rounded-xl border border-line bg-surface-raised pl-9 pr-3 text-sm text-content placeholder:text-content-faint focus:border-accent focus:outline-none"
-        />
-      </form>
+      />
 
       <div className="ml-auto flex items-center gap-1">
         {peut('conflicts.arbitrate') && (

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Search } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import { countUnread } from '../../api/notifications';
 import { useAuth } from '../../hooks/useAuth';
 import { fullName } from '../../utils/format';
 import { Avatar } from '../ui/Avatar';
 import { IconButton } from '../ui/Button';
+import { BarreRecherche } from './BarreRecherche';
 
 /** Barre haute : recherche globale, notifications, paramètres, avatar. */
 export function Topbar() {
@@ -38,25 +39,15 @@ export function Topbar() {
     // et sous les tiroirs, modales et notifications. La marge haute couvre
     // l'encoche quand l'application est installée en plein écran.
     <header className="z-topbar flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 pt-[env(safe-area-inset-top)] md:px-4">
-      <form role="search" onSubmit={onSubmit} className="relative min-w-0 flex-1 md:max-w-sm">
-        <label htmlFor="recherche-globale" className="sr-only">
-          Rechercher une salle, une réservation
-        </label>
-        <Search
-          size={15}
-          aria-hidden="true"
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-content-faint"
-        />
-        <input
-          id="recherche-globale"
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Rechercher une salle, une réservation…"
-          className="h-9 w-full rounded-xl border border-line bg-surface-raised pl-9 pr-3 text-sm text-content
-                     placeholder:text-content-faint focus:border-accent focus:outline-none"
-        />
-      </form>
+      <BarreRecherche
+        id="recherche-globale"
+        label="Rechercher une salle, une réservation"
+        placeholder="Rechercher une salle, une réservation…"
+        value={query}
+        onChange={setQuery}
+        onSubmit={onSubmit}
+        className="md:max-w-sm"
+      />
 
       <div className="ml-auto flex items-center gap-1">
         <span className="relative">
