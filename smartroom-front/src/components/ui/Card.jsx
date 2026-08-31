@@ -20,17 +20,26 @@ export function Card({ as: Tag = 'section', className, children, tone, ...props 
   );
 }
 
+/**
+ * En-tête de carte : titre, sous-titre, action à droite.
+ *
+ * `flex-wrap` et non une seule ligne : dans une carte de téléphone, le titre
+ * et son action se disputaient 288 px. L'action, faute de pouvoir descendre,
+ * se rétrécissait jusqu'à ce que son libellé s'écrive sur trois lignes —
+ * « Nouvelle demande d'aide » sortait alors de son bouton par le haut et par
+ * le bas. Elle passe désormais à la ligne, entière et lisible.
+ */
 export function CardHeader({ title, subtitle, icon: Icon, action, className }) {
   return (
-    <header className={cn('flex items-start justify-between gap-4 px-4 py-3', className)}>
-      <div className="flex items-start gap-2.5">
-        {Icon && <Icon size={16} aria-hidden="true" className="mt-0.5 text-accent" />}
-        <div>
+    <header className={cn('flex flex-wrap items-start justify-between gap-3 px-4 py-3', className)}>
+      <div className="flex min-w-0 flex-1 items-start gap-2.5">
+        {Icon && <Icon size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-accent" />}
+        <div className="min-w-0">
           <h2 className="text-sm font-semibold text-content">{title}</h2>
           {subtitle && <p className="mt-0.5 text-xs text-content-muted">{subtitle}</p>}
         </div>
       </div>
-      {action}
+      {action && <div className="shrink-0">{action}</div>}
     </header>
   );
 }

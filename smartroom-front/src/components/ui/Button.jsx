@@ -12,10 +12,16 @@ const VARIANTS = {
   success: 'bg-success text-ink border border-transparent hover:brightness-110',
 };
 
+//: `min-h` et non `h` : une hauteur fixe ne grandit pas quand le libellé passe
+//: à la ligne. « Nouvelle demande d'aide » dans une colonne étroite s'écrivait
+//: sur trois lignes dans un bouton haut de 40 px — le texte sortait par le
+//: haut et par le bas, illisible, et rien n'indiquait où finissait le bouton.
+//: La hauteur minimale garde les barres denses de l'administration alignées et
+//: laisse le bouton s'étirer quand il le faut.
 const SIZES = {
-  sm: 'h-8 px-3 text-xs gap-1.5',
-  md: 'h-10 px-4 text-sm gap-2',
-  lg: 'h-12 px-5 text-sm gap-2',
+  sm: 'min-h-8 px-3 py-1 text-xs gap-1.5',
+  md: 'min-h-10 px-4 py-1.5 text-sm gap-2',
+  lg: 'min-h-12 px-5 py-2 text-sm gap-2',
   // 36 px à l'œil, 44 px au doigt : la zone tactile est étendue par un
   // pseudo-élément plutôt qu'en grossissant le bouton, qui déformerait les
   // barres d'outils denses de l'administration. 44 px est le minimum
@@ -24,7 +30,9 @@ const SIZES = {
 };
 
 const base =
-  'inline-flex items-center justify-center rounded-xl font-medium transition ' +
+  // `text-center` : un libellé qui passe à la ligne se lit centré comme le
+  // reste du bouton, et non aligné à gauche sous son icône.
+  'inline-flex items-center justify-center rounded-xl text-center font-medium transition ' +
   'disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 ' +
   'focus-visible:outline-offset-2 focus-visible:outline-accent';
 
