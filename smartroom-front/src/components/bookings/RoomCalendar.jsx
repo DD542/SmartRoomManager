@@ -38,6 +38,11 @@ export const CALENDAR_VIEWS = [
  */
 export const vuesDisponibles = () => CALENDAR_VIEWS;
 
+//: Pas d'un créneau, en minutes. Doit rester égal à `slotDuration` : c'est ce
+//: qui fait qu'un appui au doigt et un clic à la souris produisent la même
+//: sélection.
+const MINUTES_PAR_CRENEAU = 30;
+
 const LEGEND = [
   { label: 'Libre', className: 'border-line bg-surface-raised' },
   { label: 'Occupé', className: 'border-line-strong bg-[#222C3E]' },
@@ -155,14 +160,38 @@ export function RoomCalendar({
           selectable={isTimeGrid}
           selectMirror
           selectConstraint="businessHours"
+          // Au doigt, une pression brève ne déclenche aucune sélection :
+          // FullCalendar attend un appui long avant d'ouvrir un glisser, une
+          // seconde par défaut. 200 ms suffisent à distinguer l'intention de
+          // sélectionner d'un défilement de la grille.
+          selectLongPressDelay={200}
           select={(info) => onSelect?.(info.start, info.end)}
           events={events}
           dayCellClassNames={(arg) => (visitDays.includes(arg.date.getDay()) ? [] : ['fc-day-closed'])}
           dateClick={(info) => {
-            // Vues mois et année : le clic sur une date ouvre la journée correspondante.
-            if (isTimeGrid) return;
-            setView('timeGridDay');
-            api()?.changeView('timeGridDay', info.dateStr);
+            // Vues mois et année : le clic sur une date ouvre la journée
+            // correspondante.
+            if (!isTimeGrid) {
+              setView('timeGridDay');
+              api()?.changeView('timeGridDay', info.dateStr);
+              return;
+            }
+
+            // Vues horaires au téléphone : c'est ici que se choisit un
+            // créneau. Un appui bref n'émet pas `select` — seulement
+            // `dateClick` —, et cet écouteur rendait la main : toucher une
+            // heure ne faisait donc rien du tout, alors que le même geste à la
+            // souris réservait le créneau. Le tunnel de réservation était
+            // impraticable au doigt.
+            //
+            // La souris est laissée à `select`, qui a déjà tout fait quand ce
+            // gestionnaire s'exécute : sans cette garde, un clic écraserait la
+            // sélection que l'utilisateur vient de tracer par un glisser.
+            if (!isMobile) return;
+            onSelect?.(
+              info.date,
+              new Date(info.date.getTime() + MINUTES_PAR_CRENEAU * 60000),
+            );
           }}
           datesSet={(info) => {
             setTitle(info.view.title);
