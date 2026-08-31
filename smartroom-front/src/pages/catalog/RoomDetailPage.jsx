@@ -84,7 +84,7 @@ export default function RoomDetailPage() {
 
           <RoomGallery photos={data.photos} roomName={data.name} />
 
-          <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+          <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr] [&>*]:min-w-0">
             <div className="flex flex-col gap-4">
               <Card className="p-4">
                 <div className="flex flex-wrap items-center gap-2">
@@ -107,7 +107,7 @@ export default function RoomDetailPage() {
 
               <Card>
                 <CardHeader title="Équipements inclus" icon={Zap} />
-                <ul className="grid gap-2 px-4 pb-4 sm:grid-cols-3">
+                <ul className="grid gap-2 px-4 pb-4 sm:grid-cols-3 [&>*]:min-w-0">
                   {data.equipment.map((item) => {
                     const Icon = equipmentIcon(item.icon);
                     return (
@@ -151,7 +151,7 @@ export default function RoomDetailPage() {
 
               <Card>
                 <CardHeader title="Conditions d’accès" icon={KeyRound} />
-                <div className="grid gap-2 px-4 pb-4 sm:grid-cols-3">
+                <div className="grid gap-2 px-4 pb-4 sm:grid-cols-3 [&>*]:min-w-0">
                   <div className="rounded-xl border border-line bg-surface-raised p-3">
                     <p className="text-xs uppercase tracking-wide text-content-muted">Accès</p>
                     <p className="mt-1 text-xs text-content">

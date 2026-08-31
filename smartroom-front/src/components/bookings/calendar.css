@@ -76,18 +76,33 @@
 
    Sans cela, sept colonnes de jour dans 360 px élargissaient la page entière :
    la barre haute et le titre de l'écran sortaient par la gauche dès qu'on
-   faisait glisser le calendrier, et on ne les retrouvait qu'en revenant au
-   bord. Une grille large est normale ; une page large ne l'est pas.
+   faisait glisser le calendrier. Une grille large est normale ; une page large
+   ne l'est pas.
 
-   La largeur minimale garde des colonnes lisibles plutôt que sept bandes de
-   quarante pixels où plus aucun intitulé ne tient. */
+   `min-width: 0` compte autant que le défilement : une boîte qui défile mais
+   qu'un parent laisse grandir ne contient rien du tout — elle prend la largeur
+   de son contenu, et c'est la page qui s'élargit à nouveau.
+
+   La largeur minimale ne vaut que pour les vues à plusieurs colonnes. Posée
+   sur toutes, elle imposait 544 px à la vue « Jour » — une seule colonne, qui
+   tenait parfaitement dans 360 — et décalait vers la droite l'écran de
+   réservation où elle apparaît. */
 @media (max-width: 767px) {
   .smartroom-calendar {
+    min-width: 0;
+    max-width: 100%;
     overflow-x: auto;
     overscroll-behavior-x: contain;
   }
 
-  .smartroom-calendar .fc-view-harness {
+  .smartroom-calendar .fc-timeGridWeek-view,
+  .smartroom-calendar .fc-dayGridMonth-view,
+  .smartroom-calendar .fc-multiMonthYear-view {
     min-width: 34rem;
+  }
+
+  /* La vue « Jour » n'a qu'une colonne : elle suit la largeur de l'écran. */
+  .smartroom-calendar .fc-timeGridDay-view {
+    min-width: 0;
   }
 }

@@ -16,7 +16,7 @@ export function RoomGallery({ photos = [], roomName = 'la salle' }) {
 
   return (
     <>
-      <div className="grid gap-2 sm:grid-cols-[2fr_1fr]">
+      <div className="grid gap-2 sm:grid-cols-[2fr_1fr] [&>*]:min-w-0">
         <button
           type="button"
           onClick={() => setOpenIndex(0)}

@@ -130,7 +130,7 @@ export default function FloorPlanPage() {
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+      <div className="grid gap-4 lg:grid-cols-[1fr_320px] [&>*]:min-w-0">
         <AsyncBoundary
           status={plan.status}
           error={plan.error}

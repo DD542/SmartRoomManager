@@ -128,7 +128,7 @@ export default function ExploreRoomsPage() {
         </div>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
+      <div className="grid gap-4 lg:grid-cols-[260px_1fr] [&>*]:min-w-0">
         {!isMobile && filtersPanel}
 
         <AsyncBoundary
@@ -137,7 +137,7 @@ export default function ExploreRoomsPage() {
           onRetry={rooms.reload}
           isEmpty={rooms.isSuccess && results.length === 0}
           skeleton={
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 [&>*]:min-w-0">
               {Array.from({ length: 6 }, (_, index) => (
                 <SkeletonCard key={index} />
               ))}
@@ -154,7 +154,7 @@ export default function ExploreRoomsPage() {
           }
         >
           <div className="flex flex-col gap-4">
-            <StaggerList className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <StaggerList className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 [&>*]:min-w-0">
               {paged.items.map((room) => (
                 <RoomCard key={room.id} room={room} />
               ))}

@@ -109,7 +109,7 @@ export default function BookingDetailPage() {
               actions={<BookingStatusBadge status={data.status} />}
             />
 
-            <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+            <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr] [&>*]:min-w-0">
               <div className="flex flex-col gap-4">
                 <Card>
                   <div className="flex flex-wrap items-start justify-between gap-3 px-4 py-3">

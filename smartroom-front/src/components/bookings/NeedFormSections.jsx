@@ -13,7 +13,7 @@ export function WhereWhenSection({ draft, update, buildings, minutes }) {
   return (
     <Card>
       <CardHeader title="Où & quand" icon={MapPin} />
-      <div className="grid gap-4 px-4 pb-4 sm:grid-cols-2">
+      <div className="grid gap-4 px-4 pb-4 sm:grid-cols-2 [&>*]:min-w-0">
         <Select
           label="Bâtiment privilégié"
           className="sm:col-span-2"
@@ -64,7 +64,7 @@ export function ConfigurationSection({ draft, update }) {
   return (
     <Card>
       <CardHeader title="Configuration" icon={Users} />
-      <div className="grid gap-4 px-4 pb-4 sm:grid-cols-2">
+      <div className="grid gap-4 px-4 pb-4 sm:grid-cols-2 [&>*]:min-w-0">
         <Field label="Capacité (personnes)" htmlFor="capacite" required>
           <div className="flex items-center gap-2">
             <Button variant="secondary" size="icon" aria-label="Retirer une personne" onClick={() => bump(-1)}>

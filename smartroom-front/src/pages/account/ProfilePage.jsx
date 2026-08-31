@@ -77,7 +77,7 @@ export default function ProfilePage() {
         subtitle="Gérez vos informations et vos préférences de notification."
       />
 
-      <div className="grid gap-4 lg:grid-cols-[200px_1fr]">
+      <div className="grid gap-4 lg:grid-cols-[200px_1fr] [&>*]:min-w-0">
         {/* Deux colonnes sur mobile, quatre sur tablette, liste verticale sur
             grand écran : les quatre sections tiennent toujours sans défilement. */}
         <nav

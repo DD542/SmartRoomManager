@@ -4,6 +4,16 @@ import { cn } from '../../utils/cn';
 /**
  * Stepper horizontal du tunnel de réservation.
  * Les étapes franchies sont cliquables, les suivantes sont désactivées.
+ *
+ * Sous 640 px, les quatre libellés cèdent la place à une seule ligne — « Étape
+ * 3 sur 4 — Validation ». Mesuré : « Critères Sélection Validation
+ * Confirmation » réclamait 320 px là où la carte en offrait 254, et ces
+ * libellés portent `shrink-0`. Soixante-six pixels de trop, qui décalent la
+ * page entière vers la droite : les premières étapes sortent par la gauche, et
+ * c'est le tunnel de réservation qu'on lit de travers.
+ *
+ * Une ligne unique plutôt que des libellés tronqués : « Crit… Séle… Vali… » ne
+ * dit rien de plus qu'un numéro, et coûte la place d'une phrase entière.
  */
 export function Stepper({ steps = [], current = 1, onGoTo, className, compact = false }) {
   return (
@@ -40,7 +50,7 @@ export function Stepper({ steps = [], current = 1, onGoTo, className, compact = 
                 {!compact && (
                   <span
                     className={cn(
-                      'text-[11px] uppercase tracking-wide',
+                      'hidden text-[11px] uppercase tracking-wide sm:inline',
                       active ? 'text-content' : 'text-content-muted',
                     )}
                   >
@@ -65,6 +75,19 @@ export function Stepper({ steps = [], current = 1, onGoTo, className, compact = 
           );
         })}
       </ol>
+
+      {/* Le libellé de l'étape courante, seul, sous la rangée de pastilles.
+          `aria-hidden` : les pastilles portent déjà `aria-current` et un état
+          lisible, cette ligne ne ferait que répéter à l'oreille ce qu'elle
+          apporte à l'œil. */}
+      {!compact && steps[current - 1] && (
+        <p
+          aria-hidden="true"
+          className="mt-2 text-center text-[11px] uppercase tracking-wide text-content sm:hidden"
+        >
+          Étape {current} sur {steps.length} — {steps[current - 1].label}
+        </p>
+      )}
     </nav>
   );
 }

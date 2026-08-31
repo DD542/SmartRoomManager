@@ -63,7 +63,7 @@ export default function StatsPage() {
         skeleton={
           <div className="flex flex-col gap-4">
             <Skeleton className="h-16 w-full" />
-            <div className="grid gap-3 sm:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-4 [&>*]:min-w-0">
               {Array.from({ length: 4 }, (_, index) => (
                 <KpiTileSkeleton key={index} />
               ))}
@@ -78,7 +78,7 @@ export default function StatsPage() {
               {stats.data.observation}
             </Callout>
 
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 [&>*]:min-w-0">
               <KpiTile
                 icon={CalendarCheck}
                 tone="accent"
@@ -98,7 +98,7 @@ export default function StatsPage() {
               />
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
               <HoursBarChart data={stats.data.byMonth} />
               <RoomDonutChart data={stats.data.byRoom} />
             </div>

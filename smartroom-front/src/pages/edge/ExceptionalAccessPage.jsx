@@ -78,7 +78,7 @@ export default function ExceptionalAccessPage() {
         subtitle="Justifiez votre demande de réservation hors des jours d’ouverture."
       />
 
-      <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+      <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr] [&>*]:min-w-0">
         <div className="flex flex-col gap-4">
           <Callout tone="warning" icon={AlertTriangle} title="Fermeture habituelle du site">
             {draft.room
@@ -86,7 +86,7 @@ export default function ExceptionalAccessPage() {
               : 'La date sélectionnée correspond à un jour de fermeture habituel du site.'}
           </Callout>
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2 [&>*]:min-w-0">
             <Card className="flex items-center gap-3 p-3.5">
               <DoorOpen size={15} aria-hidden="true" className="text-accent" />
               <div>

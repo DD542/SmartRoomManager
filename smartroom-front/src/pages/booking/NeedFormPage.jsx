@@ -78,7 +78,7 @@ export default function NeedFormPage() {
         subtitle="Définissez vos besoins pour trouver la salle idéale."
       />
 
-      <div className="grid gap-4 lg:grid-cols-[1.7fr_1fr]">
+      <div className="grid gap-4 lg:grid-cols-[1.7fr_1fr] [&>*]:min-w-0">
         <div className="flex flex-col gap-4">
           <WhereWhenSection
             draft={draft}

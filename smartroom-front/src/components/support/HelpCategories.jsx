@@ -13,7 +13,7 @@ const ICONS = { CalendarPlus, KeyRound, XCircle, Monitor, User };
 export function HelpCategories({ categories = [], active, onSelect, isLoading }) {
   if (isLoading) {
     return (
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">
         {Array.from({ length: 5 }, (_, index) => (
           <Skeleton key={index} className="h-[70px]" />
         ))}
@@ -22,7 +22,7 @@ export function HelpCategories({ categories = [], active, onSelect, isLoading })
   }
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">
       {categories.map((category) => {
         const Icon = ICONS[category.icon] ?? LifeBuoy;
         const selected = active === category.id;

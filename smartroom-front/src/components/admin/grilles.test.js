@@ -1,7 +1,7 @@
 /**
  * @vitest-environment node
  *
- * Aucune grille de l'administration ne doit oublier `[&>*]:min-w-0`.
+ * Aucune grille de l'application ne doit oublier `[&>*]:min-w-0`.
  *
  * Mesuré dans un navigateur : un enfant de grille sans cette permission refuse
  * de descendre sous la largeur de son contenu — c'est la règle `min-width:
@@ -18,7 +18,12 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const RACINES = ['src/pages/admin', 'src/components/admin'];
+//: Toute l'application, et non l'administration seule. Le premier
+//: débordement mesuré venait de là, mais le second est venu de l'espace
+//: utilisateur : la grille de l'écran de réservation refusait de descendre
+//: sous la largeur du calendrier, et la page entière se décalait vers la
+//: droite. La règle CSS ne connaît pas la frontière entre les deux espaces.
+const RACINES = ['src/pages', 'src/components'];
 
 function fichiers(racine) {
   return readdirSync(racine, { withFileTypes: true }).flatMap((entree) => {
@@ -32,7 +37,7 @@ function fichiers(racine) {
 /** Grilles de disposition : celles qui portent un espacement entre leurs enfants. */
 const GRILLE = /className="grid gap-\d[^"]*"/g;
 
-describe('Grilles de l’administration', () => {
+describe('Grilles de l’application', () => {
   const manquantes = RACINES.flatMap(fichiers).flatMap((chemin) => {
     const source = readFileSync(chemin, 'utf-8');
     return (source.match(GRILLE) ?? [])

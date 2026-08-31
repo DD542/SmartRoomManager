@@ -49,7 +49,7 @@ export default function DashboardPage() {
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+      <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr] [&>*]:min-w-0">
         {next.isError ? (
           <div className="card-surface">
             <ErrorState error={next.error} onRetry={next.reload} />
@@ -61,7 +61,7 @@ export default function DashboardPage() {
         <QuickSearchCard defaultBuildingId={user.preferences?.preferredBuildingId} />
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-3 [&>*]:min-w-0">
         {stats.isLoading && (
           <>
             <KpiTileSkeleton />
@@ -92,7 +92,7 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
         {upcoming.isError ? (
           <div className="card-surface">
             <ErrorState error={upcoming.error} onRetry={upcoming.reload} />

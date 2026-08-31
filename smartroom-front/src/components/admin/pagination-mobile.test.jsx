@@ -20,6 +20,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { DataTable } from './DataTable';
 import { BarreRecherche } from '../layout/BarreRecherche';
+import { Stepper } from '../ui/Stepper';
 
 const largeur = (px) => {
   window.matchMedia = vi.fn().mockImplementation((query) => {
@@ -173,6 +174,40 @@ describe('Recherche de la barre haute', () => {
 
     expect(screen.getByRole('searchbox')).toBeTruthy();
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+});
+
+describe('Frise du tunnel', () => {
+  const ETAPES = [
+    { id: 'criteres', label: 'Critères' },
+    { id: 'selection', label: 'Sélection' },
+    { id: 'validation', label: 'Validation' },
+    { id: 'confirmation', label: 'Confirmation' },
+  ];
+
+  it('remplace les quatre libellés par une ligne au téléphone', () => {
+    // Mesuré : « Critères Sélection Validation Confirmation » réclamait 320 px
+    // là où la carte en offrait 254, et ces libellés portent `shrink-0`.
+    // Soixante-six pixels de trop, qui décalent la page vers la droite.
+    render(<Stepper steps={ETAPES} current={3} />);
+
+    expect(screen.getByText('Étape 3 sur 4 — Validation')).toBeTruthy();
+    expect(screen.getByText('Critères').className).toContain('hidden');
+  });
+
+  it('garde les libellés au bureau', () => {
+    render(<Stepper steps={ETAPES} current={3} />);
+
+    ETAPES.forEach((etape) => {
+      expect(screen.getByText(etape.label).className).toContain('sm:inline');
+    });
+  });
+
+  it('ne répète pas l’étape courante aux lecteurs d’écran', () => {
+    // Les pastilles portent déjà `aria-current` et leur état en toutes lettres.
+    const { container } = render(<Stepper steps={ETAPES} current={3} />);
+
+    expect(container.querySelector('nav > p').getAttribute('aria-hidden')).toBe('true');
   });
 });
 

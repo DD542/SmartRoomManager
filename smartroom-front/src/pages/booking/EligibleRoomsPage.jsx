@@ -116,7 +116,7 @@ export default function EligibleRoomsPage() {
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
+      <div className="grid gap-4 lg:grid-cols-[260px_1fr] [&>*]:min-w-0">
         {!isMobile && filtersPanel}
 
         <AsyncBoundary
@@ -125,7 +125,7 @@ export default function EligibleRoomsPage() {
           onRetry={ranked.reload}
           isEmpty={ranked.isSuccess && results.length === 0}
           skeleton={
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 [&>*]:min-w-0">
               {Array.from({ length: 6 }, (_, index) => (
                 <SkeletonCard key={index} />
               ))}
@@ -158,7 +158,7 @@ export default function EligibleRoomsPage() {
               />
             )}
 
-            <StaggerList className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <StaggerList className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 [&>*]:min-w-0">
               {others.map((entry) => (
                 <RoomCard
                   key={entry.room.id}

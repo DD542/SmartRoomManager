@@ -95,10 +95,10 @@ export default function EditBookingPage() {
             d’accès, envoyé à tous les participants.
           </Callout>
 
-          <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+          <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr] [&>*]:min-w-0">
             <Card>
               <CardHeader title="Détails de la réservation" />
-              <div className="grid gap-4 px-4 pb-4 sm:grid-cols-2">
+              <div className="grid gap-4 px-4 pb-4 sm:grid-cols-2 [&>*]:min-w-0">
                 <Input
                   label="Date"
                   type="date"

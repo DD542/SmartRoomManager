@@ -86,7 +86,7 @@ export default function RecurringBookingPage() {
         subtitle={describeRule(rule, occurrences)}
       />
 
-      <div className="grid gap-4 lg:grid-cols-[380px_1fr]">
+      <div className="grid gap-4 lg:grid-cols-[380px_1fr] [&>*]:min-w-0">
         <div className="flex flex-col gap-4">
           <RecurrenceRuleForm
             rule={rule}

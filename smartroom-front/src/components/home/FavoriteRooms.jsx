@@ -14,7 +14,7 @@ export function FavoriteRooms({ rooms = [], isLoading }) {
       <SectionTitle title="Salles favorites" icon={Heart} to="/app/salles" className="px-4 py-3" />
 
       {isLoading && (
-        <div className="grid gap-2 px-4 pb-4 sm:grid-cols-2">
+        <div className="grid gap-2 px-4 pb-4 sm:grid-cols-2 [&>*]:min-w-0">
           <Skeleton className="h-28 w-full" />
           <Skeleton className="h-28 w-full" />
         </div>
@@ -29,7 +29,7 @@ export function FavoriteRooms({ rooms = [], isLoading }) {
       )}
 
       {!isLoading && rooms.length > 0 && (
-        <div className="grid gap-2 px-4 pb-4 sm:grid-cols-2">
+        <div className="grid gap-2 px-4 pb-4 sm:grid-cols-2 [&>*]:min-w-0">
           {rooms.map((room) => (
             <Link
               key={room.id}

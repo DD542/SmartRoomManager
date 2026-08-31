@@ -96,7 +96,7 @@ export default function SummaryPage() {
         subtitle="Vérifiez les détails de votre réservation avant de confirmer."
       />
 
-      <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+      <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr] [&>*]:min-w-0">
         <div className="flex flex-col gap-4">
           <Card>
             <CardHeader title="Récapitulatif de la réservation" icon={ListChecks} />

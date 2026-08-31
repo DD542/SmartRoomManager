@@ -39,7 +39,7 @@ export function IdentitySection({
 
       <Card>
         <CardHeader title="Informations personnelles" icon={User} />
-        <div className="grid gap-4 px-4 pb-4 sm:grid-cols-2">
+        <div className="grid gap-4 px-4 pb-4 sm:grid-cols-2 [&>*]:min-w-0">
           {/* `?? ''` sur chaque champ : l'API rend `null` pour une valeur non
               renseignée — téléphone, promotion, département —, et React refuse
               `value={null}` sur un champ contrôlé. Il l'annonce en console à
@@ -152,7 +152,7 @@ export function PreferencesSection({ preferences, buildings = [], onChange }) {
   return (
     <Card>
       <CardHeader title="Préférences de réservation" icon={SlidersHorizontal} />
-      <div className="grid gap-4 px-4 pb-4 sm:grid-cols-2">
+      <div className="grid gap-4 px-4 pb-4 sm:grid-cols-2 [&>*]:min-w-0">
         <Select
           label="Bâtiment principal"
           value={preferences.preferredBuildingId}

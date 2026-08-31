@@ -61,7 +61,7 @@ export default function MyBookingsCalendarPage() {
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
+      <div className="grid gap-4 lg:grid-cols-[1fr_300px] [&>*]:min-w-0">
         <AsyncBoundary
           status={bookings.status}
           error={bookings.error}

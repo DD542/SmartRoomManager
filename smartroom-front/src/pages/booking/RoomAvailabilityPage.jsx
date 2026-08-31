@@ -85,7 +85,7 @@ export default function RoomAvailabilityPage() {
         </Card>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+      <div className="grid gap-4 lg:grid-cols-[1fr_320px] [&>*]:min-w-0">
         {availability.isError ? (
           <div className="card-surface">
             <ErrorState error={availability.error} onRetry={availability.reload} />
