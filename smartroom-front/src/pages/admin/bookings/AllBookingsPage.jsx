@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { CalendarDays, CalendarPlus, CalendarX2, Rows3 } from 'lucide-react';
 import {
   listAllBookings,
@@ -40,8 +41,26 @@ export default function AllBookingsPage() {
   useDocumentTitle('Toutes les réservations');
 
   const [affichage, setAffichage] = useState('table');
-  const [recherche, setRecherche] = useState('');
+
+  // La recherche de la barre haute mène ici — `/admin/reservations?q=…` — et
+  // ce paramètre n'était pas lu. Taper « salle curie » en haut de l'écran
+  // amenait donc sur la liste entière, champ de recherche vide, première page :
+  // rien ne distinguait une recherche sans résultat d'une recherche jamais
+  // faite. L'espace utilisateur, lui, lisait déjà son `q`.
+  const [params, setParams] = useSearchParams();
+  const [recherche, setRecherche] = useState(() => params.get('q') ?? '');
   const requete = useDebouncedValue(recherche, 250);
+
+  // L'adresse suit la saisie : une recherche se partage, se met en favori et
+  // survit à un rechargement.
+  useEffect(() => {
+    const actuel = params.get('q') ?? '';
+    if (actuel === requete) return;
+    const suivant = new URLSearchParams(params);
+    if (requete) suivant.set('q', requete);
+    else suivant.delete('q');
+    setParams(suivant, { replace: true });
+  }, [requete, params, setParams]);
 
   const referentiels = useAsync(listBookingFilters, []);
   const filtres = useSelectFilters(champsDeFiltre(referentiels.data));
