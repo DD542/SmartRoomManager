@@ -3,7 +3,6 @@ import {
   ArrowRight,
   CalendarClock,
   CheckCircle2,
-  Info,
   ShieldAlert,
 } from 'lucide-react';
 import { fmtDateLong, fmtTime } from '../../utils/dates';
@@ -11,6 +10,7 @@ import { openingLabel } from '../../utils/openingRules';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Card, Callout } from '../ui/Card';
+import { ConsigneSalle } from './ConsigneSalle';
 import { Spinner } from '../ui/States';
 
 /**
@@ -117,14 +117,8 @@ export function SlotPanel({
           </Callout>
         )}
 
-        {/* Au-dessus des règles, et non parmi elles : celles-ci se déduisent
-            des seuils, la consigne est écrite par quelqu'un. La noyer dans
-            une liste de phrases générées la ferait lire comme l'une d'elles. */}
-        {rules?.notice && (
-          <Callout tone="warning" icon={Info} title="Consigne de la salle">
-            {rules.notice}
-          </Callout>
-        )}
+        {/* Au-dessus des règles, et non parmi elles. */}
+        <ConsigneSalle notice={rules?.notice} />
 
         {rules && (
           <div className="border-t border-line pt-4">

@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { CalendarPlus, CheckCircle2, Map, Share2 } from 'lucide-react';
 import { getBooking } from '../../api/bookings';
+import { getRoomRules } from '../../api/rooms';
 import { getPlanDocumentForPlan } from '../../api/buildings';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { fmtDateLong, fmtTime } from '../../utils/dates';
 import { downloadIcs } from '../../utils/ics';
+import { ConsigneSalle } from '../../components/bookings/ConsigneSalle';
 import { ShareModal } from '../../components/bookings/ShareModal';
 import { AccessCode } from '../../components/ui/AccessCode';
 import { PlanPreview } from '../../components/rooms/PlanPreview';
@@ -28,6 +30,13 @@ export default function ConfirmedPage() {
   const { user } = useAuth();
   const toast = useToast();
   const booking = useAsync(() => getBooking(id), [id]);
+
+  // Relue après l'écriture : c'est l'écran qu'on garde ouvert en marchant vers
+  // la salle, et la consigne est précisément ce qu'on veut y retrouver.
+  const regles = useAsync(
+    () => (booking.data?.roomId ? getRoomRules(booking.data.roomId) : Promise.resolve(null)),
+    [booking.data?.roomId],
+  );
 
   // Le plan de l'étage ne sert que de repli, et n'est demandé que s'il existe :
   // le réclamer à tout hasard valait un 404 par étage sans plan, rouge dans la
@@ -104,6 +113,11 @@ export default function ConfirmedPage() {
                 </dd>
               </div>
             </dl>
+
+            {/* Sous le récapitulatif, au-dessus du code : c'est l'ordre dans
+                lequel on s'en sert — où et quand, ce qu'on doit y faire, puis
+                comment entrer. */}
+            <ConsigneSalle notice={regles.data?.notice} className="mt-4 text-left" />
 
             {(codeEnClair || booking.data.accessCode) && (
               <div className="mt-4 rounded-xl border border-line bg-surface-raised px-4 py-3">

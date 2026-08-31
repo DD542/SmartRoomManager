@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { getRules, previewImpact, updateRules } from '../../../api/admin/rules';
+import { getRules, listerSurcharges, previewImpact, updateRules } from '../../../api/admin/rules';
 import { listRoomFilters } from '../../../api/admin/rooms';
 import { useAsync } from '../../../hooks/useAsync';
 import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
 import { useToast } from '../../../hooks/useToast';
 import { PageHeader } from '../../../components/layout/PageHeader';
 import { Select } from '../../../components/ui/Form';
+import { Callout } from '../../../components/ui/Card';
+import { plural } from '../../../utils/format';
 import { AsyncBoundary, SkeletonCard } from '../../../components/ui/States';
 import { SaveBar } from '../../../components/admin/SaveBar';
 import { ImpactPanel } from '../../../components/admin/rules/ImpactPanel';
@@ -29,6 +31,7 @@ export default function BookingRulesPage() {
 
   const regles = useAsync(() => getRules(portee), [portee]);
   const referentiels = useAsync(listRoomFilters, []);
+  const surcharges = useAsync(listerSurcharges, []);
 
   useEffect(() => {
     if (regles.data) setDraft(regles.data);
@@ -87,6 +90,23 @@ export default function BookingRulesPage() {
           />
         }
       />
+
+      {/* Une consigne globale n'atteint pas une salle dont le bâtiment — ou
+          elle-même — porte sa propre règle : la résolution retient la plus
+          spécifique, entière, elle ne fusionne pas les champs. Sans ce
+          rappel, on écrit une consigne, on la voit enregistrée, et on ne
+          comprend pas pourquoi certaines salles l'ignorent. */}
+      {portee === 'global' && draft?.notice && surcharges.data?.total > 0 && (
+        <Callout tone="warning" title="Des portées plus précises coiffent celle-ci">
+          {surcharges.data.batiments > 0 && plural(surcharges.data.batiments, 'bâtiment')}
+          {surcharges.data.batiments > 0 && surcharges.data.salles > 0 && ' et '}
+          {surcharges.data.salles > 0 && plural(surcharges.data.salles, 'salle')}
+          {' '}
+          {surcharges.data.total > 1 ? 'ont' : 'a'} leur propre règle : la consigne
+          ci-dessous ne s’y appliquera pas. Écrivez-la sur ces portées, ou supprimez
+          leur surcharge.
+        </Callout>
+      )}
 
       <AsyncBoundary
         status={regles.status}

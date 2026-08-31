@@ -4,6 +4,8 @@ import { ArrowLeft, CalendarDays, CheckCircle2, DoorOpen, ListChecks, Monitor, U
 import { createBooking } from '../../api/bookings';
 import { getDirections } from '../../api/buildings';
 import { useAsync } from '../../hooks/useAsync';
+import { getRoomRules } from '../../api/rooms';
+import { ConsigneSalle } from '../../components/bookings/ConsigneSalle';
 import { useAuth } from '../../hooks/useAuth';
 import { useBooking } from '../../hooks/useBooking';
 import { useToast } from '../../hooks/useToast';
@@ -47,6 +49,15 @@ export default function SummaryPage() {
 
   const directions = useAsync(
     () => (draft.roomId ? getDirections(draft.roomId) : Promise.resolve(null)),
+    [draft.roomId],
+  );
+
+  // La consigne est relue ici plutôt que reprise du brouillon : celui-ci porte
+  // la salle choisie à l'étape précédente, et une consigne écrite entre-temps
+  // par l'administration n'y serait pas. C'est le dernier écran avant
+  // l'écriture — c'est là qu'elle doit être juste.
+  const regles = useAsync(
+    () => (draft.roomId ? getRoomRules(draft.roomId) : Promise.resolve(null)),
     [draft.roomId],
   );
 
@@ -98,6 +109,10 @@ export default function SummaryPage() {
 
       <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr] [&>*]:min-w-0">
         <div className="flex flex-col gap-4">
+          {/* Avant le récapitulatif : ce qu'on doit savoir se lit avant de
+              confirmer, pas après avoir cliqué. */}
+          <ConsigneSalle notice={regles.data?.notice} />
+
           <Card>
             <CardHeader title="Récapitulatif de la réservation" icon={ListChecks} />
             <div>

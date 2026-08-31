@@ -33,6 +33,23 @@ export async function getRules(scope = 'global', { signal } = {}) {
 }
 
 /**
+ * Portées qui possèdent leur propre règle, et coiffent donc la globale.
+ *
+ * L'écran des règles en a besoin pour une raison précise : une consigne écrite
+ * au niveau global n'atteint pas une salle dont le bâtiment — ou elle-même —
+ * porte une règle. La résolution retient la plus spécifique, entière : elle ne
+ * fusionne pas les champs. Sans ce décompte, l'administrateur écrit une
+ * consigne, la voit enregistrée, et ne comprend pas pourquoi certaines salles
+ * l'ignorent.
+ */
+export async function listerSurcharges({ signal } = {}) {
+  const lignes = items(await get('/booking-rules', { signal }));
+  const batiments = lignes.filter((item) => item.scope === 'batiment').length;
+  const salles = lignes.filter((item) => item.scope === 'salle').length;
+  return { batiments, salles, total: batiments + salles };
+}
+
+/**
  * Remplacement d'une portée.
  *
  * Les bornes sont revalidées côté serveur — durées cohérentes, fenêtre de
