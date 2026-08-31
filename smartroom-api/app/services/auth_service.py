@@ -8,6 +8,7 @@ permettrait pas de détecter.
 
 from __future__ import annotations
 
+import secrets
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -28,7 +29,7 @@ from app.core.security import (
 )
 from app.db.enums import AuditAction, UserStatus
 from app.models import AdminAccount, PasswordResetToken, RefreshToken, User
-from app.services import audit_service
+from app.services import audit_service, google_service
 
 #: Message unique quel que soit le motif : distinguer « compte inconnu » de
 #: « mot de passe faux » transformerait la connexion en énumérateur d'adresses.
@@ -130,6 +131,75 @@ def login(session: Session, *, email: str, password: str, admin: bool = False) -
         expires_in=duree,
         refresh_token=rafraichissement,
         scope=scope,
+    )
+
+
+def login_google(session: Session, *, jeton: str) -> tuple[Session_, bool]:
+    """Ouvre une session à partir d'un jeton d'identité Google.
+
+    Le compte est créé s'il n'existe pas : c'est le propre d'une connexion
+    déléguée — l'utilisateur n'a rien à remplir, et exiger une inscription
+    préalable reviendrait à lui demander deux fois qui il est.
+
+    Rend aussi si le compte vient d'être créé, pour que l'écran sache s'il
+    accueille un nouveau venu ou en retrouve un.
+
+    **Le mot de passe reste inconnu de tous.** La colonne ne peut pas être
+    nulle, et un mot de passe vide serait une porte ouverte : le compte reçoit
+    l'empreinte d'un secret aléatoire que personne — pas même le serveur — ne
+    conserve. Se connecter par mot de passe est donc impossible tant que
+    l'utilisateur n'en a pas choisi un par « mot de passe oublié », qui
+    fonctionne pour lui comme pour les autres.
+
+    Un compte suspendu le reste : déléguer l'identité ne délègue pas la
+    décision d'ouvrir la porte.
+    """
+    identite = google_service.verifier(jeton)
+
+    compte = _charger(session, identite.email)
+    creation = compte is None
+
+    if compte is None:
+        compte = User(
+            email=identite.email,
+            password_hash=hash_password(secrets.token_urlsafe(32)),
+            first_name=identite.prenom,
+            last_name=identite.nom,
+            avatar_url=identite.photo,
+        )
+        session.add(compte)
+        session.flush()
+    elif compte.avatar_url is None and identite.photo:
+        # La photo de Google comble un profil vide, sans jamais remplacer celle
+        # que l'utilisateur a déposée lui-même.
+        compte.avatar_url = identite.photo
+
+    if compte.status is UserStatus.SUSPENDU:
+        audit_service.record_login(session, label=identite.email, scope="user", success=False)
+        raise PermissionError_(
+            "Compte suspendu. Contactez l'administration.", code="compte_suspendu"
+        )
+
+    compte.last_login_at = datetime.now(UTC)
+    acces, rafraichissement, duree = _emettre(session, compte, "user")
+    audit_service.record_login(
+        session,
+        label=f"{compte.first_name} {compte.last_name}",
+        scope="user",
+        success=True,
+    )
+    session.flush()
+
+    return (
+        Session_(
+            user=compte,
+            admin=None,
+            access_token=acces,
+            expires_in=duree,
+            refresh_token=rafraichissement,
+            scope="user",
+        ),
+        creation,
     )
 
 

@@ -31,20 +31,37 @@ export async function login({ email, password }) {
 }
 
 /**
- * Connexion par le compte de l'école.
+ * Configuration publique de la connexion Google.
  *
- * Le fournisseur d'identité de l'ECE n'est pas raccordé : la route n'existe pas
- * encore côté API. L'appeler échouerait silencieusement, mieux vaut le dire.
+ * Servie par l'API plutôt que posée dans le front : l'identifiant de client
+ * est public — il figure dans la page de tout site qui propose cette
+ * connexion — et le configurer à deux endroits ferait diverger le navigateur
+ * et le serveur. La divergence ne se verrait qu'au refus, sur un message
+ * d'audience incorrecte que personne ne rattacherait à sa cause.
  */
-export async function loginWithEce() {
-  const erreur = new Error(
-    "La connexion par le compte ECE n'est pas encore disponible. "
-      + 'Utilisez votre adresse et votre mot de passe.',
-  );
-  erreur.name = 'ApiError';
-  erreur.status = 501;
-  erreur.code = 'sso_indisponible';
-  throw erreur;
+export async function getGoogleConfig({ signal } = {}) {
+  const data = await get('/auth/google/config', { signal });
+  return { enabled: Boolean(data.enabled), clientId: data.client_id };
+}
+
+/**
+ * Ouvre une session à partir du jeton d'identité rendu par Google.
+ *
+ * Le jeton n'est pas cru sur parole : le serveur en vérifie la signature,
+ * l'émetteur et le destinataire avant d'ouvrir quoi que ce soit. Le front ne
+ * fait que transporter.
+ */
+export async function loginWithGoogle(credential) {
+  const payload = await post('/auth/google', { credential });
+  setAccessToken(payload.access_token);
+
+  return {
+    user: adapt.user(payload.user),
+    // Le compte vient d'être créé : l'accueil n'accueille pas un nouveau venu
+    // comme il retrouve un habitué.
+    created: Boolean(payload.created),
+    firstLogin: !payload.user?.preferences?.preferred_building_id,
+  };
 }
 
 /**

@@ -58,6 +58,17 @@ class Settings(BaseSettings):
     #: assez court pour qu'un lien oublié dans une boîte ne serve plus.
     reset_ttl_minutes: int = 30
 
+    # ------------------------------------------------------------ Google
+
+    #: Identifiant du client OAuth, tel que la console Google le donne. Vide,
+    #: la connexion Google est refusée avec un message clair plutôt qu'un
+    #: échec de vérification incompréhensible.
+    google_client_id: str = ""
+    #: Domaines autorisés à ouvrir un compte, séparés par des virgules. Vide,
+    #: tout compte Google est accepté. `ece.fr` fermerait l'application à la
+    #: seule école — c'est une décision d'exploitation, pas de code.
+    google_allowed_domains: str = ""
+
     # ------------------------------------------------------------ limitation
 
     #: Rend le bourrage d'identifiants impraticable sans gêner un humain.

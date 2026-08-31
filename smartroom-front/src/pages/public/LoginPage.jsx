@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { AlertCircle, Eye, EyeOff, GraduationCap, Lock, Mail } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { Button } from '../../components/ui/Button';
 import { Checkbox, Field, Input } from '../../components/ui/Form';
 import { Card, Callout } from '../../components/ui/Card';
+import { BoutonGoogle } from '../../components/auth/BoutonGoogle';
 
 /**
  * P-02 — Connexion.
@@ -16,7 +17,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const toast = useToast();
-  const { login, loginWithEce, isAuthenticated } = useAuth();
+  const { login, loginWithGoogle, isAuthenticated } = useAuth();
 
   const [form, setForm] = useState({ email: '', password: '', remember: false });
   const [showPassword, setShowPassword] = useState(false);
@@ -50,12 +51,24 @@ export default function LoginPage() {
     }
   };
 
-  const onEce = async () => {
-    setPending('ece');
+  /**
+   * Le jeton rendu par Google, échangé contre une session.
+   *
+   * Un compte inconnu est créé par le serveur : c'est le propre d'une
+   * connexion déléguée, et c'est pourquoi il n'y a pas de second bouton
+   * « créer un compte ». Un nouveau venu part remplir ses préférences, un
+   * habitué revient là où il allait.
+   */
+  const onGoogle = async (credential) => {
+    setPending('google');
     setError(null);
     try {
-      await loginWithEce();
-      navigate('/bienvenue', { replace: true });
+      const resultat = await loginWithGoogle(credential);
+      toast.success(
+        resultat.created ? 'Compte créé' : 'Connexion réussie',
+        `Bienvenue, ${resultat.user.firstName}.`,
+      );
+      navigate(resultat.firstLogin ? '/bienvenue' : target, { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -156,16 +169,11 @@ export default function LoginPage() {
         <span className="h-px flex-1 bg-line" />
       </div>
 
-      <Button
-        variant="secondary"
-        size="lg"
-        fullWidth
-        icon={GraduationCap}
-        loading={pending === 'ece'}
-        onClick={onEce}
-      >
-        Continuer avec le compte ECE
-      </Button>
+      <BoutonGoogle
+        onCredential={onGoogle}
+        onError={setError}
+        disabled={pending !== null}
+      />
 
       <Callout tone="info" className="mt-5">
         Comptes de démonstration, mot de passe{' '}
@@ -173,7 +181,7 @@ export default function LoginPage() {
         <span className="font-mono text-content">dylan.menga@edu.ece.fr</span> (étudiant) ou{' '}
         <span className="font-mono text-content">marie.laurent@ece.fr</span> (pédagogie).
         L’espace d’administration a sa propre connexion : s’authentifier ici n’y donne pas accès.
-        Le compte ECE n’est pas encore raccordé.
+        Un compte Google inconnu ouvre un compte SmartRoom, sans autre formalité.
       </Callout>
     </Card>
   );

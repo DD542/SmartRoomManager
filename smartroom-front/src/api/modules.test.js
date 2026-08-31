@@ -148,9 +148,46 @@ describe('authentification', () => {
     expect(firstLogin).toBe(false);
   });
 
-  it('annonce que le compte ECE n’est pas raccordé', async () => {
-    // Un échec silencieux laisserait l'utilisateur cliquer sans rien voir.
-    await expect(auth.loginWithEce()).rejects.toMatchObject({ status: 501 });
+  it('dit si la connexion Google est active sur ce serveur', async () => {
+    // Le front n'affiche pas de bouton tant que le serveur n'a pas répondu :
+    // un bouton qui échoue à chaque clic fait croire à une panne là où il n'y
+    // a qu'une option non activée.
+    serveur.use(
+      http.get(`${BASE}/auth/google/config`, () =>
+        HttpResponse.json({ enabled: true, client_id: 'abc.apps.googleusercontent.com' }),
+      ),
+    );
+
+    await expect(auth.getGoogleConfig()).resolves.toEqual({
+      enabled: true,
+      clientId: 'abc.apps.googleusercontent.com',
+    });
+  });
+
+  it('échange le jeton Google contre une session', async () => {
+    serveur.use(
+      http.post(`${BASE}/auth/google`, () =>
+        HttpResponse.json({
+          access_token: 'jeton',
+          expires_in: 900,
+          scope: 'user',
+          created: true,
+          user: {
+            id: 'u-9',
+            email: 'nouvelle@gmail.com',
+            first_name: 'Nouvelle',
+            last_name: 'Personne',
+          },
+        }),
+      ),
+    );
+
+    const resultat = await auth.loginWithGoogle('jeton-google');
+
+    expect(resultat.user.email).toBe('nouvelle@gmail.com');
+    // Un compte créé n'a aucune préférence : il part remplir son accueil.
+    expect(resultat.created).toBe(true);
+    expect(resultat.firstLogin).toBe(true);
   });
 
   it('rend la session courante et ses permissions', async () => {

@@ -32,6 +32,18 @@ class LoginIn(BaseModel):
     password: SecretStr
 
 
+class GoogleLoginIn(BaseModel):
+    """Jeton d'identité rendu par Google au navigateur.
+
+    Le serveur ne le croit pas sur parole : il en vérifie la signature, son
+    émetteur et son destinataire avant d'ouvrir quoi que ce soit.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    credential: Annotated[str, Field(min_length=32, max_length=4096)]
+
+
 class ForgotPasswordIn(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
@@ -63,6 +75,9 @@ class TokenOut(BaseModel):
     scope: str
     user: UserRead
     admin: AdminAccountRead | None = None
+    #: Vrai quand la connexion vient de créer le compte. L'écran d'accueil
+    #: n'accueille pas un nouveau venu comme il retrouve un habitué.
+    created: bool = False
 
 
 class SessionOut(BaseModel):
@@ -155,6 +170,65 @@ def admin_login(
     session.commit()
     _poser_cookie(response, resultat.refresh_token)
     return _sortie(resultat)
+
+
+class GoogleConfigOut(BaseModel):
+    """De quoi le navigateur a besoin pour proposer la connexion Google.
+
+    L'identifiant de client est public par construction : il figure dans la
+    page de tout site qui propose cette connexion. Le servir depuis l'API évite
+    de le configurer deux fois — une divergence entre le front et le serveur ne
+    se verrait qu'au moment du refus, sur un message d'audience incorrecte.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    enabled: bool
+    client_id: str
+
+
+@router.get(
+    "/google/config",
+    response_model=GoogleConfigOut,
+    summary="Configuration publique de la connexion Google",
+    description=(
+        "Dit si la connexion Google est active sur ce serveur, et sous quel "
+        "identifiant de client. Sans secret : cet identifiant est public."
+    ),
+)
+def google_config() -> GoogleConfigOut:
+    identifiant = settings.google_client_id
+    return GoogleConfigOut(enabled=bool(identifiant), client_id=identifiant)
+
+
+@router.post(
+    "/google",
+    response_model=TokenOut,
+    summary="Ouvrir une session avec un compte Google",
+    description=(
+        "Reçoit le jeton d'identité rendu par Google au navigateur, en vérifie "
+        "la signature, l'émetteur et le destinataire, puis ouvre une session. "
+        "Le compte est créé s'il n'existe pas : c'est le propre d'une connexion "
+        "déléguée. Le mot de passe reste inconnu de tous — l'utilisateur en "
+        "choisira un par « mot de passe oublié » s'il veut aussi cette voie."
+    ),
+    responses={
+        401: {"description": "Jeton Google invalide, expiré, ou adresse non vérifiée."},
+        403: {"description": "Compte suspendu."},
+        422: {"description": "Connexion Google non configurée, ou domaine refusé."},
+        429: {"description": "Trop de tentatives."},
+    },
+)
+@limiter.limit(settings.rate_limit_login)
+def login_google(
+    request: Request, response: Response, payload: GoogleLoginIn, session: SessionDep
+) -> TokenOut:
+    resultat, creation = auth_service.login_google(session, jeton=payload.credential)
+    session.commit()
+    _poser_cookie(response, resultat.refresh_token)
+    sortie = _sortie(resultat)
+    sortie.created = creation
+    return sortie
 
 
 @router.post(

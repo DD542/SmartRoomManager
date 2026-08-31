@@ -77,10 +77,21 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const loginWithEce = useCallback(async () => {
+  /**
+   * Ouvre une session à partir du jeton rendu par Google.
+   *
+   * Le compte est créé côté serveur s'il n'existe pas : le front n'a pas à
+   * distinguer une inscription d'une connexion, et lui faire porter cette
+   * décision reviendrait à demander deux fois qui l'on est.
+   */
+  const loginWithGoogle = useCallback(async (credential) => {
     setStatus('connexion');
     try {
-      return await authApi.loginWithEce();
+      const resultat = await authApi.loginWithGoogle(credential);
+      setUser(resultat.user);
+      setNeedsOnboarding(resultat.firstLogin);
+      setStatus('connecte');
+      return resultat;
     } catch (error) {
       setStatus('deconnecte');
       throw error;
@@ -117,7 +128,7 @@ export function AuthProvider({ children }) {
       isAuthenticated: Boolean(user),
       needsOnboarding,
       login,
-      loginWithEce,
+      loginWithGoogle,
       logout,
       updateProfile,
       savePreferences,
@@ -130,7 +141,7 @@ export function AuthProvider({ children }) {
       permissions,
       needsOnboarding,
       login,
-      loginWithEce,
+      loginWithGoogle,
       logout,
       updateProfile,
       savePreferences,
