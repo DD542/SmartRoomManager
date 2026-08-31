@@ -52,15 +52,54 @@ const monter = () => {
 };
 
 describe('Démonstration filmée', () => {
-  it('démarre seule, sans son, et en boucle', async () => {
+  it('démarre seule et sans son', async () => {
     const { video } = monter();
 
     expect(lecture).toHaveBeenCalled();
     expect(video.hasAttribute('muted') || video.muted).toBe(true);
-    expect(video.hasAttribute('loop')).toBe(true);
     // Sans `playsinline`, Safari sur iPhone ouvre le lecteur plein écran au
     // lieu de jouer dans la page.
     expect(video.hasAttribute('playsinline')).toBe(true);
+    // `loop` reboucle sur le fichier courant : sept séquences dans l'ordre
+    // demandent un compteur, pas un drapeau.
+    expect(video.hasAttribute('loop')).toBe(false);
+  });
+
+  it('ouvre sur la première séquence', () => {
+    const { video } = monter();
+
+    expect(video.querySelector('source').getAttribute('src')).toBe('/demo1.mp4');
+    expect(screen.getByText('Séquence 1 sur 7')).toBeTruthy();
+  });
+
+  it('enchaîne sur la suivante quand une séquence se termine', () => {
+    const { video, container } = monter();
+
+    fireEvent.ended(video);
+
+    expect(container.querySelector('source').getAttribute('src')).toBe('/demo2.mp4');
+    expect(screen.getByText('Séquence 2 sur 7')).toBeTruthy();
+  });
+
+  it('revient à la première après la dernière', () => {
+    const { container } = monter();
+
+    for (let passage = 0; passage < 7; passage += 1) {
+      fireEvent.ended(container.querySelector('video'));
+    }
+
+    expect(container.querySelector('source').getAttribute('src')).toBe('/demo1.mp4');
+    expect(screen.getByText('Séquence 1 sur 7')).toBeTruthy();
+  });
+
+  it('laisse sauter directement à une séquence', () => {
+    // Une séquence qui change toute seule se lit comme un saut de lecture :
+    // le repère dit où l'on en est, et permet d'y revenir.
+    const { container } = monter();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Séquence 5' }));
+
+    expect(container.querySelector('source').getAttribute('src')).toBe('/demo5.mp4');
   });
 
   it('retire l’affiche une fois la lecture obtenue', async () => {
@@ -125,8 +164,10 @@ describe('Démonstration filmée', () => {
   it('porte un nom pour qui ne voit pas l’image', () => {
     const { video } = monter();
 
+    // Le nom porte la position dans la suite : sans elle, un lecteur d'écran
+    // annonce sept fois la même vidéo.
     expect(video.getAttribute('aria-label')).toBe(
-      'Démonstration de SmartRoom Manager, sans son',
+      'Démonstration de SmartRoom Manager, séquence 1 sur 7, sans son',
     );
   });
 });
