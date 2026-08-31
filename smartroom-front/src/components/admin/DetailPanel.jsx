@@ -2,12 +2,21 @@ import { X } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { Card, CardHeader } from '../ui/Card';
 import { IconButton } from '../ui/Button';
+import { Modal } from '../ui/Modal';
 import { EmptyState } from '../ui/States';
+import { useIsMobileOuTablette } from './PileInspecteur';
 
 /**
  * Rail droit des écrans de liste : détail de la ligne sélectionnée.
- * Sur mobile, la page le rend en pleine largeur sous la liste plutôt qu'en
- * colonne, faute de place pour deux volets côte à côte.
+ *
+ * Sous 1024 px il n'y a plus de rail. Le détail tombait alors **sous** la
+ * liste : choisir une réservation ne changeait rien à l'écran, il fallait
+ * deviner qu'un panneau était apparu quinze lignes plus bas. Et quand rien
+ * n'était choisi, c'est un encart « Aucune sélection » qui occupait la place.
+ *
+ * En dessous du seuil, le détail s'ouvre donc en boîte de dialogue par-dessus
+ * la liste — celle-ci garde sa position —, et l'encart vide disparaît : il ne
+ * dit rien qu'une liste sans surbrillance ne dise déjà.
  */
 export function DetailPanel({
   title,
@@ -20,6 +29,33 @@ export function DetailPanel({
   className,
   children,
 }) {
+  const enDialogue = useIsMobileOuTablette();
+
+  if (enDialogue) {
+    if (!children) return null;
+    return (
+      <Modal
+        open
+        onClose={onClose}
+        title={title}
+        description={subtitle}
+        icon={icon}
+        size="lg"
+        footer={
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-line bg-surface-raised px-4 text-sm text-content transition hover:border-line-strong"
+          >
+            Fermer le détail
+          </button>
+        }
+      >
+        <div className="flex flex-col gap-3">{children}</div>
+      </Modal>
+    );
+  }
+
   if (!children) {
     return (
       <Card className={cn('lg:sticky lg:top-4', className)}>

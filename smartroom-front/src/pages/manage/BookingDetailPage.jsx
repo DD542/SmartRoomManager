@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { CheckCircle2, History, MapPin, Pencil, Route, XCircle } from 'lucide-react';
+import { CheckCircle2, History, MapPin, Pencil, Route, Share2, XCircle } from 'lucide-react';
 import { getBooking, reissueAccessCode } from '../../api/bookings';
 import { getPlanDocumentForPlan } from '../../api/buildings';
 import { useAsync } from '../../hooks/useAsync';
@@ -18,6 +18,7 @@ import { BookingStatusBadge } from '../../components/bookings/BookingTable';
 import { ParticipantList } from '../../components/bookings/ParticipantList';
 import { PlanPreview } from '../../components/rooms/PlanPreview';
 import { BookingUnavailable } from '../../components/bookings/BookingUnavailable';
+import { ShareModal } from '../../components/bookings/ShareModal';
 import CancelBookingModal from './CancelBookingModal';
 
 const HISTORY_TONE = {
@@ -54,6 +55,7 @@ export default function BookingDetailPage() {
 
   // Le code en clair, quand l'utilisateur vient d'en demander un neuf. Il ne
   // vient jamais du chargement : le serveur ne le détient plus une fois émis.
+  const [partageOuvert, setPartageOuvert] = useState(false);
   const [codeEnClair, setCodeEnClair] = useState(null);
   const [emission, setEmission] = useState(false);
 
@@ -187,6 +189,13 @@ export default function BookingDetailPage() {
                   </div>
                 </Card>
 
+                {/* Hors du bloc « active » : une réunion passée se raconte
+                    encore, et on partage aussi bien une salle qu'on vient de
+                    quitter qu'une salle où l'on attend quelqu'un. */}
+                <Button variant="secondary" icon={Share2} onClick={() => setPartageOuvert(true)}>
+                  Partager
+                </Button>
+
                 {active && (
                   <>
                     <Button icon={Pencil} to={`/app/reservations/${data.id}/modifier`}>
@@ -217,6 +226,12 @@ export default function BookingDetailPage() {
                 )}
               </div>
             </div>
+
+            <ShareModal
+              booking={data}
+              open={partageOuvert}
+              onClose={() => setPartageOuvert(false)}
+            />
 
             <CancelBookingModal
               booking={data}

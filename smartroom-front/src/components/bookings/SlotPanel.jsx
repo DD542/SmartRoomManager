@@ -1,4 +1,11 @@
-import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, ShieldAlert } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowRight,
+  CalendarClock,
+  CheckCircle2,
+  Info,
+  ShieldAlert,
+} from 'lucide-react';
 import { fmtDateLong, fmtTime } from '../../utils/dates';
 import { openingLabel } from '../../utils/openingRules';
 import { Badge } from '../ui/Badge';
@@ -107,6 +114,15 @@ export function SlotPanel({
         {!checking && canBook && (
           <Callout tone="success" icon={CheckCircle2}>
             Créneau disponible, aucun conflit détecté.
+          </Callout>
+        )}
+
+        {/* Au-dessus des règles, et non parmi elles : celles-ci se déduisent
+            des seuils, la consigne est écrite par quelqu'un. La noyer dans
+            une liste de phrases générées la ferait lire comme l'une d'elles. */}
+        {rules?.notice && (
+          <Callout tone="warning" icon={Info} title="Consigne de la salle">
+            {rules.notice}
           </Callout>
         )}
 

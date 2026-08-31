@@ -88,13 +88,23 @@ export function FloorPlanModal({ floor, open, onClose, onChanged }) {
     }
   };
 
+  // Une modale ne protège pas son propre contenu : les enfants sont construits
+  // **ici**, par l'appelant, et passés déjà évalués. `Modal` rend `null` quand
+  // elle est fermée, mais bien trop tard — l'arbre a été bâti avant.
+  //
+  // Le corps ci-dessous ne s'affichait que si `layout.data` existait, et ces
+  // données survivent à la fermeture : refermer le plan lisait donc `floor.id`
+  // sur `null`, et l'écran des bâtiments entier tombait sur l'écran d'erreur du
+  // routeur. La sortie porte sur l'étage, seul sujet de cette modale.
+  if (!open || !floor) return null;
+
   return (
     <Modal
       open={open}
       onClose={onClose}
       size="xl"
       icon={Map}
-      title={floor ? `Plan — ${floor.label}` : 'Plan de l’étage'}
+      title={`Plan — ${floor.label}`}
       description="Glissez une salle pour la déplacer, ou sélectionnez-la et utilisez les flèches. Le placement s’aligne sur une grille de 2 %."
       footer={
         <Button variant="ghost" onClick={onClose}>

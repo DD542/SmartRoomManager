@@ -52,6 +52,7 @@ CHAMPS_REGLE = (
     "weekly_quota_hours",
     "max_active_bookings",
     "validation_capacity_threshold",
+    "notice",
 )
 
 

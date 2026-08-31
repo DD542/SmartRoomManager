@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
-import { CalendarPlus, CheckCircle2, Map } from 'lucide-react';
+import { CalendarPlus, CheckCircle2, Map, Share2 } from 'lucide-react';
 import { getBooking } from '../../api/bookings';
 import { getPlanDocumentForPlan } from '../../api/buildings';
 import { useAsync } from '../../hooks/useAsync';
@@ -8,6 +8,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { fmtDateLong, fmtTime } from '../../utils/dates';
 import { downloadIcs } from '../../utils/ics';
+import { ShareModal } from '../../components/bookings/ShareModal';
 import { AccessCode } from '../../components/ui/AccessCode';
 import { PlanPreview } from '../../components/rooms/PlanPreview';
 import { BookingUnavailable } from '../../components/bookings/BookingUnavailable';
@@ -21,6 +22,7 @@ import { AsyncBoundary, Skeleton } from '../../components/ui/States';
  * identifiant, ce qui le rend partageable et rechargeable.
  */
 export default function ConfirmedPage() {
+  const [partageOuvert, setPartageOuvert] = useState(false);
   const { id } = useParams();
   const { state: etat } = useLocation();
   const { user } = useAuth();
@@ -149,6 +151,16 @@ export default function ConfirmedPage() {
               >
                 Voir le plan interactif
               </Button>
+              {/* Ici plus qu'ailleurs : c'est l'instant où l'on prévient les
+                  gens qu'on vient de convoquer. */}
+              <Button
+                variant="secondary"
+                fullWidth
+                icon={Share2}
+                onClick={() => setPartageOuvert(true)}
+              >
+                Partager la réservation
+              </Button>
               <Button variant="ghost" size="sm" to="/app">
                 Retour à l’accueil
               </Button>
@@ -156,6 +168,12 @@ export default function ConfirmedPage() {
           </Card>
         )}
       </AsyncBoundary>
+
+      <ShareModal
+        booking={booking.data}
+        open={partageOuvert}
+        onClose={() => setPartageOuvert(false)}
+      />
     </div>
   );
 }

@@ -6,7 +6,7 @@ import uuid
 from datetime import date, datetime, time
 from typing import Annotated
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 
 from app.api.v1.schemas.common import ApiModel, ReadModel, SlotIn, SlotOut
 from app.db.enums import AccessType, ClosureKind, RequestStatus, RuleScope
@@ -25,6 +25,20 @@ class BookingRuleIn(ApiModel):
     weekly_quota_hours: Annotated[int, Field(ge=1, le=168)] = 12
     max_active_bookings: Annotated[int, Field(ge=1, le=100)] = 10
     validation_capacity_threshold: Annotated[int | None, Field(ge=1, le=500)] = 20
+    #: Consigne libre, affichée telle quelle dans le tunnel de réservation.
+    #: 500 caractères : c'est un encadré, pas un règlement intérieur.
+    notice: Annotated[str | None, Field(max_length=500)] = None
+
+    @field_validator("notice", mode="after")
+    @classmethod
+    def _consigne_vide_vaut_aucune(cls, valeur: str | None) -> str | None:
+        """Une consigne effacée vaut « aucune consigne », pas une chaîne vide.
+
+        La base refuse le blanc — c'est ce qui empêche un encadré vierge dans
+        le tunnel. Laisser remonter la chaîne vide jusqu'à elle transformerait
+        un champ vidé en erreur 500 au lieu d'une suppression.
+        """
+        return valeur or None
 
     @model_validator(mode="after")
     def _durees_coherentes(self) -> BookingRuleIn:
@@ -48,6 +62,7 @@ class BookingRuleOut(ReadModel):
     weekly_quota_hours: int
     max_active_bookings: int
     validation_capacity_threshold: int | None
+    notice: str | None = None
 
 
 class RulePreviewOut(ReadModel):

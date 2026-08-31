@@ -415,6 +415,10 @@ export const rules = (data) =>
         weeklyQuotaHours: data.weekly_quota_hours,
         maxActiveBookings: data.max_active_bookings,
         validationThreshold: data.validation_capacity_threshold,
+        //: Consigne libre de l'administration. Elle ne se déduit d'aucun
+        //: seuil : c'est la seule chose du sujet que l'écran ne peut pas
+        //: reformuler lui-même.
+        notice: data.notice ?? null,
       }
     : null;
 
@@ -493,6 +497,9 @@ export const rulesIn = (form) => ({
   weekly_quota_hours: form.weeklyQuotaHours,
   max_active_bookings: form.maxActiveBookings,
   validation_capacity_threshold: form.validationThreshold,
+  // `null` et non `''` : la base refuse une consigne blanche, et une chaîne
+  // vide produirait un encadré vierge dans le tunnel.
+  notice: form.notice?.trim() ? form.notice.trim() : null,
 });
 
 export const openingWindow = (data) => ({

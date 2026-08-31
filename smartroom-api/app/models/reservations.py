@@ -444,6 +444,9 @@ class BookingRule(TimestampMixin, Base):
         CheckConstraint(
             "weekly_quota_hours * 60 >= max_duration_min", name="quota_coherence"
         ),
+        # Une consigne vide n'est pas une consigne : sans cela, un champ effacé
+        # mais enregistré produirait un encadré blanc dans le tunnel.
+        CheckConstraint("notice IS NULL OR btrim(notice) <> ''", name="notice_non_vide"),
         Index("uq_booking_rules_global", "scope", unique=True, postgresql_where=text("scope = 'global'")),
         Index(
             "uq_booking_rules_building",
@@ -481,6 +484,10 @@ class BookingRule(TimestampMixin, Base):
     max_active_bookings: Mapped[int] = mapped_column(SmallInteger, server_default=text("10"), default=10)
     #: Au-delà, la réservation passe en validation administrative.
     validation_capacity_threshold: Mapped[int | None] = mapped_column(SmallInteger, default=None)
+    #: Consigne libre affichée à l'utilisateur au moment de réserver. Les dix
+    #: réglages ci-dessus disent combien de temps et combien de fois ; aucun ne
+    #: dit « laissez la salle rangée » ou « la clé se retire à l'accueil ».
+    notice: Mapped[str | None] = mapped_column(String(500), default=None)
 
     building: Mapped["Building | None"] = relationship(back_populates="booking_rules")
     room: Mapped["Room | None"] = relationship(back_populates="booking_rule")

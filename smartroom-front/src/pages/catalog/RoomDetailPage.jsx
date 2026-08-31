@@ -169,6 +169,11 @@ export default function RoomDetailPage() {
                     </p>
                   </div>
                 </div>
+                {data.rules.notice && (
+                  <p className="mx-4 mb-3 rounded-xl border border-warning/40 bg-warning-soft px-3 py-2 text-xs leading-relaxed text-content">
+                    {data.rules.notice}
+                  </p>
+                )}
                 <ul className="flex flex-col gap-1.5 px-4 pb-4">
                   {data.rules.constraints.map((constraint) => (
                     <li key={constraint} className="text-xs text-content-muted">

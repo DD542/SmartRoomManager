@@ -224,6 +224,11 @@ export async function saveRoomAvailability(id, regles) {
       min_duration_min: Number(regles.minDurationMin ?? 30),
       max_duration_min: Number(regles.maxDurationMin ?? 240),
       buffer_min: Number(regles.bufferMin ?? 15),
+      // La consigne de l'onglet Accès. Sans cette ligne, elle était saisie,
+      // affichée, puis perdue à l'enregistrement — et l'écran la remplaçait
+      // par les phrases recalculées à partir des seuils, ce qui donnait
+      // l'illusion qu'elle avait été gardée.
+      notice: regles.notice?.trim() ? regles.notice.trim() : null,
     },
     { params: { room_id: id } },
   );

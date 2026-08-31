@@ -356,6 +356,55 @@ class TestRegles:
         assert corps["min_duration_min"] == 60
         assert corps["scope"] == "salle"
 
+    def test_la_consigne_ecrite_survit_a_l_enregistrement(
+        self, client, session, administrateur, salle
+    ):
+        """Les dix réglages sont des nombres ; aucun ne dit « rangez la salle ».
+
+        L'onglet Accès proposait déjà d'écrire des consignes, mais dans
+        `constraints` — la traduction en phrases des seuils, recalculée à
+        chaque lecture et jamais envoyée. Elles disparaissaient à
+        l'enregistrement en donnant l'illusion d'avoir été gardées.
+        """
+        accorder(session, administrateur, RULES_CONFIGURE)
+        entetes = connecter(client, administrateur.user.email, admin=True)
+
+        client.put(
+            "/api/v1/booking-rules/salle",
+            headers=entetes,
+            params={"room_id": str(salle.id)},
+            json={"notice": "Laissez la salle rangée."},
+        )
+
+        corps = client.get(
+            f"/api/v1/rooms/{salle.id}/booking-rules", headers=entetes
+        ).json()
+        assert corps["notice"] == "Laissez la salle rangée."
+
+    def test_une_consigne_effacee_vaut_aucune_consigne(
+        self, client, session, administrateur, salle
+    ):
+        """La base refuse le blanc : sans conversion, vider le champ ferait 500."""
+        accorder(session, administrateur, RULES_CONFIGURE)
+        entetes = connecter(client, administrateur.user.email, admin=True)
+        cible = {"room_id": str(salle.id)}
+
+        client.put(
+            "/api/v1/booking-rules/salle",
+            headers=entetes,
+            params=cible,
+            json={"notice": "Provisoire"},
+        )
+        reponse = client.put(
+            "/api/v1/booking-rules/salle",
+            headers=entetes,
+            params=cible,
+            json={"notice": "   "},
+        )
+
+        assert reponse.status_code == 200, reponse.text
+        assert reponse.json()["notice"] is None
+
     def test_portee_et_cible_doivent_concorder(self, client, session, administrateur):
         accorder(session, administrateur, RULES_CONFIGURE)
         entetes = connecter(client, administrateur.user.email, admin=True)

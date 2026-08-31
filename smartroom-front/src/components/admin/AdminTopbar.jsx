@@ -39,10 +39,20 @@ export function AdminTopbar({ onOpenMenu }) {
     <header className="relative z-topbar flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 md:px-4">
       {/* Ouvre la navigation en feuille : sous 768 px la barre latérale est
           masquée, et sans ce bouton aucun écran d'administration n'est
-          atteignable. */}
-      <span className="md:hidden">
-        <IconButton icon={Menu} label="Ouvrir la navigation" onClick={onOpenMenu} />
-      </span>
+          atteignable.
+
+          Le mot « Menu » est écrit et non seulement lu par les lecteurs
+          d'écran : trois traits ne disent pas qu'ils cachent dix-huit écrans,
+          et la navigation a été rapportée comme absente alors qu'elle était
+          là, derrière cette icône. */}
+      <button
+        type="button"
+        onClick={onOpenMenu}
+        className="inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-xl border border-line bg-surface-raised px-2.5 text-xs text-content transition hover:border-line-strong md:hidden"
+      >
+        <Menu size={16} aria-hidden="true" />
+        Menu
+      </button>
 
       <form
         role="search"

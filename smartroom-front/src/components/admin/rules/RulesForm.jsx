@@ -1,4 +1,4 @@
-import { Input } from '../../ui/Form';
+import { Input, Textarea } from '../../ui/Form';
 import { Card, CardHeader } from '../../ui/Card';
 
 /**
@@ -174,6 +174,27 @@ export function RulesForm({ draft, onChange, scopeLabel }) {
             </div>
           </fieldset>
         ))}
+
+        {/* Hors des groupes ci-dessus, et volontairement : les dix réglages
+            sont des nombres que l'écran de réservation sait reformuler tout
+            seul — « Réservable jusqu'à 60 jours à l'avance ». Une consigne ne
+            se déduit d'aucun seuil. C'est la seule chose du sujet que
+            l'administration doit pouvoir écrire, et elle n'avait jusqu'ici que
+            le nom de la salle pour la faire passer. */}
+        <fieldset>
+          <legend className="pb-2 text-[11px] uppercase tracking-wide text-content-faint">
+            Consigne aux utilisateurs
+          </legend>
+          <Textarea
+            label="Message affiché au moment de réserver"
+            hint={`Facultatif, 500 caractères au plus. Affiché tel quel dans le tunnel — portée : ${scopeLabel}.`}
+            rows={3}
+            maxLength={500}
+            placeholder="Laissez la salle rangée. La clé se retire à l’accueil."
+            value={draft.notice ?? ''}
+            onChange={(event) => onChange({ notice: event.target.value })}
+          />
+        </fieldset>
       </div>
     </Card>
   );
