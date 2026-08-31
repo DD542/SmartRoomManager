@@ -362,6 +362,10 @@ class TestTransport:
         # Le carnet de la fixture remplace `send` : ici, c'est le vrai transport
         # qu'on observe.
         monkeypatch.undo()
+        # L'état est posé, non hérité : un développeur qui active l'envoi dans
+        # son `.env` local ne doit pas faire tomber ce test, qui parle de ce
+        # qu'on écrit dans le journal quand l'envoi est coupé.
+        monkeypatch.setattr(mail_service._config(), "mail_enabled", False)
 
         lignes: list[str] = []
 
@@ -385,6 +389,62 @@ class TestTransport:
         trace = "\n".join(lignes)
         assert "d.menga@ece.fr" in trace
         assert "E-7412" not in trace
+
+    @pytest.mark.asyncio
+    async def test_le_port_465_chiffre_des_le_premier_octet(self, monkeypatch):
+        """465 est le port réservé au SMTPS.
+
+        Y annoncer STARTTLS fait échouer la poignée de main : la connexion est
+        déjà chiffrée. Toute configuration sur ce port échouait donc sans autre
+        explication qu'une erreur de handshake dans le journal.
+        """
+        monkeypatch.undo()
+        recus = {}
+
+        async def _capter(message, **options):
+            recus.update(options)
+
+        monkeypatch.setattr(mail_service.aiosmtplib, "send", _capter)
+        monkeypatch.setattr(mail_service._config(), "mail_enabled", True)
+        monkeypatch.setattr(mail_service._config(), "smtp_use_tls", True)
+        monkeypatch.setattr(mail_service._config(), "smtp_port", 465)
+
+        await mail_service.send(mail_service.Message(to="a@ece.fr", subject="s", body="b"))
+
+        assert recus["use_tls"] is True
+        assert recus["start_tls"] is False
+
+    @pytest.mark.asyncio
+    async def test_le_port_587_negocie_starttls(self, monkeypatch):
+        """Celui que recommandent Gmail, Outlook et les services d'envoi."""
+        monkeypatch.undo()
+        recus = {}
+
+        async def _capter(message, **options):
+            recus.update(options)
+
+        monkeypatch.setattr(mail_service.aiosmtplib, "send", _capter)
+        monkeypatch.setattr(mail_service._config(), "mail_enabled", True)
+        monkeypatch.setattr(mail_service._config(), "smtp_use_tls", True)
+        monkeypatch.setattr(mail_service._config(), "smtp_port", 587)
+
+        await mail_service.send(mail_service.Message(to="a@ece.fr", subject="s", body="b"))
+
+        assert recus["start_tls"] is True
+        assert recus["use_tls"] is False
+
+    @pytest.mark.asyncio
+    async def test_un_relais_absent_ne_fait_pas_echouer_l_action(self, monkeypatch):
+        """La réservation est déjà écrite : le relais ne peut plus la défaire."""
+        monkeypatch.undo()
+
+        async def _refuser(message, **options):
+            raise OSError("relais injoignable")
+
+        monkeypatch.setattr(mail_service.aiosmtplib, "send", _refuser)
+        monkeypatch.setattr(mail_service._config(), "mail_enabled", True)
+
+        await mail_service.send(mail_service.Message(to="a@ece.fr", subject="s", body="b"))
 
     def test_la_file_se_vide_en_une_fois(self):
         """`flush` lisait puis vidait : un dépôt entre les deux se perdait."""

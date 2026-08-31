@@ -56,7 +56,12 @@ def _appliquer_environnement(dsn: str) -> None:
     os.environ["POSTGRES_DB"] = url.database or "smartroom"
     os.environ.setdefault("JWT_SECRET", "secret-de-test-suffisamment-long-pour-passer")
     os.environ.setdefault("ENVIRONMENT", "local")
-    os.environ.setdefault("MAIL_ENABLED", "false")
+    # Imposé, et non pris par défaut. `setdefault` laissait le `.env` du poste
+    # décider : un développeur qui active l'envoi pour voir ses courriels dans
+    # Mailpit voyait ensuite la suite de tests y déposer les siens — et
+    # dépendre d'un relais allumé pour passer. Une suite ne parle à aucun
+    # transport, sur aucune machine.
+    os.environ["MAIL_ENABLED"] = "false"
 
     # Magasin de médias isolé, comme la base l'est déjà.
     #

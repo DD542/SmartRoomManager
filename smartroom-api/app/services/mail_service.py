@@ -30,14 +30,30 @@ from app.db.enums import NotificationChannel
 from app.models import EmailTemplate, EmailTemplateVariable, Notification, User
 
 logger = logging.getLogger(__name__)
-settings = get_settings()
+
+
+def _config():
+    """Configuration lue à l'appel, jamais figée à l'import.
+
+    `settings = get_settings()` au niveau du module gelait la configuration au
+    premier import : invalider le cache — ce que font les tests pour se
+    brancher sur leur base — ne changeait plus rien ici. La suite de tests a
+    ainsi déposé de vrais courriels dans la boîte de développement d'un poste
+    où l'envoi était activé, et se mettait à dépendre d'un relais allumé.
+
+    `get_settings` est mémoïsé : la relire à chaque appel ne coûte rien.
+    """
+    return get_settings()
 
 #: `SandboxedEnvironment` bloque l'accès aux attributs internes. `autoescape`
 #: reste désactivé : ces gabarits produisent du texte, pas du HTML, et
 #: échapper transformerait « L'Atelier » en « L&#39;Atelier ».
 JINJA = SandboxedEnvironment(autoescape=False, trim_blocks=True, lstrip_blocks=True)
 
-FUSEAU = ZoneInfo(settings.timezone)
+FUSEAU = ZoneInfo(get_settings().timezone)
+
+#: Port réservé au SMTP sur TLS implicite (SMTPS).
+PORT_SMTPS = 465
 
 _JOURS = ("lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche")
 _MOIS = (
@@ -108,7 +124,7 @@ def preview(session: Session, code: str, variables: dict[str, Any] | None = None
     valeurs.update(variables or {})
 
     return Message(
-        to=valeurs.get("destinataire", settings.mail_from),
+        to=valeurs.get("destinataire", _config().mail_from),
         subject=render(gabarit.subject, valeurs),
         body=render(gabarit.body, valeurs),
     )
@@ -120,7 +136,7 @@ async def send(message: Message) -> None:
     Sans transport actif, le message est tracé : en développement, lire le
     journal vaut mieux qu'un envoi silencieusement perdu.
     """
-    if not settings.mail_enabled:
+    if not _config().mail_enabled:
         # Le destinataire et l'objet, jamais le corps : un courriel de
         # confirmation porte le code d'accès de la porte, et le journal n'est
         # pas un endroit où le déposer.
@@ -134,25 +150,41 @@ async def send(message: Message) -> None:
     from email.message import EmailMessage
 
     courriel = EmailMessage()
-    courriel["From"] = settings.mail_from
+    courriel["From"] = _config().mail_from
     courriel["To"] = message.to
     courriel["Subject"] = message.subject
     courriel.set_content(message.body)
 
+    # Deux façons de chiffrer, et le port les départage. 465 est le port
+    # réservé au SMTPS : la connexion est chiffrée dès le premier octet, et
+    # y annoncer STARTTLS fait échouer la poignée de main. Partout ailleurs —
+    # 587 en tête, celui que recommandent Gmail, Outlook et les services
+    # d'envoi — c'est STARTTLS sur une connexion d'abord en clair.
+    #
+    # Sans cette distinction, toute configuration sur 465 échouait sans autre
+    # explication qu'une erreur de poignée de main dans le journal.
+    implicite = _config().smtp_use_tls and _config().smtp_port == PORT_SMTPS
+
     try:
         await aiosmtplib.send(
             courriel,
-            hostname=settings.smtp_host,
-            port=settings.smtp_port,
-            username=settings.smtp_user,
+            hostname=_config().smtp_host,
+            port=_config().smtp_port,
+            username=_config().smtp_user,
             password=(
-                settings.smtp_password.get_secret_value() if settings.smtp_password else None
+                _config().smtp_password.get_secret_value() if _config().smtp_password else None
             ),
-            start_tls=settings.smtp_use_tls,
+            use_tls=implicite,
+            start_tls=_config().smtp_use_tls and not implicite,
         )
     except (aiosmtplib.SMTPException, OSError):
         # Un serveur de courriel indisponible ne doit pas faire échouer une
         # réservation déjà écrite : l'incident est tracé, l'action tient.
+        #
+        # C'est aussi le seul endroit où un refus du relais se lit — adresse
+        # d'expéditeur non autorisée, mot de passe d'application expiré. Le
+        # message porte le destinataire ; l'exception porte le refus du serveur,
+        # mot pour mot.
         logger.exception("Envoi SMTP impossible → %s", message.to)
 
 
@@ -282,7 +314,7 @@ def queue_password_reset(session: Session, compte: User, jeton: str) -> Message:
         body=(
             f"Bonjour {compte.first_name},\n\n"
             "Vous avez demandé à réinitialiser votre mot de passe. "
-            f"Ce lien est valable {settings.reset_ttl_minutes} minutes et ne "
+            f"Ce lien est valable {_config().reset_ttl_minutes} minutes et ne "
             f"fonctionne qu'une fois :\n\n{lien}\n\n"
             "Si vous n'êtes pas à l'origine de cette demande, ignorez ce message : "
             "votre mot de passe reste inchangé."
@@ -354,4 +386,4 @@ def _deposer(message: Message) -> Message:
 
 def _origine() -> str:
     """Première origine autorisée : celle du front."""
-    return settings.cors_origins[0] if settings.cors_origins else "http://localhost:5173"
+    return _config().cors_origins[0] if _config().cors_origins else "http://localhost:5173"
