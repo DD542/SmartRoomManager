@@ -48,14 +48,21 @@ export function BarreRecherche({
   if (compact) {
     return (
       <>
+        {/* Le mot « Rechercher » disparaît sous 640 px. Mesure à l'appui :
+            avec lui, « Menu » et quatre icônes, la barre réclamait 395 px pour
+            un écran de 375 — et c'est la page entière qui s'élargissait, donc
+            tout l'espace d'administration qui sortait par la droite. Le
+            libellé reste lu par les lecteurs d'écran. */}
         <button
           type="button"
           onClick={() => setOuverte(true)}
-          className="inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-xl border border-line bg-surface-raised px-3 text-sm text-content-faint transition hover:border-line-strong"
+          className="inline-flex min-h-[40px] w-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-line bg-surface-raised text-sm text-content-faint transition hover:border-line-strong sm:w-auto sm:justify-start sm:px-3"
         >
           <Search size={16} aria-hidden="true" />
           <span className="sr-only">{label}</span>
-          <span aria-hidden="true">Rechercher</span>
+          <span aria-hidden="true" className="hidden sm:inline">
+            Rechercher
+          </span>
         </button>
 
         <Modal

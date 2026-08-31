@@ -91,12 +91,18 @@ export function AdminTopbar({ onOpenMenu }) {
             )}
           </span>
         )}
+        {/* Masqué sous 640 px : le journal a son entrée dans la feuille de
+            navigation — « Assistance › Journal d'audit » —, et six commandes
+            alignées ne tiennent pas dans une barre de téléphone. La file
+            d'arbitrage reste, elle : c'est la seule qui porte un compteur. */}
         {peut('system.configure') && (
-          <IconButton
-            icon={FileClock}
-            label="Journal d’audit"
-            onClick={() => navigate('/admin/audit')}
-          />
+          <span className="hidden sm:inline-flex">
+            <IconButton
+              icon={FileClock}
+              label="Journal d’audit"
+              onClick={() => navigate('/admin/audit')}
+            />
+          </span>
         )}
         <IconButton icon={Bell} label="Notifications" onClick={() => navigate('/admin')} />
         <span className="ml-1">

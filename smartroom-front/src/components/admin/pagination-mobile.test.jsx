@@ -152,6 +152,21 @@ describe('Recherche de la barre haute', () => {
     expect(container.ownerDocument.querySelectorAll('#recherche-test-compact')).toHaveLength(1);
   });
 
+  it('ne montre que l’icône sur un écran étroit', () => {
+    // Mesuré : avec « Rechercher » écrit, « Menu » et quatre icônes, la barre
+    // réclamait 395 px pour un écran de 375 — et c'est la page entière qui
+    // s'élargissait. Le libellé reste lu, il cesse seulement d'être affiché.
+    largeur(390);
+    monter();
+
+    const bouton = screen.getByRole('button', { name: /Rechercher/ });
+    const visible = [...bouton.querySelectorAll('span')].find(
+      (item) => item.textContent === 'Rechercher',
+    );
+    expect(visible.className).toContain('hidden');
+    expect(bouton.querySelector('.sr-only').textContent).toBe('Rechercher une salle');
+  });
+
   it('reste un champ posé dans la barre au bureau', () => {
     largeur(1440);
     monter();
