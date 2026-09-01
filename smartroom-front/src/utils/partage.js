@@ -118,23 +118,33 @@ const gabaritDeNom = (booking) =>
     .replace(/^-|-$/g, '');
 
 /**
- * Adresses de partage des applications qui acceptent un texte seul.
+ * Adresses de partage des applications.
  *
- * Ni Facebook ni LinkedIn n'y figurent, et pour la même raison : leurs
- * dialogues de partage ne transportent qu'une **URL** — `sharer.php?u=` d'un
- * côté, `shareArticle?url=` de l'autre. Une réservation privée n'a pas de page
- * publique à référencer : `/app/reservations/:id` exige une session et le
- * serveur rend 404 à quiconque n'est pas l'organisateur. Pointer la page
- * d'accueil de l'application à la place partagerait l'application, pas la
- * réunion. Le bouton ouvrirait une boîte vide, ce qui est pire que son absence.
+ * Quatre d'entre elles acceptent un texte seul, et reçoivent donc le résumé
+ * dans leur adresse. Facebook non : son dialogue ne transporte qu'une **URL**
+ * — `sharer.php?u=` — et `quote`, qui portait autrefois le texte, est
+ * officiellement abandonné ; il est souvent ignoré. Il est passé quand même,
+ * au cas où, et le résumé est copié au clic pour que l'utilisateur le colle
+ * dans sa publication : `copieLeResume` le signale à l'écran, qui doit dire ce
+ * qu'il fait.
+ *
+ * L'URL référencée est la **page publique** de l'application, jamais la
+ * réservation : `/app/reservations/:id` exige une session et le serveur rend
+ * 404 à quiconque n'est pas l'organisateur. Un lien que le destinataire ne
+ * peut pas ouvrir donne l'impression d'avoir partagé quelque chose — et sur
+ * Facebook, il serait de surcroît public.
+ *
+ * LinkedIn reste absent : même contrainte d'URL, sans le public qui
+ * justifierait un cinquième bouton.
  *
  * La couleur est celle de la marque : elle sert à reconnaître le bouton avant
  * de lire son intitulé.
  */
-export function liensDePartage(booking) {
+export function liensDePartage(booking, origine = originePublique()) {
   const texte = resumePartage(booking);
   const encode = encodeURIComponent(texte);
   const sujet = encodeURIComponent(booking.title || 'Réservation');
+  const page = encodeURIComponent(`${origine.replace(/\/$/, '')}/`);
 
   return [
     {
@@ -142,6 +152,13 @@ export function liensDePartage(booking) {
       label: 'WhatsApp',
       couleur: '#25D366',
       href: `https://wa.me/?text=${encode}`,
+    },
+    {
+      id: 'facebook',
+      label: 'Facebook',
+      couleur: '#1877F2',
+      copieLeResume: true,
+      href: `https://www.facebook.com/sharer/sharer.php?u=${page}&quote=${encode}`,
     },
     {
       id: 'x',
@@ -162,4 +179,17 @@ export function liensDePartage(booking) {
       href: `mailto:?subject=${sujet}&body=${encode}`,
     },
   ];
+}
+
+/**
+ * Adresse publique de l'application.
+ *
+ * Prise de la page elle-même : elle suit le déploiement sans réglage à tenir
+ * à jour, du poste de développement au vrai domaine. Sur `localhost`, Facebook
+ * ne pourra pas la lire — c'est attendu, et sans conséquence ailleurs.
+ */
+function originePublique() {
+  return typeof window !== 'undefined' && window.location
+    ? window.location.origin
+    : 'https://smartroom.local';
 }

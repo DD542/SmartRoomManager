@@ -253,8 +253,11 @@ export function ShareModal({ booking, open, onClose }) {
               cellules égales se visent mieux qu'une file de largeurs
               inégales, et le pouce en trouve deux par ligne au téléphone. */}
           <div className="grid grid-cols-2 gap-2">
-            {liens.map((lien) => {
+            {liens.map((lien, rang) => {
               const Logo = LOGOS[lien.id];
+              // En nombre impair, le dernier prend la ligne entière : une
+              // cellule seule à mi-largeur ressemble à une erreur de calage.
+              const seulSurSaLigne = liens.length % 2 === 1 && rang === liens.length - 1;
               return (
                 <a
                   key={lien.id}
@@ -268,7 +271,16 @@ export function ShareModal({ booking, open, onClose }) {
                   // fenêtre sombre se disputeraient l'attention que le résumé
                   // doit garder.
                   style={{ '--marque': lien.couleur }}
-                  className="group inline-flex min-h-[46px] items-center gap-2.5 rounded-xl border border-line bg-surface-raised px-3.5 text-sm font-medium text-content transition hover:border-[var(--marque)] hover:bg-surface focus-visible:border-[var(--marque)] focus-visible:outline-none"
+                  // Facebook ne transporte qu'un lien : le résumé part au
+                  // presse-papiers pour être collé dans la publication. Le
+                  // lien s'ouvre dans tous les cas — un presse-papiers refusé
+                  // ne doit pas empêcher le partage.
+                  onClick={() => {
+                    if (lien.copieLeResume) navigator.clipboard?.writeText(resume).catch(() => {});
+                  }}
+                  className={`group inline-flex min-h-[46px] items-center gap-2.5 rounded-xl border border-line bg-surface-raised px-3.5 text-sm font-medium text-content transition hover:border-[var(--marque)] hover:bg-surface focus-visible:border-[var(--marque)] focus-visible:outline-none ${
+                    seulSurSaLigne ? 'col-span-2' : ''
+                  }`}
                 >
                   <span
                     className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--marque)_16%,transparent)] text-[var(--marque)]"
@@ -286,9 +298,11 @@ export function ShareModal({ booking, open, onClose }) {
               );
             })}
           </div>
-          <p className="text-[11px] text-content-faint">
-            Le résumé y arrive prérempli. Facebook n’y figure pas : son partage ne
-            transporte qu’un lien, et une réservation privée n’a pas de page publique.
+          <p className="text-[11px] leading-relaxed text-content-faint">
+            Le résumé y arrive prérempli. Facebook fait exception : il ne partage
+            qu’un lien — celui de la page publique de SmartRoom, la réservation
+            n’en ayant aucune — et le résumé est copié pour que vous le colliez dans
+            votre publication.
           </p>
 
           <Button

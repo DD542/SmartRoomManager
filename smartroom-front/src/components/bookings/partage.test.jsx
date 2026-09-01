@@ -85,9 +85,12 @@ describe('Ce qui sort de l’application', () => {
 });
 
 describe('Les applications proposées', () => {
-  it('portent toutes le résumé dans leur adresse', () => {
-    // Un bouton qui ouvre un formulaire vide ne partage rien.
+  it('portent le résumé dans leur adresse, sauf Facebook', () => {
+    // Un bouton qui ouvre un formulaire vide ne partage rien. Facebook fait
+    // exception : il n'accepte qu'une URL, et le résumé lui arrive par le
+    // presse-papiers.
     for (const lien of liensDePartage(RESERVATION)) {
+      if (lien.copieLeResume) continue;
       expect(decodeURIComponent(lien.href), lien.id).toContain('Salle Joule');
     }
   });
@@ -98,18 +101,45 @@ describe('Les applications proposées', () => {
     }
   });
 
-  it('couvrent WhatsApp, X, Telegram et le courriel', () => {
+  it('couvrent WhatsApp, Facebook, X, Telegram et le courriel', () => {
     const ids = liensDePartage(RESERVATION).map((lien) => lien.id);
 
-    expect(ids).toEqual(expect.arrayContaining(['whatsapp', 'x', 'telegram', 'email']));
+    expect(ids).toEqual(
+      expect.arrayContaining(['whatsapp', 'facebook', 'x', 'telegram', 'email']),
+    );
   });
 
-  it("laissent Facebook de côté, et disent pourquoi", () => {
-    // Le dialogue de Facebook ne partage qu'une URL : `sharer.php?u=`. Une
-    // réservation privée n'a pas de page publique à référencer, et pointer
-    // la page d'accueil de l'application partagerait l'application, pas la
-    // réunion. Le bouton ouvrirait une boîte vide.
-    expect(liensDePartage(RESERVATION).map((lien) => lien.id)).not.toContain('facebook');
+  it('emmènent Facebook sur la page publique, faute de mieux', () => {
+    // Le dialogue de Facebook ne transporte qu'une URL. La réservation
+    // elle-même n'en a pas de publique — `/app/reservations/:id` exige une
+    // session et rend 404 à qui n'est pas l'organisateur — donc c'est la
+    // page d'accueil de l'application qui est référencée.
+    const facebook = liensDePartage(RESERVATION, 'https://smartroom.example')
+      .find((lien) => lien.id === 'facebook');
+
+    expect(facebook).toBeTruthy();
+    expect(facebook.href).toContain('facebook.com/sharer');
+    expect(decodeURIComponent(facebook.href)).toContain('https://smartroom.example/');
+  });
+
+  it("ne font jamais pointer Facebook sur la réservation elle-même", () => {
+    // Un lien que le destinataire ne peut pas ouvrir donne l'impression
+    // d'avoir partagé quelque chose. Sur Facebook, il serait de surcroît
+    // public.
+    const facebook = liensDePartage(RESERVATION, 'https://smartroom.example')
+      .find((lien) => lien.id === 'facebook');
+
+    expect(decodeURIComponent(facebook.href)).not.toContain('/app/reservations');
+    expect(decodeURIComponent(facebook.href)).not.toContain(RESERVATION.id);
+  });
+
+  it("préviennent que Facebook ne porte pas le résumé tout seul", () => {
+    // `quote` est officiellement abandonné : Facebook l'ignore souvent. Le
+    // résumé est donc copié au clic, et l'écran le dit — promettre un
+    // partage complet serait promettre ce qu'on ne maîtrise pas.
+    const facebook = liensDePartage(RESERVATION).find((lien) => lien.id === 'facebook');
+
+    expect(facebook.copieLeResume).toBe(true);
   });
 
   it('portent une couleur de marque, pour se distinguer au coup d’œil', () => {
