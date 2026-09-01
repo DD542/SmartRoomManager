@@ -126,7 +126,14 @@ export default function NotificationsPage() {
                               )}
                             </span>
                           </div>
-                          <p className="mt-0.5 text-xs leading-relaxed text-content-muted">
+                          {/* Le corps est recopié du courriel : il porte des
+                              paragraphes séparés par des sauts de ligne, et un
+                              lien de soixante caractères. Sans `break-words`,
+                              cette URL insecable sortait de la carte — 11
+                              cartes sur 14 débordaient de 54 à 64 px à 375 px.
+                              Sans `whitespace-pre-line`, « Bonjour Dylan, »
+                              se recollait à la phrase suivante. */}
+                          <p className="mt-0.5 whitespace-pre-line break-words text-xs leading-relaxed text-content-muted">
                             {notification.body}
                           </p>
                           {notification.action && (
