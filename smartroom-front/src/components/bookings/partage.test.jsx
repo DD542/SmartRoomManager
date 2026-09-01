@@ -34,7 +34,16 @@ const RESERVATION = {
   },
 };
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  // Le refus est retenu par navigateur : sans cet oubli, un test le lèguerait
+  // au suivant et masquerait le bouton qu'il vient vérifier.
+  try {
+    localStorage.clear();
+  } catch {
+    // Un navigateur qui refuse le stockage n'a rien à oublier.
+  }
+});
 
 describe('Ce qui sort de l’application', () => {
   it('porte le lieu, la date et l’heure', () => {
@@ -72,6 +81,41 @@ describe('Ce qui sort de l’application', () => {
     // l'agenda du destinataire lit trois champs au lieu d'un lieu.
     expect(ics).toContain('LOCATION:Salle Joule\\, Eiffel 2\\, 2e étage');
     expect(ics.trimEnd().endsWith('END:VCALENDAR')).toBe(true);
+  });
+});
+
+describe('Les applications proposées', () => {
+  it('portent toutes le résumé dans leur adresse', () => {
+    // Un bouton qui ouvre un formulaire vide ne partage rien.
+    for (const lien of liensDePartage(RESERVATION)) {
+      expect(decodeURIComponent(lien.href), lien.id).toContain('Salle Joule');
+    }
+  });
+
+  it("n'emmènent jamais le code d'accès", () => {
+    for (const lien of liensDePartage(RESERVATION)) {
+      expect(decodeURIComponent(lien.href), lien.id).not.toContain('7412');
+    }
+  });
+
+  it('couvrent WhatsApp, X, Telegram et le courriel', () => {
+    const ids = liensDePartage(RESERVATION).map((lien) => lien.id);
+
+    expect(ids).toEqual(expect.arrayContaining(['whatsapp', 'x', 'telegram', 'email']));
+  });
+
+  it("laissent Facebook de côté, et disent pourquoi", () => {
+    // Le dialogue de Facebook ne partage qu'une URL : `sharer.php?u=`. Une
+    // réservation privée n'a pas de page publique à référencer, et pointer
+    // la page d'accueil de l'application partagerait l'application, pas la
+    // réunion. Le bouton ouvrirait une boîte vide.
+    expect(liensDePartage(RESERVATION).map((lien) => lien.id)).not.toContain('facebook');
+  });
+
+  it('portent une couleur de marque, pour se distinguer au coup d’œil', () => {
+    for (const lien of liensDePartage(RESERVATION)) {
+      expect(lien.couleur, lien.id).toMatch(/^#[0-9a-f]{6}$/i);
+    }
   });
 });
 
@@ -215,6 +259,32 @@ describe('Fenêtre de partage', () => {
     expect(screen.queryByText(/joints au partage/)).toBeNull();
     // À la place, de quoi les joindre soi-même.
     expect(screen.getByRole('button', { name: /Télécharger le plan/ })).toBeTruthy();
+  });
+
+  it("se souvient du refus, au lieu de le rejouer à chaque ouverture", async () => {
+    // « J'ai encore cette erreur » : le refus était oublié d'une fenêtre à
+    // l'autre. Sur un navigateur qui refuse par réglage — Brave, Firefox — le
+    // resultat ne changera pas d'un clic au suivant : le proposer encore, c'est
+    // renvoyer l'utilisateur au meme mur, message d'erreur compris.
+    const ecrit = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText: ecrit }, configurable: true });
+    Object.defineProperty(navigator, 'canShare', { value: () => false, configurable: true });
+    Object.defineProperty(navigator, 'share', {
+      value: () => Promise.reject(Object.assign(new Error('refus'), { name: 'NotAllowedError' })),
+      configurable: true,
+    });
+
+    const premier = render(<ShareModal booking={RESERVATION} open onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /Partager…/ }));
+    await screen.findByText(/NotAllowedError/);
+    premier.unmount();
+
+    // Deuxième ouverture : ni le bouton, ni le message.
+    render(<ShareModal booking={RESERVATION} open onClose={vi.fn()} />);
+
+    expect(screen.queryByRole('button', { name: /Partager…/ })).toBeNull();
+    expect(screen.queryByText(/NotAllowedError/)).toBeNull();
+    expect(screen.getByRole('link', { name: /WhatsApp/ })).toBeTruthy();
   });
 
   it('ne signale rien quand l’utilisateur ferme la feuille lui-même', async () => {

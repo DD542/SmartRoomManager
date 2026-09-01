@@ -18,6 +18,36 @@ import {
 import { Button } from '../ui/Button';
 import { Callout } from '../ui/Card';
 import { Modal } from '../ui/Modal';
+import { LOGOS } from './LogosPartage';
+
+/**
+ * Le navigateur a-t-il déjà refusé la feuille de partage ?
+ *
+ * Retenu par navigateur, pas par réservation : c'est un réglage de l'un, pas
+ * une propriété de l'autre. Le stockage local peut être refusé lui aussi —
+ * navigation privée, réglages stricts — auquel cas on retombe simplement sur
+ * l'ancien comportement : le bouton reparait, et échoue.
+ */
+const CLE_REFUS = 'smartroom:partage-systeme-refuse';
+
+function refusMemorise() {
+  // Lu à chaque ouverture, pas une fois au chargement du module : une page
+  // restée ouverte garderait sinon une réponse d'avant le premier refus.
+  try {
+    return localStorage.getItem(CLE_REFUS) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function memoriserLeRefus() {
+  try {
+    localStorage.setItem(CLE_REFUS, '1');
+  } catch {
+    // Sans stockage, le refus se redecouvre à chaque fois. Tant pis : il ne
+    // coûte qu'un clic, et rien ne justifie de faire échouer l'écran pour ça.
+  }
+}
 
 /**
  * Partage d'une réservation.
@@ -46,7 +76,12 @@ export function ShareModal({ booking, open, onClose }) {
   //: ordinateur : `navigator.share` existe, et rejette `NotAllowedError`. Un
   //: bouton principal qui échoue une fois échouera toutes les suivantes — il
   //: cède alors la place à ce qui marche.
-  const [partageRefuse, setPartageRefuse] = useState(false);
+  //:
+  //: Et le refus est retenu d'une fenêtre à l'autre : il tient à un réglage du
+  //: navigateur, pas à l'humeur du moment. Sans cette mémoire, l'utilisateur
+  //: retrouvait le bouton à chaque ouverture, cliquait, et relisait la même
+  //: erreur — « j'ai encore cette erreur ».
+  const [partageRefuse, setPartageRefuse] = useState(refusMemorise);
 
   useEffect(() => {
     if (!open || !booking) return undefined;
@@ -102,6 +137,7 @@ export function ShareModal({ booking, open, onClose }) {
         // c'est la seule chose qui distingue un navigateur qui ne sait pas
         // partager d'un réglage qui l'en empêche.
         setPartageRefuse(true);
+        memoriserLeRefus();
         navigator.clipboard
           ?.writeText(resume)
           .then(() =>
@@ -213,24 +249,46 @@ export function ShareModal({ booking, open, onClose }) {
           <p className="pt-1 text-xs uppercase tracking-wide text-content-muted">
             Ouvrir dans
           </p>
-          <div className="flex flex-wrap gap-2">
-            {liens.map((lien) => (
-              <a
-                key={lien.id}
-                href={lien.href}
-                target="_blank"
-                // `noopener` : la page ouverte ne doit pas pouvoir manipuler
-                // celle-ci par `window.opener`.
-                rel="noopener noreferrer"
-                className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl border border-line bg-surface-raised px-4 text-sm text-content transition hover:border-line-strong"
-              >
-                <ExternalLink size={15} aria-hidden="true" className="text-content-muted" />
-                {lien.label}
-              </a>
-            ))}
+          {/* Une grille de deux, pas une rangée : à quatre applications, des
+              cellules égales se visent mieux qu'une file de largeurs
+              inégales, et le pouce en trouve deux par ligne au téléphone. */}
+          <div className="grid grid-cols-2 gap-2">
+            {liens.map((lien) => {
+              const Logo = LOGOS[lien.id];
+              return (
+                <a
+                  key={lien.id}
+                  href={lien.href}
+                  target="_blank"
+                  // `noopener` : la page ouverte ne doit pas pouvoir manipuler
+                  // celle-ci par `window.opener`.
+                  rel="noopener noreferrer"
+                  // La couleur de marque teinte le logo et la bordure au
+                  // survol, jamais le fond : quatre aplats vifs dans une
+                  // fenêtre sombre se disputeraient l'attention que le résumé
+                  // doit garder.
+                  style={{ '--marque': lien.couleur }}
+                  className="group inline-flex min-h-[46px] items-center gap-2.5 rounded-xl border border-line bg-surface-raised px-3.5 text-sm font-medium text-content transition hover:border-[var(--marque)] hover:bg-surface focus-visible:border-[var(--marque)] focus-visible:outline-none"
+                >
+                  <span
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--marque)_16%,transparent)] text-[var(--marque)]"
+                    aria-hidden="true"
+                  >
+                    {Logo ? <Logo /> : <ExternalLink size={15} />}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate">{lien.label}</span>
+                  <ExternalLink
+                    size={13}
+                    aria-hidden="true"
+                    className="shrink-0 text-content-faint transition group-hover:text-content-muted"
+                  />
+                </a>
+              );
+            })}
           </div>
           <p className="text-[11px] text-content-faint">
-            Le résumé y arrive prérempli.
+            Le résumé y arrive prérempli. Facebook n’y figure pas : son partage ne
+            transporte qu’un lien, et une réservation privée n’a pas de page publique.
           </p>
 
           <Button

@@ -120,23 +120,46 @@ const gabaritDeNom = (booking) =>
 /**
  * Adresses de partage des applications qui acceptent un texte seul.
  *
- * LinkedIn n'y figure pas : sa route de partage exige une URL publique à
- * référencer, et il n'en existe aucune pour une réservation privée. Un bouton
- * qui ouvrirait un formulaire vide ne partagerait rien.
+ * Ni Facebook ni LinkedIn n'y figurent, et pour la même raison : leurs
+ * dialogues de partage ne transportent qu'une **URL** — `sharer.php?u=` d'un
+ * côté, `shareArticle?url=` de l'autre. Une réservation privée n'a pas de page
+ * publique à référencer : `/app/reservations/:id` exige une session et le
+ * serveur rend 404 à quiconque n'est pas l'organisateur. Pointer la page
+ * d'accueil de l'application à la place partagerait l'application, pas la
+ * réunion. Le bouton ouvrirait une boîte vide, ce qui est pire que son absence.
+ *
+ * La couleur est celle de la marque : elle sert à reconnaître le bouton avant
+ * de lire son intitulé.
  */
 export function liensDePartage(booking) {
   const texte = resumePartage(booking);
   const encode = encodeURIComponent(texte);
+  const sujet = encodeURIComponent(booking.title || 'Réservation');
 
   return [
-    { id: 'whatsapp', label: 'WhatsApp', href: `https://wa.me/?text=${encode}` },
-    { id: 'x', label: 'X', href: `https://twitter.com/intent/tweet?text=${encode}` },
+    {
+      id: 'whatsapp',
+      label: 'WhatsApp',
+      couleur: '#25D366',
+      href: `https://wa.me/?text=${encode}`,
+    },
+    {
+      id: 'x',
+      label: 'X',
+      couleur: '#E7E9EA',
+      href: `https://twitter.com/intent/tweet?text=${encode}`,
+    },
+    {
+      id: 'telegram',
+      label: 'Telegram',
+      couleur: '#2AABEE',
+      href: `https://t.me/share/url?url=&text=${encode}`,
+    },
     {
       id: 'email',
       label: 'E-mail',
-      href: `mailto:?subject=${encodeURIComponent(
-        booking.title || 'Réservation',
-      )}&body=${encode}`,
+      couleur: '#8AA0C0',
+      href: `mailto:?subject=${sujet}&body=${encode}`,
     },
   ];
 }
