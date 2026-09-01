@@ -35,8 +35,18 @@ const colonnes = [
     // pas n'en a pas : la case était vide, elle dit maintenant pourquoi.
     // Mieux vaut cela qu'une colonne de plus — une ligne d'annuaire compte
     // déjà huit colonnes, et une neuvième ne se lirait plus.
-    render: (row) =>
-      row.promotion ?? (row.isExternal ? <EtiquetteExterne email={row.email} /> : null),
+    //
+    // Les deux coexistent : un compte peut être rattaché à une promotion et
+    // se connecter avec une adresse personnelle. Écrire `promotion ?? étiquette`
+    // faisait disparaître le signalement précisément sur les lignes
+    // renseignées — celles où il apprend le plus.
+    render: (row) => (
+      <span className="flex flex-col items-start gap-1">
+        {row.promotion ? <span>{row.promotion}</span> : null}
+        {row.isExternal ? <EtiquetteExterne email={row.email} /> : null}
+        {!row.promotion && !row.isExternal ? <span className="text-content-faint">—</span> : null}
+      </span>
+    ),
   },
   { key: 'department', label: 'Département' },
   { key: 'bookings', label: 'Réservations', align: 'right' },
