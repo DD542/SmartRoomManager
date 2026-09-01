@@ -71,10 +71,13 @@ export function InviteModal({ open, onClose, onSubmit, groups = [], loading = fa
             <div className="flex flex-col gap-2">
               {groupe.permissions.map((permission) => (
                 <Checkbox
-                  key={permission.id}
+                  key={permission.code}
                   label={permission.label}
-                  checked={permissions.includes(permission.id)}
-                  onChange={() => basculer(permission.id)}
+                  // Le code : c'est lui que la route d'invitation attend. Avec
+                  // l'identifiant technique, une invitation portant des
+                  // permissions était refusée par le serveur.
+                  checked={permissions.includes(permission.code)}
+                  onChange={() => basculer(permission.code)}
                 />
               ))}
             </div>

@@ -83,11 +83,23 @@ function Groupe({ groupe, admins, onToggle, busy }) {
         <tr key={permission.id} className="border-b border-line/60 last:border-0">
           <th scope="row" className="px-3 py-2.5 text-left font-normal text-content">
             {permission.label}
-            <span className="ml-2 font-mono text-[10px] text-content-faint">{permission.id}</span>
+            {/* Le code, celui qu'on retrouve dans les journaux et dans le
+                contrôle d'accès. Cette ligne affichait l'identifiant technique
+                de la base — trente-six caractères qui ne disent rien. */}
+            <span className="ml-2 font-mono text-[10px] text-content-faint">{permission.code}</span>
           </th>
 
           {admins.map((admin) => {
-            const accordee = admin.permissions.includes(permission.id);
+            // Le **code**, jamais l'identifiant technique. Une permission
+            // s'identifie par son code dans tout le système : le compte en
+            // rend une liste, la route d'écriture en attend une, et le
+            // contrôle d'accès en prend un. L'UUID ne vit que dans la base.
+            //
+            // Comparé à `permission.id`, le test n'était jamais vrai : les
+            // vingt-huit cases s'affichaient vides alors que la base portait
+            // quinze attributions, et le clic envoyait un UUID à une route qui
+            // attend un code.
+            const accordee = admin.permissions.includes(permission.code);
             const verrouille = admin.owner;
             const libelle = `${permission.label} — ${fullName(admin)}`;
 
@@ -115,7 +127,7 @@ function Groupe({ groupe, admins, onToggle, busy }) {
                   aria-checked={accordee}
                   aria-label={libelle}
                   disabled={busy}
-                  onClick={() => onToggle(admin, permission.id, !accordee)}
+                  onClick={() => onToggle(admin, permission.code, !accordee)}
                   className={cn(
                     'inline-flex h-7 w-7 items-center justify-center rounded-lg border text-xs transition',
                     accordee
