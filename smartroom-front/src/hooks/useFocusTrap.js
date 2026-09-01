@@ -12,20 +12,43 @@ export function useFocusTrap(active, onEscape) {
   const ref = useRef(null);
   const previous = useRef(null);
 
+  // La fermeture est jointe par référence, jamais par dépendance.
+  //
+  // Les appelants la passent en fonction anonyme — `onClose={() => setDraft(null)}`
+  // — dont l'identité change à chaque rendu. Avec `onEscape` dans le tableau,
+  // l'effet se démontait et se remontait à chaque rendu ; sa remise en place
+  // redonne le focus au premier élément focalisable, c'est-à-dire la croix de
+  // fermeture. Un champ contrôlé rendant une fois par lettre frappée, la
+  // saisie devenait impossible : une lettre, un saut sur la croix.
+  //
+  // Le piège ne doit se poser qu'à l'ouverture. La référence garde l'accès à
+  // la dernière fermeture connue sans lier la vie de l'effet à la sienne.
+  const echappement = useRef(onEscape);
+  echappement.current = onEscape;
+
   useEffect(() => {
     if (!active) return undefined;
     previous.current = document.activeElement;
 
     const node = ref.current;
-    const focusables = node ? Array.from(node.querySelectorAll(FOCUSABLE)) : [];
-    (focusables[0] ?? node)?.focus?.();
+
+    // Recalcules a chaque tabulation, jamais retenus. Une modale change de
+    // contenu en cours de vie — un champ qui apparaît, un bouton qui
+    // s'active — et une liste figée à l'ouverture laisserait sortir du
+    // piège. Elle ne se recalculait jusqu'ici que par l'effet de bord d'un
+    // effet remonté à chaque rendu, ce qui n'est plus le cas.
+    const focalisables = () =>
+      node ? Array.from(node.querySelectorAll(FOCUSABLE)) : [];
+
+    (focalisables()[0] ?? node)?.focus?.();
 
     const onKeyDown = (event) => {
       if (event.key === 'Escape') {
         event.stopPropagation();
-        onEscape?.();
+        echappement.current?.();
         return;
       }
+      const focusables = focalisables();
       if (event.key !== 'Tab' || focusables.length === 0) return;
       const first = focusables[0];
       const last = focusables[focusables.length - 1];
@@ -54,7 +77,7 @@ export function useFocusTrap(active, onEscape) {
       document.body.style.overflow = previousOverflow;
       previous.current?.focus?.();
     };
-  }, [active, onEscape]);
+  }, [active]);
 
   return ref;
 }

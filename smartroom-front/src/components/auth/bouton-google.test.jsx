@@ -108,6 +108,60 @@ describe('Quand elle est configurée', () => {
   });
 });
 
+describe('Quand la page se remonte', () => {
+  it("n'appelle `initialize` qu'une seule fois", async () => {
+    // Google le dit lui-même en console : « initialize() is called multiple
+    // times [...] only the last initialized instance will be used ». En mode
+    // strict, React monte, démonte et remonte chaque effet ; le composant
+    // réinitialisait donc la bibliothèque sous le bouton déjà dessiné.
+    active(true);
+    const { initialise } = poserGoogle();
+
+    const premier = render(<BoutonGoogle onCredential={vi.fn()} />);
+    await waitFor(() => expect(initialise).toHaveBeenCalled());
+    premier.unmount();
+
+    render(<BoutonGoogle onCredential={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText('ou')).toBeTruthy());
+
+    expect(initialise).toHaveBeenCalledTimes(1);
+  });
+
+  it('remet le jeton au bouton actuellement monté', async () => {
+    // Conséquence de la règle précédente : puisque `initialize` n'est plus
+    // rappelé, son rappel ne doit pas rester attaché au premier bouton, parti
+    // depuis longtemps.
+    active(true);
+    const { initialise } = poserGoogle();
+
+    const premier = render(<BoutonGoogle onCredential={vi.fn()} />);
+    await waitFor(() => expect(initialise).toHaveBeenCalled());
+    premier.unmount();
+
+    const recevoir = vi.fn();
+    render(<BoutonGoogle onCredential={recevoir} />);
+    await waitFor(() => expect(screen.getByText('ou')).toBeTruthy());
+
+    initialise.mock.calls[0][0].callback({ credential: 'jeton-du-second' });
+
+    expect(recevoir).toHaveBeenCalledWith('jeton-du-second');
+  });
+
+  it('ne parle plus à un bouton démonté', async () => {
+    active(true);
+    const { initialise } = poserGoogle();
+    const oublie = vi.fn();
+
+    const parti = render(<BoutonGoogle onCredential={oublie} />);
+    await waitFor(() => expect(initialise).toHaveBeenCalled());
+    parti.unmount();
+
+    initialise.mock.calls[0][0].callback({ credential: 'jeton-perdu' });
+
+    expect(oublie).not.toHaveBeenCalled();
+  });
+});
+
 describe('Quand le script ne se charge pas', () => {
   it('le dit, et laisse le mot de passe comme voie de secours', async () => {
     // Extension de blocage, réseau filtré, coupure : l'utilisateur doit

@@ -35,6 +35,48 @@ function chargerScript() {
 }
 
 /**
+ * `initialize` n'est appelé qu'une fois, et le jeton distribué aux boutons
+ * effectivement montés.
+ *
+ * La bibliothèque le dit en console quand on s'y prend mal : « initialize() is
+ * called multiple times [...] only the last initialized instance will be
+ * used ». En mode strict, React monte, démonte et remonte chaque effet ; sans
+ * ce garde-fou, le composant réinitialisait Google sous le bouton déjà
+ * dessiné à chaque montage.
+ *
+ * Le rappel passé à Google ne peut donc pas appartenir à une instance : il
+ * appartient au module, et sert ceux qui sont là au moment où le jeton
+ * arrive. Un bouton démonté se retire de la liste et ne reçoit plus rien.
+ */
+let clientInitialise = null;
+let bibliothequeInitialisee = null;
+const destinataires = new Set();
+
+function initialiser(clientId) {
+  const bibliotheque = window.google.accounts.id;
+
+  // La bibliothèque elle-même fait partie de la condition, pas seulement
+  // l'identifiant de client : un script rechargé est une instance neuve, qui
+  // ne sait rien de ce qu'on a dit à la précédente. S'en souvenir à sa place
+  // laisserait un bouton muet.
+  if (clientInitialise === clientId && bibliothequeInitialisee === bibliotheque) return;
+
+  bibliotheque.initialize({
+    client_id: clientId,
+    callback: ({ credential }) => {
+      destinataires.forEach((remettre) => remettre(credential));
+    },
+    // La sélection automatique ouvrirait une session sans que personne
+    // l'ait demandé, au simple chargement de la page.
+    auto_select: false,
+    cancel_on_tap_outside: true,
+  });
+
+  clientInitialise = clientId;
+  bibliothequeInitialisee = bibliotheque;
+}
+
+/**
  * Bouton « Se connecter avec Google ».
  *
  * C'est Google qui le dessine, par `renderButton`. Deux raisons, l'une
@@ -107,14 +149,13 @@ export function BoutonGoogle({ onCredential, onError, disabled = false }) {
         await chargerScript();
         if (!vivant || !cible.current) return;
 
-        window.google.accounts.id.initialize({
-          client_id: config.clientId,
-          callback: ({ credential }) => rappel.current.onCredential?.(credential),
-          // La sélection automatique ouvrirait une session sans que personne
-          // l'ait demandé, au simple chargement de la page.
-          auto_select: false,
-          cancel_on_tap_outside: true,
-        });
+        const surveillants = [];
+
+        initialiser(config.clientId);
+
+        const remettre = (credential) => rappel.current.onCredential?.(credential);
+        destinataires.add(remettre);
+        surveillants.push(() => destinataires.delete(remettre));
 
         dessiner();
         setEtat('pret');
@@ -130,8 +171,6 @@ export function BoutonGoogle({ onCredential, onError, disabled = false }) {
         // que le navigateur ne peint pas, ce qui arrive plus souvent qu'on ne
         // croit : onglet en arrière-plan, fenêtre jamais composée. L'événement
         // `resize`, lui, arrive partout, et couvre le cas le plus fréquent.
-        const surveillants = [];
-
         if (typeof ResizeObserver !== 'undefined') {
           const surveillant = new ResizeObserver(dessiner);
           surveillant.observe(cible.current.parentElement);
