@@ -339,9 +339,13 @@ export function ShareModal({ booking, open, onClose }) {
               className="h-16 w-24 shrink-0 rounded-lg object-cover"
             />
             <p className="text-xs text-content-muted">
-              {partageAutomatique
+              {/* Le ton compte : sans feuille de partage, il n'y a rien de
+                cassé à signaler — seulement un geste de plus à faire. Une
+                phrase qui commence par « ce navigateur ne... » se lit comme
+                une panne, et se relit comme telle à chaque ouverture. */}
+            {partageAutomatique
                 ? 'Le plan de la salle et l’invitation d’agenda sont joints au partage.'
-                : 'Ce navigateur ne joint pas de fichier à un partage : téléchargez le plan et l’invitation pour les attacher vous-même.'}
+                : 'Ici, les fichiers ne partent pas avec le message : téléchargez le plan et l’invitation pour les joindre vous-même.'}
             </p>
           </div>
         )}
