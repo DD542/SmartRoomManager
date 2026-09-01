@@ -20,20 +20,34 @@ import { abortable, collect, get, items } from './client';
 export async function listRooms({
   capacity,
   building,
+  buildings = [],
   floor,
+  floors = [],
   equipment = [],
+  accessible = false,
   accessibleOnly = false,
   status,
   query,
   signal,
 } = {}) {
+  // Les noms au pluriel sont ceux des écrans : le panneau de filtres coche
+  // plusieurs bâtiments et plusieurs étages. Les singuliers restent pour les
+  // appels qui n'en visent qu'un — le tunnel de réservation.
+  //
+  // C'est ici qu'était le défaut : la fonction ne connaissait que `building`,
+  // `floor` et `accessibleOnly`, quand les écrans envoyaient `buildings`,
+  // `floors` et `accessible`. Trois déstructurations de `undefined`, aucune
+  // erreur, et trois filtres qui ne partaient jamais. Mesuré : « 14 salles
+  // trouvées » quel que soit le bâtiment coché.
   const page = await get('/rooms', {
     params: {
       min_capacity: capacity,
       building_id: building,
       floor_id: floor,
+      building_ids: buildings,
+      floor_ids: floors,
       equipment_ids: equipment,
-      accessible_only: accessibleOnly || undefined,
+      accessible_only: accessible || accessibleOnly || undefined,
       status,
       q: query,
       size: 100,

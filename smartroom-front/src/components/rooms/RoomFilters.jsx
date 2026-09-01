@@ -72,21 +72,24 @@ export function RoomFilters({ value, onChange, buildings = [], equipment = [], f
               Étage
             </legend>
             <div className="mt-3 flex flex-wrap gap-2">
+              {/* L'étage se choisit par son identifiant, s'affiche par son
+                  libellé : c'est l'identifiant que le serveur sait filtrer, et
+                  deux bâtiments ont chacun leur « 1er étage ». */}
               {floors.map((floor) => {
-                const active = (value.floors ?? []).includes(floor);
+                const active = (value.floors ?? []).includes(floor.id);
                 return (
                   <button
-                    key={floor}
+                    key={floor.id}
                     type="button"
                     aria-pressed={active}
-                    onClick={() => toggle('floors', floor)}
+                    onClick={() => toggle('floors', floor.id)}
                     className={`rounded-lg border px-2.5 py-1 text-xs transition ${
                       active
                         ? 'border-accent bg-accent-soft text-content'
                         : 'border-line bg-surface text-content-muted hover:text-content'
                     }`}
                   >
-                    {floor}
+                    {floor.label}
                   </button>
                 );
               })}

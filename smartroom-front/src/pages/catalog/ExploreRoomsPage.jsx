@@ -69,7 +69,15 @@ export default function ExploreRoomsPage() {
   }, [rooms.data, query, sort]);
 
   const paged = paginate(results, page, PAGE_SIZE);
-  const floors = [...new Set((rooms.data ?? []).map((room) => room.floor))].sort();
+  // Un étage par identifiant, pas par libellé : « 1er étage » existe dans
+  // chaque bâtiment, et c'est l'identifiant que le serveur sait filtrer.
+  const floors = [
+    ...new Map(
+      (rooms.data ?? [])
+        .filter((room) => room.floorId)
+        .map((room) => [room.floorId, { id: room.floorId, label: room.floor }]),
+    ).values(),
+  ].sort((a, b) => String(a.label).localeCompare(String(b.label)));
 
   const filtersPanel = (
     <RoomFilters

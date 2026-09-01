@@ -298,6 +298,52 @@ describe('parc', () => {
     expect(recus.get('accessible_only')).toBe('true');
   });
 
+  it('transmet les filtres tels que les écrans les nomment', async () => {
+    // Le défaut : les écrans envoyaient `buildings`, `floors`, `accessible`
+    // — au pluriel pour les deux premiers — et la fonction déstructurait
+    // `building`, `floor`, `accessibleOnly`. Trois `undefined`, aucune erreur,
+    // et trois filtres qui ne partaient jamais. Mesuré à l'écran : « 14 salles
+    // trouvées » quel que soit le bâtiment coché.
+    let recus = null;
+    serveur.use(
+      http.get(`${BASE}/rooms`, ({ request }) => {
+        recus = new URL(request.url).searchParams;
+        return HttpResponse.json(page([SALLE]));
+      }),
+    );
+
+    await rooms.listRooms({
+      capacity: 4,
+      buildings: ['b-1', 'b-2'],
+      floors: ['f-1'],
+      equipment: ['eq-1'],
+      accessible: true,
+    });
+
+    expect(recus.getAll('building_ids')).toEqual(['b-1', 'b-2']);
+    expect(recus.getAll('floor_ids')).toEqual(['f-1']);
+    expect(recus.get('accessible_only')).toBe('true');
+    expect(recus.get('min_capacity')).toBe('4');
+  });
+
+  it('ne demande rien quand aucun filtre n’est posé', async () => {
+    // Une liste vide vaut « aucune préférence » : la transmettre vide
+    // reviendrait à demander les salles d'aucun bâtiment.
+    let recus = null;
+    serveur.use(
+      http.get(`${BASE}/rooms`, ({ request }) => {
+        recus = new URL(request.url).searchParams;
+        return HttpResponse.json(page([SALLE]));
+      }),
+    );
+
+    await rooms.listRooms({ buildings: [], floors: [], accessible: false });
+
+    expect(recus.getAll('building_ids')).toEqual([]);
+    expect(recus.getAll('floor_ids')).toEqual([]);
+    expect(recus.get('accessible_only')).toBeNull();
+  });
+
   it('compose la fiche salle depuis trois ressources', async () => {
     serveur.use(
       http.get(`${BASE}/rooms/r-1`, () => HttpResponse.json(SALLE)),

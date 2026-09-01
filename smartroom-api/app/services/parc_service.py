@@ -703,6 +703,8 @@ def list_rooms(
     *,
     building_id: uuid.UUID | None = None,
     floor_id: uuid.UUID | None = None,
+    building_ids: list[uuid.UUID] | None = None,
+    floor_ids: list[uuid.UUID] | None = None,
     min_capacity: int | None = None,
     equipment_ids: list[uuid.UUID] | None = None,
     accessible_only: bool = False,
@@ -711,12 +713,24 @@ def list_rooms(
 ) -> tuple[list[Room], int]:
     requete = _requete_salle().where(Room.deleted_at.is_(None))
 
-    if building_id is not None or floor_id is not None:
+    # Les listes doublent les valeurs uniques plutôt que de les remplacer :
+    # l'écran d'exploration coche plusieurs bâtiments, les appels qui n'en
+    # visent qu'un gardent leur paramètre. Une liste vide vaut « aucune
+    # préférence », jamais « aucune salle » — sans quoi ouvrir le panneau de
+    # filtres viderait l'écran.
+    batiments = list(building_ids or [])
+    if building_id is not None:
+        batiments.append(building_id)
+    etages = list(floor_ids or [])
+    if floor_id is not None:
+        etages.append(floor_id)
+
+    if batiments or etages:
         requete = requete.join(Floor, Floor.id == Room.floor_id)
-        if building_id is not None:
-            requete = requete.where(Floor.building_id == building_id)
-        if floor_id is not None:
-            requete = requete.where(Room.floor_id == floor_id)
+        if batiments:
+            requete = requete.where(Floor.building_id.in_(batiments))
+        if etages:
+            requete = requete.where(Room.floor_id.in_(etages))
 
     if min_capacity is not None:
         requete = requete.where(Room.capacity >= min_capacity)

@@ -42,6 +42,8 @@ export default function NeedFormPage() {
       capacity: Number(draft.attendees) || 0,
       building: draft.buildingId,
       equipment: draft.equipmentIds,
+      // `accessible` et non `accessibleOnly` : le nom était ignoré en silence,
+      // et quelqu'un qui demandait une salle accessible recevait tout le parc.
       accessible: draft.accessible,
     }),
     [draft.attendees, draft.buildingId, draft.equipmentIds, draft.accessible],
