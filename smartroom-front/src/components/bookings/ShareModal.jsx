@@ -1,5 +1,13 @@
 import { useEffect, useState } from 'react';
-import { CalendarArrowDown, Check, Copy, Share2, ShieldCheck } from 'lucide-react';
+import {
+  CalendarArrowDown,
+  Check,
+  Copy,
+  ExternalLink,
+  ImageDown,
+  Share2,
+  ShieldCheck,
+} from 'lucide-react';
 import {
   fichiersDePartage,
   icsPartageable,
@@ -56,6 +64,10 @@ export function ShareModal({ booking, open, onClose }) {
 
   const resume = resumePartage(booking);
   const liens = liensDePartage(booking);
+  //: Seule la feuille du système sait joindre des fichiers. Sans elle — ou
+  //: après son refus — rien n'est joint à rien, et l'écran ne doit pas
+  //: prétendre le contraire.
+  const partageAutomatique = partageNatifDisponible() && !partageRefuse;
 
   /**
    * Ouvre la feuille de partage du système.
@@ -120,17 +132,45 @@ export function ShareModal({ booking, open, onClose }) {
     }
   };
 
-  const telechargerInvitation = () => {
-    const blob = new Blob([icsPartageable(booking)], { type: 'text/calendar;charset=utf-8' });
+  /**
+   * Dépose un fichier, quel qu'il soit.
+   *
+   * Le plan n'est joint automatiquement que par la feuille du système. Quand
+   * elle manque, il reste à portée : l'utilisateur le télécharge et l'attache
+   * lui-même dans la conversation. Mieux vaut cela qu'une phrase promettant
+   * une pièce jointe qui n'arrivera jamais.
+   */
+  const deposer = (blob, nom) => {
     const url = URL.createObjectURL(blob);
     const lien = document.createElement('a');
     lien.href = url;
-    lien.download = 'invitation.ics';
+    lien.download = nom;
     document.body.appendChild(lien);
     lien.click();
     document.body.removeChild(lien);
     URL.revokeObjectURL(url);
   };
+
+  const telechargerPlan = async () => {
+    setEchec(null);
+    try {
+      const reponse = await fetch(booking.room.locationPlanUrl);
+      if (!reponse.ok) throw new Error(String(reponse.status));
+      const contenu = await reponse.blob();
+      const extension = (contenu.type.split('/')[1] ?? 'png').replace('jpeg', 'jpg');
+      deposer(contenu, `plan-${booking.room.name}.${extension}`);
+    } catch {
+      // Nomme ce qui manque plutôt que de ne rien faire : le résumé porte
+      // déjà le bâtiment et l'étage, le partage reste possible sans le plan.
+      setEchec('Le plan de la salle n’a pas pu être récupéré. Le résumé porte déjà le bâtiment et l’étage.');
+    }
+  };
+
+  const telechargerInvitation = () =>
+    deposer(
+      new Blob([icsPartageable(booking)], { type: 'text/calendar;charset=utf-8' }),
+      'invitation.ics',
+    );
 
   return (
     <Modal
@@ -146,39 +186,53 @@ export function ShareModal({ booking, open, onClose }) {
       }
     >
       <div className="flex flex-col gap-4">
+        {/* Ce que verra la personne : le sujet de la fenêtre, donc en tête. */}
         <pre className="whitespace-pre-wrap rounded-xl border border-line bg-surface-raised px-3.5 py-3 font-sans text-sm leading-relaxed text-content">
           {resume}
         </pre>
 
-        {booking.room?.locationPlanUrl && (
-          <div className="flex items-center gap-3 rounded-xl border border-line bg-surface-raised p-2">
-            <img
-              src={booking.room.locationPlanUrl}
-              alt={`Plan de localisation — ${booking.room.name}`}
-              className="h-16 w-24 shrink-0 rounded-lg object-cover"
-            />
-            <p className="text-xs text-content-muted">
-              Le plan de la salle et l’invitation d’agenda sont joints au partage.
-            </p>
-          </div>
-        )}
-
-        <Callout tone="success" icon={ShieldCheck} title="Le code d’accès n’est pas partagé">
-          C’est le code d’une porte : il ouvre la salle à qui le lit, et un message se
-          transfère. Le lien vers la réservation ne part pas non plus — elle n’est visible
-          que par vous.
-        </Callout>
-
         {echec && <Callout tone="warning">{echec}</Callout>}
 
+        {/* Ce qui marche vient avant ce qui explique.
+            
+            Le message de refus disait « passez par les boutons ci-dessous » en
+            désignant un bloc qui tombait hors du champ : mesuré sur une fenêtre
+            de 700 px, 143 px de contenu étaient masqués et « Ouvrir dans »
+            commençait 57 px sous le bas de la zone visible. L'utilisateur
+            devait deviner qu'il y avait une suite — et le partage « ne passait
+            pas », faute de trouver ce qui l'aurait fait passer. */}
         <div className="flex flex-col gap-2">
           {/* Retiré après un refus : le proposer encore en action principale
               enverrait l'utilisateur droit sur le même mur. */}
-          {partageNatifDisponible() && !partageRefuse && (
+          {partageAutomatique && (
             <Button icon={Share2} fullWidth onClick={partagerNativement}>
               Partager…
             </Button>
           )}
+
+          <p className="pt-1 text-xs uppercase tracking-wide text-content-muted">
+            Ouvrir dans
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {liens.map((lien) => (
+              <a
+                key={lien.id}
+                href={lien.href}
+                target="_blank"
+                // `noopener` : la page ouverte ne doit pas pouvoir manipuler
+                // celle-ci par `window.opener`.
+                rel="noopener noreferrer"
+                className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl border border-line bg-surface-raised px-4 text-sm text-content transition hover:border-line-strong"
+              >
+                <ExternalLink size={15} aria-hidden="true" className="text-content-muted" />
+                {lien.label}
+              </a>
+            ))}
+          </div>
+          <p className="text-[11px] text-content-faint">
+            Le résumé y arrive prérempli.
+          </p>
+
           <Button
             // Devient l'action principale quand la feuille du système est
             // refusée : c'est alors le geste qui aboutit.
@@ -197,28 +251,34 @@ export function ShareModal({ booking, open, onClose }) {
           >
             Télécharger l’invitation (.ics)
           </Button>
+          {/* Proposé seulement quand rien ne joindra le plan tout seul. */}
+          {booking.room?.locationPlanUrl && !partageAutomatique && (
+            <Button variant="secondary" icon={ImageDown} fullWidth onClick={telechargerPlan}>
+              Télécharger le plan
+            </Button>
+          )}
         </div>
 
-        <div>
-          <p className="pb-2 text-xs uppercase tracking-wide text-content-muted">
-            Ouvrir dans
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {liens.map((lien) => (
-              <a
-                key={lien.id}
-                href={lien.href}
-                target="_blank"
-                // `noopener` : la page ouverte ne doit pas pouvoir manipuler
-                // celle-ci par `window.opener`.
-                rel="noopener noreferrer"
-                className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-xl border border-line bg-surface-raised px-4 text-sm text-content transition hover:border-line-strong"
-              >
-                {lien.label}
-              </a>
-            ))}
+        {booking.room?.locationPlanUrl && (
+          <div className="flex items-center gap-3 rounded-xl border border-line bg-surface-raised p-2">
+            <img
+              src={booking.room.locationPlanUrl}
+              alt={`Plan de localisation — ${booking.room.name}`}
+              className="h-16 w-24 shrink-0 rounded-lg object-cover"
+            />
+            <p className="text-xs text-content-muted">
+              {partageAutomatique
+                ? 'Le plan de la salle et l’invitation d’agenda sont joints au partage.'
+                : 'Ce navigateur ne joint pas de fichier à un partage : téléchargez le plan et l’invitation pour les attacher vous-même.'}
+            </p>
           </div>
-        </div>
+        )}
+
+        <Callout tone="success" icon={ShieldCheck} title="Le code d’accès n’est pas partagé">
+          C’est le code d’une porte : il ouvre la salle à qui le lit, et un message se
+          transfère. Le lien vers la réservation ne part pas non plus — elle n’est visible
+          que par vous.
+        </Callout>
       </div>
     </Modal>
   );

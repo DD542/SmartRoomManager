@@ -153,6 +153,70 @@ describe('Fenêtre de partage', () => {
     expect(screen.getByRole('button', { name: /Copier le résumé/ })).toBeTruthy();
   });
 
+  it("met les applications au-dessus des explications quand le partage est refusé", async () => {
+    // Le message disait « passez par les boutons ci-dessous » en désignant un
+    // bloc situé hors du champ visible : mesuré sur une fenêtre de 700 px,
+    // 143 px de contenu étaient masqués et le bloc « Ouvrir dans » commençait
+    // 57 px sous le bas de la zone. L'utilisateur devait deviner qu'il y avait
+    // une suite.
+    //
+    // L'ordre du document est ce que ce test défend : ce qui marche vient
+    // avant ce qui explique.
+    const ecrit = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText: ecrit }, configurable: true });
+    Object.defineProperty(navigator, 'canShare', { value: () => false, configurable: true });
+    Object.defineProperty(navigator, 'share', {
+      value: () => Promise.reject(Object.assign(new Error('refus'), { name: 'NotAllowedError' })),
+      configurable: true,
+    });
+
+    render(<ShareModal booking={RESERVATION} open onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /Partager…/ }));
+    await screen.findByText(/NotAllowedError/);
+
+    // La modale vit dans un portail : c'est `document.body` qui la porte, pas
+    // la racine du rendu.
+    const texte = document.querySelector('[role=dialog]').textContent;
+    const rang = (motif) => texte.search(motif);
+
+    expect(rang(/Ouvrir dans/), 'bloc des applications introuvable').toBeGreaterThan(-1);
+    expect(rang(/ne permet pas la feuille/)).toBeLessThan(rang(/Ouvrir dans/));
+    expect(rang(/Ouvrir dans/)).toBeLessThan(rang(/Le code d’accès n’est pas partagé/));
+  });
+
+  it("garde les applications joignables même sans refus", async () => {
+    // Sur un navigateur de bureau sans feuille de partage, l'écran n'affiche
+    // aucun message : les applications doivent rester la voie évidente.
+    render(<ShareModal booking={RESERVATION} open onClose={vi.fn()} />);
+
+    const texte = document.querySelector('[role=dialog]').textContent;
+    expect(texte.search(/Ouvrir dans/)).toBeLessThan(
+      texte.search(/Le code d’accès n’est pas partagé/),
+    );
+  });
+
+  it("ne promet pas des pièces jointes que le navigateur ne joindra pas", async () => {
+    // « Le plan de la salle et l'invitation d'agenda sont joints au partage »
+    // n'est vrai que par la feuille du système. Sur un navigateur qui la
+    // refuse — Brave, Firefox — rien n'est joint à rien, et la phrase
+    // décrivait un partage qui n'a pas lieu.
+    const ecrit = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText: ecrit }, configurable: true });
+    Object.defineProperty(navigator, 'canShare', { value: () => false, configurable: true });
+    Object.defineProperty(navigator, 'share', {
+      value: () => Promise.reject(Object.assign(new Error('refus'), { name: 'NotAllowedError' })),
+      configurable: true,
+    });
+
+    render(<ShareModal booking={RESERVATION} open onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /Partager…/ }));
+    await screen.findByText(/NotAllowedError/);
+
+    expect(screen.queryByText(/joints au partage/)).toBeNull();
+    // À la place, de quoi les joindre soi-même.
+    expect(screen.getByRole('button', { name: /Télécharger le plan/ })).toBeTruthy();
+  });
+
   it('ne signale rien quand l’utilisateur ferme la feuille lui-même', async () => {
     // `AbortError` n'est pas un échec : c'est un choix.
     const ecrit = vi.fn().mockResolvedValue(undefined);
