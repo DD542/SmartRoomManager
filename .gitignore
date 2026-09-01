@@ -17,10 +17,6 @@ node_modules/
 dist/
 .vite/
 
-# Divers
-.DS_Store
-*.log
-
 # IDE
 .idea/
 .vscode/
@@ -28,4 +24,6 @@ dist/
 # Rapports de tests
 coverage/
 
-smartroom-api/media/
+# Divers
+.DS_Store
+*.log
