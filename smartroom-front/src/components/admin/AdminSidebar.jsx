@@ -145,7 +145,13 @@ export function AdminNav({ onNavigate }) {
                       onClick={onNavigate}
                       className={({ isActive }) =>
                         cn(
-                          'flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition',
+                          // 44 px au téléphone, où cette liste est le tiroir de
+                          // navigation et compte dix-sept entrées empilées :
+                          // 36 px les rendaient voisines au point de se
+                          // toucher. À partir de `lg`, la barre latérale reprend
+                          // sa densité — elle se vise à la souris, et dix-sept
+                          // entrées à 44 px ne tiendraient plus dans la hauteur.
+                          'flex min-h-[44px] items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition lg:min-h-0',
                           isActive
                             ? 'bg-accent-soft text-content'
                             : 'text-content-muted hover:bg-surface-raised hover:text-content',
@@ -171,7 +177,7 @@ export function AdminNav({ onNavigate }) {
         <NavLink
           to="/app"
           onClick={onNavigate}
-          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs text-content-muted transition hover:bg-surface-raised hover:text-content"
+          className="flex min-h-[44px] items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs text-content-muted transition hover:bg-surface-raised hover:text-content lg:min-h-0"
         >
           <ArrowLeft size={14} aria-hidden="true" />
           Retour à l’espace utilisateur
@@ -182,7 +188,7 @@ export function AdminNav({ onNavigate }) {
             logout();
             navigate('/admin/connexion');
           }}
-          className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs text-content-muted transition hover:bg-surface-raised hover:text-danger"
+          className="flex min-h-[44px] w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs text-content-muted transition hover:bg-surface-raised hover:text-danger lg:min-h-0"
         >
           <LogOut size={14} aria-hidden="true" />
           Déconnexion

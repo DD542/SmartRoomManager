@@ -32,8 +32,24 @@ export function Field({ label, htmlFor, hint, error, required, className, childr
   );
 }
 
+/**
+ * Une valeur absente devient la chaîne vide.
+ *
+ * React refuse `null` sur un champ contrôlé — « `value` prop on `select`
+ * should not be null » — et l'avertissement s'imprimait à chaque rendu de
+ * l'écran des préférences : « bâtiment principal » vaut `null` tant que
+ * personne n'en a choisi, et c'est bien ce qu'il faut renvoyer au serveur.
+ *
+ * La normalisation vit donc ici et non chez l'appelant. Chaque écran qui
+ * affiche une préférence non renseignée retomberait sinon dans le même piège.
+ *
+ * `undefined` passe intact : c'est ainsi qu'on demande un champ non contrôlé,
+ * et le confondre avec `null` retirerait ce choix aux appelants.
+ */
+const valeurControlee = (valeur) => (valeur === null ? '' : valeur);
+
 export const Input = forwardRef(function Input(
-  { label, hint, error, required, icon: Icon, className, id, ...props },
+  { label, hint, error, required, icon: Icon, className, id, value, ...props },
   ref,
 ) {
   const autoId = useId();
@@ -54,6 +70,7 @@ export const Input = forwardRef(function Input(
           required={required}
           aria-invalid={Boolean(error) || undefined}
           className={cn(fieldBase, 'h-10', Icon && 'pl-9', error ? 'border-danger' : 'border-line', className)}
+          value={valeurControlee(value)}
           {...props}
         />
       </div>
@@ -62,7 +79,7 @@ export const Input = forwardRef(function Input(
 });
 
 export const Textarea = forwardRef(function Textarea(
-  { label, hint, error, required, className, id, rows = 4, ...props },
+  { label, hint, error, required, className, id, rows = 4, value, ...props },
   ref,
 ) {
   const autoId = useId();
@@ -76,6 +93,7 @@ export const Textarea = forwardRef(function Textarea(
         required={required}
         aria-invalid={Boolean(error) || undefined}
         className={cn(fieldBase, 'py-2.5 leading-relaxed', error ? 'border-danger' : 'border-line', className)}
+        value={valeurControlee(value)}
         {...props}
       />
     </Field>
@@ -83,7 +101,7 @@ export const Textarea = forwardRef(function Textarea(
 });
 
 export const Select = forwardRef(function Select(
-  { label, hint, error, required, options = [], placeholder, className, id, ...props },
+  { label, hint, error, required, options = [], placeholder, className, id, value, ...props },
   ref,
 ) {
   const autoId = useId();
@@ -102,6 +120,7 @@ export const Select = forwardRef(function Select(
             error ? 'border-danger' : 'border-line',
             className,
           )}
+          value={valeurControlee(value)}
           {...props}
         >
           {placeholder && <option value="">{placeholder}</option>}

@@ -59,7 +59,19 @@ export function AlertList({ alerts = [], className }) {
                   <PermissionGate permission={alerte.action.permission}>
                     <Link
                       to={alerte.action.to}
-                      className="inline-flex items-center gap-1 text-xs font-medium transition hover:underline"
+                      // 44 px de haut, la cible retenue dans l'espace
+                      // utilisateur. Ce lien faisait 16 px — sous le minimum
+                      // de 24 px du référentiel d'accessibilité — alors qu'il
+                      // porte l'action principale de sa ligne. Le retrait
+                      // horizontal garde la densité du tableau de bord : c'est
+                      // la hauteur qui manquait au doigt, pas la largeur.
+                      //
+                      // Relaché à partir de `lg` : la souris vise 16 px sans
+                      // peine, et cinq lignes d'alerte allongées de quatorze
+                      // pixels chacune étireraient le tableau de bord pour
+                      // rien. C'est la même borne que les tableaux qui
+                      // deviennent des cartes.
+                      className="-mx-2 inline-flex min-h-[44px] items-center gap-1 px-2 text-xs font-medium transition hover:underline lg:mx-0 lg:min-h-0 lg:px-0"
                     >
                       {alerte.action.label}
                       <ArrowRight size={12} aria-hidden="true" />

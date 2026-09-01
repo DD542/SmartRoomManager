@@ -46,7 +46,8 @@ export function FilterBar({ filters = [], active = [], onReset, className, child
       <button
         type="button"
         onClick={onReset}
-        className="ml-auto inline-flex items-center gap-1 text-xs text-accent transition hover:text-accent-hover"
+        // Même raison qu'ailleurs : 16 px de haut ne se visent pas au doigt.
+        className="ml-auto -mr-2 inline-flex min-h-[44px] items-center gap-1 px-2 text-xs text-accent transition hover:text-accent-hover lg:mr-0 lg:min-h-0 lg:px-0"
       >
         <RotateCcw size={12} aria-hidden="true" />
         Réinitialiser
