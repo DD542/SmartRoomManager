@@ -61,8 +61,38 @@ export function BoutonGoogle({ onCredential, onError, disabled = false }) {
   const rappel = useRef({ onCredential, onError });
   rappel.current = { onCredential, onError };
 
+  //: Arrêt de la surveillance de largeur, posé une fois le bouton dessiné.
+  const nettoyage = useRef(() => {});
+
   useEffect(() => {
     let vivant = true;
+
+    /**
+     * (Re)dessine le bouton à la largeur de son conteneur.
+     *
+     * Google impose son propre bouton — leurs conditions l'exigent, et lui
+     * seul ouvre la fenêtre de choix de compte. Restent quatre réglages, et
+     * `outline` est celui qui tient sur un fond sombre : `filled_black` y
+     * creuse un trou noir, faute de bordure pour marquer ses limites.
+     */
+    const dessiner = () => {
+      if (!cible.current) return;
+      const disponible = cible.current.parentElement?.clientWidth ?? 320;
+      // Google refuse en dehors de cette plage, sans le dire.
+      const largeur = Math.max(200, Math.min(400, Math.round(disponible)));
+
+      cible.current.innerHTML = '';
+      window.google.accounts.id.renderButton(cible.current, {
+        type: 'standard',
+        theme: 'outline',
+        size: 'large',
+        shape: 'rectangular',
+        text: 'continue_with',
+        logo_alignment: 'center',
+        locale: 'fr',
+        width: largeur,
+      });
+    };
 
     (async () => {
       try {
@@ -86,17 +116,32 @@ export function BoutonGoogle({ onCredential, onError, disabled = false }) {
           cancel_on_tap_outside: true,
         });
 
-        window.google.accounts.id.renderButton(cible.current, {
-          type: 'standard',
-          theme: 'filled_black',
-          size: 'large',
-          shape: 'pill',
-          text: 'continue_with',
-          locale: 'fr',
-          width: 320,
-        });
-
+        dessiner();
         setEtat('pret');
+
+        // La largeur est un nombre de pixels, pas un pourcentage : Google
+        // n'accepte que cela, et le bouton ne se redimensionne pas tout seul.
+        // Il est donc redessiné quand la place change — sans quoi il gardait
+        // sa largeur d'origine et débordait de la carte sur un téléphone.
+        //
+        // Deux sources, parce qu'aucune ne suffit seule. `ResizeObserver` voit
+        // les changements que la fenêtre ignore — un volet qui s'ouvre, une
+        // carte qui rétrécit — mais il ne se déclenche pas dans un document
+        // que le navigateur ne peint pas, ce qui arrive plus souvent qu'on ne
+        // croit : onglet en arrière-plan, fenêtre jamais composée. L'événement
+        // `resize`, lui, arrive partout, et couvre le cas le plus fréquent.
+        const surveillants = [];
+
+        if (typeof ResizeObserver !== 'undefined') {
+          const surveillant = new ResizeObserver(dessiner);
+          surveillant.observe(cible.current.parentElement);
+          surveillants.push(() => surveillant.disconnect());
+        }
+
+        window.addEventListener('resize', dessiner);
+        surveillants.push(() => window.removeEventListener('resize', dessiner));
+
+        nettoyage.current = () => surveillants.forEach((arreter) => arreter());
       } catch {
         if (!vivant) return;
         setEtat('erreur');
@@ -108,6 +153,7 @@ export function BoutonGoogle({ onCredential, onError, disabled = false }) {
 
     return () => {
       vivant = false;
+      nettoyage.current();
     };
   }, []);
 
@@ -129,7 +175,10 @@ export function BoutonGoogle({ onCredential, onError, disabled = false }) {
         <span className="h-px flex-1 bg-line" />
       </div>
 
-      <div className="flex justify-center">
+      {/* `w-full` : c'est ce conteneur que le bouton mesure pour se dessiner,
+          il doit donc porter la largeur de la carte, pas celle de son
+          contenu. */}
+      <div className="flex w-full justify-center">
         {etat === 'chargement' && <Spinner label="Chargement de la connexion Google…" />}
         {/* Le conteneur reste monté pendant le chargement : Google y dessine
             son bouton, et le retirer du DOM entre-temps lui ferait perdre sa
