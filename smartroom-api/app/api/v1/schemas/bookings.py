@@ -60,6 +60,17 @@ class CheckInIn(ApiModel):
     code: Annotated[str, Field(min_length=1, max_length=20)] = ""
 
 
+class LateIn(ApiModel):
+    """Durée annoncée d'un retard. Facultative, et sans effet sur les règles.
+
+    « Je suis en retard » doit rester le geste le plus court de l'écran : le
+    corps entier est optionnel. La borne haute est le créneau lui-même, posée
+    par le service qui le connaît ; celle d'ici n'écarte que l'absurde.
+    """
+
+    delay_min: Annotated[int, Field(ge=1, le=480)] | None = None
+
+
 class AccessCodeOut(ReadModel):
     code: str
     hint: str

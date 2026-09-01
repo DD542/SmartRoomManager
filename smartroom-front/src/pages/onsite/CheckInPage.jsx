@@ -67,6 +67,8 @@ export default function CheckInPage() {
   const [digits, setDigits] = useState(['', '', '', '']);
   const [error, setError] = useState(null);
   const [pending, setPending] = useState(false);
+  const [retardOuvert, setRetardOuvert] = useState(false);
+  const [retardMin, setRetardMin] = useState('');
   const inputs = useRef([]);
 
   const booking = useAsync(() => getBooking(id), [id]);
@@ -148,8 +150,13 @@ export default function CheckInPage() {
     setPending(true);
     setError(null);
     try {
-      await declareLate(id);
-      toast.success('Retard signalé', 'Votre présence est validée, la salle reste à vous.');
+      await declareLate(id, retardMin || null);
+      toast.success(
+        'Retard signalé',
+        retardMin
+          ? `Votre présence est validée ; ${retardMin} minutes annoncées.`
+          : 'Votre présence est validée, la salle reste à vous.',
+      );
       navigate(`/app/reservations/${id}`);
     } catch (err) {
       setError(err.message);
@@ -291,16 +298,65 @@ export default function CheckInPage() {
 
                 {/* Rien à déclarer avant l'heure : le serveur répond « Le
                     créneau n'a pas encore commencé », et il a raison. */}
-                {!avantOuverture && (
-                  <button
-                    type="button"
-                    onClick={declarerRetard}
-                    disabled={pending}
-                    className="mx-auto mt-4 block text-xs text-accent transition hover:text-accent-hover disabled:opacity-50"
-                  >
-                    Je suis en retard
-                  </button>
-                )}
+                {!avantOuverture &&
+                  (retardOuvert ? (
+                    <div className="mt-4 rounded-xl border border-line bg-surface-raised p-3">
+                      <label
+                        htmlFor="retard-min"
+                        className="block text-xs text-content-muted"
+                      >
+                        Retard estimé, en minutes{' '}
+                        <span className="text-content-faint">(facultatif)</span>
+                      </label>
+                      <input
+                        id="retard-min"
+                        type="number"
+                        inputMode="numeric"
+                        min={1}
+                        max={480}
+                        value={retardMin}
+                        placeholder="15"
+                        onChange={(event) => setRetardMin(event.target.value)}
+                        className="mt-2 h-10 w-full rounded-lg border border-line bg-surface px-3 text-sm text-content focus:border-accent focus:outline-none"
+                      />
+                      {/* Ce que la déclaration fait vraiment : la présence est
+                          validée, la salle gardée. La durée n'est qu'une
+                          annonce, portée au journal de la réservation. */}
+                      <p className="mt-2 text-[11px] leading-relaxed text-content-faint">
+                        Votre présence sera validée et la salle vous restera acquise. La
+                        durée annoncée est indicative.
+                      </p>
+                      <div className="mt-3 flex gap-2">
+                        <Button
+                          size="sm"
+                          fullWidth
+                          loading={pending}
+                          onClick={declarerRetard}
+                        >
+                          Signaler mon retard
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setRetardOuvert(false);
+                            setRetardMin('');
+                          }}
+                        >
+                          Annuler
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setRetardOuvert(true)}
+                      disabled={pending}
+                      className="mx-auto mt-4 block text-xs text-accent transition hover:text-accent-hover disabled:opacity-50"
+                    >
+                      Je suis en retard
+                    </button>
+                  ))}
               </>
             )}
               </section>

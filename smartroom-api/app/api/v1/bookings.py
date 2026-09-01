@@ -30,6 +30,7 @@ from app.api.v1.schemas import (
     CancelIn,
     BookingDetailOut,
     CheckInIn,
+    LateIn,
     InvitationRespondIn,
     OccurrenceOut,
     ParticipantIn,
@@ -491,16 +492,23 @@ def respond_to_invitation(
     description=(
         "Le créneau reste réservé au-delà de la fenêtre de validation. Sans "
         "cela, la tâche de libération rendrait la salle à quelqu\'un qui arrive "
-        "avec dix minutes de retard. La marque vaut validation de présence."
+        "avec dix minutes de retard. La marque vaut validation de présence. "
+        "`delay_min` annonce la durée du retard : facultative, sans effet sur "
+        "les règles, écrite au journal de la réservation."
     ),
     responses={422: {"description": "Créneau non commencé, écoulé, ou déjà validé."}},
 )
 def mark_late(
-    booking_id: uuid.UUID, session: SessionDep, principal: CurrentPrincipal
+    booking_id: uuid.UUID,
+    session: SessionDep,
+    principal: CurrentPrincipal,
+    payload: LateIn | None = None,
 ) -> BookingOut:
     reservation = _charger(session, booking_id)
     assert_owner_or_admin(principal, reservation.owner_id)
 
-    marquee = service.mark_late(session, booking_id)
+    marquee = service.mark_late(
+        session, booking_id, delai_min=payload.delay_min if payload else None
+    )
     session.commit()
     return BookingOut.of(marquee)

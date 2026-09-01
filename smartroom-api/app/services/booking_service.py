@@ -853,12 +853,22 @@ def respond_to_invitation(
 
 
 def mark_late(
-    session: Session, booking_id: uuid.UUID, *, now: datetime | None = None
+    session: Session,
+    booking_id: uuid.UUID,
+    *,
+    delai_min: int | None = None,
+    now: datetime | None = None,
 ) -> Booking:
     """Signale un retard : le créneau reste réservé au-delà de la fenêtre.
 
     Sans cela, la tâche de libération rendrait la salle à quelqu'un qui arrive
     avec dix minutes de retard. La marque vaut validation de présence.
+
+    `delai_min` est une annonce, facultative : « j'arrive dans un quart
+    d'heure ». Elle ne décale aucune règle — la présence est validée dans les
+    deux cas, et la salle gardée de la même façon. Elle est écrite au journal,
+    pour l'occupant suivant et pour l'administration ; la garder en mémoire
+    vive reviendrait à ne pas la demander.
     """
     now = en_utc(now or datetime.now(UTC))
     reservation = _charger(session, booking_id)
@@ -874,12 +884,31 @@ def mark_late(
     if now >= creneau.end:
         raise RuleViolationError("Le créneau est écoulé.", code="passe")
 
+    if delai_min is not None:
+        duree_creneau = int((creneau.end - creneau.start).total_seconds() // 60)
+        if delai_min < 1:
+            raise RuleViolationError(
+                "Un retard se compte en minutes entières.", code="delai_invalide"
+            )
+        # Au-delà du créneau, ce n'est plus un retard : c'est une absence, et
+        # la salle a vocation à repartir à quelqu'un d'autre.
+        if delai_min > duree_creneau:
+            raise RuleViolationError(
+                f"Un retard ne peut pas dépasser la durée du créneau "
+                f"({duree_creneau} minutes).",
+                code="delai_trop_long",
+            )
+
     reservation.checked_in_at = now
     _journaliser(
         session,
         reservation,
         BookingEventType.CHECKIN,
-        "Arrivée tardive signalée",
+        (
+            f"Arrivée tardive signalée — environ {delai_min} minutes"
+            if delai_min is not None
+            else "Arrivée tardive signalée"
+        ),
         reservation.owner_id,
     )
     session.flush()

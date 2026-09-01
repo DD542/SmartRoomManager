@@ -223,6 +223,7 @@ describe('Quand le serveur refuse un retard', () => {
     monter();
 
     fireEvent.click(await screen.findByRole('button', { name: /en retard/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Signaler mon retard/ }));
 
     expect(await screen.findByText('Le créneau est écoulé.')).toBeTruthy();
   });
@@ -238,7 +239,81 @@ describe('Ce que « Je suis en retard » fait vraiment', () => {
 
     const resultat = await declareLate('bk-1');
 
-    expect(post).toHaveBeenCalledWith('/bookings/bk-1/late');
+    expect(post).toHaveBeenCalledWith('/bookings/bk-1/late', {});
     expect(resultat.booking).toBeTruthy();
+  });
+});
+
+describe('Le code envoyé au serveur', () => {
+  it("garde le tiret que le serveur a haché", async () => {
+    // Le code émis a la forme `E-3716`, et c'est cette chaîne exacte dont la
+    // base garde l'empreinte. L'écran retirait le tiret avant d'envoyer : le
+    // serveur recevait `E3716` et répondait « Code d'accès incorrect » pour
+    // un code parfaitement valable.
+    maintenant(3);
+    post.mockResolvedValueOnce({ ...reservation, checked_in_at: new Date().toISOString() });
+    monter();
+
+    const bouton = await screen.findByRole('button', { name: /Valider mon arrivée/ });
+    for (const [rang, chiffre] of ['3', '7', '1', '6'].entries()) {
+      fireEvent.change(screen.getByLabelText(`Chiffre ${rang + 1} du code d’accès`), {
+        target: { value: chiffre },
+      });
+    }
+    fireEvent.click(bouton);
+
+    await waitFor(() =>
+      expect(post).toHaveBeenCalledWith('/bookings/bk-1/check-in', { code: 'E-3716' }),
+    );
+  });
+
+  it("prend le préfixe de l'indice, pas une lettre inventée", async () => {
+    // `accessCode` vaut « E-**** » : la lettre vient du bâtiment, et un
+    // repli sur « A » enverrait le code d'une autre aile.
+    maintenant(3);
+    post.mockResolvedValueOnce({ ...reservation });
+    monter();
+
+    // Le rendu d'abord : les champs n'existent qu'une fois la réservation
+    // chargée, et une saisie tapée dans le vide ne prouve rien.
+    await screen.findByRole('button', { name: /Valider mon arrivée/ });
+    for (const [rang, chiffre] of ['1', '2', '3', '4'].entries()) {
+      fireEvent.change(screen.getByLabelText(`Chiffre ${rang + 1} du code d’accès`), {
+        target: { value: chiffre },
+      });
+    }
+    fireEvent.click(await screen.findByRole('button', { name: /Valider mon arrivée/ }));
+
+    await waitFor(() => expect(post.mock.calls[0][1].code).toBe('E-1234'));
+  });
+});
+
+describe('La durée annoncée du retard', () => {
+  it("part avec la déclaration quand elle est saisie", async () => {
+    maintenant(5);
+    post.mockResolvedValueOnce({ ...reservation });
+    monter();
+
+    fireEvent.click(await screen.findByRole('button', { name: /en retard/ }));
+    fireEvent.change(await screen.findByLabelText(/Retard estimé/), {
+      target: { value: '15' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Signaler mon retard/ }));
+
+    await waitFor(() =>
+      expect(post).toHaveBeenCalledWith('/bookings/bk-1/late', { delay_min: 15 }),
+    );
+  });
+
+  it('reste facultative', async () => {
+    // Le geste le plus court de l'écran ne doit pas devenir un formulaire.
+    maintenant(5);
+    post.mockResolvedValueOnce({ ...reservation });
+    monter();
+
+    fireEvent.click(await screen.findByRole('button', { name: /en retard/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Signaler mon retard/ }));
+
+    await waitFor(() => expect(post).toHaveBeenCalledWith('/bookings/bk-1/late', {}));
   });
 });

@@ -52,8 +52,17 @@ export async function getCheckInWindow(bookingId, maintenant = new Date()) {
 }
 
 export async function checkIn(bookingId, code) {
+  // Le tiret reste.
+  //
+  // Le code émis a la forme `E-3716`, et c'est cette chaîne **exacte** dont la
+  // base garde l'empreinte — rien d'autre n'est conservé. En retirant le
+  // tiret, cette fonction présentait `E3716` : un code que le serveur n'a
+  // jamais émis, refusé à juste titre, et l'utilisateur lisait « Code d'accès
+  // incorrect » en tapant le bon code.
+  //
+  // Les espaces partent, eux : ils viennent de la saisie, jamais du code.
   const data = await post(`/bookings/${bookingId}/check-in`, {
-    code: String(code ?? '').replace(/\s|-/g, '').toUpperCase(),
+    code: String(code ?? '').replace(/\s/g, '').toUpperCase(),
   });
   return adapt.booking(data);
 }
@@ -62,9 +71,13 @@ export async function checkIn(bookingId, code) {
  * « Je suis en retard » : le créneau reste réservé au-delà de la fenêtre.
  *
  * La marque vaut validation de présence — sans cela, la tâche de libération
- * rendrait la salle à quelqu'un qui arrive avec dix minutes de retard.
+ * rendrait la salle à quelqu'un qui arrive avec dix minutes de retard. Elle ne
+ * prolonge aucune fenêtre : rien dans l'API ne prolonge quoi que ce soit.
  */
-export async function declareLate(bookingId) {
-  const data = await post(`/bookings/${bookingId}/late`);
-  return { bookingId, extendedByMin: 0, booking: adapt.booking(data) };
+export async function declareLate(bookingId, delayMin = null) {
+  // La durée est une annonce, jamais une condition : sans elle, le corps est
+  // vide et le geste reste le plus court de l'écran.
+  const corps = delayMin ? { delay_min: Number(delayMin) } : {};
+  const data = await post(`/bookings/${bookingId}/late`, corps);
+  return { bookingId, delayMin: delayMin ? Number(delayMin) : null, booking: adapt.booking(data) };
 }

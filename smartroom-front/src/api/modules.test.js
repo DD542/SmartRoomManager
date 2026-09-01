@@ -858,7 +858,7 @@ describe('présence sur place', () => {
     expect(fenetre.checkedIn).toBe(false);
   });
 
-  it('normalise le code saisi avant de le présenter', async () => {
+  it('nettoie la saisie sans toucher au code', async () => {
     let recu = null;
     serveur.use(
       http.post(`${BASE}/bookings/bk-1/check-in`, async ({ request }) => {
@@ -868,18 +868,50 @@ describe('présence sur place', () => {
     );
 
     await checkin.checkIn('bk-1', ' a-4821 ');
-    // Espaces et tirets retirés, majuscules imposées : l'utilisateur recopie
-    // ce qu'il voit à l'écran de la salle, pas une forme canonique.
-    expect(recu.code).toBe('A4821');
+
+    // Ce test attendait « A4821 » : il verrouillait le défaut.
+    //
+    // Le serveur émet `A-4821` et n'en garde que l'empreinte, tiret compris.
+    // Retirer le tiret produisait une chaîne que l'empreinte ne reconnaît pas,
+    // et l'utilisateur lisait « Code d'accès incorrect » en tapant le bon code.
+    //
+    // Les espaces partent, la casse est imposée : ils viennent de la saisie.
+    // Le tiret, lui, fait partie du code.
+    expect(recu.code).toBe('A-4821');
   });
 
   it('signale un retard sans prolonger la fenêtre', async () => {
+    // `extendedByMin: 0` décrivait une prolongation qui n'existe pas : le
+    // serveur pose `checked_in_at`, la marque **vaut** validation de présence.
+    // Un champ toujours nul ne décrivait rien et laissait croire le contraire.
+    let recu = 'jamais appelé';
     serveur.use(
-      http.post(`${BASE}/bookings/bk-1/late`, () => HttpResponse.json(RESERVATION)),
+      http.post(`${BASE}/bookings/bk-1/late`, async ({ request }) => {
+        recu = await request.json();
+        return HttpResponse.json({ ...RESERVATION, checked_in_at: CRENEAU.starts_at });
+      }),
     );
 
     const retard = await checkin.declareLate('bk-1');
-    expect(retard.extendedByMin).toBe(0);
+
+    expect(recu).toEqual({});
+    expect(retard.delayMin).toBeNull();
+    expect(retard.booking.checkedIn).toBe(true);
+  });
+
+  it('transmet la durée annoncée quand elle est donnée', async () => {
+    let recu = null;
+    serveur.use(
+      http.post(`${BASE}/bookings/bk-1/late`, async ({ request }) => {
+        recu = await request.json();
+        return HttpResponse.json({ ...RESERVATION, checked_in_at: CRENEAU.starts_at });
+      }),
+    );
+
+    const retard = await checkin.declareLate('bk-1', '15');
+
+    expect(recu).toEqual({ delay_min: 15 });
+    expect(retard.delayMin).toBe(15);
   });
 });
 
