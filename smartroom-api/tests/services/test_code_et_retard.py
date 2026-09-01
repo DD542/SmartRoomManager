@@ -177,3 +177,52 @@ class TestRoute:
         )
 
         assert reponse.status_code == 422
+
+
+class TestAnnulerApresValidation:
+    """Annuler une réservation dont la présence est validée.
+
+    La base l'interdit — `ck_bookings_cancelled_not_checked_in` — mais le
+    service ne le voyait pas venir : la violation remontait en `IntegrityError`
+    au `flush`, donc en **500**. Un utilisateur qui valide sa présence puis
+    change d'avis produit exactement ce geste ; il doit lire une phrase, pas un
+    plantage.
+    """
+
+    def test_le_service_refuse_avant_la_base(self, session, en_cours):
+        reservation, code = en_cours
+        booking_service.check_in(session, reservation.id, code=code.clear)
+        session.flush()
+
+        with pytest.raises(RuleViolationError) as refus:
+            booking_service.cancel_booking(
+                session, reservation.id, reason="Finalement non", actor_id=reservation.owner_id
+            )
+
+        assert refus.value.code == "deja_validee"
+
+    def test_la_route_repond_422_et_non_500(self, client, session, compte, en_cours):
+        reservation, code = en_cours
+        booking_service.check_in(session, reservation.id, code=code.clear)
+        session.commit()
+        entetes = connecter(client, compte.email)
+
+        reponse = client.post(
+            f"/api/v1/bookings/{reservation.id}/cancel",
+            headers=entetes,
+            json={"reason": "Finalement non"},
+        )
+
+        assert reponse.status_code == 422, reponse.text
+        assert reponse.json()["error"]["code"] == "deja_validee"
+
+    def test_une_reservation_non_validee_s_annule_toujours(self, session, en_cours):
+        # La contrepartie : le refus ne doit pas déborder sur le cas normal.
+        reservation, _ = en_cours
+
+        annulee = booking_service.cancel_booking(
+            session, reservation.id, reason="Changement de programme",
+            actor_id=reservation.owner_id,
+        )
+
+        assert annulee.cancelled_at is not None

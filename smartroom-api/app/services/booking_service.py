@@ -584,6 +584,11 @@ def cancel_booking(
 
     Une annulation tardive n'est pas refusée — le créneau doit être libéré même
     au dernier moment — mais elle est signalée dans la frise.
+
+    Une présence validée, en revanche, ferme la porte : on ne défait pas une
+    occupation constatée. La base le disait déjà — `ck_bookings_cancelled_not_
+    checked_in` — mais elle le disait au `flush`, en `IntegrityError`, donc en
+    500. La règle vit ici, où elle se lit et où elle rend une phrase.
     """
     now = en_utc(now or datetime.now(UTC))
     reservation = _charger(session, booking_id)
@@ -592,6 +597,11 @@ def cancel_booking(
         raise RuleViolationError("Le motif d'annulation est obligatoire.", code="motif_requis")
     if reservation.status is BookingStatus.ANNULEE:
         raise RuleViolationError("Réservation déjà annulée.", code="deja_annulee")
+    if reservation.checked_in_at is not None:
+        raise RuleViolationError(
+            "Votre présence est déjà validée : cette réservation ne peut plus être annulée.",
+            code="deja_validee",
+        )
 
     salle = charger_salle(session, reservation.room_id)
     regles = load_rules(session, salle)
