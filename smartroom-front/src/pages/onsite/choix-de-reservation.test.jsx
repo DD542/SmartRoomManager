@@ -75,8 +75,12 @@ describe('Plusieurs réservations à valider', () => {
       </MemoryRouter>,
     );
 
-    await waitFor(() => expect(screen.getByText(/Salle Curie/)).toBeTruthy());
-    expect(within(ligne('Salle Curie')).getByText(/Ouverte/)).toBeTruthy();
+    // L'étiquette n'apparaît qu'une fois la règle de la salle obtenue :
+    // attendre la ligne ne suffit pas, il faut attendre l'étiquette. Sans
+    // cela le test passait par chance, selon l'ordre des microtâches.
+    await waitFor(() =>
+      expect(within(ligne('Salle Curie')).getByText(/Ouverte/)).toBeTruthy(),
+    );
   });
 
   it('annonce l’heure d’ouverture des autres, plutôt qu’un bouton identique', async () => {
@@ -88,8 +92,9 @@ describe('Plusieurs réservations à valider', () => {
       </MemoryRouter>,
     );
 
-    await waitFor(() => expect(screen.getByText(/Salle Descartes/)).toBeTruthy());
-    expect(within(ligne('Salle Descartes')).getByText(/Ouvre à/)).toBeTruthy();
+    await waitFor(() =>
+      expect(within(ligne('Salle Descartes')).getByText(/Ouvre à/)).toBeTruthy(),
+    );
   });
 
   it('place la validable en premier', async () => {
