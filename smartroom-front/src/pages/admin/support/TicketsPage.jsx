@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Inbox, PartyPopper } from 'lucide-react';
 import {
   countTickets,
@@ -31,8 +32,24 @@ export default function TicketsPage() {
   useDocumentTitle('Tickets');
   const toast = useToast();
 
+  // La sélection vit dans l'adresse, pas seulement dans un état local.
+  //
+  // `/admin/tickets/:id` figure dans le routeur comme une entrée à part :
+  // l'intention était bien d'ouvrir une demande précise. Mais la page ne lisait
+  // jamais le paramètre, et l'adresse menaçait à la file avec « Aucun ticket
+  // sélectionné ». Un lien vers un ticket — notification, courriel, signet —
+  // perdait son ticket, sans que rien ne le signale.
+  const { id: idDeLUrl } = useParams();
+  const naviguer = useNavigate();
+
   const [onglet, setOnglet] = useState('ouverts');
-  const [selectionId, setSelectionId] = useState(null);
+  const selectionId = idDeLUrl ?? null;
+
+  /** Ouvrir un ticket change l'adresse : elle redevient partageable. */
+  const setSelectionId = (identifiant) =>
+    naviguer(identifiant ? `/admin/tickets/${identifiant}` : '/admin/tickets', {
+      replace: true,
+    });
   const [envoi, setEnvoi] = useState(false);
 
   const file = useAsync(() => listAdminTickets(onglet), [onglet]);
