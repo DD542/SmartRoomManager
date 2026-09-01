@@ -746,3 +746,42 @@ describe('demandes d’accès, statistiques et audit', () => {
     expect(entree.flagged).toBe(false);
   });
 });
+
+describe('Participants d’une réservation', () => {
+  const SLOT = { starts_at: ISO, ends_at: ISO, duration_minutes: 60 };
+
+  it('rend toujours un tableau, meme absent de la charge', () => {
+    // Deux écrans le parcouraient sans se garder : la fiche affichait
+    // « Participants (0) » quel que soit le nombre réel, et l'écran de
+    // modification plantait — « Cannot read properties of undefined (reading
+    // 'filter') ». Le champ n'était servi que par une route dédiée, qu'aucun
+    // des deux n'appelait, et JavaScript ne dit rien d'un champ absent.
+    const sans = adapt.booking({ id: 'bk-1', slot: SLOT });
+
+    expect(Array.isArray(sans.participants)).toBe(true);
+    expect(sans.participants).toEqual([]);
+  });
+
+  it('les adapte quand le détail les porte', () => {
+    const avec = adapt.booking({
+      id: 'bk-2',
+      slot: SLOT,
+      participants: [
+        { id: 'p-1', booking_id: 'bk-2', user_id: null, email: 'marie@edu.ece.fr',
+          display_name: 'Marie Laurent', response: 'en_attente', is_organizer: false,
+          responded_at: null },
+        { id: 'p-2', booking_id: 'bk-2', user_id: 'u-1', email: 'd.menga@ece.fr',
+          display_name: 'Dylan Menga', response: 'accepte', is_organizer: true,
+          responded_at: ISO },
+      ],
+    });
+
+    expect(avec.participants.map((p) => p.email)).toEqual([
+      'marie@edu.ece.fr',
+      'd.menga@ece.fr',
+    ]);
+    // `organizer` et non `is_organizer` : c'est ce nom que lit l'écran de
+    // modification pour ne proposer de retirer que les invités.
+    expect(avec.participants.filter((p) => !p.organizer)).toHaveLength(1);
+  });
+});

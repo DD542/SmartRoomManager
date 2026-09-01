@@ -345,6 +345,13 @@ export const booking = (data) => ({
     label: item.label,
     actor: item.actor_label,
   })),
+  // Toujours un tableau, jamais `undefined` : deux écrans le parcouraient
+  // sans se garder. La fiche affichait « Participants (0) » quel que soit le
+  // nombre réel, et l'écran de modification plantait sur `.filter()`.
+  //
+  // Seul le détail le porte — une liste de cent réservations n'a pas à tirer
+  // cent listes d'invités — d'où le repli sur un tableau vide.
+  participants: (data.participants ?? []).map(participant),
 });
 
 /**

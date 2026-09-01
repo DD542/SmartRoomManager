@@ -190,19 +190,41 @@ class BookingEventOut(ReadModel):
 
 
 class BookingDetailOut(BookingOut):
-    """Détail d'une réservation, frise comprise.
+    """Détail d'une réservation : frise et participants compris.
 
-    La frise n'accompagne pas les listes : cent réservations affichées en
-    tireraient cent historiques dont aucun n'est lu.
+    Ni l'une ni les autres n'accompagnent les listes : cent réservations
+    affichées en tireraient cent historiques et cent listes d'invités dont
+    aucun n'est lu.
+
+    Les participants y figurent parce que deux écrans les lisaient ici sans
+    qu'ils y soient — la fiche affichait « Participants (0) » quel que soit le
+    nombre réel, et l'écran de modification plantait sur un `.filter()`
+    d'`undefined`. Une route dédiée existe, qu'aucun des deux n'appelait ; leur
+    demander un second aller-retour pour une donnée aussi courte l'aurait
+    laissée oubliable une fois de plus.
     """
 
     events: list[BookingEventOut] = Field(default_factory=list)
+    participants: list[ParticipantOut] = Field(default_factory=list)
 
     @classmethod
     def of(cls, reservation) -> BookingDetailOut:
         base = BookingOut.of(reservation).model_dump()
         return cls(
             **base,
+            participants=[
+                ParticipantOut(
+                    id=item.id,
+                    booking_id=item.booking_id,
+                    user_id=item.user_id,
+                    email=item.email,
+                    display_name=item.display_name,
+                    response=item.response.value,
+                    is_organizer=item.is_organizer,
+                    responded_at=item.responded_at,
+                )
+                for item in reservation.participants
+            ],
             events=[
                 BookingEventOut(
                     id=item.id,
