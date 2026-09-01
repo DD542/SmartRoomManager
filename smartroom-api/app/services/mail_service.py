@@ -11,6 +11,8 @@ prévenir vaut mieux que la faire échouer.
 
 from __future__ import annotations
 
+import re
+
 import logging
 import threading
 from dataclasses import dataclass
@@ -188,6 +190,39 @@ async def send(message: Message) -> None:
         logger.exception("Envoi SMTP impossible → %s", message.to)
 
 
+#: Variables dont la valeur ne doit jamais atteindre la base.
+#:
+#: Le courriel les porte — c'est ainsi que l'organisateur reçoit son code, une
+#: fois. La notification applicative, elle, est écrite en base et s'affiche
+#: indéfiniment : elle gardait en clair le secret que tout le reste protège.
+#: `booking_access_codes` n'en conserve qu'une empreinte, la fiche affiche
+#: « E-**** », et les mentions légales affirment que le code complet n'existe
+#: qu'à l'instant de son émission.
+#:
+#: La liste est ici, et non chez l'appelant : un appelant peut oublier de
+#: signaler son secret, ce fichier ne peut pas oublier de le masquer.
+VARIABLES_SECRETES = frozenset({"code_acces"})
+
+#: Un code émis : une lettre, un tiret, quatre chiffres.
+_FORME_DU_CODE = re.compile(r"^([A-Za-z])-\d{4}$")
+
+
+def masquer_secret(valeur: Any) -> str:
+    """Rend l'indice d'un secret, ou rien.
+
+    Un code reconnu garde sa première lettre — « E-**** », comme la fiche de
+    réservation — parce qu'elle aide à reconnaître le bon code parmi plusieurs
+    sans rien révéler. Une valeur d'une autre forme disparaît entièrement :
+    mieux vaut perdre un renseignement que le divulguer, et le jour où la forme
+    du code changera, ce masque-là ne laissera rien passer.
+    """
+    if valeur in (None, ""):
+        return ""
+
+    trouve = _FORME_DU_CODE.match(str(valeur))
+    return f"{trouve.group(1)}-****" if trouve else "****"
+
+
 def notify(
     session: Session,
     *,
@@ -221,10 +256,21 @@ def notify(
     titre = render(gabarit.subject, valeurs)
     corps = render(gabarit.body, valeurs)
 
+    # Deux rendus, deux destinations. Le masquage porte sur la **valeur**,
+    # avant le rendu : une expression régulière passée sur le texte rendu
+    # dépendrait de la forme que le gabarit donne au code, et l'administration
+    # peut réécrire ce gabarit.
+    sans_secrets = {
+        **valeurs,
+        **{nom: masquer_secret(valeurs[nom]) for nom in VARIABLES_SECRETES & valeurs.keys()},
+    }
+    titre_stocke = render(gabarit.subject, sans_secrets)
+    corps_stocke = render(gabarit.body, sans_secrets)
+
     notification = Notification(
         user_id=user.id,
-        title=titre,
-        body=corps,
+        title=titre_stocke,
+        body=corps_stocke,
         channel=NotificationChannel.IN_APP,
         # Le gabarit d'origine : c'est lui qui dit ce que la notification
         # propose de faire, et l'écran n'a pas à le deviner d'après son titre.
