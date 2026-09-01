@@ -36,6 +36,44 @@ const RENDUS = [
   },
 ];
 
+/**
+ * Les résumés d'une liste dépliable tiennent sur deux lignes, pas une.
+ *
+ * `truncate` coupe à une ligne, ellipse comprise. Sur un téléphone, la colonne
+ * du centre d'aide fait 237 px : mesuré sur les 24 articles, les résumés
+ * réclamaient jusqu'à 373 px et perdaient donc leur tiers final — « Réserver une
+ * salle du campus, en connaît… ». Le teaser ne renseignait plus.
+ *
+ * Deux lignes suffisent : sur un écran large, la plupart tiennent toujours sur
+ * une seule et rien ne change.
+ */
+const RESUMES = [
+  {
+    fichier: 'src/components/support/HelpArticleList.jsx',
+    expression: '{article.excerpt}',
+    quoi: 'le résumé d’un article d’aide',
+  },
+];
+
+describe('Résumés de liste', () => {
+  for (const { fichier, expression, quoi } of RESUMES) {
+    it(`laisse deux lignes à ${quoi}`, () => {
+      const source = readFileSync(fichier, 'utf8');
+      const position = source.indexOf(expression);
+      expect(position, `${expression} introuvable dans ${fichier}`).toBeGreaterThan(-1);
+
+      const balise = source.slice(source.lastIndexOf('<', position), position);
+
+      expect(balise, `${fichier} : le résumé est coupé à une ligne`).toMatch(
+        /line-clamp-2/,
+      );
+      expect(balise, `${fichier} : \`truncate\` ramène à une ligne`).not.toMatch(
+        /truncate/,
+      );
+    });
+  }
+});
+
 describe('Textes non maîtrisés', () => {
   for (const { fichier, expression, quoi } of RENDUS) {
     it(`coupe ${quoi}`, () => {

@@ -36,8 +36,14 @@ export function HelpArticleList({ articles = [], openId, onToggle, related = [],
               >
                 <span className="min-w-0">
                   <span className="block text-sm text-content">{article.title}</span>
+                  {/* Deux lignes, pas une. `truncate` coupait à la première,
+                      ellipse comprise : sur un téléphone, la colonne fait
+                      237 px et les résumés en réclamaient jusqu'à 373 —
+                      « Réserver une salle du campus, en connaît… ». Le teaser
+                      ne renseignait plus. Sur un écran large, la plupart
+                      tiennent toujours sur une seule ligne. */}
                   {!open && (
-                    <span className="mt-0.5 block truncate text-xs text-content-muted">
+                    <span className="mt-0.5 block line-clamp-2 text-xs text-content-muted">
                       {article.excerpt}
                     </span>
                   )}
