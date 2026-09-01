@@ -24,16 +24,20 @@ const colonnes = [
         <span className="min-w-0">
           <span className="block truncate text-content">{row.name}</span>
           <span className="block truncate text-[11px] text-content-faint">{row.email}</span>
-          {row.isExternal && (
-            <span className="mt-1 inline-flex">
-              <EtiquetteExterne email={row.email} />
-            </span>
-          )}
         </span>
       </span>
     ),
   },
-  { key: 'promotion', label: 'Promotion' },
+  {
+    key: 'promotion',
+    label: 'Promotion',
+    // La promotion est le rattachement à l'école. Un compte qui n'en relève
+    // pas n'en a pas : la case était vide, elle dit maintenant pourquoi.
+    // Mieux vaut cela qu'une colonne de plus — une ligne d'annuaire compte
+    // déjà huit colonnes, et une neuvième ne se lirait plus.
+    render: (row) =>
+      row.promotion ?? (row.isExternal ? <EtiquetteExterne email={row.email} /> : null),
+  },
   { key: 'department', label: 'Département' },
   { key: 'bookings', label: 'Réservations', align: 'right' },
   {
@@ -109,8 +113,15 @@ export function UsersTable({ table, onSelect, selectedId }) {
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm text-content">{row.name}</span>
                 <span className="block truncate text-[11px] text-content-faint">
-                  {row.promotion} · {row.bookings} réservation(s)
+                  {row.promotion ?? row.email} · {row.bookings} réservation(s)
                 </span>
+                {/* Sous 1024 px il n'y a plus de colonnes : l'étiquette
+                    reprend sa place sous le nom. */}
+                {row.isExternal && (
+                  <span className="mt-1 inline-flex">
+                    <EtiquetteExterne email={row.email} />
+                  </span>
+                )}
               </span>
               <Fiabilite score={row.reliabilityScore} />
             </button>

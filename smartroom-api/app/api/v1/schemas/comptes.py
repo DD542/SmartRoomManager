@@ -6,10 +6,11 @@ import uuid
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import Base64Bytes, Field, field_validator
+from pydantic import Base64Bytes, Field, computed_field, field_validator
 
 from app.api.v1.schemas.common import ApiModel, ReadModel
 from app.db.enums import UserStatus
+from app.domain.organisation import est_externe
 
 Email = Annotated[str, Field(pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$", max_length=255)]
 PermissionCode = Annotated[str, Field(pattern=r"^[a-z]+\.[a-z]+$", max_length=40)]
@@ -98,6 +99,19 @@ class UserOut(ReadModel):
     is_admin: bool = False
     last_login_at: datetime | None
     preferences: PreferencesOut | None = None
+
+    @computed_field
+    @property
+    def is_external(self) -> bool:
+        """Adresse hors des domaines de l'établissement.
+
+        La même règle que sur `UserRead`, appelée au même endroit. Deux
+        schémas exposent les comptes ; la règle n'a d'abord été écrite que sur
+        l'un, et l'annuaire — servi par celui-ci — ne recevait rien. Un champ
+        absent d'une réponse JSON est simplement absent : aucune erreur, une
+        étiquette qui ne s'affiche jamais.
+        """
+        return est_externe(self.email)
 
 
 class UserMetricsOut(ReadModel):
