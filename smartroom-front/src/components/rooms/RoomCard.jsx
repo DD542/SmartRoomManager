@@ -66,7 +66,10 @@ export function RoomCard({ room, tight = false, action, to, badge }) {
         <div>
           <Link
             to={to ?? `/app/salles/${room.id}`}
-            className="text-sm font-semibold text-content transition hover:text-accent"
+            // Le titre de la carte est aussi son lien : 84 x 17 px au
+            // téléphone, là où c'est le geste le plus naturel pour ouvrir une
+            // salle. La zone sensible s'étend sans que le texte bouge.
+            className="-my-2 inline-flex min-h-[44px] items-center py-2 text-sm font-semibold text-content transition hover:text-accent lg:my-0 lg:min-h-0 lg:py-0"
           >
             {room.name}
           </Link>

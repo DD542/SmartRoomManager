@@ -226,10 +226,19 @@ export function LandingDemo() {
                   onClick={() => setIndex(position)}
                   aria-label={`Séquence ${position + 1}`}
                   aria-current={position === index ? 'true' : undefined}
-                  className={`h-1.5 w-7 rounded-full transition ${
-                    position === index ? 'bg-accent' : 'bg-line hover:bg-line-strong'
-                  }`}
-                />
+                  // La barre garde ses six pixels ; c'est la zone sensible qui
+                  // grandit, par un remplissage vertical que le trait ignore.
+                  // Mesuré : 28 x 6 px, six pixels d'écart entre deux voisines,
+                  // sur le premier écran qu'un visiteur voit.
+                  className="flex min-h-[44px] items-center px-0.5"
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`block h-1.5 w-7 rounded-full transition ${
+                      position === index ? 'bg-accent' : 'bg-line hover:bg-line-strong'
+                    }`}
+                  />
+                </button>
               ))}
             </span>
           </div>

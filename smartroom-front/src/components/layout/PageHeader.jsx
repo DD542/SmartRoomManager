@@ -9,7 +9,10 @@ export function PageHeader({ title, subtitle, backTo, backLabel = 'Retour', acti
       {backTo && (
         <Link
           to={backTo}
-          className="inline-flex w-fit items-center gap-1 text-xs text-content-muted transition hover:text-content"
+          // Un seul endroit pour tous les retours de l'application : « Retour
+          // à mes réservations », « Retour à la liste », et les suivants.
+          // Relâché à partir de `lg`, où la souris vise seize pixels sans peine.
+          className="-my-2 inline-flex min-h-[44px] w-fit items-center gap-1 py-2 text-xs text-content-muted transition hover:text-content lg:my-0 lg:min-h-0 lg:py-0"
         >
           <ChevronLeft size={14} aria-hidden="true" />
           {backLabel}

@@ -352,7 +352,7 @@ export default function CheckInPage() {
                       type="button"
                       onClick={() => setRetardOuvert(true)}
                       disabled={pending}
-                      className="mx-auto mt-4 block text-xs text-accent transition hover:text-accent-hover disabled:opacity-50"
+                      className="mx-auto mt-4 flex w-fit min-h-[44px] items-center px-3 text-xs text-accent transition hover:text-accent-hover disabled:opacity-50"
                     >
                       Je suis en retard
                     </button>

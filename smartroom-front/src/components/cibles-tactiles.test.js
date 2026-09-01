@@ -32,6 +32,28 @@ const CONTROLES = [
     ancre: 'Réinitialiser',
     quoi: '« Réinitialiser » des barres de filtres',
   },
+  {
+    fichier: 'src/components/public/LandingDemo.jsx',
+    ancre: 'aria-label={`Séquence',
+    quoi: 'les pastilles de séquence de la page de présentation',
+  },
+  {
+    fichier: 'src/components/layout/PageHeader.jsx',
+    ancre: '{backLabel}',
+    quoi: 'le lien de retour des en-têtes de page',
+  },
+  {
+    fichier: 'src/components/rooms/RoomCard.jsx',
+    ancre: '{room.name}',
+    quoi: 'le nom de salle des cartes de résultat',
+  },
+  {
+    fichier: 'src/pages/onsite/CheckInPage.jsx',
+    // Ancée sur le geste et non sur le libellé : celui-ci apparaît d'abord
+    // dans un commentaire, bien avant la balise.
+    ancre: 'setRetardOuvert(true)',
+    quoi: '« Je suis en retard » de la validation de présence',
+  },
 ];
 
 /**
@@ -41,20 +63,40 @@ const CONTROLES = [
  */
 const CIBLE = /min-h-\[44px\]|min-h-11/;
 
+/**
+ * La balise ouvrante qui porte l'ancre.
+ *
+ * On remonte au `<Link` ou `<button` qui précède, puis on avance jusqu'au `>`
+ * qui ferme cette balise — en ignorant ceux qui vivent dans une expression
+ * `{...}`, où un `=>` en produit à lui seul. Découper jusqu'à l'ancre
+ * seulement laisserait de côté les attributs écrits après elle, et le test
+ * echouerait sur du code correct.
+ */
+function baliseOuvrante(source, ancre) {
+  const position = source.indexOf(ancre);
+  if (position < 0) return null;
+
+  const avant = source.slice(0, position);
+  const debut = Math.max(avant.lastIndexOf('<Link'), avant.lastIndexOf('<button'));
+  if (debut < 0) return null;
+
+  let profondeur = 0;
+  for (let i = debut; i < source.length; i += 1) {
+    const c = source[i];
+    if (c === '{') profondeur += 1;
+    else if (c === '}') profondeur -= 1;
+    else if (c === '>' && profondeur === 0) return source.slice(debut, i + 1);
+  }
+  return source.slice(debut);
+}
+
 describe('Cibles tactiles', () => {
   for (const { fichier, ancre, quoi } of CONTROLES) {
     it(`laisse 44 px à ${quoi}`, () => {
       const source = readFileSync(fichier, 'utf8');
-      const position = source.indexOf(ancre);
-      expect(position, `${ancre} introuvable dans ${fichier}`).toBeGreaterThan(-1);
+      const balise = baliseOuvrante(source, ancre);
 
-      // La balise ouvrante du contrôle : on remonte au `<` qui précède, en
-      // sautant les éventuelles balises internes (une icône, un libellé).
-      const avant = source.slice(0, position);
-      const ouverture = Math.max(avant.lastIndexOf('<Link'), avant.lastIndexOf('<button'));
-      expect(ouverture, `aucun contrôle avant ${ancre}`).toBeGreaterThan(-1);
-      const balise = source.slice(ouverture, position);
-
+      expect(balise, `${ancre} introuvable dans ${fichier}`).not.toBeNull();
       expect(balise, `${fichier} : ${quoi} reste sous 44 px`).toMatch(CIBLE);
     });
   }
