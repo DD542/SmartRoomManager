@@ -10,10 +10,24 @@ import { Button, IconButton } from '../../components/ui/Button';
 import { Card, Callout } from '../../components/ui/Card';
 import { AsyncBoundary, Skeleton } from '../../components/ui/States';
 
-/** Compte à rebours circulaire de la fenêtre de validation. */
-function CountdownRing({ remainingMin, totalMin = 10 }) {
-  const ratio = Math.max(0, Math.min(1, remainingMin / totalMin));
+/**
+ * Compte à rebours circulaire de la fenêtre de validation.
+ *
+ * Il affichait `MM:00` — les secondes étaient une constante. Associé à un
+ * calcul fait une seule fois au montage, cela donnait un chronomètre
+ * parfaitement immobile, qui annonçait dix minutes restantes aussi longtemps
+ * qu'on le regardait.
+ */
+function CountdownRing({ remainingSec, totalSec, legende, etiquette }) {
+  const ratio = Math.max(0, Math.min(1, remainingSec / totalSec));
   const circumference = 2 * Math.PI * 46;
+  // `MM:SS` débordait dès qu'on dépassait l'heure : une réservation du matin
+  // consultée la veille au soir affichait « 375:52 », qui ne se lit pas.
+  const total = Math.floor(remainingSec);
+  const heures = Math.floor(total / 3600);
+  const minutes = String(Math.floor((total % 3600) / 60)).padStart(2, '0');
+  const secondes = String(total % 60).padStart(2, '0');
+  const affichage = heures > 0 ? `${heures}:${minutes}:${secondes}` : `${minutes}:${secondes}`;
 
   return (
     <div className="relative mx-auto h-32 w-32">
@@ -32,10 +46,14 @@ function CountdownRing({ remainingMin, totalMin = 10 }) {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-mono text-2xl text-content">
-          {String(Math.floor(remainingMin)).padStart(2, '0')}:00
+        <span
+          className={heures > 0 ? 'font-mono text-xl text-content' : 'font-mono text-2xl text-content'}
+          role="timer"
+          aria-label={etiquette}
+        >
+          {affichage}
         </span>
-        <span className="text-xs text-content-muted">restantes</span>
+        <span className="text-xs text-content-muted">{legende}</span>
       </div>
     </div>
   );
@@ -53,6 +71,31 @@ export default function CheckInPage() {
 
   const booking = useAsync(() => getBooking(id), [id]);
   const checkWindow = useAsync(() => getCheckInWindow(id), [id]);
+
+  // Une seconde d'horloge, une seconde à l'écran.
+  //
+  // La fenêtre était calculée une fois au montage et plus jamais : le décompte
+  // restait figé sur sa valeur d'ouverture, et l'écran ne s'apercevait pas
+  // davantage du passage du créneau à l'heure dite. Le battement est local —
+  // les bornes viennent du serveur, pas leur écoulement.
+  const [seconde, setSeconde] = useState(() => Date.now());
+
+  useEffect(() => {
+    const battement = setInterval(() => setSeconde(Date.now()), 1000);
+    return () => clearInterval(battement);
+  }, []);
+
+  const debut = booking.data?.start ? new Date(booking.data.start) : null;
+  const fenetreMin = checkWindow.data?.windowMin ?? 10;
+  const ecoulees = debut ? Math.floor((seconde - debut.getTime()) / 1000) : null;
+  const restantes =
+    ecoulees === null ? null : Math.max(0, Math.min(fenetreMin * 60, fenetreMin * 60 - ecoulees));
+
+  // Les mêmes bornes que le serveur : `[début, début + fenêtre)`. L'écran
+  // annonçait une ouverture dix minutes avant le début, et chaque essai
+  // repartait en 422.
+  const ouverte = ecoulees !== null && ecoulees >= 0 && restantes > 0;
+  const avantOuverture = ecoulees !== null && ecoulees < 0;
 
   useEffect(() => {
     document.title = 'Validation de présence — SmartRoom Manager';
@@ -85,6 +128,28 @@ export default function CheckInPage() {
       const prefix = booking.data?.accessCode?.split('-')[0] ?? 'A';
       await checkIn(id, `${prefix}-${digits.join('')}`);
       toast.success('Présence validée', 'Bonne réunion !');
+      navigate(`/app/reservations/${id}`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setPending(false);
+    }
+  };
+
+  /**
+   * « Je suis en retard » : le serveur pose la présence et la salle reste
+   * réservée. Ce n'est pas une prolongation de fenêtre — rien dans l'API ne
+   * prolonge quoi que ce soit, et l'écran l'annonçait pourtant.
+   *
+   * L'appel partait sans `catch` : un refus du serveur finissait en « Uncaught
+   * (in promise) » dans la console, et l'utilisateur ne voyait rien du tout.
+   */
+  const declarerRetard = async () => {
+    setPending(true);
+    setError(null);
+    try {
+      await declareLate(id);
+      toast.success('Retard signalé', 'Votre présence est validée, la salle reste à vous.');
       navigate(`/app/reservations/${id}`);
     } catch (err) {
       setError(err.message);
@@ -126,11 +191,26 @@ export default function CheckInPage() {
                 même page, jamais deux versions. */}
             <div className="mt-4 md:grid md:grid-cols-2 md:items-start md:gap-6">
               <section>
-                <CountdownRing remainingMin={checkWindow.data?.remainingMin ?? 10} />
+                {/* Avant l'heure, l'anneau décompte jusqu'à l'ouverture. Il
+                    affichait une fenêtre pleine et immobile, qui n'était le
+                    décompte de rien — c'est ce chronomètre figé qu'on voyait
+                    une heure avant son créneau. */}
+                <CountdownRing
+                  remainingSec={avantOuverture ? -ecoulees : (restantes ?? fenetreMin * 60)}
+                  totalSec={avantOuverture ? Math.max(-ecoulees, 1) : fenetreMin * 60}
+                  legende={avantOuverture ? 'avant l’ouverture' : 'restantes'}
+                  etiquette={
+                    avantOuverture
+                      ? 'Temps restant avant l’ouverture de la validation'
+                      : 'Temps restant pour valider votre présence'
+                  }
+                />
                 <p className="mt-2 text-center text-xs text-content-muted">
-                  {checkWindow.data?.open
+                  {ouverte
                     ? 'Fenêtre de validation ouverte'
-                    : `Validation ouverte ${checkWindow.data?.windowMin ?? 10} minutes avant le début`}
+                    : avantOuverture
+                      ? `La validation ouvre au début du créneau, à ${fmtTime(booking.data.start)}.`
+                      : 'Fenêtre de validation dépassée.'}
                 </p>
 
                 <dl className="mt-5 divide-y divide-line rounded-xl border border-line bg-surface-raised">
@@ -190,11 +270,14 @@ export default function CheckInPage() {
                 )}
 
                 <div className="mt-5 flex flex-col gap-2">
+                  {/* Fermée, la fenêtre ferme aussi le bouton. Le laisser
+                      cliquable ne produisait qu'un 422 de plus et une invitation
+                      à recommencer. */}
                   <Button
                     fullWidth
                     size="lg"
                     loading={pending}
-                    disabled={digits.some((digit) => !digit)}
+                    disabled={!ouverte || digits.some((digit) => !digit)}
                     onClick={validate}
                   >
                     Valider mon arrivée
@@ -206,17 +289,18 @@ export default function CheckInPage() {
                     'La salle sera libérée si la présence n’est pas validée à temps.'}
                 </Callout>
 
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await declareLate(id);
-                    toast.info('Retard signalé', 'La fenêtre de validation est prolongée de 10 minutes.');
-                    checkWindow.reload();
-                  }}
-                  className="mx-auto mt-4 block text-xs text-accent transition hover:text-accent-hover"
-                >
-                  Je suis en retard
-                </button>
+                {/* Rien à déclarer avant l'heure : le serveur répond « Le
+                    créneau n'a pas encore commencé », et il a raison. */}
+                {!avantOuverture && (
+                  <button
+                    type="button"
+                    onClick={declarerRetard}
+                    disabled={pending}
+                    className="mx-auto mt-4 block text-xs text-accent transition hover:text-accent-hover disabled:opacity-50"
+                  >
+                    Je suis en retard
+                  </button>
+                )}
               </>
             )}
               </section>

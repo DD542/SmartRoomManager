@@ -6,29 +6,45 @@
 // La fenêtre elle-même n'est pas une route : elle se déduit du début du créneau
 // et de `checkinWindowMin`, deux valeurs déjà chargées par l'écran. Un appel de
 // plus n'apporterait qu'une horloge serveur, que le décompte local suit déjà.
+//
+// Elle s'ouvre au **début** du créneau et dure `checkinWindowMin`. Rien
+// n'ouvre avant : le serveur refuse, et l'écran ne doit pas promettre le
+// contraire.
 
-import { differenceInMinutes } from 'date-fns';
+import { differenceInSeconds } from 'date-fns';
 import * as adapt from './adapters';
 import { post } from './client';
 import { getBooking } from './bookings';
 import { getRoomRules } from './rooms';
 
-export async function getCheckInWindow(bookingId) {
+export async function getCheckInWindow(bookingId, maintenant = new Date()) {
   const reservation = await getBooking(bookingId);
   const regles = await getRoomRules(reservation.roomId);
   const fenetre = regles.checkinWindowMin ?? 10;
 
-  const depuisDebut = differenceInMinutes(new Date(), reservation.start);
-  // Avant l'ouverture, le compteur reste plein ; une fois ouverte, il décompte
-  // les minutes restantes sans jamais dépasser la durée de fenêtre.
-  const restantes = Math.max(0, Math.min(fenetre, fenetre - depuisDebut));
+  // La fenêtre est `[début, début + fenêtre)`, comme le serveur l'entend :
+  // avant le début il refuse (« La validation ouvre au début du créneau »),
+  // après la fenêtre il refuse encore (« Fenêtre de validation dépassée »).
+  //
+  // Cette fonction prétendait qu'elle s'ouvrait dix minutes **avant** le
+  // début. L'écran invitait donc à valider une demi-heure trop tôt, et le
+  // serveur répondait 422 à chaque essai — une divergence que rien ne
+  // signalait, sinon la console.
+  const secondesDepuisLeDebut = differenceInSeconds(maintenant, reservation.start);
+  const secondesDeFenetre = fenetre * 60;
+  const restantes = Math.max(
+    0,
+    Math.min(secondesDeFenetre, secondesDeFenetre - secondesDepuisLeDebut),
+  );
 
   return {
     bookingId,
-    open: depuisDebut >= -fenetre && restantes > 0,
-    opensInMin: Math.max(0, -depuisDebut - fenetre),
+    start: reservation.start,
+    open: secondesDepuisLeDebut >= 0 && restantes > 0,
+    opensInMin: Math.max(0, Math.ceil(-secondesDepuisLeDebut / 60)),
     windowMin: fenetre,
-    remainingMin: restantes,
+    remainingMin: Math.ceil(restantes / 60),
+    remainingSec: restantes,
     checkedIn: Boolean(reservation.checkedInAt),
     autoReleaseWarning:
       'La salle sera automatiquement libérée si vous ne validez pas votre présence dans le temps imparti.',
