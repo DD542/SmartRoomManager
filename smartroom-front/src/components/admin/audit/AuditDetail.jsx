@@ -13,9 +13,16 @@ import { fmtDateLong, fmtTime } from '../../../utils/dates';
  * que l'audit sert à retrouver.
  */
 export function AuditDetail({ entry, onFlag, busy = false }) {
-  const champs = [
-    ...new Set([...Object.keys(entry.diff?.before ?? {}), ...Object.keys(entry.diff?.after ?? {})]),
-  ];
+  // `entry.before` et `entry.after`, tels que l'adaptateur les produit.
+  //
+  // Ce composant lisait `entry.diff?.before` : un niveau qui n'existe pas.
+  // L'optionnel absorbait l'absence, le repli donnait un objet vide, et la
+  // section « ce qui a changé » se rendait sans une ligne — sans erreur, sur
+  // les 91 entrées d'un journal qui portait pourtant toutes ses valeurs.
+  // C'était la raison d'être de l'écran qui manquait.
+  const avantTout = entry.before ?? {};
+  const apresTout = entry.after ?? {};
+  const champs = [...new Set([...Object.keys(avantTout), ...Object.keys(apresTout)])];
 
   return (
     <>
@@ -40,8 +47,8 @@ export function AuditDetail({ entry, onFlag, busy = false }) {
           </p>
           <ul className="flex flex-col gap-1.5">
             {champs.map((champ) => {
-              const avant = entry.diff?.before?.[champ];
-              const apres = entry.diff?.after?.[champ];
+              const avant = avantTout[champ];
+              const apres = apresTout[champ];
               return (
                 <li
                   key={champ}
