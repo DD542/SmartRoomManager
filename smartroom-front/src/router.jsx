@@ -7,6 +7,7 @@ import AppLayout from './layouts/AppLayout';
 import WizardLayout from './layouts/WizardLayout';
 
 import LandingPage from './pages/public/LandingPage';
+import LegalPage from './pages/public/LegalPage';
 import LoginPage from './pages/public/LoginPage';
 import ForgotPasswordPage from './pages/public/ForgotPasswordPage';
 import OnboardingPage from './pages/onboarding/OnboardingPage';
@@ -143,6 +144,7 @@ const routes = [
       // La vitrine garde une adresse propre : elle décrit le produit, et cet
       // usage-là survit à la redirection de la racine.
       { path: '/presentation', element: <LandingPage /> },
+      { path: '/mentions-legales', element: <LegalPage /> },
       { path: '/invitation/:token', element: <InvitationPage /> },
     ],
   },

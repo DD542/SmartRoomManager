@@ -11,8 +11,9 @@ import uuid
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import Field, SecretStr, model_validator
+from pydantic import Field, SecretStr, computed_field, model_validator
 
+from app.core.config import get_settings
 from app.db.enums import UserStatus
 from app.schemas.common import ApiModel, Email, PermissionCode, ReadModel, TimestampedRead
 
@@ -100,6 +101,26 @@ class UserRead(TimestampedRead):
     status: UserStatus
     last_login_at: datetime | None
     preferences: UserPreferenceRead | None = None
+
+    @computed_field
+    @property
+    def is_external(self) -> bool:
+        """L'adresse relève-t-elle d'un domaine hors de l'établissement ?
+
+        Calculé ici et non dans l'écran : la liste des domaines est une
+        décision d'exploitation, elle vit dans la configuration du serveur. La
+        recopier dans le front la ferait diverger le jour où l'école en ajoute
+        un, et personne ne s'en apercevrait — un compte interne passerait pour
+        un invité, sans erreur nulle part.
+        """
+        domaines = {
+            part.strip().lower()
+            for part in get_settings().organisation_domains.split(",")
+            if part.strip()
+        }
+        if not domaines:
+            return False
+        return self.email.split("@")[-1].lower() not in domaines
 
     @property
     def full_name(self) -> str:

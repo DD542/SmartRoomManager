@@ -205,6 +205,50 @@ class TestOuvertureDeSession:
         assert compte.avatar_url == "/media/avatars/choisie-par-lutilisateur.png"
 
 
+class TestMotDePasseOublie:
+    def test_un_compte_google_peut_s_en_choisir_un(self, session, paire):
+        """La seule voie pour un compte sans mot de passe utilisable.
+
+        Rien de particulier n'a été écrit pour ce cas : la réinitialisation
+        cherche un compte par son adresse, et un compte créé par Google en a
+        une comme les autres. Ce test le vérifie plutôt que de le supposer —
+        c'est la seule sortie de secours de ces comptes, elle ne doit pas
+        dépendre d'un heureux hasard.
+        """
+        auth_service.login_google(session, jeton=forger(paire))
+        compte = session.scalars(
+            select(User).where(User.email == "nouvelle.personne@gmail.com")
+        ).one()
+        empreinte_avant = compte.password_hash
+
+        resultat = auth_service.request_password_reset(
+            session, email="nouvelle.personne@gmail.com"
+        )
+        assert resultat is not None, "aucun lien émis"
+        _, jeton_reinit = resultat
+
+        auth_service.reset_password(session, token=jeton_reinit, password="motdepasse-choisi")
+        session.flush()
+
+        assert compte.password_hash != empreinte_avant
+        # Les deux voies coexistent désormais pour ce compte.
+        ouverture = auth_service.login(
+            session, email=compte.email, password="motdepasse-choisi"
+        )
+        assert ouverture.user.id == compte.id
+        assert auth_service.login_google(session, jeton=forger(paire))[1] is False
+
+    def test_le_lien_ne_sert_qu_une_fois(self, session, paire):
+        auth_service.login_google(session, jeton=forger(paire))
+        _, jeton_reinit = auth_service.request_password_reset(
+            session, email="nouvelle.personne@gmail.com"
+        )
+        auth_service.reset_password(session, token=jeton_reinit, password="premier-choix")
+
+        with pytest.raises(AuthenticationError):
+            auth_service.reset_password(session, token=jeton_reinit, password="second-choix")
+
+
 class TestRoute:
     def test_la_route_ouvre_une_session(self, client, paire):
         reponse = client.post(

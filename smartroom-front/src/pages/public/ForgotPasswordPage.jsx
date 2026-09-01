@@ -75,7 +75,7 @@ export default function ForgotPasswordPage() {
 
       <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4" noValidate>
         <Input
-          label="Adresse email institutionnelle"
+          label="Adresse email"
           type="email"
           name="email"
           autoComplete="email"
@@ -93,6 +93,16 @@ export default function ForgotPasswordPage() {
         <Callout tone="info" icon={Info}>
           Le lien reçu est à usage unique et expire au bout de 30 minutes.
         </Callout>
+
+        {/* Un compte ouvert par Google n'a pas de mot de passe utilisable :
+            c'est délibéré, mais rien ne le disait, et cette page était le seul
+            endroit où la question se pose. Personne ne devine qu'un écran de
+            réparation sert aussi à créer ce qui n'a jamais existé. */}
+        <p className="text-xs leading-relaxed text-content-faint">
+          Vous vous connectez d’habitude avec Google ? Votre compte n’a pas encore de mot de
+          passe : cette page vous permet d’en choisir un. Les deux façons d’entrer
+          fonctionneront ensuite.
+        </p>
 
         <Button type="submit" size="lg" fullWidth icon={Send} loading={status === 'envoi'}>
           Envoyer le lien

@@ -30,7 +30,7 @@ export default function AuthLayout() {
           Besoin d’aide ?
         </Link>
         <span aria-hidden="true">•</span>
-        <Link to="/" className="transition hover:text-content">
+        <Link to="/mentions-legales" className="transition hover:text-content">
           Mentions légales
         </Link>
       </footer>

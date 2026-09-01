@@ -69,6 +69,15 @@ class Settings(BaseSettings):
     #: seule école — c'est une décision d'exploitation, pas de code.
     google_allowed_domains: str = ""
 
+    # --------------------------------------------------------- organisation
+
+    #: Domaines de l'établissement, séparés par des virgules. Un compte dont
+    #: l'adresse n'en relève pas est signalé aux administrateurs : il a le
+    #: droit d'être là — c'est ce que dit `GOOGLE_ALLOWED_DOMAINS` — mais
+    #: l'administration doit pouvoir le distinguer d'un membre de l'école sans
+    #: relire chaque adresse.
+    organisation_domains: str = "ece.fr,edu.ece.fr"
+
     # ------------------------------------------------------------ limitation
 
     #: Rend le bourrage d'identifiants impraticable sans gêner un humain.

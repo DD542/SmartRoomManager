@@ -51,6 +51,11 @@ export const user = (data) =>
         avatarUrl: data.avatar_url ?? null,
         status: data.status,
         role: data.promotion?.startsWith('B') ? 'etudiant' : 'personnel',
+        //: Adresse hors des domaines de l'établissement. Calculé par le
+        //: serveur, qui seul détient la liste : la recopier ici la ferait
+        //: diverger le jour où l'école en ajoute un, et un compte interne
+        //: passerait pour un invité sans que rien ne le signale.
+        isExternal: Boolean(data.is_external),
         preferences: preferences(data.preferences),
       }
     : null;

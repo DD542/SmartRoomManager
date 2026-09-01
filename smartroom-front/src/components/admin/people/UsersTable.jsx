@@ -1,5 +1,6 @@
 import { Badge } from '../../ui/Badge';
 import { Avatar } from '../../ui/Avatar';
+import { EtiquetteExterne } from './EtiquetteExterne';
 import { CompactGauge } from '../CompactGauge';
 import { DataTable } from '../DataTable';
 import { fmtPercent, fullName } from '../../../utils/format';
@@ -23,6 +24,11 @@ const colonnes = [
         <span className="min-w-0">
           <span className="block truncate text-content">{row.name}</span>
           <span className="block truncate text-[11px] text-content-faint">{row.email}</span>
+          {row.isExternal && (
+            <span className="mt-1 inline-flex">
+              <EtiquetteExterne email={row.email} />
+            </span>
+          )}
         </span>
       </span>
     ),

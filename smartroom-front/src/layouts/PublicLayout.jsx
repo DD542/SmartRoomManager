@@ -113,10 +113,26 @@ export default function PublicLayout() {
           </div>
           <div>
             <p className="font-medium uppercase tracking-wide text-content">Légal</p>
+            {/* Trois libellés, une seule page : confidentialité, mentions et
+                RGPD y sont trois sections. Les annoncer séparément pour mener
+                au même endroit vaut mieux que trois pages qui se répètent —
+                mais ils mènent quelque part, ce qui n'était pas le cas. */}
             <ul className="mt-2 space-y-1.5">
-              <li>Confidentialité</li>
-              <li>Mentions légales</li>
-              <li>RGPD</li>
+              <li>
+                <Link to="/mentions-legales" className="transition hover:text-content">
+                  Confidentialité
+                </Link>
+              </li>
+              <li>
+                <Link to="/mentions-legales" className="transition hover:text-content">
+                  Mentions légales
+                </Link>
+              </li>
+              <li>
+                <Link to="/mentions-legales" className="transition hover:text-content">
+                  RGPD
+                </Link>
+              </li>
             </ul>
           </div>
         </div>

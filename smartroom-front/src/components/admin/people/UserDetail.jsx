@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Ban, Check, ShieldCheck } from 'lucide-react';
 import { Badge } from '../../ui/Badge';
+import { EtiquetteExterne } from './EtiquetteExterne';
 import { Button } from '../../ui/Button';
 import { Input, Textarea } from '../../ui/Form';
 import { Modal } from '../../ui/Modal';
@@ -32,7 +33,12 @@ export function UserDetail({ user, onStatus, onCredits, busy = false }) {
 
   return (
     <>
-      <DetailRow label="Adresse email">{user.email}</DetailRow>
+      <DetailRow label="Adresse email">
+        <span className="flex flex-col items-end gap-1">
+          {user.email}
+          {user.isExternal && <EtiquetteExterne email={user.email} />}
+        </span>
+      </DetailRow>
       <DetailRow label="Promotion">{user.promotion}</DetailRow>
       <DetailRow label="Département">{user.department}</DetailRow>
       <DetailRow label="Badge" mono>
