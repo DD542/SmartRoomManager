@@ -17,13 +17,6 @@ node_modules/
 dist/
 .vite/
 
-# IDE
-.idea/
-.vscode/
-
-# Rapports de tests
-coverage/
-
 # Divers
 .DS_Store
 *.log
