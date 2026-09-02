@@ -18,3 +18,5 @@ build/
 .coverage
 .pytest_cache/
 htmlcov/
+coverage/
+coverage*.xml
