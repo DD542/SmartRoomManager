@@ -1780,6 +1780,17 @@ def creer_support(
             "L'équipe Support.",
         ),
         (
+            "compte_suspendu",
+            "Suspension de compte",
+            "Déclenché lorsqu'un administrateur suspend un compte",
+            "Votre compte SmartRoom Manager est suspendu",
+            "Bonjour {{prenom}},\n\nVotre compte SmartRoom Manager a été suspendu par "
+            "l'administration.\n\nMotif : {{motif}}\n\nVos réservations à venir sont "
+            "conservées, mais vous ne pouvez plus en créer de nouvelle tant que la "
+            "suspension dure.\n\nPour toute question, contactez le support depuis "
+            "l'application.\n\nL'équipe Support.",
+        ),
+        (
             "reservation_annulation",
             "Annulation de réservation",
             "Déclenché lors de l'annulation d'une réservation",
@@ -1788,6 +1799,14 @@ def creer_support(
             "({{creneau}}) a été annulée.\n\nL'équipe Support.",
         ),
     ]:
+        # La migration `0012` pose `compte_suspendu` sur les bases deja
+        # installees. Sans ce controle, un seed lance apres elle buterait sur
+        # l'unicite du code.
+        deja = session.scalars(
+            select(EmailTemplate).where(EmailTemplate.code == code)
+        ).one_or_none()
+        if deja is not None:
+            continue
         session.add(
             EmailTemplate(
                 code=code,

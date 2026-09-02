@@ -32,7 +32,7 @@ from app.models import (
     User,
     UserPreference,
 )
-from app.services import audit_service, auth_service
+from app.services import audit_service, auth_service, mail_service
 
 #: Champs de tri acceptés des comptes d'administration.
 TRI_ADMINS: dict[str, Any] = {
@@ -454,6 +454,16 @@ def set_status(
 
     if status is UserStatus.SUSPENDU:
         auth_service.revoke_all(session, user_id)
+        # Le motif est deja exige plus haut et journalise plus bas. Il manquait
+        # au seul endroit ou il sert vraiment : chez la personne concernee.
+        # Un compte suspendu sans explication se traduit par un ticket de
+        # support, ou par un abandon.
+        mail_service.notify(
+            session,
+            user=compte,
+            code="compte_suspendu",
+            variables={"motif": reason.strip()},
+        )
 
     audit_service.record(
         session,
