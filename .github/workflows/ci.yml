@@ -65,7 +65,12 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16-alpine
+        # `pgvector/pgvector` et non `postgres` : la migration 0007 cree
+        # l'extension `vector`, absente de l'image standard. Les cinq autres
+        # extensions du schema vivent dans `contrib` et sont partout ; celle-ci
+        # non, et `alembic upgrade head` s'arretait la. C'est l'image que
+        # `docker-compose.prod.yml` utilise deja.
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_DB: smartroom
           POSTGRES_USER: smartroom
