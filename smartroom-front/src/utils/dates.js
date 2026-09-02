@@ -92,6 +92,32 @@ export const mergeDateAndTime = (dateInput, timeInput) => {
   return addMinutes(base, h * 60 + m);
 };
 
+/**
+ * Fuseau de l'établissement.
+ *
+ * Les tranches d'ouverture — 08-10, 10-12, 14-16, 16-18 — sont celles du
+ * campus, pas celles du poste qui affiche la page.
+ */
+export const FUSEAU_CAMPUS = 'Europe/Paris';
+
+//: `en-GB` et `h23` plutôt que `fr-FR` : la locale française rend minuit
+//: « 24 » dans certains moteurs, ce qui sortirait de toute tranche.
+const LECTEUR_HEURE = new Intl.DateTimeFormat('en-GB', {
+  timeZone: FUSEAU_CAMPUS,
+  hour: '2-digit',
+  hourCycle: 'h23',
+});
+
+/**
+ * Heure d'un instant, lue dans le fuseau du campus.
+ *
+ * `Date.getHours()` rend l'heure du poste. Sur un navigateur réglé ailleurs
+ * — ou dans une chaîne d'intégration, qui tourne en UTC — une réservation de
+ * 9 h devient 7 h et ne tombe plus dans aucune tranche : la répartition
+ * s'affiche vide sans que rien ne signale l'erreur.
+ */
+export const heureCampus = (value) => Number(LECTEUR_HEURE.format(toDate(value)));
+
 export const durationMin = (start, end) => differenceInMinutes(toDate(end), toDate(start));
 
 /** 90 -> '1 h 30' ; 60 -> '1 h' ; 45 -> '45 min' */

@@ -6,7 +6,7 @@
 //   GET /api/v1/bookings            base des répartitions par mois, salle, tranche
 
 import { getMonth, getYear } from 'date-fns';
-import { durationMin, toDate } from '../utils/dates';
+import { durationMin, heureCampus, toDate } from '../utils/dates';
 import * as adapt from './adapters';
 import { abortable, collect, get, getText } from './client';
 
@@ -65,7 +65,9 @@ export async function getMyStats(period = 'trimestre', _ownerId, { signal } = {}
 
   const bySlot = TRANCHES.map((tranche) => {
     const count = reservations.filter((item) => {
-      const heure = item.start.getHours();
+      // Heure du campus, et non celle du poste : les tranches sont les
+      // creneaux d'ouverture de l'etablissement.
+      const heure = heureCampus(item.start);
       return heure >= tranche.from && heure < tranche.to;
     }).length;
     return { ...tranche, count, share: count / (reservations.length || 1) };
