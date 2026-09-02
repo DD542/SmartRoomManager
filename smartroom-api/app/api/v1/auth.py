@@ -15,6 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 from app.api.deps import CurrentPrincipal, SessionDep
 from app.core.config import get_settings
+from app.core.errors import DomainError
 from app.core.limiter import limiter
 from app.schemas.comptes import AdminAccountRead, UserRead
 from app.services import auth_service
@@ -103,6 +104,18 @@ def _poser_cookie(response: Response, jeton: str) -> None:
 
 def _retirer_cookie(response: Response) -> None:
     response.delete_cookie(key=COOKIE, path=settings.refresh_cookie_path)
+
+
+def _entete_retrait_cookie() -> dict[str, str]:
+    """L'en-tête `Set-Cookie` qui efface le cookie, détaché de toute réponse.
+
+    Une route qui lève ne peut pas se servir de l'objet `Response` injecté :
+    le gestionnaire d'erreurs en fabrique un autre. L'en-tête est donc produit
+    ici, pour voyager avec l'exception.
+    """
+    porteur = Response()
+    _retirer_cookie(porteur)
+    return {"set-cookie": porteur.headers["set-cookie"]}
 
 
 def _sortie(resultat: auth_service.Session_) -> TokenOut:
@@ -240,24 +253,39 @@ def login_google(
         "déjà consommé qui reparaît révoque toute la famille : il signale une "
         "copie en circulation."
     ),
-    responses={401: {"description": "Session inconnue, expirée ou rejouée."}},
+    responses={
+        204: {"description": "Aucun cookie présenté : il n'y a pas de session à reprendre."},
+        401: {"description": "Session inconnue, expirée ou rejouée."},
+    },
 )
 def refresh(
     response: Response,
     session: SessionDep,
     smartroom_refresh: Annotated[str | None, Cookie(alias=COOKIE)] = None,
-) -> TokenOut:
+) -> TokenOut | Response:
     if not smartroom_refresh:
-        from app.core.errors import AuthenticationError
-
-        raise AuthenticationError("Aucune session à renouveler.", code="jeton_absent")
+        # Aucun cookie présenté : le front demande « ai-je une session ? » et la
+        # réponse est « non ». Rien n'a été tenté, donc rien n'a échoué — décrire
+        # cet état comme une erreur d'authentification faisait écrire au
+        # navigateur une ligne rouge en console à chaque chargement d'une page
+        # publique, pour un cas parfaitement normal.
+        #
+        # La distinction n'affaiblit rien : dès qu'un cookie est présenté et
+        # refusé — inconnu, expiré, rejoué — la réponse reste un 401.
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
 
     try:
         resultat = auth_service.refresh(session, token=smartroom_refresh)
-    except Exception:
+    except Exception as erreur:
         # La révocation d'une famille compromise doit survivre au refus.
         session.commit()
-        _retirer_cookie(response)
+        # Et le cookie refusé doit disparaître du navigateur, sans quoi il est
+        # représenté à chaque chargement et refusé à chaque fois : une session
+        # morte que l'utilisateur ne peut plus quitter sans vider ses cookies
+        # à la main. Il ne suffit pas de le poser sur `response` — cet objet
+        # est abandonné dès qu'on lève.
+        if isinstance(erreur, DomainError):
+            erreur.headers = _entete_retrait_cookie()
         raise
 
     session.commit()
@@ -272,14 +300,16 @@ def refresh(
     description="Révoque la famille de jetons et efface le cookie.",
 )
 def logout(
-    response: Response,
     session: SessionDep,
     smartroom_refresh: Annotated[str | None, Cookie(alias=COOKIE)] = None,
 ) -> Response:
     auth_service.logout(session, token=smartroom_refresh)
     session.commit()
-    _retirer_cookie(response)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    # Le retrait est posé sur la réponse effectivement renvoyée. Posé sur
+    # l'objet `response` injecté, il était perdu : c'est celui-ci qui part.
+    sortie = Response(status_code=status.HTTP_204_NO_CONTENT)
+    _retirer_cookie(sortie)
+    return sortie
 
 
 @router.get(

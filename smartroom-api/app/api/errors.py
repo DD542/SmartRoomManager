@@ -50,7 +50,16 @@ def enveloppe(code: str, message: str, **extra: Any) -> dict[str, Any]:
 def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(DomainError)
     async def _domaine(_: Request, erreur: DomainError) -> JSONResponse:
-        return JSONResponse(status_code=erreur.http_status, content=enveloppe(**erreur.payload()))
+        # `headers` laisse une erreur emporter ses en-têtes jusqu'à la réponse.
+        # Sans cela, ce qu'une route pose sur l'objet `Response` injecté est
+        # perdu dès qu'elle lève : le gestionnaire fabrique une réponse neuve,
+        # qui ne sait rien de la précédente. C'est le mécanisme que `_http`
+        # utilise déjà pour `Retry-After`.
+        return JSONResponse(
+            status_code=erreur.http_status,
+            content=enveloppe(**erreur.payload()),
+            headers=getattr(erreur, "headers", None),
+        )
 
     @app.exception_handler(RequestValidationError)
     async def _validation(_: Request, erreur: RequestValidationError) -> JSONResponse:

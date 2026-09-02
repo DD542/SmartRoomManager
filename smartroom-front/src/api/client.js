@@ -99,6 +99,10 @@ async function refreshAccessToken() {
         method: 'POST',
         credentials: 'include',
       });
+      // 204 : aucun cookie présenté, donc aucune session à reprendre. Ce n'est
+      // pas un refus, et le distinguer explicitement évite de s'en remettre à
+      // l'exception que lèverait `json()` sur un corps vide.
+      if (response.status === 204) return null;
       if (!response.ok) return null;
 
       const payload = await response.json();

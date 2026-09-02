@@ -270,6 +270,21 @@ describe('reprise de session', () => {
 
     await expect(restoreSession()).resolves.toBeNull();
   });
+
+  it('rend null sur 204, sans poser de jeton ni lever', async () => {
+    // 204 est la réponse du serveur quand aucun cookie n'est présenté : il
+    // n'y a pas de session à reprendre, et rien n'a échoué. Le cas est
+    // traité explicitement plutôt que laissé à l'exception que lèverait
+    // `json()` sur un corps vide — un comportement correct par accident
+    // reste un comportement que personne ne protège.
+    setAccessToken('jeton-precedent');
+    serveur.use(
+      http.post(`${BASE}/auth/refresh`, () => new HttpResponse(null, { status: 204 })),
+    );
+
+    await expect(restoreSession()).resolves.toBeNull();
+    expect(getAccessToken()).toBe('jeton-precedent');
+  });
 });
 
 describe('pagination', () => {

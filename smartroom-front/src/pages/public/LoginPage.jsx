@@ -171,11 +171,15 @@ export default function LoginPage() {
         disabled={pending !== null}
       />
 
+      {/* Les comptes de démonstration et leur mot de passe ont été retirés :
+          le développement est terminé, et sur une instance ouverte ils
+          donneraient des identifiants valables à qui atteint la page.
+
+          Les deux phrases restantes ne sont pas des identifiants. La seconde
+          décrit ce que fait l'application quand un compte Google inconnu se
+          présente — c'est une information à donner avant le clic, pas une
+          commodité de développement. */}
       <Callout tone="info" className="mt-5">
-        Comptes de démonstration, mot de passe{' '}
-        <span className="font-mono text-content">smartroom2026</span> :{' '}
-        <span className="font-mono text-content">dylan.menga@edu.ece.fr</span> (étudiant) ou{' '}
-        <span className="font-mono text-content">marie.laurent@ece.fr</span> (pédagogie).
         L’espace d’administration a sa propre connexion : s’authentifier ici n’y donne pas accès.
         Un compte Google inconnu ouvre un compte SmartRoom, sans autre formalité.
       </Callout>

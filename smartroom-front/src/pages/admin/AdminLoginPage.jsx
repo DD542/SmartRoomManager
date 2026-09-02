@@ -125,17 +125,12 @@ export default function AdminLoginPage() {
             </Button>
           </form>
 
+          {/* Les comptes de démonstration et leur mot de passe figuraient ici
+              pendant le développement. Ils en ont été retirés : sur une
+              instance ouverte, cet encadré donnerait des identifiants valables
+              à qui atteint la page. */}
           <Callout tone="info" icon={Info} className="mt-5">
             Accès réservé aux comptes administrateurs. Toute connexion est journalisée.
-          </Callout>
-
-          <Callout tone="info" className="mt-3">
-            Comptes de démonstration, mot de passe{' '}
-            <span className="font-mono text-content">smartroom2026</span> :{' '}
-            <span className="font-mono text-content">d.menga@ece.fr</span> (toutes permissions),{' '}
-            <span className="font-mono text-content">s.boukehila@ece.fr</span> (salles, aide,
-            conflits) ou <span className="font-mono text-content">c.nkoulou@ece.fr</span> (aide et
-            conflits).
           </Callout>
         </Card>
       </div>

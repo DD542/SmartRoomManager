@@ -134,10 +134,78 @@ class TestRotation:
         assert reponse.status_code == 401
         assert reponse.json()["error"]["code"] == "session_expiree"
 
-    def test_sans_cookie_le_renouvellement_echoue(self, client):
+    def test_sans_cookie_le_renouvellement_ne_signale_pas_d_erreur(self, client):
+        """Sans cookie, il n'y a pas d'échec : il n'y a pas de session.
+
+        Le front pose cette question à chaque chargement de page, avant de
+        savoir s'il y a quelqu'un. Y répondre par un 401 décrivait comme une
+        erreur d'authentification l'état le plus banal qui soit — un visiteur
+        déconnecté devant l'écran de connexion — et le navigateur, qui
+        journalise toute réponse 4xx avant que le code ne la voie, en faisait
+        une ligne rouge en console que rien côté client ne pouvait effacer.
+        """
         reponse = client.post("/api/v1/auth/refresh")
+
+        assert reponse.status_code == 204
+        assert reponse.content == b""
+
+    def test_un_cookie_refuse_reste_une_erreur(self, client):
+        """Le 204 ne vaut que pour l'absence de cookie.
+
+        Ce test est le garde-fou du précédent : dès qu'un jeton est présenté,
+        son refus est un vrai échec d'authentification et doit le rester.
+        Sans lui, élargir le 204 « pour faire taire la console » passerait
+        inaperçu.
+        """
+        client.cookies.set(COOKIE, "jeton-invente", path=settings.refresh_cookie_path)
+
+        reponse = client.post("/api/v1/auth/refresh")
+
         assert reponse.status_code == 401
-        assert reponse.json()["error"]["code"] == "jeton_absent"
+        assert reponse.json()["error"]["code"]
+
+    def test_un_jeton_refuse_efface_le_cookie(self, client, compte):
+        """Un cookie refusé doit disparaître, sinon la session morte est sans issue.
+
+        Le retrait était posé sur l'objet `Response` injecté dans la route,
+        que FastAPI abandonne dès qu'elle lève : le gestionnaire d'erreurs
+        fabrique sa propre réponse, qui ne sait rien de la précédente. Le
+        navigateur gardait donc un cookie que le serveur refusait, le
+        représentait à chaque chargement, recevait un 401 à chaque fois, et
+        rien ne pouvait rompre la boucle — sinon vider ses cookies à la main.
+        """
+        ouvrir(client, compte)
+        ancien = client.cookies[COOKIE]
+        client.post("/api/v1/auth/refresh")
+
+        client.cookies.set(COOKIE, ancien, path=settings.refresh_cookie_path)
+        rejoue = client.post("/api/v1/auth/refresh")
+
+        assert rejoue.status_code == 401
+        # L'assertion porte sur l'en-tête effectivement renvoyé, et non sur le
+        # bocal à cookies du client de test : le cookie y a été injecté à la
+        # main, sans domaine, et n'y répond donc pas aux mêmes règles
+        # d'appariement qu'un cookie posé par le serveur.
+        retrait = rejoue.headers.get("set-cookie", "")
+        assert COOKIE in retrait
+        assert "Max-Age=0" in retrait
+        assert f"Path={settings.refresh_cookie_path}" in retrait
+
+    def test_la_deconnexion_efface_le_cookie(self, client, compte):
+        """« Révoque la famille et efface le cookie » : la seconde moitié aussi.
+
+        La route posait le retrait sur l'objet `Response` injecté, puis
+        retournait un `Response` neuf : celui qui partait n'emportait pas
+        l'en-tête. Le compte était bien déconnecté côté serveur, mais le
+        navigateur conservait un cookie mort qu'il représentait ensuite.
+        """
+        ouvrir(client, compte)
+        assert COOKIE in client.cookies
+
+        assert client.post("/api/v1/auth/logout").status_code == 204
+
+        assert COOKIE not in client.cookies
+        assert client.post("/api/v1/auth/refresh").status_code == 204
 
     def test_la_deconnexion_revoque_la_famille(self, client, session, compte):
         ouvrir(client, compte)
