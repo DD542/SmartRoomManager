@@ -113,7 +113,9 @@ def history_fit(room: RoomProfile, user: UserProfile | None) -> float:
     return min(1.0, user.booked_room_counts.get(room.id, 0) / HISTORIQUE_PLEIN)
 
 
-def _composante(key: str, valeur: float, detail: str, weights: Weights) -> ScoreComponent:
+def _composante(
+    key: str, valeur: float, detail: str, weights: Weights
+) -> ScoreComponent:
     maximum = weights.of(key)
     return ScoreComponent(
         key=key,
@@ -142,7 +144,9 @@ def _detail_batiment(
     reference = criteria.building_id or (user.preferred_building_id if user else None)
     if reference is None:
         return "aucun bâtiment de préférence"
-    return "bâtiment de préférence" if room.building_id == reference else "autre bâtiment"
+    return (
+        "bâtiment de préférence" if room.building_id == reference else "autre bâtiment"
+    )
 
 
 def _detail_etage(room: RoomProfile, user: UserProfile | None) -> str:
@@ -266,7 +270,11 @@ def _phrase(composante: ScoreComponent) -> str:
     if key == "building":
         return "dans votre bâtiment habituel"
     if key == "floor":
-        return "au même étage" if composante.detail == "même étage" else f"proche ({composante.detail})"
+        return (
+            "au même étage"
+            if composante.detail == "même étage"
+            else f"proche ({composante.detail})"
+        )
     if key == "occupancy":
         return f"peu sollicitée ({composante.detail})"
     return f"salle habituelle ({composante.detail})"
@@ -280,7 +288,11 @@ def justify(score: Score, blocker: str | None = None) -> str:
     force ni comme réserve : leur ratio de 0,5 les laisse hors des deux seuils.
     """
     if not score.components:
-        return "Aucun critère renseigné." if blocker is None else f"Indisponible : {blocker}"
+        return (
+            "Aucun critère renseigné."
+            if blocker is None
+            else f"Indisponible : {blocker}"
+        )
 
     classes = sorted(score.components, key=lambda item: item.ratio, reverse=True)
     forts = [item for item in classes if item.ratio >= 0.6][:2]
@@ -296,7 +308,9 @@ def justify(score: Score, blocker: str | None = None) -> str:
         # « réserve : bâtiment, autre bâtiment » : quand le détail reprend déjà
         # le critère, le rappeler devant produit une répétition.
         redondant = _sans_accent(faible.label) in _sans_accent(faible.detail)
-        reserve = faible.detail if redondant else f"{faible.label.lower()}, {faible.detail}"
+        reserve = (
+            faible.detail if redondant else f"{faible.label.lower()}, {faible.detail}"
+        )
         base += f" — réserve : {reserve}"
 
     if blocker:

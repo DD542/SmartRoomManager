@@ -31,7 +31,7 @@ TRI_DEMANDES: dict[str, Any] = {
     "reference": AccessRequest.reference,
 }
 
-from app.services.availability_service import check_slot, en_utc, to_range
+from app.services.availability_service import check_slot, en_utc, to_range  # noqa: E402
 
 #: Préfixe des références lisibles, repris tel quel par l'écran d'arbitrage.
 #: Le croisillon fait partie du format imposé par `ck_access_requests_reference_format`.
@@ -89,7 +89,9 @@ def list_all(
 
 
 def get(session: Session, request_id: uuid.UUID) -> AccessRequest:
-    demande = session.scalars(_requete().where(AccessRequest.id == request_id)).one_or_none()
+    demande = session.scalars(
+        _requete().where(AccessRequest.id == request_id)
+    ).one_or_none()
     if demande is None:
         raise NotFoundError("Demande introuvable.")
     return demande
@@ -184,12 +186,15 @@ def decide(
     demande = get(session, request_id)
 
     if demande.status is not RequestStatus.OUVERT:
-        raise RuleViolationError("Cette demande est déjà tranchée.", code="deja_decidee")
+        raise RuleViolationError(
+            "Cette demande est déjà tranchée.", code="deja_decidee"
+        )
     if decision is RequestStatus.OUVERT:
         raise RuleViolationError("Décision attendue.", code="decision_requise")
     if decision is RequestStatus.REORIENTE and alternative_room_id is None:
         raise RuleViolationError(
-            "Une réorientation exige une salle de remplacement.", code="alternative_requise"
+            "Une réorientation exige une salle de remplacement.",
+            code="alternative_requise",
         )
 
     creneau = TimeSlot(
@@ -227,7 +232,9 @@ def decide(
         before={"status": RequestStatus.OUVERT.value},
         after={
             "status": decision.value,
-            "alternative_room_id": str(alternative_room_id) if alternative_room_id else None,
+            "alternative_room_id": str(alternative_room_id)
+            if alternative_room_id
+            else None,
             "booking_id": str(demande.booking_id) if demande.booking_id else None,
         },
     )

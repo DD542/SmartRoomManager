@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Cookie, Depends, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Cookie, Request, Response, status
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 from app.api.deps import CurrentPrincipal, SessionDep
@@ -168,7 +168,10 @@ def login(
         "Un compte sans droits d'administration reçoit le même refus qu'un mot "
         "de passe incorrect."
     ),
-    responses={401: {"description": "Identifiants incorrects."}, 429: {"description": "Trop de tentatives."}},
+    responses={
+        401: {"description": "Identifiants incorrects."},
+        429: {"description": "Trop de tentatives."},
+    },
 )
 @limiter.limit(settings.rate_limit_login)
 def admin_login(
@@ -254,7 +257,9 @@ def login_google(
         "copie en circulation."
     ),
     responses={
-        204: {"description": "Aucun cookie présenté : il n'y a pas de session à reprendre."},
+        204: {
+            "description": "Aucun cookie présenté : il n'y a pas de session à reprendre."
+        },
         401: {"description": "Session inconnue, expirée ou rejouée."},
     },
 )

@@ -36,6 +36,7 @@ from app.db.base import Base, SoftDeleteMixin, TimestampMixin, UuidPk, pg_enum
 from app.db.enums import UserStatus
 
 if TYPE_CHECKING:
+    from app.models.auth import PasswordResetToken, RefreshToken
     from app.models.parc import Building, FloorPlan
     from app.models.reservations import (
         AccessRequest,
@@ -76,7 +77,12 @@ class User(TimestampMixin, SoftDeleteMixin, Base):
         ),
         # Unicités partielles : une adresse redevient disponible après suppression
         # logique, ce qu'une contrainte UNIQUE simple interdirait.
-        Index("uq_users_email", "email", unique=True, postgresql_where=text("deleted_at IS NULL")),
+        Index(
+            "uq_users_email",
+            "email",
+            unique=True,
+            postgresql_where=text("deleted_at IS NULL"),
+        ),
         Index(
             "uq_users_badge_number",
             "badge_number",
@@ -114,23 +120,41 @@ class User(TimestampMixin, SoftDeleteMixin, Base):
     #: photo. `NULL` est l'état normal d'un compte sans photo.
     avatar_url: Mapped[str | None] = mapped_column(String(255), default=None)
     status: Mapped[UserStatus] = mapped_column(
-        pg_enum(UserStatus, "user_status"), server_default=text("'actif'"), default=UserStatus.ACTIF
+        pg_enum(UserStatus, "user_status"),
+        server_default=text("'actif'"),
+        default=UserStatus.ACTIF,
     )
     last_login_at: Mapped[datetime | None] = mapped_column(default=None)
 
     preferences: Mapped["UserPreference | None"] = relationship(
-        back_populates="user", cascade="all, delete-orphan", passive_deletes=True, lazy="selectin"
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="selectin",
     )
     admin_account: Mapped["AdminAccount | None"] = relationship(
-        back_populates="user", cascade="all, delete-orphan", passive_deletes=True, lazy="selectin"
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="selectin",
     )
-    bookings: Mapped[list["Booking"]] = relationship(back_populates="owner", lazy="select")
-    participations: Mapped[list["BookingParticipant"]] = relationship(back_populates="user")
+    bookings: Mapped[list["Booking"]] = relationship(
+        back_populates="owner", lazy="select"
+    )
+    participations: Mapped[list["BookingParticipant"]] = relationship(
+        back_populates="user"
+    )
     booking_events: Mapped[list["BookingEvent"]] = relationship(back_populates="actor")
-    recurrence_rules: Mapped[list["RecurrenceRule"]] = relationship(back_populates="owner")
-    access_requests: Mapped[list["AccessRequest"]] = relationship(back_populates="requester")
+    recurrence_rules: Mapped[list["RecurrenceRule"]] = relationship(
+        back_populates="owner"
+    )
+    access_requests: Mapped[list["AccessRequest"]] = relationship(
+        back_populates="requester"
+    )
     tickets: Mapped[list["Ticket"]] = relationship(back_populates="requester")
-    ticket_messages: Mapped[list["TicketMessage"]] = relationship(back_populates="author")
+    ticket_messages: Mapped[list["TicketMessage"]] = relationship(
+        back_populates="author"
+    )
     refresh_tokens: Mapped[list["RefreshToken"]] = relationship(
         back_populates="user", cascade="all, delete-orphan", passive_deletes=True
     )
@@ -138,7 +162,10 @@ class User(TimestampMixin, SoftDeleteMixin, Base):
         back_populates="user", cascade="all, delete-orphan", passive_deletes=True
     )
     notifications: Mapped[list["Notification"]] = relationship(
-        back_populates="user", cascade="all, delete-orphan", passive_deletes=True, lazy="select"
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="select",
     )
 
     @property
@@ -162,9 +189,7 @@ class UserPreference(TimestampMixin, Base):
             "     AND usual_capacity_min >= 1 AND usual_capacity_min <= usual_capacity_max)",
             name="capacity",
         ),
-        CheckConstraint(
-            "reminder_delay_min BETWEEN 5 AND 1440", name="reminder"
-        ),
+        CheckConstraint("reminder_delay_min BETWEEN 5 AND 1440", name="reminder"),
         CheckConstraint("weekly_quota_hours BETWEEN 0 AND 168", name="quota"),
         Index(
             "idx_user_preferences_building",
@@ -174,7 +199,12 @@ class UserPreference(TimestampMixin, Base):
     )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE", name="fk_user_preferences_user"),
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE",
+            name="fk_user_preferences_user",
+        ),
         primary_key=True,
     )
     #: Pondère le critère « bâtiment » du moteur de recommandation.
@@ -189,8 +219,12 @@ class UserPreference(TimestampMixin, Base):
     )
     usual_capacity_min: Mapped[int | None] = mapped_column(SmallInteger, default=None)
     usual_capacity_max: Mapped[int | None] = mapped_column(SmallInteger, default=None)
-    email_notifications: Mapped[bool] = mapped_column(server_default=text("true"), default=True)
-    in_app_notifications: Mapped[bool] = mapped_column(server_default=text("true"), default=True)
+    email_notifications: Mapped[bool] = mapped_column(
+        server_default=text("true"), default=True
+    )
+    in_app_notifications: Mapped[bool] = mapped_column(
+        server_default=text("true"), default=True
+    )
     reminder_delay_min: Mapped[int] = mapped_column(
         SmallInteger, server_default=text("30"), default=30
     )
@@ -200,7 +234,9 @@ class UserPreference(TimestampMixin, Base):
     )
 
     user: Mapped["User"] = relationship(back_populates="preferences")
-    preferred_building: Mapped["Building | None"] = relationship(back_populates="user_preferences")
+    preferred_building: Mapped["Building | None"] = relationship(
+        back_populates="user_preferences"
+    )
 
 
 class AdminAccount(TimestampMixin, Base):
@@ -219,7 +255,12 @@ class AdminAccount(TimestampMixin, Base):
     )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE", name="fk_admin_accounts_user"),
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE",
+            name="fk_admin_accounts_user",
+        ),
         primary_key=True,
     )
     job_title: Mapped[str] = mapped_column(String(80))
@@ -244,18 +285,34 @@ class AdminAccount(TimestampMixin, Base):
         viewonly=True,
         lazy="selectin",
     )
-    invitations_sent: Mapped[list["AdminInvitation"]] = relationship(back_populates="invited_by")
-    uploaded_plans: Mapped[list["FloorPlan"]] = relationship(back_populates="uploaded_by")
-    created_bookings: Mapped[list["Booking"]] = relationship(back_populates="created_by_admin")
-    decided_requests: Mapped[list["AccessRequest"]] = relationship(back_populates="decided_by")
-    created_closures: Mapped[list["ClosurePeriod"]] = relationship(back_populates="created_by")
-    assigned_tickets: Mapped[list["Ticket"]] = relationship(back_populates="assigned_admin")
-    edited_templates: Mapped[list["EmailTemplate"]] = relationship(back_populates="updated_by")
+    invitations_sent: Mapped[list["AdminInvitation"]] = relationship(
+        back_populates="invited_by"
+    )
+    uploaded_plans: Mapped[list["FloorPlan"]] = relationship(
+        back_populates="uploaded_by"
+    )
+    created_bookings: Mapped[list["Booking"]] = relationship(
+        back_populates="created_by_admin"
+    )
+    decided_requests: Mapped[list["AccessRequest"]] = relationship(
+        back_populates="decided_by"
+    )
+    created_closures: Mapped[list["ClosurePeriod"]] = relationship(
+        back_populates="created_by"
+    )
+    assigned_tickets: Mapped[list["Ticket"]] = relationship(
+        back_populates="assigned_admin"
+    )
+    edited_templates: Mapped[list["EmailTemplate"]] = relationship(
+        back_populates="updated_by"
+    )
     audit_entries: Mapped[list["AuditLog"]] = relationship(back_populates="actor")
 
     def has_permission(self, code: str) -> bool:
         """Le propriétaire détient tout, sans dépendre de la matrice."""
-        return self.is_owner or any(grant.permission.code == code for grant in self.grants)
+        return self.is_owner or any(
+            grant.permission.code == code for grant in self.grants
+        )
 
 
 class PermissionGroup(TimestampMixin, Base):
@@ -268,7 +325,9 @@ class PermissionGroup(TimestampMixin, Base):
     id: Mapped[UuidPk]
     code: Mapped[str] = mapped_column(String(40))
     label: Mapped[str] = mapped_column(String(80))
-    sort_order: Mapped[int] = mapped_column(SmallInteger, server_default=text("0"), default=0)
+    sort_order: Mapped[int] = mapped_column(
+        SmallInteger, server_default=text("0"), default=0
+    )
 
     permissions: Mapped[list["Permission"]] = relationship(
         back_populates="group", order_by="Permission.sort_order", lazy="selectin"
@@ -296,9 +355,13 @@ class Permission(TimestampMixin, Base):
     )
     code: Mapped[str] = mapped_column(String(40))
     label: Mapped[str] = mapped_column(String(120))
-    sort_order: Mapped[int] = mapped_column(SmallInteger, server_default=text("0"), default=0)
+    sort_order: Mapped[int] = mapped_column(
+        SmallInteger, server_default=text("0"), default=0
+    )
 
-    group: Mapped["PermissionGroup"] = relationship(back_populates="permissions", lazy="joined")
+    group: Mapped["PermissionGroup"] = relationship(
+        back_populates="permissions", lazy="joined"
+    )
     grants: Mapped[list["AdminPermission"]] = relationship(back_populates="permission")
 
 
@@ -343,13 +406,19 @@ class AdminPermission(TimestampMixin, Base):
         ),
         default=None,
     )
-    granted_at: Mapped[datetime] = mapped_column(server_default=text("now()"), default=None)
+    granted_at: Mapped[datetime] = mapped_column(
+        server_default=text("now()"), default=None
+    )
 
     admin: Mapped["AdminAccount"] = relationship(
         back_populates="grants", foreign_keys=[admin_user_id]
     )
-    granted_by: Mapped["AdminAccount | None"] = relationship(foreign_keys=[granted_by_admin_id])
-    permission: Mapped["Permission"] = relationship(back_populates="grants", lazy="joined")
+    granted_by: Mapped["AdminAccount | None"] = relationship(
+        foreign_keys=[granted_by_admin_id]
+    )
+    permission: Mapped["Permission"] = relationship(
+        back_populates="grants", lazy="joined"
+    )
 
 
 class AdminInvitation(TimestampMixin, Base):
@@ -368,7 +437,11 @@ class AdminInvitation(TimestampMixin, Base):
             unique=True,
             postgresql_where=text("accepted_at IS NULL AND revoked_at IS NULL"),
         ),
-        Index("idx_admin_invitations_invited_by", "invited_by_admin_id", text("sent_at DESC")),
+        Index(
+            "idx_admin_invitations_invited_by",
+            "invited_by_admin_id",
+            text("sent_at DESC"),
+        ),
     )
 
     id: Mapped[UuidPk]
@@ -383,7 +456,9 @@ class AdminInvitation(TimestampMixin, Base):
             name="fk_admin_invitations_invited_by",
         )
     )
-    sent_at: Mapped[datetime] = mapped_column(server_default=text("now()"), default=None)
+    sent_at: Mapped[datetime] = mapped_column(
+        server_default=text("now()"), default=None
+    )
     expires_at: Mapped[datetime]
     accepted_at: Mapped[datetime | None] = mapped_column(default=None)
     revoked_at: Mapped[datetime | None] = mapped_column(default=None)
@@ -401,7 +476,9 @@ class AdminInvitationPermission(TimestampMixin, Base):
     """Périmètre choisi dès l'invitation : le compte arrive avec ses droits."""
 
     __tablename__ = "admin_invitation_permissions"
-    __table_args__ = (Index("idx_admin_invitation_permissions_permission", "permission_id"),)
+    __table_args__ = (
+        Index("idx_admin_invitation_permissions_permission", "permission_id"),
+    )
 
     invitation_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey(
@@ -422,5 +499,7 @@ class AdminInvitationPermission(TimestampMixin, Base):
         primary_key=True,
     )
 
-    invitation: Mapped["AdminInvitation"] = relationship(back_populates="permission_grants")
+    invitation: Mapped["AdminInvitation"] = relationship(
+        back_populates="permission_grants"
+    )
     permission: Mapped["Permission"] = relationship(lazy="joined")

@@ -116,7 +116,10 @@ def _par_vecteur(session: Session, vecteur, profondeur: int, categorie_id):
     ).all()
     # La similarité est rendue plutôt que la distance : elle se lit dans le sens
     # attendu — 1 vaut « identique » — et c'est elle que le seuil compare.
-    return [(ligne.id, ligne.article_id, ligne.contenu, 1.0 - float(ligne.distance)) for ligne in lignes]
+    return [
+        (ligne.id, ligne.article_id, ligne.contenu, 1.0 - float(ligne.distance))
+        for ligne in lignes
+    ]
 
 
 def _par_lexique(session: Session, question: str, profondeur: int, categorie_id):
@@ -140,7 +143,10 @@ def _par_lexique(session: Session, question: str, profondeur: int, categorie_id)
         .order_by(rang.desc())
         .limit(profondeur)
     ).all()
-    return [(ligne.id, ligne.article_id, ligne.contenu, float(ligne.rang)) for ligne in lignes]
+    return [
+        (ligne.id, ligne.article_id, ligne.contenu, float(ligne.rang))
+        for ligne in lignes
+    ]
 
 
 #: Mots trop courants pour distinguer un article d'un autre dans ce corpus.
@@ -178,7 +184,9 @@ def _termes(question: str) -> str:
     return " | ".join(dict.fromkeys(mots))
 
 
-def _fusionner(session: Session, *, vectoriels, lexicaux, limite: int, k: int, seuil: float):
+def _fusionner(
+    session: Session, *, vectoriels, lexicaux, limite: int, k: int, seuil: float
+):
     """Fusion par rangs réciproques, puis filtrage par le seuil de similarité."""
     scores: dict = {}
     contenus: dict = {}
@@ -207,9 +215,7 @@ def _fusionner(session: Session, *, vectoriels, lexicaux, limite: int, k: int, s
     # rejeter sur une similarité cosinus médiocre reviendrait à écarter la
     # bonne réponse parce qu'elle est formulée autrement.
     filtres = [
-        fid
-        for fid in retenus
-        if fid in rang_lex or similarite.get(fid, 0.0) >= seuil
+        fid for fid in retenus if fid in rang_lex or similarite.get(fid, 0.0) >= seuil
     ]
 
     if not filtres:

@@ -76,7 +76,9 @@ class RulePreviewOut(ReadModel):
 
 
 class OpeningWindowIn(ApiModel):
-    weekday: Annotated[int, Field(ge=0, le=6, description="0 = dimanche, comme EXTRACT(DOW)")]
+    weekday: Annotated[
+        int, Field(ge=0, le=6, description="0 = dimanche, comme EXTRACT(DOW)")
+    ]
     is_open: bool = True
     opens_at: time
     closes_at: time

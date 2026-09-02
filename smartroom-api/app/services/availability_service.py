@@ -208,7 +208,10 @@ def load_rules(session: Session, salle: Room) -> RuleSet:
         select(BookingRule)
         .where(
             (BookingRule.scope == RuleScope.GLOBAL)
-            | ((BookingRule.scope == RuleScope.SALLE) & (BookingRule.room_id == salle.id))
+            | (
+                (BookingRule.scope == RuleScope.SALLE)
+                & (BookingRule.room_id == salle.id)
+            )
             | (
                 (BookingRule.scope == RuleScope.BATIMENT)
                 & (BookingRule.building_id == salle.floor.building_id)
@@ -248,13 +251,17 @@ def load_openings(session: Session, salle: Room) -> tuple[OpeningWindow, ...]:
     ):
         lignes = session.scalars(
             select(OpeningHour)
-            .where(OpeningHour.scope == portee, condition, OpeningHour.is_open.is_(True))
+            .where(
+                OpeningHour.scope == portee, condition, OpeningHour.is_open.is_(True)
+            )
             .order_by(OpeningHour.weekday)
         ).all()
         if lignes:
             return tuple(
                 OpeningWindow(
-                    weekday=item.weekday, opens_at=item.opens_at, closes_at=item.closes_at
+                    weekday=item.weekday,
+                    opens_at=item.opens_at,
+                    closes_at=item.closes_at,
                 )
                 for item in lignes
             )
@@ -328,7 +335,11 @@ def load_bookings(
 
 
 def count_active_bookings(
-    session: Session, user_id: uuid.UUID, *, now: datetime, ignore_booking_id: uuid.UUID | None = None
+    session: Session,
+    user_id: uuid.UUID,
+    *,
+    now: datetime,
+    ignore_booking_id: uuid.UUID | None = None,
 ) -> int:
     """Réservations à venir non annulées. Un COUNT, jamais un chargement."""
     requete = (
@@ -414,12 +425,17 @@ def check_slot(
     fermetures = load_closures(session, salle, jours[0], jours[-1])
 
     voisines = load_bookings(
-        session, room_id, slot.expanded(regles.buffer), ignore_booking_id=ignore_booking_id
+        session,
+        room_id,
+        slot.expanded(regles.buffer),
+        ignore_booking_id=ignore_booking_id,
     )
     conflits = dom_conflicts.detect(slot, voisines, buffer=regles.buffer)
 
     actives = (
-        count_active_bookings(session, requester_id, now=now, ignore_booking_id=ignore_booking_id)
+        count_active_bookings(
+            session, requester_id, now=now, ignore_booking_id=ignore_booking_id
+        )
         if requester_id is not None
         else 0
     )
@@ -565,7 +581,11 @@ def calendar_events(
         )
 
     return [
-        (reservation, salle, viewer_id is not None and reservation.owner_id == viewer_id)
+        (
+            reservation,
+            salle,
+            viewer_id is not None and reservation.owner_id == viewer_id,
+        )
         for reservation, salle in session.execute(requete).all()
     ]
 

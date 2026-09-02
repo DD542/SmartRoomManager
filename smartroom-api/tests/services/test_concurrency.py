@@ -228,7 +228,10 @@ def _compter(session, salle_id, slot: TimeSlot) -> int:
 class TestConcurrence:
     @pytest.mark.parametrize(
         "nombre",
-        [pytest.param(2, id="deux_pretendants"), pytest.param(PRETENDANTS, id="dix_pretendants")],
+        [
+            pytest.param(2, id="deux_pretendants"),
+            pytest.param(PRETENDANTS, id="dix_pretendants"),
+        ],
     )
     def test_une_seule_reservation_survit(self, engine, parc_isole, nombre):
         """Le cœur du sujet : la double réservation est impossible.
@@ -263,7 +266,9 @@ class TestConcurrence:
 
         for perdant in perdants:
             assert perdant.message
-            assert "Réservation" in perdant.message or "créneau" in perdant.message.lower()
+            assert (
+                "Réservation" in perdant.message or "créneau" in perdant.message.lower()
+            )
 
     def test_chaque_perdant_est_refuse_de_maniere_exploitable(self, engine, parc_isole):
         """Deux chemins de refus, deux niveaux de détail. C'est délibéré.
@@ -475,7 +480,9 @@ class TestContrainteDeBase:
             )
             assert total == 2
 
-    def test_une_reservation_annulee_ne_bloque_plus_le_creneau(self, engine, parc_isole):
+    def test_une_reservation_annulee_ne_bloque_plus_le_creneau(
+        self, engine, parc_isole
+    ):
         """L'index d'exclusion est partiel : il ignore les annulées. Sans cela,
         annuler ne libérerait rien, et la salle resterait prise pour toujours."""
         slot = _creneau_futur(10)
@@ -560,6 +567,8 @@ class TestContrainteDeBase:
             identifiant_voisine = voisine.id
 
         with Session(engine) as session:
-            session.execute(delete(Booking).where(Booking.room_id == identifiant_voisine))
+            session.execute(
+                delete(Booking).where(Booking.room_id == identifiant_voisine)
+            )
             session.execute(delete(Room).where(Room.id == identifiant_voisine))
             session.commit()

@@ -29,7 +29,9 @@ from app.models import ChatConversation, ChatMessage, ChatRole, ChatTour
 TAILLE_TITRE = 60
 
 
-def creer_conversation(session: Session, *, user_id: uuid.UUID, titre: str = "") -> ChatConversation:
+def creer_conversation(
+    session: Session, *, user_id: uuid.UUID, titre: str = ""
+) -> ChatConversation:
     conversation = ChatConversation(
         user_id=user_id, titre=(titre or "Nouvelle conversation")[:120]
     )
@@ -49,7 +51,9 @@ def obtenir_conversation(
     conversation = session.scalars(
         select(ChatConversation)
         .options(selectinload(ChatConversation.messages))
-        .where(ChatConversation.id == conversation_id, ChatConversation.user_id == user_id)
+        .where(
+            ChatConversation.id == conversation_id, ChatConversation.user_id == user_id
+        )
     ).one_or_none()
     if conversation is None:
         raise NotFoundError("Conversation introuvable.")
@@ -62,7 +66,11 @@ def lister_conversations(
     """Fils de l'utilisateur, du plus récent au plus ancien, avec leur volume."""
     lignes = session.execute(
         select(ChatConversation, func.count(ChatMessage.id))
-        .join(ChatMessage, ChatMessage.conversation_id == ChatConversation.id, isouter=True)
+        .join(
+            ChatMessage,
+            ChatMessage.conversation_id == ChatConversation.id,
+            isouter=True,
+        )
         .where(ChatConversation.user_id == user_id)
         .group_by(ChatConversation.id)
         .order_by(ChatConversation.derniere_activite.desc())
@@ -198,7 +206,9 @@ def enregistrer_tour(
         premier_jeton_ms=journal.get("premier_jeton_ms"),
         jetons_invite=int(journal.get("jetons_invite", 0)),
         jetons_reponse=int(journal.get("jetons_reponse", 0)),
-        jetons_contexte=int(contexte.get("jetons", 0)) if isinstance(contexte, dict) else 0,
+        jetons_contexte=int(contexte.get("jetons", 0))
+        if isinstance(contexte, dict)
+        else 0,
         injection_suspectee=bool(journal.get("injection_suspectee")),
         etaye=bool(journal.get("etaye", True)),
         transfert_humain="transferer_humain" in (journal.get("outils") or []),
@@ -261,11 +271,15 @@ def statistiques(session: Session, *, jours: int = 7) -> Statistiques:
     demander un humain.
     """
     depuis = datetime.now(UTC) - timedelta(days=jours)
-    base = select(ChatTour).where(ChatTour.created_at >= depuis)
 
-    total = session.scalar(
-        select(func.count()).select_from(ChatTour).where(ChatTour.created_at >= depuis)
-    ) or 0
+    total = (
+        session.scalar(
+            select(func.count())
+            .select_from(ChatTour)
+            .where(ChatTour.created_at >= depuis)
+        )
+        or 0
+    )
 
     if total == 0:
         return Statistiques(
@@ -281,33 +295,53 @@ def statistiques(session: Session, *, jours: int = 7) -> Statistiques:
             jetons={"invite": 0, "reponse": 0, "contexte": 0},
         )
 
-    transferts = session.scalar(
-        select(func.count()).select_from(ChatTour)
-        .where(ChatTour.created_at >= depuis, ChatTour.transfert_humain.is_(True))
-    ) or 0
-    replis = session.scalar(
-        select(func.count()).select_from(ChatTour)
-        .where(ChatTour.created_at >= depuis, ChatTour.repli.is_(True))
-    ) or 0
-    etayes = session.scalar(
-        select(func.count()).select_from(ChatTour)
-        .where(ChatTour.created_at >= depuis, ChatTour.etaye.is_(True))
-    ) or 0
-    injections = session.scalar(
-        select(func.count()).select_from(ChatTour)
-        .where(ChatTour.created_at >= depuis, ChatTour.injection_suspectee.is_(True))
-    ) or 0
+    transferts = (
+        session.scalar(
+            select(func.count())
+            .select_from(ChatTour)
+            .where(ChatTour.created_at >= depuis, ChatTour.transfert_humain.is_(True))
+        )
+        or 0
+    )
+    replis = (
+        session.scalar(
+            select(func.count())
+            .select_from(ChatTour)
+            .where(ChatTour.created_at >= depuis, ChatTour.repli.is_(True))
+        )
+        or 0
+    )
+    etayes = (
+        session.scalar(
+            select(func.count())
+            .select_from(ChatTour)
+            .where(ChatTour.created_at >= depuis, ChatTour.etaye.is_(True))
+        )
+        or 0
+    )
+    injections = (
+        session.scalar(
+            select(func.count())
+            .select_from(ChatTour)
+            .where(
+                ChatTour.created_at >= depuis, ChatTour.injection_suspectee.is_(True)
+            )
+        )
+        or 0
+    )
 
     # Médiane et non moyenne : un tour à trente secondes tirerait la moyenne
     # au point de la rendre inutile, alors que la médiane dit ce que vit la
     # plupart des utilisateurs.
     mediane = session.scalar(
-        select(func.percentile_cont(0.5).within_group(ChatTour.duree_ms))
-        .where(ChatTour.created_at >= depuis)
+        select(func.percentile_cont(0.5).within_group(ChatTour.duree_ms)).where(
+            ChatTour.created_at >= depuis
+        )
     )
     mediane_premier = session.scalar(
-        select(func.percentile_cont(0.5).within_group(ChatTour.premier_jeton_ms))
-        .where(ChatTour.created_at >= depuis, ChatTour.premier_jeton_ms.is_not(None))
+        select(func.percentile_cont(0.5).within_group(ChatTour.premier_jeton_ms)).where(
+            ChatTour.created_at >= depuis, ChatTour.premier_jeton_ms.is_not(None)
+        )
     )
 
     outils = session.execute(
@@ -339,11 +373,19 @@ def statistiques(session: Session, *, jours: int = 7) -> Statistiques:
         taux_repli=round(replis / total, 3),
         taux_etaye=round(etayes / total, 3),
         latence_mediane_ms=int(mediane) if mediane is not None else None,
-        premier_jeton_median_ms=int(mediane_premier) if mediane_premier is not None else None,
+        premier_jeton_median_ms=int(mediane_premier)
+        if mediane_premier is not None
+        else None,
         outils=[{"outil": ligne[0], "appels": ligne[1]} for ligne in outils],
-        replis=[{"cause": ligne[0] or "inconnue", "tours": ligne[1]} for ligne in causes],
+        replis=[
+            {"cause": ligne[0] or "inconnue", "tours": ligne[1]} for ligne in causes
+        ],
         injections=injections,
-        jetons={"invite": int(jetons[0]), "reponse": int(jetons[1]), "contexte": int(jetons[2])},
+        jetons={
+            "invite": int(jetons[0]),
+            "reponse": int(jetons[1]),
+            "contexte": int(jetons[2]),
+        },
     )
 
 
@@ -352,7 +394,11 @@ def conversations_en_echec(session: Session, *, jours: int = 7, limite: int = 10
     depuis = datetime.now(UTC) - timedelta(days=jours)
     lignes = session.execute(
         select(ChatTour, ChatConversation.titre)
-        .join(ChatConversation, ChatConversation.id == ChatTour.conversation_id, isouter=True)
+        .join(
+            ChatConversation,
+            ChatConversation.id == ChatTour.conversation_id,
+            isouter=True,
+        )
         .where(
             ChatTour.created_at >= depuis,
             (ChatTour.transfert_humain.is_(True)) | (ChatTour.etaye.is_(False)),
@@ -364,7 +410,9 @@ def conversations_en_echec(session: Session, *, jours: int = 7, limite: int = 10
     return [
         {
             "tour_id": str(ligne[0].id),
-            "conversation_id": str(ligne[0].conversation_id) if ligne[0].conversation_id else None,
+            "conversation_id": str(ligne[0].conversation_id)
+            if ligne[0].conversation_id
+            else None,
             "titre": ligne[1] or "—",
             "quand": ligne[0].created_at.isoformat(),
             "mode": ligne[0].mode,

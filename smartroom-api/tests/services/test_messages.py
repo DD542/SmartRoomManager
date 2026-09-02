@@ -52,7 +52,10 @@ class TestTraduction:
                 "ctx": {"pattern": "^(day|week|month)$"},
             }
         )
-        assert message == "La granularité doit valoir l'une de ces valeurs : day, week, month."
+        assert (
+            message
+            == "La granularité doit valoir l'une de ces valeurs : day, week, month."
+        )
 
     def test_un_motif_non_enumere_reste_decrit_sans_etre_recopie(self):
         message = traduire(
@@ -84,11 +87,14 @@ class TestTraduction:
             ("decimal_parsing", "La capacité doit être un nombre."),
         ],
     )
-    def test_les_erreurs_numeriques_disent_ce_qui_est_attendu(self, type_erreur, attendu):
+    def test_les_erreurs_numeriques_disent_ce_qui_est_attendu(
+        self, type_erreur, attendu
+    ):
         assert traduire({"loc": ["body", "capacity"], "type": type_erreur}) == attendu
 
     @pytest.mark.parametrize(
-        "type_erreur", ["datetime_parsing", "datetime_type", "datetime_from_date_parsing"]
+        "type_erreur",
+        ["datetime_parsing", "datetime_type", "datetime_from_date_parsing"],
     )
     def test_une_date_heure_cite_le_format_attendu(self, type_erreur):
         message = traduire({"loc": ["query", "from_date"], "type": type_erreur})
@@ -125,9 +131,17 @@ class TestTraduction:
     @pytest.mark.parametrize(
         ("type_erreur", "contexte", "attendu"),
         [
-            ("greater_than_equal", {"ge": 1}, "La taille de page doit valoir au moins 1."),
+            (
+                "greater_than_equal",
+                {"ge": 1},
+                "La taille de page doit valoir au moins 1.",
+            ),
             ("greater_than", {"gt": 0}, "La taille de page doit dépasser 0."),
-            ("less_than_equal", {"le": 100}, "La taille de page ne peut pas dépasser 100."),
+            (
+                "less_than_equal",
+                {"le": 100},
+                "La taille de page ne peut pas dépasser 100.",
+            ),
             ("less_than", {"lt": 200}, "La taille de page doit rester sous 200."),
         ],
     )
@@ -135,7 +149,9 @@ class TestTraduction:
         self, type_erreur, contexte, attendu
     ):
         """La borne est citée : « trop grand » n'aide personne à corriger."""
-        message = traduire({"loc": ["query", "size"], "type": type_erreur, "ctx": contexte})
+        message = traduire(
+            {"loc": ["query", "size"], "type": type_erreur, "ctx": contexte}
+        )
         assert message == attendu
 
     @pytest.mark.parametrize("type_erreur", ["string_too_short", "too_short"])
@@ -153,7 +169,8 @@ class TestTraduction:
         assert message == "Le titre ne peut pas dépasser 160 caractères."
 
     @pytest.mark.parametrize(
-        "type_erreur", ["string_type", "list_type", "dict_type", "model_attributes_type"]
+        "type_erreur",
+        ["string_type", "list_type", "dict_type", "model_attributes_type"],
     )
     def test_un_type_inattendu_le_dit_sans_jargon(self, type_erreur):
         assert traduire({"loc": ["body", "permissions"], "type": type_erreur}) == (
@@ -178,12 +195,18 @@ class TestTraduction:
         assert message == "La durée maximale doit dépasser la durée minimale."
 
     def test_un_validateur_sans_message_reste_explicite(self):
-        assert traduire({"loc": ["body"], "type": "value_error", "msg": ""}) == "Valeur refusée."
+        assert (
+            traduire({"loc": ["body"], "type": "value_error", "msg": ""})
+            == "Valeur refusée."
+        )
 
     def test_un_type_inconnu_conserve_le_message_d_origine(self):
         """Le dernier recours ne masque rien : une traduction absente vaut mieux
         qu'un message inventé qui décrirait la mauvaise contrainte."""
-        assert traduire({"loc": ["body", "x"], "type": "type_jamais_vu", "msg": "Boom"}) == "Boom"
+        assert (
+            traduire({"loc": ["body", "x"], "type": "type_jamais_vu", "msg": "Boom"})
+            == "Boom"
+        )
 
     def test_un_type_inconnu_sans_message_reste_affichable(self):
         assert traduire({"type": "type_jamais_vu"}) == "Requête invalide."

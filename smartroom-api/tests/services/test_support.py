@@ -5,17 +5,14 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import Range
 
 from app.api.deps import DATA_EXPORT, SUPPORT_HANDLE, SYSTEM_CONFIGURE
 from app.core.errors import RuleViolationError
 from app.db.enums import (
     ArticleStatus,
-    AuditAction,
     BookingStatus,
     NotificationChannel,
-    TicketStatus,
 )
 from app.models import (
     Booking,
@@ -27,7 +24,7 @@ from app.models import (
     FaqCategory,
     Notification,
 )
-from app.services import mail_service, stats_service, support_service
+from app.services import mail_service, stats_service
 from app.tasks import scheduler
 from tests.services.conftest import accorder, connecter, creneau
 from tests.services.test_api_v1 import poser
@@ -114,7 +111,9 @@ class TestTickets:
         assert corps["status"] == "ouvert"
         assert corps["message_count"] == 1
 
-    def test_le_ticket_d_autrui_est_invisible(self, client, compte, creer_compte, salle):
+    def test_le_ticket_d_autrui_est_invisible(
+        self, client, compte, creer_compte, salle
+    ):
         entetes = connecter(client, compte.email)
         ticket = client.post(
             "/api/v1/tickets",
@@ -124,7 +123,10 @@ class TestTickets:
 
         intrus = creer_compte("Sam")
         autres = connecter(client, intrus.email)
-        assert client.get(f"/api/v1/tickets/{ticket['id']}", headers=autres).status_code == 404
+        assert (
+            client.get(f"/api/v1/tickets/{ticket['id']}", headers=autres).status_code
+            == 404
+        )
 
     def test_la_note_interne_ne_sort_pas_vers_le_demandeur(
         self, client, session, administrateur, compte
@@ -223,7 +225,9 @@ class TestBaseDeConnaissances:
         session.flush()
 
         entetes = connecter(client, compte.email)
-        corps = client.get("/api/v1/faq/articles", headers=entetes, params={"size": 50}).json()
+        corps = client.get(
+            "/api/v1/faq/articles", headers=entetes, params={"size": 50}
+        ).json()
         titres = {item["title"] for item in corps["items"]}
         assert "Comment réserver une salle" in titres
         assert "Brouillon" not in titres
@@ -330,7 +334,10 @@ class TestNotifications:
         session.flush()
         entetes = connecter(client, compte.email)
 
-        assert client.get("/api/v1/notifications/unread-count", headers=entetes).json() == 3
+        assert (
+            client.get("/api/v1/notifications/unread-count", headers=entetes).json()
+            == 3
+        )
         corps = client.get("/api/v1/notifications", headers=entetes).json()
         assert corps["total"] == 3
 
@@ -343,8 +350,14 @@ class TestNotifications:
         session.flush()
         entetes = connecter(client, compte.email)
 
-        assert client.post("/api/v1/notifications/read-all", headers=entetes).status_code == 204
-        assert client.get("/api/v1/notifications/unread-count", headers=entetes).json() == 0
+        assert (
+            client.post("/api/v1/notifications/read-all", headers=entetes).status_code
+            == 204
+        )
+        assert (
+            client.get("/api/v1/notifications/unread-count", headers=entetes).json()
+            == 0
+        )
 
     def test_la_notification_d_autrui_est_invisible(
         self, client, session, compte, creer_compte
@@ -358,7 +371,9 @@ class TestNotifications:
 
         entetes = connecter(client, compte.email)
         reponse = client.patch(
-            f"/api/v1/notifications/{notification.id}", headers=entetes, json={"read": True}
+            f"/api/v1/notifications/{notification.id}",
+            headers=entetes,
+            json={"read": True},
         )
         assert reponse.status_code == 404
 
@@ -402,7 +417,9 @@ class TestGabarits:
         )
         assert resultat is None
 
-    def test_notification_persistee_et_courriel_en_attente(self, session, compte, gabarit):
+    def test_notification_persistee_et_courriel_en_attente(
+        self, session, compte, gabarit
+    ):
         mail_service.flush()
         notification = mail_service.notify(
             session, user=compte, code=gabarit.code, variables={"titre": "Réunion"}
@@ -444,7 +461,9 @@ class TestStatistiques:
         assert reponse.json()["rooms"] >= 1
         assert reponse.headers["cache-control"].startswith("public")
 
-    def test_vue_d_ensemble(self, client, session, administrateur, compte, salle, jour_ouvre):
+    def test_vue_d_ensemble(
+        self, client, session, administrateur, compte, salle, jour_ouvre
+    ):
         poser(session, salle, compte, creneau(jour_ouvre, 10))
         accorder(session, administrateur, DATA_EXPORT)
         entetes = connecter(client, administrateur.user.email, admin=True)
@@ -460,11 +479,15 @@ class TestStatistiques:
         entetes = connecter(client, administrateur.user.email, admin=True)
 
         reponse = client.get(
-            "/api/v1/admin/stats/occupancy", headers=entetes, params={"granularity": "siecle"}
+            "/api/v1/admin/stats/occupancy",
+            headers=entetes,
+            params={"granularity": "siecle"},
         )
         assert reponse.status_code == 422
 
-    def test_classement_des_salles(self, client, session, administrateur, compte, salle, jour_ouvre):
+    def test_classement_des_salles(
+        self, client, session, administrateur, compte, salle, jour_ouvre
+    ):
         poser(session, salle, compte, creneau(jour_ouvre, 10))
         accorder(session, administrateur, DATA_EXPORT)
         entetes = connecter(client, administrateur.user.email, admin=True)
@@ -474,9 +497,10 @@ class TestStatistiques:
 
     def test_export_sans_permission(self, client, session, administrateur):
         entetes = connecter(client, administrateur.user.email, admin=True)
-        assert client.get(
-            "/api/v1/admin/stats/overview", headers=entetes
-        ).status_code == 403
+        assert (
+            client.get("/api/v1/admin/stats/overview", headers=entetes).status_code
+            == 403
+        )
 
 
 class TestAudit:
@@ -486,14 +510,18 @@ class TestAudit:
         accorder(session, administrateur, SYSTEM_CONFIGURE, "rooms.manage")
         entetes = connecter(client, administrateur.user.email, admin=True)
 
-        client.patch(f"/api/v1/rooms/{salle.id}", headers=entetes, json={"capacity": 42})
+        client.patch(
+            f"/api/v1/rooms/{salle.id}", headers=entetes, json={"capacity": 42}
+        )
 
         corps = client.get(
             "/api/v1/admin/audit-logs",
             headers=entetes,
             params={"target_type": "room", "size": 50},
         ).json()
-        entree = next(item for item in corps["items"] if item["target_id"] == str(salle.id))
+        entree = next(
+            item for item in corps["items"] if item["target_id"] == str(salle.id)
+        )
         assert entree["diff_before"]["capacity"] == 12
         assert entree["diff_after"]["capacity"] == 42
         assert entree["session_id"]
@@ -501,7 +529,9 @@ class TestAudit:
     def test_signalement_exige_un_motif(self, client, session, administrateur, salle):
         accorder(session, administrateur, SYSTEM_CONFIGURE, "rooms.manage")
         entetes = connecter(client, administrateur.user.email, admin=True)
-        client.patch(f"/api/v1/rooms/{salle.id}", headers=entetes, json={"capacity": 20})
+        client.patch(
+            f"/api/v1/rooms/{salle.id}", headers=entetes, json={"capacity": 20}
+        )
 
         entree = client.get(
             "/api/v1/admin/audit-logs", headers=entetes, params={"size": 1}
@@ -524,7 +554,9 @@ class TestAudit:
 
     def test_le_journal_est_reserve(self, client, session, administrateur):
         entetes = connecter(client, administrateur.user.email, admin=True)
-        assert client.get("/api/v1/admin/audit-logs", headers=entetes).status_code == 403
+        assert (
+            client.get("/api/v1/admin/audit-logs", headers=entetes).status_code == 403
+        )
 
 
 class TestTachesPlanifiees:
@@ -549,7 +581,9 @@ class TestTachesPlanifiees:
         session.refresh(abandonnee)
         assert abandonnee.status is BookingStatus.ANNULEE
 
-    def test_le_rappel_ne_part_qu_une_fois(self, session, compte, salle, gabarit, maintenant):
+    def test_le_rappel_ne_part_qu_une_fois(
+        self, session, compte, salle, gabarit, maintenant
+    ):
         """Sans garde, chaque passage renverrait le même rappel."""
         import app.tasks.scheduler as module
 

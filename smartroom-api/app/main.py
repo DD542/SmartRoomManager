@@ -59,16 +59,31 @@ rotation à chaque renouvellement.
 """
 
 TAGS = [
-    {"name": "authentification", "description": "Sessions, mots de passe, permissions."},
+    {
+        "name": "authentification",
+        "description": "Sessions, mots de passe, permissions.",
+    },
     {"name": "parc", "description": "Bâtiments, étages, salles, équipements, plans."},
-    {"name": "disponibilité", "description": "Créneaux libres, vérification, recherche."},
-    {"name": "recommandation", "description": "Classement des salles, alternatives, arbitrage."},
-    {"name": "réservations", "description": "Créer, déplacer, annuler, valider la présence."},
+    {
+        "name": "disponibilité",
+        "description": "Créneaux libres, vérification, recherche.",
+    },
+    {
+        "name": "recommandation",
+        "description": "Classement des salles, alternatives, arbitrage.",
+    },
+    {
+        "name": "réservations",
+        "description": "Créer, déplacer, annuler, valider la présence.",
+    },
     {"name": "demandes d'accès", "description": "Dérogations et leur arbitrage."},
     {"name": "règles", "description": "Règles de réservation, horaires, fermetures."},
     {"name": "comptes", "description": "Utilisateurs, administrateurs, invitations."},
     {"name": "support", "description": "Tickets, base de connaissances, chatbot."},
-    {"name": "notifications", "description": "Notifications applicatives et gabarits d'e-mail."},
+    {
+        "name": "notifications",
+        "description": "Notifications applicatives et gabarits d'e-mail.",
+    },
     {"name": "statistiques", "description": "Agrégats des tableaux de bord."},
     {"name": "audit", "description": "Journal des écritures sensibles."},
     {"name": "administration", "description": "Actions de back-office."},
@@ -177,7 +192,9 @@ def health() -> dict[str, str]:
     ),
     responses={503: {"description": "Base injoignable ou schéma non migré."}},
 )
-def readiness(response: Response, session: Session = Depends(get_session)) -> dict[str, object]:
+def readiness(
+    response: Response, session: Session = Depends(get_session)
+) -> dict[str, object]:
     try:
         version = session.execute(
             text("SELECT version_num FROM alembic_version LIMIT 1")

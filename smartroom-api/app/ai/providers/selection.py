@@ -150,7 +150,10 @@ class SelecteurModeles:
             return []
 
         charges: list[str] = []
-        for modele in (self._reglages.modele_raisonnement, self._reglages.modele_vecteurs):
+        for modele in (
+            self._reglages.modele_raisonnement,
+            self._reglages.modele_vecteurs,
+        ):
             if modele and await local.prechauffer(modele):
                 charges.append(modele)
         return charges
@@ -182,7 +185,8 @@ class SelecteurModeles:
                 "manquants": [
                     nom
                     for nom in attendus.values()
-                    if installes and not any(m.startswith(nom.split(":")[0]) for m in installes)
+                    if installes
+                    and not any(m.startswith(nom.split(":")[0]) for m in installes)
                 ],
             },
             "distant": {

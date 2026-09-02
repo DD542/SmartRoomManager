@@ -39,7 +39,8 @@ def compter_jetons(texte: str) -> int:
             _encodeur = tiktoken.get_encoding("cl100k_base")
         except Exception as souci:  # pragma: no cover - dépend du réseau
             logger.info(
-                "tiktoken indisponible, estimation par caractères", extra={"detail": str(souci)}
+                "tiktoken indisponible, estimation par caractères",
+                extra={"detail": str(souci)},
             )
             _encodeur = None
 

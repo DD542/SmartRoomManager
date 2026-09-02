@@ -124,7 +124,8 @@ def toute_la_semaine(
     opens: time = time(8, 0), closes: time = time(20, 0)
 ) -> tuple[OpeningWindow, ...]:
     return tuple(
-        OpeningWindow(weekday=jour, opens_at=opens, closes_at=closes) for jour in range(7)
+        OpeningWindow(weekday=jour, opens_at=opens, closes_at=closes)
+        for jour in range(7)
     )
 
 

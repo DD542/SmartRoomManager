@@ -25,7 +25,9 @@ from app.api.v1.schemas import (
 from app.models import Building, Equipment, Floor, Room
 
 
-def batiment_sortie(batiment: Building, floor_count: int = 0, room_count: int = 0) -> BuildingOut:
+def batiment_sortie(
+    batiment: Building, floor_count: int = 0, room_count: int = 0
+) -> BuildingOut:
     return BuildingOut(
         id=batiment.id,
         code=batiment.code,
@@ -100,7 +102,9 @@ def salle_sortie(salle: Room, occupation: int = 0, reservations: int = 0) -> Roo
                 icon=lien.equipment.icon,
                 quantity=lien.quantity,
             )
-            for lien in sorted(salle.room_equipments, key=lambda item: item.equipment.label)
+            for lien in sorted(
+                salle.room_equipments, key=lambda item: item.equipment.label
+            )
         ],
         photos=[
             RoomPhotoOut.model_validate(photo)

@@ -91,14 +91,20 @@ class MagasinBrouillons:
 
     def _purger(self) -> None:
         maintenant = time.monotonic()
-        for jeton in [cle for cle, valeur in self._entrees.items() if valeur.expire(maintenant=maintenant)]:
+        for jeton in [
+            cle
+            for cle, valeur in self._entrees.items()
+            if valeur.expire(maintenant=maintenant)
+        ]:
             self._entrees.pop(jeton, None)
 
         # Garde-fou de mémoire : au-delà de la capacité, les plus anciens
         # partent. Un magasin sans borne serait une fuite lente.
         if len(self._entrees) > self._capacite:
             surplus = len(self._entrees) - self._capacite
-            for jeton in sorted(self._entrees, key=lambda cle: self._entrees[cle].expire_a)[:surplus]:
+            for jeton in sorted(
+                self._entrees, key=lambda cle: self._entrees[cle].expire_a
+            )[:surplus]:
                 self._entrees.pop(jeton, None)
 
     @property

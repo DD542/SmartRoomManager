@@ -10,7 +10,14 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, ForeignKey, Index, String, UniqueConstraint, text
+from sqlalchemy import (
+    CheckConstraint,
+    ForeignKey,
+    Index,
+    String,
+    UniqueConstraint,
+    text,
+)
 from sqlalchemy.dialects.postgresql import INET
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -54,7 +61,9 @@ class RefreshToken(TimestampMixin, Base):
     token_hash: Mapped[str] = mapped_column(String(64))
     #: Identifie la chaîne de rotations issue d'une même connexion.
     family_id: Mapped[uuid.UUID] = mapped_column()
-    scope: Mapped[str] = mapped_column(String(10), server_default=text("'user'"), default="user")
+    scope: Mapped[str] = mapped_column(
+        String(10), server_default=text("'user'"), default="user"
+    )
     expires_at: Mapped[datetime] = mapped_column()
     used_at: Mapped[datetime | None] = mapped_column(default=None)
     revoked_at: Mapped[datetime | None] = mapped_column(default=None)

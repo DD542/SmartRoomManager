@@ -86,7 +86,10 @@ class ClientOllama(LLMProvider):
 
     async def disponible(self) -> bool:
         maintenant = time.monotonic()
-        if self._sante is not None and maintenant - self._sante[0] < self._cache_sante_s:
+        if (
+            self._sante is not None
+            and maintenant - self._sante[0] < self._cache_sante_s
+        ):
             return self._sante[1]
 
         try:
@@ -142,7 +145,8 @@ class ClientOllama(LLMProvider):
             reponse.raise_for_status()
         except httpx.HTTPError as souci:
             logger.warning(
-                "Préchauffage impossible", extra={"modele": modele, "detail": str(souci)}
+                "Préchauffage impossible",
+                extra={"modele": modele, "detail": str(souci)},
             )
             return False
         logger.info("Modèle préchauffé", extra={"modele": modele})
@@ -174,7 +178,9 @@ class ClientOllama(LLMProvider):
             # revient en texte, aucun outil n'est appelé, et rien ne le signale.
             # Le catalogue garde donc sa forme nue, et chaque fournisseur
             # l'habille à sa manière.
-            charge["tools"] = [{"type": "function", "function": outil} for outil in outils]
+            charge["tools"] = [
+                {"type": "function", "function": outil} for outil in outils
+            ]
         if format_json:
             charge["format"] = "json"
 
@@ -192,9 +198,7 @@ class ClientOllama(LLMProvider):
         # Le même délai vaut avant le premier jeton et entre deux jetons : un
         # silence de deux secondes et demie au milieu d'une phrase condamne le
         # tour autant qu'un silence au début.
-        delais = httpx.Timeout(
-            self._delai_premier, connect=2.0, write=10.0, pool=5.0
-        )
+        delais = httpx.Timeout(self._delai_premier, connect=2.0, write=10.0, pool=5.0)
 
         try:
             async with self._http().stream(
@@ -224,7 +228,9 @@ class ClientOllama(LLMProvider):
                         # Une ligne illisible n'interrompt pas le flux : elle est
                         # signalée et ignorée. Interrompre coûterait la réponse
                         # entière pour un octet perdu.
-                        logger.warning("Ligne Ollama illisible", extra={"taille": len(ligne)})
+                        logger.warning(
+                            "Ligne Ollama illisible", extra={"taille": len(ligne)}
+                        )
                         continue
 
                     if erreur := evenement.get("error"):
@@ -234,7 +240,9 @@ class ClientOllama(LLMProvider):
 
                     if contenu := message.get("content"):
                         if premier_jeton_ms is None:
-                            premier_jeton_ms = int((time.perf_counter() - depart) * 1000)
+                            premier_jeton_ms = int(
+                                (time.perf_counter() - depart) * 1000
+                            )
                         yield Fragment(type=TypeFragment.TEXTE, texte=contenu)
 
                     for brut in message.get("tool_calls") or []:
@@ -242,7 +250,9 @@ class ClientOllama(LLMProvider):
                         if appel is not None:
                             appels.append(appel)
                             if premier_jeton_ms is None:
-                                premier_jeton_ms = int((time.perf_counter() - depart) * 1000)
+                                premier_jeton_ms = int(
+                                    (time.perf_counter() - depart) * 1000
+                                )
 
                     if evenement.get("done"):
                         mesures_finales = evenement
@@ -268,7 +278,9 @@ class ClientOllama(LLMProvider):
                 modele=modele,
                 premier_jeton_ms=premier_jeton_ms,
                 total_ms=int((time.perf_counter() - depart) * 1000),
-                chargement_ms=int(mesures_finales.get("load_duration", 0) // _NS_PAR_MS),
+                chargement_ms=int(
+                    mesures_finales.get("load_duration", 0) // _NS_PAR_MS
+                ),
                 jetons_invite=int(mesures_finales.get("prompt_eval_count", 0)),
                 jetons_reponse=int(mesures_finales.get("eval_count", 0)),
                 arret=arret,
@@ -277,14 +289,20 @@ class ClientOllama(LLMProvider):
 
     # ---------------------------------------------------------------- vecteurs
 
-    async def vectoriser(self, textes: Sequence[str], *, modele: str) -> list[list[float]]:
+    async def vectoriser(
+        self, textes: Sequence[str], *, modele: str
+    ) -> list[list[float]]:
         if not textes:
             return []
 
         try:
             reponse = await self._http().post(
                 "/api/embed",
-                json={"model": modele, "input": list(textes), "keep_alive": self._keep_alive},
+                json={
+                    "model": modele,
+                    "input": list(textes),
+                    "keep_alive": self._keep_alive,
+                },
                 timeout=self._delai_total,
             )
             reponse.raise_for_status()

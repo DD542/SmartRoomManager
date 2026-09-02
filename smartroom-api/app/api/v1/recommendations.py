@@ -8,7 +8,12 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import Range
 
-from app.api.deps import CONFLICTS_ARBITRATE, CurrentPrincipal, SessionDep, require_permission
+from app.api.deps import (
+    CONFLICTS_ARBITRATE,
+    CurrentPrincipal,
+    SessionDep,
+    require_permission,
+)
 from app.api.v1.schemas import (
     AlternativeOut,
     ArbitrationOut,
@@ -61,7 +66,9 @@ def recommend_best(
     meilleure = reco.best_room(session, _criteres(payload), user_id=principal.user.id)
     if meilleure is None:
         return None
-    return ScoredRoomOut.of(meilleure, vitrines(session, [meilleure.room.id]).get(meilleure.room.id))
+    return ScoredRoomOut.of(
+        meilleure, vitrines(session, [meilleure.room.id]).get(meilleure.room.id)
+    )
 
 
 @router.post(
@@ -78,7 +85,8 @@ def alternatives(
 ) -> list[AlternativeOut]:
     if payload.slot is None:
         raise RuleViolationError(
-            "Un créneau est nécessaire pour proposer une alternative.", code="creneau_requis"
+            "Un créneau est nécessaire pour proposer une alternative.",
+            code="creneau_requis",
         )
 
     propositions = reco.suggest_alternatives(
@@ -123,8 +131,15 @@ def arbitration(
     ).first()
 
     if titulaire is not None:
-        dossiers.append(_dossier(session, titulaire.owner_id, titulaire.created_at,
-                                 titulaire.id, regles.max_active_bookings))
+        dossiers.append(
+            _dossier(
+                session,
+                titulaire.owner_id,
+                titulaire.created_at,
+                titulaire.id,
+                regles.max_active_bookings,
+            )
+        )
 
     demandes = session.scalars(
         select(AccessRequest).where(
@@ -134,13 +149,16 @@ def arbitration(
     ).all()
     for demande in demandes:
         dossiers.append(
-            _dossier(session, demande.requester_id, demande.created_at, demande.booking_id,
-                     regles.max_active_bookings)
+            _dossier(
+                session,
+                demande.requester_id,
+                demande.created_at,
+                demande.booking_id,
+                regles.max_active_bookings,
+            )
         )
 
-    return ArbitrationOut.of(
-        arbitration_brief(creneau, room_id, dossiers, tz=FUSEAU)
-    )
+    return ArbitrationOut.of(arbitration_brief(creneau, room_id, dossiers, tz=FUSEAU))
 
 
 def _dossier(session, user_id, requested_at, booking_id, quota) -> ClaimantFile:

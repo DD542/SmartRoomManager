@@ -47,6 +47,7 @@ def _config():
     """
     return get_settings()
 
+
 #: `SandboxedEnvironment` bloque l'accès aux attributs internes. `autoescape`
 #: reste désactivé : ces gabarits produisent du texte, pas du HTML, et
 #: échapper transformerait « L'Atelier » en « L&#39;Atelier ».
@@ -59,8 +60,18 @@ PORT_SMTPS = 465
 
 _JOURS = ("lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche")
 _MOIS = (
-    "janvier", "février", "mars", "avril", "mai", "juin",
-    "juillet", "août", "septembre", "octobre", "novembre", "décembre",
+    "janvier",
+    "février",
+    "mars",
+    "avril",
+    "mai",
+    "juin",
+    "juillet",
+    "août",
+    "septembre",
+    "octobre",
+    "novembre",
+    "décembre",
 )
 
 
@@ -113,10 +124,16 @@ def get_template(session: Session, code: str) -> EmailTemplate | None:
 
 
 def known_variables(session: Session) -> list[EmailTemplateVariable]:
-    return list(session.scalars(select(EmailTemplateVariable).order_by(EmailTemplateVariable.code)))
+    return list(
+        session.scalars(
+            select(EmailTemplateVariable).order_by(EmailTemplateVariable.code)
+        )
+    )
 
 
-def preview(session: Session, code: str, variables: dict[str, Any] | None = None) -> Message:
+def preview(
+    session: Session, code: str, variables: dict[str, Any] | None = None
+) -> Message:
     """Rend un gabarit avec les valeurs d'exemple, sans rien envoyer."""
     gabarit = get_template(session, code)
     if gabarit is None:
@@ -174,7 +191,9 @@ async def send(message: Message) -> None:
             port=_config().smtp_port,
             username=_config().smtp_user,
             password=(
-                _config().smtp_password.get_secret_value() if _config().smtp_password else None
+                _config().smtp_password.get_secret_value()
+                if _config().smtp_password
+                else None
             ),
             use_tls=implicite,
             start_tls=_config().smtp_use_tls and not implicite,
@@ -262,7 +281,10 @@ def notify(
     # peut réécrire ce gabarit.
     sans_secrets = {
         **valeurs,
-        **{nom: masquer_secret(valeurs[nom]) for nom in VARIABLES_SECRETES & valeurs.keys()},
+        **{
+            nom: masquer_secret(valeurs[nom])
+            for nom in VARIABLES_SECRETES & valeurs.keys()
+        },
     }
     titre_stocke = render(gabarit.subject, sans_secrets)
     corps_stocke = render(gabarit.body, sans_secrets)
@@ -432,4 +454,6 @@ def _deposer(message: Message) -> Message:
 
 def _origine() -> str:
     """Première origine autorisée : celle du front."""
-    return _config().cors_origins[0] if _config().cors_origins else "http://localhost:5173"
+    return (
+        _config().cors_origins[0] if _config().cors_origins else "http://localhost:5173"
+    )

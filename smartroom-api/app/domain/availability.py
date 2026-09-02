@@ -118,7 +118,9 @@ def daily_windows(
         # instant. Sur l'heure locale répétée du retour à l'heure d'hiver, fold=0
         # retient la première occurrence, celle de l'heure d'été.
         debut = datetime.combine(day, ouverture.opens_at, tzinfo=tz)
-        jour_fin = day if ouverture.closes_at > ouverture.opens_at else day + timedelta(days=1)
+        jour_fin = (
+            day if ouverture.closes_at > ouverture.opens_at else day + timedelta(days=1)
+        )
         fin = datetime.combine(jour_fin, ouverture.closes_at, tzinfo=tz)
 
         fenetres.append(TimeSlot(start=debut, end=fin))
@@ -166,7 +168,9 @@ def open_windows(
     return merge(subtract_all(dans_la_periode, fermes))
 
 
-def is_free(slot: TimeSlot, busy: Sequence[TimeSlot], *, buffer: timedelta = _ZERO) -> bool:
+def is_free(
+    slot: TimeSlot, busy: Sequence[TimeSlot], *, buffer: timedelta = _ZERO
+) -> bool:
     """Vrai si aucune occupation ne touche le créneau élargi du battement."""
     if buffer < _ZERO:
         raise ValueError("Le battement ne peut pas être négatif.")

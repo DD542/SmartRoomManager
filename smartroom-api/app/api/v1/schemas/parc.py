@@ -20,7 +20,9 @@ from app.db.enums import EquipmentCategory, PlanDocumentKind, RoomStatus
 
 Slug = Annotated[str, Field(pattern=r"^[a-z0-9]+(-[a-z0-9]+)*$", max_length=160)]
 CodeBatiment = Annotated[str, Field(pattern=r"^[A-Z0-9]{1,4}$")]
-CodeEquipement = Annotated[str, Field(pattern=r"^[a-z0-9]+(-[a-z0-9]+)*$", max_length=40)]
+CodeEquipement = Annotated[
+    str, Field(pattern=r"^[a-z0-9]+(-[a-z0-9]+)*$", max_length=40)
+]
 
 
 # --------------------------------------------------------------------------- #
@@ -63,7 +65,9 @@ class FloorCreateIn(ApiModel):
     """
 
     code: Annotated[str, Field(min_length=1, max_length=8)] = Field(examples=["R2"])
-    label: Annotated[str, Field(min_length=1, max_length=60)] = Field(examples=["2e étage"])
+    label: Annotated[str, Field(min_length=1, max_length=60)] = Field(
+        examples=["2e étage"]
+    )
     level: Annotated[int, Field(ge=-5, le=50)]
 
 
@@ -189,7 +193,9 @@ class EquipmentIn(ApiModel):
         examples=["Vidéoprojecteur"]
     )
     category: EquipmentCategory
-    icon: Annotated[str, Field(min_length=1, max_length=40)] = Field(examples=["projector"])
+    icon: Annotated[str, Field(min_length=1, max_length=40)] = Field(
+        examples=["projector"]
+    )
     description: Annotated[str | None, Field(max_length=255)] = None
     is_filterable: bool = True
 

@@ -86,7 +86,9 @@ class TestVerification:
 
     def test_un_jeton_d_un_autre_emetteur_est_refuse(self, paire):
         with pytest.raises(AuthenticationError):
-            google_service.verifier(forger(paire, iss="https://exemple-malveillant.test"))
+            google_service.verifier(
+                forger(paire, iss="https://exemple-malveillant.test")
+            )
 
     def test_un_jeton_expire_est_refuse(self, paire):
         with pytest.raises(AuthenticationError):
@@ -117,7 +119,9 @@ class TestVerification:
         with pytest.raises(AuthenticationError):
             google_service.verifier(jeton)
 
-    def test_sans_identifiant_de_client_la_connexion_est_refusee(self, paire, monkeypatch):
+    def test_sans_identifiant_de_client_la_connexion_est_refusee(
+        self, paire, monkeypatch
+    ):
         # Mieux vaut ce refus explicite qu'un échec de vérification
         # incompréhensible sur un serveur mal configuré.
         monkeypatch.setattr(google_service.get_settings(), "google_client_id", "")
@@ -126,7 +130,9 @@ class TestVerification:
             google_service.verifier(forger(paire))
 
     def test_un_domaine_hors_liste_est_refuse(self, paire, monkeypatch):
-        monkeypatch.setattr(google_service.get_settings(), "google_allowed_domains", "ece.fr")
+        monkeypatch.setattr(
+            google_service.get_settings(), "google_allowed_domains", "ece.fr"
+        )
 
         with pytest.raises(RuleViolationError):
             google_service.verifier(forger(paire))
@@ -227,7 +233,9 @@ class TestMotDePasseOublie:
         assert resultat is not None, "aucun lien émis"
         _, jeton_reinit = resultat
 
-        auth_service.reset_password(session, token=jeton_reinit, password="motdepasse-choisi")
+        auth_service.reset_password(
+            session, token=jeton_reinit, password="motdepasse-choisi"
+        )
         session.flush()
 
         assert compte.password_hash != empreinte_avant
@@ -243,17 +251,19 @@ class TestMotDePasseOublie:
         _, jeton_reinit = auth_service.request_password_reset(
             session, email="nouvelle.personne@gmail.com"
         )
-        auth_service.reset_password(session, token=jeton_reinit, password="premier-choix")
+        auth_service.reset_password(
+            session, token=jeton_reinit, password="premier-choix"
+        )
 
         with pytest.raises(AuthenticationError):
-            auth_service.reset_password(session, token=jeton_reinit, password="second-choix")
+            auth_service.reset_password(
+                session, token=jeton_reinit, password="second-choix"
+            )
 
 
 class TestRoute:
     def test_la_route_ouvre_une_session(self, client, paire):
-        reponse = client.post(
-            "/api/v1/auth/google", json={"credential": forger(paire)}
-        )
+        reponse = client.post("/api/v1/auth/google", json={"credential": forger(paire)})
 
         assert reponse.status_code == 200, reponse.text
         corps = reponse.json()

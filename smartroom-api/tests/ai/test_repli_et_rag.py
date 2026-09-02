@@ -65,14 +65,20 @@ class TestMoteurDeterministe:
         assert reponse.intention == attendue
 
     @pytest.mark.asyncio
-    async def test_une_demande_incomprise_propose_les_parcours(self, contexte, intentions):
-        reponse = await MoteurDeterministe(contexte.session).repondre("blablabla xyz", contexte)
+    async def test_une_demande_incomprise_propose_les_parcours(
+        self, contexte, intentions
+    ):
+        reponse = await MoteurDeterministe(contexte.session).repondre(
+            "blablabla xyz", contexte
+        )
 
         assert reponse.intention == "inconnue"
         assert reponse.suggestions
 
     @pytest.mark.asyncio
-    async def test_une_tentative_d_injection_ne_rapproche_rien(self, contexte, intentions):
+    async def test_une_tentative_d_injection_ne_rapproche_rien(
+        self, contexte, intentions
+    ):
         """Le rapprochement mot à mot évite les correspondances fortuites : avec
         `partial_ratio` sur la phrase entière, cette demande tombait sur une
         intention au score de 75."""
@@ -82,7 +88,9 @@ class TestMoteurDeterministe:
         assert reponse.intention == "inconnue"
 
     @pytest.mark.asyncio
-    async def test_le_moteur_appelle_un_outil_en_lecture(self, contexte, intentions, salle):
+    async def test_le_moteur_appelle_un_outil_en_lecture(
+        self, contexte, intentions, salle
+    ):
         reponse = await MoteurDeterministe(contexte.session).repondre(
             "trouve une salle libre", contexte
         )
@@ -98,7 +106,9 @@ class TestMoteurDeterministe:
         demain = MoteurDeterministe.jour("demain à 14h", maintenant=maintenant)
         assert demain.date().isoformat() == "2026-08-29"
         # Une date absente n'est pas devinée.
-        assert MoteurDeterministe.jour("une salle pour 4", maintenant=maintenant) is None
+        assert (
+            MoteurDeterministe.jour("une salle pour 4", maintenant=maintenant) is None
+        )
 
 
 class TestDecoupage:
@@ -116,10 +126,14 @@ class TestDecoupage:
             f"Paragraphe numéro {index}. " + "Une phrase de contenu utile. " * 12
             for index in range(6)
         )
-        fragments = decouper(titre="Long", corps=paragraphes, taille=180, recouvrement=40)
+        fragments = decouper(
+            titre="Long", corps=paragraphes, taille=180, recouvrement=40
+        )
 
         assert len(fragments) > 1
-        assert [fragment.position for fragment in fragments] == list(range(len(fragments)))
+        assert [fragment.position for fragment in fragments] == list(
+            range(len(fragments))
+        )
 
     def test_l_empreinte_change_avec_le_texte(self):
         premier = decouper(titre="T", corps="Un contenu.")[0]
@@ -132,9 +146,13 @@ class TestIndexation:
     async def test_un_article_publie_est_indexe(
         self, session, creer_article, vectoriseur_simule
     ):
-        article = creer_article(titre="Annuler une réservation", corps="Jusqu'à une heure avant.")
+        article = creer_article(
+            titre="Annuler une réservation", corps="Jusqu'à une heure avant."
+        )
 
-        rapport = await indexer_article(session, article, vectoriseur=vectoriseur_simule)
+        rapport = await indexer_article(
+            session, article, vectoriseur=vectoriseur_simule
+        )
 
         assert rapport.fragments_ecrits >= 1
         assert rapport.fragments_vectorises == rapport.fragments_ecrits
@@ -144,10 +162,14 @@ class TestIndexation:
         self, session, creer_article, vectoriseur_simule
     ):
         """L'empreinte évite de redemander au modèle ce qu'il a déjà produit."""
-        article = creer_article(titre="Code d'accès", corps="Il est émis à la confirmation.")
+        article = creer_article(
+            titre="Code d'accès", corps="Il est émis à la confirmation."
+        )
         await indexer_article(session, article, vectoriseur=vectoriseur_simule)
 
-        rapport = await indexer_article(session, article, vectoriseur=vectoriseur_simule)
+        rapport = await indexer_article(
+            session, article, vectoriseur=vectoriseur_simule
+        )
 
         assert rapport.fragments_ecrits == 0
         assert rapport.fragments_inchanges >= 1
@@ -158,7 +180,9 @@ class TestIndexation:
     ):
         """Sinon l'assistant citerait un article que le centre d'aide n'affiche
         plus."""
-        article = creer_article(titre="Présence sur place", corps="Validez avec le code affiché.")
+        article = creer_article(
+            titre="Présence sur place", corps="Validez avec le code affiché."
+        )
         await indexer_article(session, article, vectoriseur=vectoriseur_simule)
 
         retire = support_service.set_article_status(
@@ -168,9 +192,9 @@ class TestIndexation:
 
         assert rapport.fragments_retires >= 1
         restants = session.scalar(
-            select(func.count()).select_from(FaqFragment).where(
-                FaqFragment.article_id == article.id
-            )
+            select(func.count())
+            .select_from(FaqFragment)
+            .where(FaqFragment.article_id == article.id)
         )
         assert restants == 0
 
@@ -216,7 +240,9 @@ class TestRechercheHybride:
         """Sans vecteurs, le rappel baisse ; la réponse reste sourcée."""
         sourd = Vectoriseur(SelecteurModeles(ReglagesIA(forcer_repli=True)))
 
-        extraits = await rechercher(session, "annuler une reservation", vectoriseur=sourd)
+        extraits = await rechercher(
+            session, "annuler une reservation", vectoriseur=sourd
+        )
 
         assert extraits
         assert all(extrait.voie == "lexicale" for extrait in extraits)
@@ -246,7 +272,9 @@ class TestRechercheHybride:
 
         extraits = await rechercher(session, "annuler", vectoriseur=sourd)
 
-        assert all(extrait.article_titre and extrait.article_slug for extrait in extraits)
+        assert all(
+            extrait.article_titre and extrait.article_slug for extrait in extraits
+        )
 
     @pytest.mark.asyncio
     async def test_une_question_sans_correspondance_ne_rend_rien(self, session, corpus):

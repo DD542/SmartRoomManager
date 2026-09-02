@@ -215,7 +215,9 @@ class LLMProvider(ABC):
         """
 
     @abstractmethod
-    async def vectoriser(self, textes: Sequence[str], *, modele: str) -> list[list[float]]:
+    async def vectoriser(
+        self, textes: Sequence[str], *, modele: str
+    ) -> list[list[float]]:
         """Rend un vecteur par texte, dans l'ordre reçu."""
 
     @abstractmethod

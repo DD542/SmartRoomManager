@@ -17,7 +17,7 @@ import logging
 from collections import OrderedDict
 from collections.abc import Sequence
 
-from app.ai.providers.base import ErreurFournisseur, LLMProvider, RoleModele
+from app.ai.providers.base import ErreurFournisseur, RoleModele
 from app.ai.providers.selection import SelecteurModeles
 from app.ai.reglages import get_reglages_ia
 
@@ -42,7 +42,9 @@ class CacheVecteurs:
         # Le modèle entre dans la clé : deux modèles ne produisent pas des
         # vecteurs comparables, et resservir le vecteur de l'un pour l'autre
         # donnerait des distances absurdes.
-        return hashlib.blake2b(f"{modele}\x00{texte}".encode(), digest_size=16).hexdigest()
+        return hashlib.blake2b(
+            f"{modele}\x00{texte}".encode(), digest_size=16
+        ).hexdigest()
 
     def obtenir(self, texte: str, modele: str) -> list[float] | None:
         cle = self._cle(texte, modele)
@@ -77,11 +79,15 @@ class CacheVecteurs:
 
 CACHE = CacheVecteurs()
 
+
 class Vectoriseur:
     """Façade au-dessus du fournisseur, avec cache et dégradation explicite."""
 
     def __init__(
-        self, selecteur: SelecteurModeles | None = None, *, cache: CacheVecteurs | None = None
+        self,
+        selecteur: SelecteurModeles | None = None,
+        *,
+        cache: CacheVecteurs | None = None,
     ) -> None:
         self._selecteur = selecteur or SelecteurModeles()
         self._cache = cache or CACHE
@@ -110,7 +116,9 @@ class Vectoriseur:
             logger.info("Vectorisation indisponible", extra={"detail": souci.message})
             return None
 
-        resultats: list[list[float] | None] = [self._cache.obtenir(t, modele) for t in textes]
+        resultats: list[list[float] | None] = [
+            self._cache.obtenir(t, modele) for t in textes
+        ]
         manquants = [index for index, valeur in enumerate(resultats) if valeur is None]
 
         if manquants:

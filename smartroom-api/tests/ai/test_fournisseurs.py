@@ -19,7 +19,7 @@ import json
 import httpx
 import pytest
 
-from app.ai.providers import Message, RoleMessage, TypeFragment, agreger
+from app.ai.providers import Message, RoleMessage, agreger
 from app.ai.providers.base import DelaiDepasse, ErreurFournisseur
 from app.ai.providers.distant import ClientDistant
 from app.ai.providers.ollama import ClientOllama
@@ -28,12 +28,17 @@ from app.ai.providers.selection import SelecteurModeles
 OUTIL = {
     "name": "rechercher_salles",
     "description": "Cherche des salles.",
-    "parameters": {"type": "object", "properties": {"capacite_min": {"type": "integer"}}},
+    "parameters": {
+        "type": "object",
+        "properties": {"capacite_min": {"type": "integer"}},
+    },
 }
 
 
 def ndjson(*evenements: dict) -> bytes:
-    return "".join(json.dumps(item, ensure_ascii=False) + "\n" for item in evenements).encode()
+    return "".join(
+        json.dumps(item, ensure_ascii=False) + "\n" for item in evenements
+    ).encode()
 
 
 def client_ollama(gestionnaire) -> ClientOllama:
@@ -52,15 +57,25 @@ class TestOllama:
                 200,
                 content=ndjson(
                     {"message": {"role": "assistant", "content": "Bon"}, "done": False},
-                    {"message": {"role": "assistant", "content": "jour."}, "done": False},
-                    {"message": {"role": "assistant", "content": ""}, "done": True,
-                     "done_reason": "stop", "prompt_eval_count": 12, "eval_count": 3},
+                    {
+                        "message": {"role": "assistant", "content": "jour."},
+                        "done": False,
+                    },
+                    {
+                        "message": {"role": "assistant", "content": ""},
+                        "done": True,
+                        "done_reason": "stop",
+                        "prompt_eval_count": 12,
+                        "eval_count": 3,
+                    },
                 ),
             )
 
         client = client_ollama(repondre)
         reponse = await agreger(
-            client.discuter([Message(role=RoleMessage.UTILISATEUR, contenu="salut")], modele="m")
+            client.discuter(
+                [Message(role=RoleMessage.UTILISATEUR, contenu="salut")], modele="m"
+            )
         )
 
         assert reponse.texte == "Bonjour."
@@ -101,8 +116,13 @@ class TestOllama:
                             "role": "assistant",
                             "content": "",
                             "tool_calls": [
-                                {"id": "call_1", "function": {"name": "rechercher_salles",
-                                                              "arguments": {"capacite_min": 4}}}
+                                {
+                                    "id": "call_1",
+                                    "function": {
+                                        "name": "rechercher_salles",
+                                        "arguments": {"capacite_min": 4},
+                                    },
+                                }
                             ],
                         },
                         "done": True,
@@ -112,7 +132,9 @@ class TestOllama:
 
         client = client_ollama(repondre)
         reponse = await agreger(
-            client.discuter([Message(role=RoleMessage.UTILISATEUR, contenu="x")], modele="m")
+            client.discuter(
+                [Message(role=RoleMessage.UTILISATEUR, contenu="x")], modele="m"
+            )
         )
 
         assert [(appel.nom, appel.arguments) for appel in reponse.appels] == [
@@ -123,6 +145,7 @@ class TestOllama:
     @pytest.mark.asyncio
     async def test_des_arguments_en_chaine_sont_acceptes(self):
         """Selon les modèles, `arguments` arrive en objet ou en chaîne JSON."""
+
         def repondre(requete: httpx.Request) -> httpx.Response:
             return httpx.Response(
                 200,
@@ -130,8 +153,12 @@ class TestOllama:
                     {
                         "message": {
                             "tool_calls": [
-                                {"function": {"name": "rechercher_salles",
-                                              "arguments": '{"capacite_min": 6}'}}
+                                {
+                                    "function": {
+                                        "name": "rechercher_salles",
+                                        "arguments": '{"capacite_min": 6}',
+                                    }
+                                }
                             ]
                         },
                         "done": True,
@@ -141,7 +168,9 @@ class TestOllama:
 
         client = client_ollama(repondre)
         reponse = await agreger(
-            client.discuter([Message(role=RoleMessage.UTILISATEUR, contenu="x")], modele="m")
+            client.discuter(
+                [Message(role=RoleMessage.UTILISATEUR, contenu="x")], modele="m"
+            )
         )
 
         assert reponse.appels[0].arguments == {"capacite_min": 6}
@@ -153,15 +182,27 @@ class TestOllama:
             return httpx.Response(
                 200,
                 content=ndjson(
-                    {"message": {"tool_calls": [
-                        {"function": {"name": "rechercher_salles", "arguments": "{pas du json"}}
-                    ]}, "done": True}
+                    {
+                        "message": {
+                            "tool_calls": [
+                                {
+                                    "function": {
+                                        "name": "rechercher_salles",
+                                        "arguments": "{pas du json",
+                                    }
+                                }
+                            ]
+                        },
+                        "done": True,
+                    }
                 ),
             )
 
         client = client_ollama(repondre)
         reponse = await agreger(
-            client.discuter([Message(role=RoleMessage.UTILISATEUR, contenu="x")], modele="m")
+            client.discuter(
+                [Message(role=RoleMessage.UTILISATEUR, contenu="x")], modele="m"
+            )
         )
 
         assert reponse.appels == ()
@@ -176,7 +217,9 @@ class TestOllama:
 
         client = client_ollama(repondre)
         reponse = await agreger(
-            client.discuter([Message(role=RoleMessage.UTILISATEUR, contenu="x")], modele="m")
+            client.discuter(
+                [Message(role=RoleMessage.UTILISATEUR, contenu="x")], modele="m"
+            )
         )
 
         assert reponse.texte == "AB"
@@ -185,6 +228,7 @@ class TestOllama:
     @pytest.mark.asyncio
     async def test_un_delai_est_nomme_delai_et_non_panne(self):
         """Le tableau de bord doit pouvoir compter les deux séparément."""
+
         def repondre(requete: httpx.Request) -> httpx.Response:
             raise httpx.ReadTimeout("trop lent", request=requete)
 
@@ -224,6 +268,7 @@ class TestOllama:
     @pytest.mark.asyncio
     async def test_la_vectorisation_refuse_un_decompte_incoherent(self):
         """Un décalage indexerait des fragments sous le vecteur d'un autre."""
+
         def repondre(requete: httpx.Request) -> httpx.Response:
             return httpx.Response(200, json={"embeddings": [[0.1, 0.2]]})
 
@@ -306,7 +351,10 @@ class TestPrechauffage:
 class TestDistant:
     def client(self, gestionnaire, **kw) -> ClientDistant:
         client = ClientDistant(
-            base_url="https://distant.invalide/v1", cle="clef", exiger_anonymisation=False, **kw
+            base_url="https://distant.invalide/v1",
+            cle="clef",
+            exiger_anonymisation=False,
+            **kw,
         )
         client._client = httpx.AsyncClient(  # noqa: SLF001
             base_url="https://distant.invalide/v1",
@@ -326,7 +374,9 @@ class TestDistant:
 
         client = self.client(repondre)
         reponse = await agreger(
-            client.discuter([Message(role=RoleMessage.UTILISATEUR, contenu="x")], modele="m")
+            client.discuter(
+                [Message(role=RoleMessage.UTILISATEUR, contenu="x")], modele="m"
+            )
         )
 
         assert reponse.texte == "Bonjour"
@@ -346,7 +396,9 @@ class TestDistant:
 
         client = self.client(repondre)
         reponse = await agreger(
-            client.discuter([Message(role=RoleMessage.UTILISATEUR, contenu="x")], modele="m")
+            client.discuter(
+                [Message(role=RoleMessage.UTILISATEUR, contenu="x")], modele="m"
+            )
         )
 
         assert reponse.appels[0].nom == "rechercher_salles"
@@ -366,7 +418,12 @@ class TestDistant:
         client = self.client(repondre, anonymiseur=Anonymiseur())
         await agreger(
             client.discuter(
-                [Message(role=RoleMessage.UTILISATEUR, contenu="écris à jean.dupont@ece.fr")],
+                [
+                    Message(
+                        role=RoleMessage.UTILISATEUR,
+                        contenu="écris à jean.dupont@ece.fr",
+                    )
+                ],
                 modele="m",
             )
         )
@@ -380,10 +437,13 @@ class TestDistant:
             raise AssertionError("aucune requête ne doit partir")
 
         client = ClientDistant(
-            base_url="https://distant.invalide/v1", cle="clef", exiger_anonymisation=True
+            base_url="https://distant.invalide/v1",
+            cle="clef",
+            exiger_anonymisation=True,
         )
         client._client = httpx.AsyncClient(  # noqa: SLF001
-            base_url="https://distant.invalide/v1", transport=httpx.MockTransport(repondre)
+            base_url="https://distant.invalide/v1",
+            transport=httpx.MockTransport(repondre),
         )
 
         with pytest.raises(ErreurFournisseur) as souci:
@@ -400,10 +460,12 @@ class TestDistant:
         def repondre(requete: httpx.Request) -> httpx.Response:
             return httpx.Response(
                 200,
-                json={"data": [
-                    {"index": 1, "embedding": [0.2]},
-                    {"index": 0, "embedding": [0.1]},
-                ]},
+                json={
+                    "data": [
+                        {"index": 1, "embedding": [0.2]},
+                        {"index": 0, "embedding": [0.1]},
+                    ]
+                },
             )
 
         client = self.client(repondre)

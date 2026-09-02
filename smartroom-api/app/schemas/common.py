@@ -45,7 +45,9 @@ class TimestampedRead(ReadModel):
 Slug = Annotated[str, Field(pattern=r"^[a-z0-9]+(-[a-z0-9]+)*$", max_length=160)]
 Email = Annotated[str, Field(pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$", max_length=255)]
 PermissionCode = Annotated[str, Field(pattern=r"^[a-z]+\.[a-z]+$", max_length=40)]
-Weekday = Annotated[int, Field(ge=0, le=6, description="0 = dimanche, comme EXTRACT(DOW)")]
+Weekday = Annotated[
+    int, Field(ge=0, le=6, description="0 = dimanche, comme EXTRACT(DOW)")
+]
 
 
 class TimeRange(ApiModel):

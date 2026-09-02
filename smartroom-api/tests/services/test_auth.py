@@ -304,7 +304,8 @@ class TestMotDePasse:
         session.flush()
 
         reponse = client.post(
-            "/api/v1/auth/reset-password", json={"token": clair, "password": "peu-importe"}
+            "/api/v1/auth/reset-password",
+            json={"token": clair, "password": "peu-importe"},
         )
         assert reponse.status_code == 401
         assert reponse.json()["error"]["code"] == "jeton_expire"

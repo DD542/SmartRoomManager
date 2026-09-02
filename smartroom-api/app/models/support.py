@@ -40,6 +40,7 @@ from app.db.enums import ArticleStatus, AuditAction, NotificationChannel, Ticket
 if TYPE_CHECKING:
     from app.models.comptes import AdminAccount, User
     from app.models.parc import Room
+    from app.models.rag import FaqFragment
     from app.models.reservations import Booking
 
 
@@ -50,12 +51,19 @@ class Ticket(TimestampMixin, Base):
         CheckConstraint("reference ~ '^#?[0-9]{1,10}$'", name="reference_format"),
         CheckConstraint("btrim(subject) <> ''", name="subject_not_blank"),
         CheckConstraint(
-            "(status IN ('resolu', 'ferme')) = (resolved_at IS NOT NULL)", name="resolved"
+            "(status IN ('resolu', 'ferme')) = (resolved_at IS NOT NULL)",
+            name="resolved",
         ),
         Index("idx_tickets_queue", "status", text("updated_at DESC")),
         Index("idx_tickets_requester", "requester_id", text("created_at DESC")),
-        Index("idx_tickets_room", "room_id", postgresql_where=text("room_id IS NOT NULL")),
-        Index("idx_tickets_booking", "booking_id", postgresql_where=text("booking_id IS NOT NULL")),
+        Index(
+            "idx_tickets_room", "room_id", postgresql_where=text("room_id IS NOT NULL")
+        ),
+        Index(
+            "idx_tickets_booking",
+            "booking_id",
+            postgresql_where=text("booking_id IS NOT NULL"),
+        ),
         Index(
             "idx_tickets_assigned_admin",
             "assigned_admin_id",
@@ -67,16 +75,28 @@ class Ticket(TimestampMixin, Base):
     #: Référence communiquée au demandeur : « #152 ».
     reference: Mapped[str] = mapped_column(String(16))
     requester_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id", ondelete="RESTRICT", onupdate="CASCADE", name="fk_tickets_requester")
+        ForeignKey(
+            "users.id",
+            ondelete="RESTRICT",
+            onupdate="CASCADE",
+            name="fk_tickets_requester",
+        )
     )
     subject: Mapped[str] = mapped_column(String(180))
     category: Mapped[str] = mapped_column(String(40))
     room_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("rooms.id", ondelete="SET NULL", onupdate="CASCADE", name="fk_tickets_room"),
+        ForeignKey(
+            "rooms.id", ondelete="SET NULL", onupdate="CASCADE", name="fk_tickets_room"
+        ),
         default=None,
     )
     booking_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("bookings.id", ondelete="SET NULL", onupdate="CASCADE", name="fk_tickets_booking"),
+        ForeignKey(
+            "bookings.id",
+            ondelete="SET NULL",
+            onupdate="CASCADE",
+            name="fk_tickets_booking",
+        ),
         default=None,
     )
     status: Mapped[TicketStatus] = mapped_column(
@@ -97,9 +117,13 @@ class Ticket(TimestampMixin, Base):
     resolved_at: Mapped[datetime | None] = mapped_column(default=None)
 
     requester: Mapped["User"] = relationship(back_populates="tickets", lazy="selectin")
-    room: Mapped["Room | None"] = relationship(back_populates="tickets", lazy="selectin")
+    room: Mapped["Room | None"] = relationship(
+        back_populates="tickets", lazy="selectin"
+    )
     booking: Mapped["Booking | None"] = relationship(back_populates="tickets")
-    assigned_admin: Mapped["AdminAccount | None"] = relationship(back_populates="assigned_tickets")
+    assigned_admin: Mapped["AdminAccount | None"] = relationship(
+        back_populates="assigned_tickets"
+    )
     messages: Mapped[list["TicketMessage"]] = relationship(
         back_populates="ticket",
         cascade="all, delete-orphan",
@@ -130,20 +154,38 @@ class TicketMessage(TimestampMixin, Base):
 
     id: Mapped[UuidPk]
     ticket_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("tickets.id", ondelete="CASCADE", onupdate="CASCADE", name="fk_ticket_messages_ticket")
+        ForeignKey(
+            "tickets.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE",
+            name="fk_ticket_messages_ticket",
+        )
     )
     body: Mapped[str] = mapped_column(Text)
     author_user_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("users.id", ondelete="SET NULL", onupdate="CASCADE", name="fk_ticket_messages_author"),
+        ForeignKey(
+            "users.id",
+            ondelete="SET NULL",
+            onupdate="CASCADE",
+            name="fk_ticket_messages_author",
+        ),
         default=None,
     )
-    is_from_support: Mapped[bool] = mapped_column(server_default=text("false"), default=False)
+    is_from_support: Mapped[bool] = mapped_column(
+        server_default=text("false"), default=False
+    )
     #: Note interne : visible du support seul, jamais envoyée au demandeur.
-    is_internal: Mapped[bool] = mapped_column(server_default=text("false"), default=False)
-    sent_at: Mapped[datetime] = mapped_column(server_default=text("now()"), default=None)
+    is_internal: Mapped[bool] = mapped_column(
+        server_default=text("false"), default=False
+    )
+    sent_at: Mapped[datetime] = mapped_column(
+        server_default=text("now()"), default=None
+    )
 
     ticket: Mapped["Ticket"] = relationship(back_populates="messages")
-    author: Mapped["User | None"] = relationship(back_populates="ticket_messages", lazy="joined")
+    author: Mapped["User | None"] = relationship(
+        back_populates="ticket_messages", lazy="joined"
+    )
 
 
 class TicketResponseTemplate(TimestampMixin, Base):
@@ -180,7 +222,9 @@ class FaqCategory(TimestampMixin, Base):
     code: Mapped[str] = mapped_column(String(40))
     label: Mapped[str] = mapped_column(String(80))
     icon: Mapped[str | None] = mapped_column(String(40), default=None)
-    sort_order: Mapped[int] = mapped_column(SmallInteger, server_default=text("0"), default=0)
+    sort_order: Mapped[int] = mapped_column(
+        SmallInteger, server_default=text("0"), default=0
+    )
 
     articles: Mapped[list["FaqArticle"]] = relationship(back_populates="category")
 
@@ -216,7 +260,10 @@ class FaqArticle(TimestampMixin, Base):
     id: Mapped[UuidPk]
     category_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey(
-            "faq_categories.id", ondelete="RESTRICT", onupdate="CASCADE", name="fk_faq_articles_category"
+            "faq_categories.id",
+            ondelete="RESTRICT",
+            onupdate="CASCADE",
+            name="fk_faq_articles_category",
         )
     )
     slug: Mapped[str] = mapped_column(String(160))
@@ -232,7 +279,9 @@ class FaqArticle(TimestampMixin, Base):
     view_count: Mapped[int] = mapped_column(server_default=text("0"), default=0)
     published_at: Mapped[datetime | None] = mapped_column(default=None)
 
-    category: Mapped["FaqCategory"] = relationship(back_populates="articles", lazy="joined")
+    category: Mapped["FaqCategory"] = relationship(
+        back_populates="articles", lazy="joined"
+    )
     #: Fragments vectorisés (`app/models/rag.py`). Paresseuse : aucun écran
     #: n'affiche les fragments, seule l'indexation les manipule.
     fragments: Mapped[list["FaqFragment"]] = relationship(
@@ -287,7 +336,9 @@ class FaqArticleLink(TimestampMixin, Base):
     article: Mapped["FaqArticle"] = relationship(
         back_populates="related_links", foreign_keys=[article_id]
     )
-    related_article: Mapped["FaqArticle"] = relationship(foreign_keys=[related_article_id])
+    related_article: Mapped["FaqArticle"] = relationship(
+        foreign_keys=[related_article_id]
+    )
 
 
 class ChatbotIntent(TimestampMixin, Base):
@@ -315,10 +366,15 @@ class ChatbotIntent(TimestampMixin, Base):
     quick_replies: Mapped[list[str]] = mapped_column(
         ARRAY(Text), server_default=text("'{}'"), default=list
     )
-    escalates_to_ticket: Mapped[bool] = mapped_column(server_default=text("false"), default=False)
+    escalates_to_ticket: Mapped[bool] = mapped_column(
+        server_default=text("false"), default=False
+    )
     faq_article_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey(
-            "faq_articles.id", ondelete="SET NULL", onupdate="CASCADE", name="fk_chatbot_intents_article"
+            "faq_articles.id",
+            ondelete="SET NULL",
+            onupdate="CASCADE",
+            name="fk_chatbot_intents_article",
         ),
         default=None,
     )
@@ -326,7 +382,10 @@ class ChatbotIntent(TimestampMixin, Base):
 
     article: Mapped["FaqArticle | None"] = relationship(back_populates="intents")
     keywords: Mapped[list["ChatbotIntentKeyword"]] = relationship(
-        back_populates="intent", cascade="all, delete-orphan", passive_deletes=True, lazy="selectin"
+        back_populates="intent",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="selectin",
     )
 
 
@@ -366,13 +425,26 @@ class Notification(TimestampMixin, Base):
             postgresql_where=text("read_at IS NULL"),
         ),
         Index("idx_notifications_user", "user_id", text("sent_at DESC")),
-        Index("idx_notifications_booking", "booking_id", postgresql_where=text("booking_id IS NOT NULL")),
-        Index("idx_notifications_ticket", "ticket_id", postgresql_where=text("ticket_id IS NOT NULL")),
+        Index(
+            "idx_notifications_booking",
+            "booking_id",
+            postgresql_where=text("booking_id IS NOT NULL"),
+        ),
+        Index(
+            "idx_notifications_ticket",
+            "ticket_id",
+            postgresql_where=text("ticket_id IS NOT NULL"),
+        ),
     )
 
     id: Mapped[UuidPk]
     user_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE", name="fk_notifications_user")
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE",
+            name="fk_notifications_user",
+        )
     )
     title: Mapped[str] = mapped_column(String(180))
     channel: Mapped[NotificationChannel] = mapped_column(
@@ -389,16 +461,26 @@ class Notification(TimestampMixin, Base):
     template_code: Mapped[str | None] = mapped_column(String(60), default=None)
     booking_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey(
-            "bookings.id", ondelete="SET NULL", onupdate="CASCADE", name="fk_notifications_booking"
+            "bookings.id",
+            ondelete="SET NULL",
+            onupdate="CASCADE",
+            name="fk_notifications_booking",
         ),
         default=None,
     )
     ticket_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("tickets.id", ondelete="SET NULL", onupdate="CASCADE", name="fk_notifications_ticket"),
+        ForeignKey(
+            "tickets.id",
+            ondelete="SET NULL",
+            onupdate="CASCADE",
+            name="fk_notifications_ticket",
+        ),
         default=None,
     )
     read_at: Mapped[datetime | None] = mapped_column(default=None)
-    sent_at: Mapped[datetime] = mapped_column(server_default=text("now()"), default=None)
+    sent_at: Mapped[datetime] = mapped_column(
+        server_default=text("now()"), default=None
+    )
 
     user: Mapped["User"] = relationship(back_populates="notifications")
     booking: Mapped["Booking | None"] = relationship(back_populates="notifications")
@@ -455,7 +537,9 @@ class EmailTemplate(TimestampMixin, Base):
         default=None,
     )
 
-    updated_by: Mapped["AdminAccount | None"] = relationship(back_populates="edited_templates")
+    updated_by: Mapped["AdminAccount | None"] = relationship(
+        back_populates="edited_templates"
+    )
 
 
 class AuditLog(TimestampMixin, Base):
@@ -499,7 +583,10 @@ class AuditLog(TimestampMixin, Base):
     target_label: Mapped[str] = mapped_column(String(160))
     actor_admin_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey(
-            "admin_accounts.user_id", ondelete="SET NULL", onupdate="CASCADE", name="fk_audit_logs_actor"
+            "admin_accounts.user_id",
+            ondelete="SET NULL",
+            onupdate="CASCADE",
+            name="fk_audit_logs_actor",
         ),
         default=None,
     )
@@ -512,6 +599,10 @@ class AuditLog(TimestampMixin, Base):
     session_id: Mapped[str | None] = mapped_column(String(64), default=None)
     flagged_at: Mapped[datetime | None] = mapped_column(default=None)
     flag_reason: Mapped[str | None] = mapped_column(String(255), default=None)
-    occurred_at: Mapped[datetime] = mapped_column(server_default=text("now()"), default=None)
+    occurred_at: Mapped[datetime] = mapped_column(
+        server_default=text("now()"), default=None
+    )
 
-    actor: Mapped["AdminAccount | None"] = relationship(back_populates="audit_entries", lazy="selectin")
+    actor: Mapped["AdminAccount | None"] = relationship(
+        back_populates="audit_entries", lazy="selectin"
+    )

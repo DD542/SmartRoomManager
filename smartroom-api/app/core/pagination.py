@@ -102,7 +102,9 @@ def _cle_stable(requete: Select) -> object | None:
     return getattr(entite, "id", None)
 
 
-def apply_sort(requete: Select, params: PageParams, colonnes: dict[str, object]) -> Select:
+def apply_sort(
+    requete: Select, params: PageParams, colonnes: dict[str, object]
+) -> Select:
     """Applique le tri demandé, refusé s'il ne figure pas dans la liste blanche.
 
     Un champ inconnu lève 422 plutôt que d'être ignoré : un tri silencieusement
@@ -150,9 +152,14 @@ def paginate(
     if colonnes:
         requete = apply_sort(requete, params, colonnes)
 
-    total = session.scalar(
-        select(func.count()).select_from(requete.order_by(None).subquery())
-    ) or 0
+    total = (
+        session.scalar(
+            select(func.count()).select_from(requete.order_by(None).subquery())
+        )
+        or 0
+    )
 
-    lignes = session.scalars(requete.limit(params.size).offset(params.offset)).unique().all()
+    lignes = (
+        session.scalars(requete.limit(params.size).offset(params.offset)).unique().all()
+    )
     return list(lignes), total

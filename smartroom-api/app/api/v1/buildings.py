@@ -27,7 +27,6 @@ from app.api.v1.schemas import (
     VisuelIn,
 )
 from app.api.v1.serializers import batiment_sortie, etage_sortie
-from app.core import storage
 from app.services import parc_service as service
 
 router = APIRouter(tags=["parc"])
@@ -49,7 +48,9 @@ def list_buildings(session: SessionDep, _: CurrentPrincipal) -> list[BuildingOut
     return [batiment_sortie(*ligne) for ligne in service.list_buildings(session)]
 
 
-@router.get("/buildings/{building_id}", response_model=BuildingOut, summary="Fiche bâtiment")
+@router.get(
+    "/buildings/{building_id}", response_model=BuildingOut, summary="Fiche bâtiment"
+)
 def get_building(
     building_id: uuid.UUID, session: SessionDep, _: CurrentPrincipal
 ) -> BuildingOut:
@@ -68,7 +69,9 @@ def get_building(
     ),
     responses={422: {"description": "Code déjà pris."}},
 )
-def create_building(payload: BuildingIn, session: SessionDep, _admin=Ecriture) -> BuildingOut:
+def create_building(
+    payload: BuildingIn, session: SessionDep, _admin=Ecriture
+) -> BuildingOut:
     batiment = service.create_building(session, payload)
     session.commit()
     return batiment_sortie(batiment)
@@ -84,7 +87,10 @@ def create_building(payload: BuildingIn, session: SessionDep, _admin=Ecriture) -
     ),
 )
 def update_building(
-    building_id: uuid.UUID, payload: BuildingPatchIn, session: SessionDep, _admin=Ecriture
+    building_id: uuid.UUID,
+    payload: BuildingPatchIn,
+    session: SessionDep,
+    _admin=Ecriture,
 ) -> BuildingOut:
     batiment = service.update_building(session, building_id, payload)
     session.commit()
@@ -102,7 +108,9 @@ def update_building(
     ),
     responses={422: {"description": "Le bâtiment porte encore des salles."}},
 )
-def delete_building(building_id: uuid.UUID, session: SessionDep, _admin=Ecriture) -> None:
+def delete_building(
+    building_id: uuid.UUID, session: SessionDep, _admin=Ecriture
+) -> None:
     service.delete_building(session, building_id)
     session.commit()
 
@@ -162,7 +170,9 @@ def create_floor(
     return etage_sortie(etage)
 
 
-@router.patch("/floors/{floor_id}", response_model=FloorOut, summary="Modifier un étage")
+@router.patch(
+    "/floors/{floor_id}", response_model=FloorOut, summary="Modifier un étage"
+)
 def update_floor(
     floor_id: uuid.UUID, payload: FloorPatchIn, session: SessionDep, _admin=Ecriture
 ) -> FloorOut:
@@ -201,7 +211,9 @@ def list_floors(
     summary="Plan d'un étage",
     responses={404: {"description": "Aucun plan téléversé pour cet étage."}},
 )
-def get_plan(floor_id: uuid.UUID, session: SessionDep, _: CurrentPrincipal) -> FloorPlanOut:
+def get_plan(
+    floor_id: uuid.UUID, session: SessionDep, _: CurrentPrincipal
+) -> FloorPlanOut:
     return FloorPlanOut.model_validate(service.get_floor_plan(session, floor_id))
 
 

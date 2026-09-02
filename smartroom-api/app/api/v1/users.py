@@ -6,16 +6,13 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
-from pydantic import Field
 
-from sqlalchemy import select
 
 from app.api.deps import (
     USERS_MANAGE,
     CurrentPrincipal,
     PageDep,
     SessionDep,
-    known_permissions,
     require_permission,
 )
 from app.api.v1.schemas.comptes import (
@@ -38,9 +35,7 @@ from app.api.v1.schemas.comptes import (
 )
 from app.core.pagination import Page
 from app.db.enums import UserStatus
-from app.core.config import get_settings
-from app.core.security import fingerprint
-from app.models import AdminAccount, AdminInvitation, RefreshToken, User, UserPreference
+from app.models import AdminAccount, AdminInvitation, User, UserPreference
 from app.services import users_service as service
 
 router = APIRouter(tags=["comptes"])
@@ -215,7 +210,9 @@ def revoke_my_other_sessions(
     return {"closed": fermees}
 
 
-@router.get("/users/me/preferences", response_model=PreferencesOut, summary="Mes préférences")
+@router.get(
+    "/users/me/preferences", response_model=PreferencesOut, summary="Mes préférences"
+)
 def my_preferences(session: SessionDep, principal: CurrentPrincipal) -> PreferencesOut:
     preferences = service.get_preferences(session, principal.user.id)
     session.commit()
@@ -374,7 +371,9 @@ def list_permissions(
     response_model=Page[AdminAccountOut],
     summary="Comptes d'administration",
 )
-def list_admins(session: SessionDep, params: PageDep, _admin=Gestion) -> Page[AdminAccountOut]:
+def list_admins(
+    session: SessionDep, params: PageDep, _admin=Gestion
+) -> Page[AdminAccountOut]:
     admins, total = service.list_admins(session, params)
     return Page.build([_compte_admin(item) for item in admins], total, params)
 
@@ -452,7 +451,9 @@ def list_invitations(session: SessionDep, _admin=Gestion) -> list[AdminInvitatio
 def invite(
     payload: InvitationIn, session: SessionDep, admin: AdminAccount = Gestion
 ) -> AdminInvitationOut:
-    invitation, _clair = service.invite_admin(session, payload, invited_by=admin.user_id)
+    invitation, _clair = service.invite_admin(
+        session, payload, invited_by=admin.user_id
+    )
     session.commit()
     return _invitation(invitation)
 

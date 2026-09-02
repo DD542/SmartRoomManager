@@ -2,7 +2,12 @@
 
 from app.ai.agent.boucle import Agent, JournalTour
 from app.ai.agent.brouillons import MAGASIN, Brouillon, MagasinBrouillons
-from app.ai.agent.contexte import ConstructeurContexte, MesuresContexte, Tour, compter_jetons
+from app.ai.agent.contexte import (
+    ConstructeurContexte,
+    MesuresContexte,
+    Tour,
+    compter_jetons,
+)
 from app.ai.agent.evenements import Evenement, TypeEvenement
 from app.ai.agent.routage import router_domaines
 

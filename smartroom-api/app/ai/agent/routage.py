@@ -18,7 +18,13 @@ from __future__ import annotations
 
 import logging
 
-from app.ai.providers.base import ErreurFournisseur, Message, RoleMessage, RoleModele, agreger
+from app.ai.providers.base import (
+    ErreurFournisseur,
+    Message,
+    RoleMessage,
+    RoleModele,
+    agreger,
+)
 from app.ai.providers.selection import SelecteurModeles
 from app.ai.reglages import get_reglages_ia
 from app.ai.tools.base import Domaine
@@ -27,13 +33,41 @@ logger = logging.getLogger("app.ai.routage")
 
 _INDICES = {
     Domaine.RESERVATION: (
-        "reserv", "annul", "modifi", "decal", "creneau", "libre", "disponib",
-        "code d'acc", "code acc", "mes reunions", "planning", "quota", "regle",
+        "reserv",
+        "annul",
+        "modifi",
+        "decal",
+        "creneau",
+        "libre",
+        "disponib",
+        "code d'acc",
+        "code acc",
+        "mes reunions",
+        "planning",
+        "quota",
+        "regle",
     ),
-    Domaine.PARC: ("salle", "batiment", "eiffel", "etage", "plan", "ou est", "equipement", "capacit"),
+    Domaine.PARC: (
+        "salle",
+        "batiment",
+        "eiffel",
+        "etage",
+        "plan",
+        "ou est",
+        "equipement",
+        "capacit",
+    ),
     Domaine.ASSISTANCE: (
-        "comment", "aide", "probleme", "panne", "ticket", "support", "humain",
-        "ne marche pas", "ne fonctionne pas", "cass",
+        "comment",
+        "aide",
+        "probleme",
+        "panne",
+        "ticket",
+        "support",
+        "humain",
+        "ne marche pas",
+        "ne fonctionne pas",
+        "cass",
     ),
 }
 
@@ -72,7 +106,9 @@ def _lexical(message: str) -> set[Domaine]:
     }
 
 
-async def router_domaines(message: str, selecteur: SelecteurModeles) -> list[Domaine] | None:
+async def router_domaines(
+    message: str, selecteur: SelecteurModeles
+) -> list[Domaine] | None:
     """Rend les domaines à exposer, ou `None` pour le catalogue entier."""
     trouves = _lexical(message)
     if len(trouves) == 1:
@@ -98,10 +134,6 @@ async def router_domaines(message: str, selecteur: SelecteurModeles) -> list[Dom
         logger.info("Routage indisponible", extra={"detail": souci.code})
         return list(trouves) or None
 
-    dits = {
-        domaine
-        for domaine in Domaine
-        if domaine.value in reponse.texte.lower()
-    }
+    dits = {domaine for domaine in Domaine if domaine.value in reponse.texte.lower()}
     domaines = dits or trouves
     return list(domaines) or None

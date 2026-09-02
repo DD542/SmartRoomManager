@@ -23,7 +23,7 @@ from app.domain.rules import (
     local_days,
     requires_validation,
 )
-from app.domain.types import Closure, RuleCode, RuleSet, TimeSlot
+from app.domain.types import Closure, RuleCode, TimeSlot
 from tests.domain.conftest import JOUR, PARIS, booking, local, slot, utc
 
 
@@ -37,7 +37,9 @@ class TestFormatage:
         [
             pytest.param(timedelta(minutes=30), "30 min", id="minutes"),
             pytest.param(timedelta(hours=4), "4 h", id="heures_pleines"),
-            pytest.param(timedelta(hours=1, minutes=30), "1 h 30", id="heures_et_minutes"),
+            pytest.param(
+                timedelta(hours=1, minutes=30), "1 h 30", id="heures_et_minutes"
+            ),
             pytest.param(timedelta(0), "0 min", id="nulle"),
         ],
     )
@@ -135,7 +137,10 @@ class TestCapacite:
 
 class TestOuverture:
     def test_creneau_dans_l_amplitude(self, ouverture_du_jour):
-        assert check_opening(TimeSlot(local(10), local(11)), ouverture_du_jour, PARIS) == ()
+        assert (
+            check_opening(TimeSlot(local(10), local(11)), ouverture_du_jour, PARIS)
+            == ()
+        )
 
     def test_creneau_hors_amplitude(self, ouverture_du_jour):
         (violation,) = check_opening(
@@ -158,7 +163,11 @@ class TestFermeture:
         assert "Journée pédagogique" in violation.message
 
     def test_jour_ouvert(self):
-        fermeture = Closure(label="Pont", first_day=JOUR + timedelta(days=5), last_day=JOUR + timedelta(days=6))
+        fermeture = Closure(
+            label="Pont",
+            first_day=JOUR + timedelta(days=5),
+            last_day=JOUR + timedelta(days=6),
+        )
         assert check_closure(TimeSlot(local(10), local(11)), [fermeture], PARIS) == ()
 
     def test_aucune_fermeture(self):
@@ -207,11 +216,17 @@ class TestBattement:
         assert "commence à" in violation.message
 
     def test_battement_suffisant(self, regles):
-        assert check_buffer(slot(10, 0, 11), [booking(slot(9, 0, 9, 45))], regles, PARIS) == ()
+        assert (
+            check_buffer(slot(10, 0, 11), [booking(slot(9, 0, 9, 45))], regles, PARIS)
+            == ()
+        )
 
     def test_recouvrement_ignore_ici(self, regles):
         """Un vrai chevauchement relève de la détection de conflits, pas du battement."""
-        assert check_buffer(slot(10, 0, 12), [booking(slot(11, 0, 13))], regles, PARIS) == ()
+        assert (
+            check_buffer(slot(10, 0, 12), [booking(slot(11, 0, 13))], regles, PARIS)
+            == ()
+        )
 
     def test_battement_desactive(self, regles):
         sans_battement = replace(regles, buffer=timedelta(0))
@@ -236,9 +251,9 @@ class TestEvaluate:
 
     def test_creneau_ecoule_court_circuite_les_autres_regles(self, regles):
         """Sans amplitude fournie, la règle d'ouverture serait aussi enfreinte."""
-        assert codes(
-            evaluate(slot(8, 0, 9), rules=regles, now=utc(10), tz=PARIS)
-        ) == [RuleCode.PASSE]
+        assert codes(evaluate(slot(8, 0, 9), rules=regles, now=utc(10), tz=PARIS)) == [
+            RuleCode.PASSE
+        ]
 
     def test_violations_cumulees_dans_un_ordre_stable(
         self, regles, ouverture_du_jour, maintenant
@@ -262,7 +277,9 @@ class TestEvaluate:
             RuleCode.QUOTA,
         ]
 
-    def test_capacite_ignoree_si_non_fournie(self, regles, ouverture_du_jour, maintenant):
+    def test_capacite_ignoree_si_non_fournie(
+        self, regles, ouverture_du_jour, maintenant
+    ):
         assert (
             codes(
                 evaluate(
@@ -294,7 +311,9 @@ class TestEvaluate:
             == []
         )
 
-    def test_fermeture_et_ouverture_cumulees(self, regles, maintenant, fermeture_du_jour):
+    def test_fermeture_et_ouverture_cumulees(
+        self, regles, maintenant, fermeture_du_jour
+    ):
         obtenus = codes(
             evaluate(
                 TimeSlot(local(10), local(11)),

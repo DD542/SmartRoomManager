@@ -9,7 +9,6 @@ c'est-à-dire trop tard.
 
 from __future__ import annotations
 
-import calendar
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
@@ -58,7 +57,9 @@ def _rang_dans_le_mois(jour: date) -> int:
     return (jour.day - 1) // 7 + 1
 
 
-def _nieme_jour_du_mois(annee: int, mois: int, jour_semaine: int, rang: int) -> date | None:
+def _nieme_jour_du_mois(
+    annee: int, mois: int, jour_semaine: int, rang: int
+) -> date | None:
     """Nième occurrence d'un jour de semaine dans un mois, ou None si absente.
 
     Un mois n'a pas toujours cinq mardis : la série saute alors ce mois plutôt
@@ -81,9 +82,13 @@ def generate_dates(
 ) -> tuple[date, ...]:
     """Dates d'une série, bornes comprises, dans l'ordre chronologique."""
     if until_date < start_date:
-        raise RuleViolationError("La date de fin précède la date de début.", code="ordre_dates")
+        raise RuleViolationError(
+            "La date de fin précède la date de début.", code="ordre_dates"
+        )
     if not byweekday:
-        raise RuleViolationError("Aucun jour de la semaine sélectionné.", code="jours_requis")
+        raise RuleViolationError(
+            "Aucun jour de la semaine sélectionné.", code="jours_requis"
+        )
 
     jours = sorted(set(byweekday))
     dates: list[date] = []
@@ -154,7 +159,9 @@ def preview_series(
         )
 
     now = en_utc(now or datetime.now(UTC))
-    duree = datetime.combine(date.min, end_time) - datetime.combine(date.min, start_time)
+    duree = datetime.combine(date.min, end_time) - datetime.combine(
+        date.min, start_time
+    )
 
     occurrences: list[Occurrence] = []
     for jour in generate_dates(
@@ -177,7 +184,11 @@ def preview_series(
         motif = (
             describe_conflicts(bloquants)[0]
             if bloquants
-            else (rapport.violations[0].message if rapport.violations else "Créneau indisponible.")
+            else (
+                rapport.violations[0].message
+                if rapport.violations
+                else "Créneau indisponible."
+            )
         )
         occurrences.append(Occurrence(slot=creneau, accepted=False, reason=motif))
 
@@ -222,7 +233,9 @@ def create_series(
     )
 
     if not apercu.accepted:
-        raise RuleViolationError("Aucune date de la série n'est disponible.", code="serie_vide")
+        raise RuleViolationError(
+            "Aucune date de la série n'est disponible.", code="serie_vide"
+        )
     if apercu.rejected and not skip_conflicts:
         raise RuleViolationError(
             apercu.rejected[0].reason or "Série en conflit.", code="conflit"

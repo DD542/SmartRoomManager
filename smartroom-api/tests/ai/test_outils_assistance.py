@@ -8,14 +8,20 @@ comprendre « la salle Curie ».
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC
 
 import pytest
 import pytest_asyncio
 from sqlalchemy import func, select
 
 from app.ai.providers import FournisseurSimule, SelecteurModeles
-from app.ai.rag import Vectoriseur, desindexer_article, indexer_article, rattraper, reindexer_tout
+from app.ai.rag import (
+    Vectoriseur,
+    desindexer_article,
+    indexer_article,
+    rattraper,
+    reindexer_tout,
+)
 from app.ai.rag.indexation import etat_index
 from app.ai.reglages import ReglagesIA
 from app.ai.tools import ArgumentsInvalides, ToolContext, obtenir
@@ -64,7 +70,9 @@ class TestResolution:
             resoudre_batiment(session, "Tour Montparnasse")
         assert batiment.name in souci.value.message()
 
-    def test_une_salle_se_resout_malgre_les_accents_et_la_casse(self, session, creer_salle):
+    def test_une_salle_se_resout_malgre_les_accents_et_la_casse(
+        self, session, creer_salle
+    ):
         salle = creer_salle("Salle Ampère")
         assert resoudre_salle(session, nom="salle ampere").id == salle.id
 
@@ -102,7 +110,9 @@ class TestAssistance:
         assert session.scalar(select(func.count()).select_from(Ticket)) == 0
 
     @pytest.mark.asyncio
-    async def test_le_ticket_confirme_est_cree_pour_le_demandeur(self, session, principal):
+    async def test_le_ticket_confirme_est_cree_pour_le_demandeur(
+        self, session, principal
+    ):
         proposition = await obtenir("creer_ticket").execute(
             {
                 "sujet": "Vidéoprojecteur en panne",
@@ -124,16 +134,23 @@ class TestAssistance:
     async def test_une_categorie_inventee_est_refusee(self, contexte):
         with pytest.raises(ArgumentsInvalides):
             await obtenir("creer_ticket").execute(
-                {"sujet": "Souci", "categorie": "cosmique", "message": "Description du souci."},
+                {
+                    "sujet": "Souci",
+                    "categorie": "cosmique",
+                    "message": "Description du souci.",
+                },
                 contexte,
             )
 
     @pytest.mark.asyncio
-    async def test_le_transfert_humain_n_exige_pas_de_confirmation(self, session, contexte):
+    async def test_le_transfert_humain_n_exige_pas_de_confirmation(
+        self, session, contexte
+    ):
         """Demander « confirmez-vous vouloir un humain ? » à qui vient de le
         demander serait une friction absurde."""
         resultat = await obtenir("transferer_humain").execute(
-            {"resume": "L'utilisateur ne trouve pas son code et s'impatiente."}, contexte
+            {"resume": "L'utilisateur ne trouve pas son code et s'impatiente."},
+            contexte,
         )
 
         assert resultat.statut is Statut.OK
@@ -198,7 +215,10 @@ class TestModificationEtAnnulation:
         rien."""
         with pytest.raises(ArgumentsInvalides):
             await obtenir("modifier_reservation").execute(
-                {"reservation_id": str(reservation.id), "debut": "2026-09-03T14:00:00Z"},
+                {
+                    "reservation_id": str(reservation.id),
+                    "debut": "2026-09-03T14:00:00Z",
+                },
                 contexte,
             )
 
@@ -243,8 +263,12 @@ class TestModificationEtAnnulation:
 
     @pytest.mark.asyncio
     async def test_lister_distingue_les_etats(self, contexte, reservation):
-        a_venir = await obtenir("lister_mes_reservations").execute({"etat": "a_venir"}, contexte)
-        annulees = await obtenir("lister_mes_reservations").execute({"etat": "annulees"}, contexte)
+        a_venir = await obtenir("lister_mes_reservations").execute(
+            {"etat": "a_venir"}, contexte
+        )
+        annulees = await obtenir("lister_mes_reservations").execute(
+            {"etat": "annulees"}, contexte
+        )
 
         assert a_venir.statut is Statut.OK
         assert annulees.statut is Statut.VIDE
@@ -255,17 +279,22 @@ class TestEntretienDeLIndex:
     async def test_desindexer_retire_les_fragments(
         self, session, creer_article, vectoriseur_simule
     ):
-        article = creer_article(titre="Éphémère", corps="Un contenu appelé à disparaître.")
+        article = creer_article(
+            titre="Éphémère", corps="Un contenu appelé à disparaître."
+        )
         await indexer_article(session, article, vectoriseur=vectoriseur_simule)
 
         await desindexer_article(session, article.id)
         session.flush()
 
-        assert session.scalar(
-            select(func.count()).select_from(FaqFragment).where(
-                FaqFragment.article_id == article.id
+        assert (
+            session.scalar(
+                select(func.count())
+                .select_from(FaqFragment)
+                .where(FaqFragment.article_id == article.id)
             )
-        ) == 0
+            == 0
+        )
 
     @pytest.mark.asyncio
     async def test_le_rattrapage_vectorise_ce_qui_attendait(
@@ -274,7 +303,9 @@ class TestEntretienDeLIndex:
         """Un article publié pendant une absence du modèle ne doit pas rester
         définitivement invisible à la recherche sémantique."""
         sourd = Vectoriseur(SelecteurModeles(ReglagesIA(forcer_repli=True)))
-        article = creer_article(titre="Écrit sans modèle", corps="Le contenu attend son vecteur.")
+        article = creer_article(
+            titre="Écrit sans modèle", corps="Le contenu attend son vecteur."
+        )
         await indexer_article(session, article, vectoriseur=sourd)
         session.flush()
 
@@ -295,8 +326,12 @@ class TestEntretienDeLIndex:
     async def test_reindexer_tout_parcourt_le_corpus(
         self, session, creer_article, vectoriseur_simule
     ):
-        creer_article(titre="Premier", corps="Un premier contenu de test suffisamment long.")
-        creer_article(titre="Second", corps="Un second contenu de test suffisamment long.")
+        creer_article(
+            titre="Premier", corps="Un premier contenu de test suffisamment long."
+        )
+        creer_article(
+            titre="Second", corps="Un second contenu de test suffisamment long."
+        )
         session.flush()
 
         rapport = await reindexer_tout(session, vectoriseur=vectoriseur_simule)

@@ -6,12 +6,11 @@ from datetime import timedelta
 from decimal import Decimal
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
 
 from app.api.deps import ROOMS_MANAGE
 from app.db.enums import AuditAction, RoomStatus
-from app.models import AuditLog, Equipment, Room, RoomEquipment
-from tests.services.conftest import accorder, charge, connecter, creneau
+from app.models import AuditLog, Equipment
+from tests.services.conftest import accorder, connecter, creneau
 from tests.services.test_api_v1 import poser
 
 
@@ -30,7 +29,9 @@ class TestBatiments:
 
     def test_etages_d_un_batiment(self, client, compte, salle, batiment, etage):
         entetes = connecter(client, compte.email)
-        corps = client.get(f"/api/v1/buildings/{batiment.id}/floors", headers=entetes).json()
+        corps = client.get(
+            f"/api/v1/buildings/{batiment.id}/floors", headers=entetes
+        ).json()
 
         assert [item["id"] for item in corps] == [str(etage.id)]
         assert corps[0]["room_count"] >= 1
@@ -70,7 +71,9 @@ class TestSalles:
     def test_tri_inconnu_refuse(self, client, compte):
         """Un tri silencieusement ignoré produit un écran qui ment sur son état."""
         entetes = connecter(client, compte.email)
-        reponse = client.get("/api/v1/rooms", headers=entetes, params={"sort": "couleur"})
+        reponse = client.get(
+            "/api/v1/rooms", headers=entetes, params={"sort": "couleur"}
+        )
         assert reponse.status_code == 422
         assert reponse.json()["error"]["code"] == "validation"
         assert reponse.json()["error"]["fields"][0]["field"] == "sort"
@@ -132,8 +135,12 @@ class TestAdministrationDuParc:
         reponse = client.post(
             "/api/v1/rooms",
             headers=entetes,
-            json={"floor_id": str(etage.id), "name": "Interdite", "capacity": 8,
-                  "area_m2": "20.00"},
+            json={
+                "floor_id": str(etage.id),
+                "name": "Interdite",
+                "capacity": 8,
+                "area_m2": "20.00",
+            },
         )
         assert reponse.status_code == 403
         assert reponse.json()["error"]["code"] == "permission_manquante"
@@ -149,7 +156,8 @@ class TestAdministrationDuParc:
         )
         trace = session.scalars(
             select(AuditLog).where(
-                AuditLog.target_id == salle.id, AuditLog.action == AuditAction.MODIFICATION
+                AuditLog.target_id == salle.id,
+                AuditLog.action == AuditAction.MODIFICATION,
             )
         ).one()
         assert trace.diff_before["capacity"] == 12
@@ -195,7 +203,10 @@ class TestAdministrationDuParc:
         accorder(session, administrateur, ROOMS_MANAGE)
         entetes = connecter(client, administrateur.user.email, admin=True)
 
-        assert client.delete(f"/api/v1/rooms/{salle.id}", headers=entetes).status_code == 204
+        assert (
+            client.delete(f"/api/v1/rooms/{salle.id}", headers=entetes).status_code
+            == 204
+        )
         session.refresh(salle)
         assert salle.status is RoomStatus.ARCHIVEE
         assert salle.deleted_at is not None
@@ -220,7 +231,9 @@ class TestAdministrationDuParc:
         assert len(corps["failed"]) == 1
         assert corps["failed"][0]["room_id"] == str(occupee.id)
 
-    def test_action_groupee_incoherente_refusee(self, client, session, administrateur, salle):
+    def test_action_groupee_incoherente_refusee(
+        self, client, session, administrateur, salle
+    ):
         accorder(session, administrateur, ROOMS_MANAGE)
         entetes = connecter(client, administrateur.user.email, admin=True)
 
@@ -237,7 +250,9 @@ class TestEquipements:
         creer_salle("Equipee", equipements=[video])
         entetes = connecter(client, compte.email)
 
-        corps = client.get("/api/v1/equipments", headers=entetes, params={"size": 50}).json()
+        corps = client.get(
+            "/api/v1/equipments", headers=entetes, params={"size": 50}
+        ).json()
         vise = next(item for item in corps["items"] if item["id"] == str(video.id))
         assert vise["room_count"] == 1
 
@@ -252,11 +267,16 @@ class TestEquipements:
         assert reponse.status_code == 422
         assert reponse.json()["error"]["code"] == "reference"
 
-    def test_suppression_d_un_equipement_libre(self, client, session, administrateur, video):
+    def test_suppression_d_un_equipement_libre(
+        self, client, session, administrateur, video
+    ):
         accorder(session, administrateur, ROOMS_MANAGE)
         entetes = connecter(client, administrateur.user.email, admin=True)
 
-        assert client.delete(f"/api/v1/equipments/{video.id}", headers=entetes).status_code == 204
+        assert (
+            client.delete(f"/api/v1/equipments/{video.id}", headers=entetes).status_code
+            == 204
+        )
         assert session.get(Equipment, video.id) is None
 
 
@@ -293,9 +313,7 @@ class TestTeleversement:
     def test_depot_puis_remplacement_du_plan(
         self, client, session, administrateur, etage, tmp_path, monkeypatch
     ):
-        monkeypatch.setattr(
-            "app.core.storage.racine", lambda: tmp_path, raising=True
-        )
+        monkeypatch.setattr("app.core.storage.racine", lambda: tmp_path, raising=True)
         accorder(session, administrateur, ROOMS_MANAGE)
         entetes = connecter(client, administrateur.user.email, admin=True)
 
@@ -315,16 +333,24 @@ class TestTeleversement:
         assert second.json()["file_size_bytes"] == 128
         assert len(list((tmp_path / "plans").iterdir())) == 1
 
-        assert client.get(
-            f"/api/v1/floors/{etage.id}/plan", headers=entetes
-        ).json()["file_url"] == second.json()["file_url"]
+        assert (
+            client.get(f"/api/v1/floors/{etage.id}/plan", headers=entetes).json()[
+                "file_url"
+            ]
+            == second.json()["file_url"]
+        )
 
-        assert client.delete(
-            f"/api/v1/floors/{etage.id}/plan", headers=entetes
-        ).status_code == 204
+        assert (
+            client.delete(
+                f"/api/v1/floors/{etage.id}/plan", headers=entetes
+            ).status_code
+            == 204
+        )
         assert list((tmp_path / "plans").iterdir()) == []
 
-    def test_format_refuse(self, client, session, administrateur, etage, tmp_path, monkeypatch):
+    def test_format_refuse(
+        self, client, session, administrateur, etage, tmp_path, monkeypatch
+    ):
         """Accepter un type arbitraire reviendrait à héberger n'importe quel
         exécutable sur le domaine de l'application."""
         monkeypatch.setattr("app.core.storage.racine", lambda: tmp_path, raising=True)
@@ -423,9 +449,12 @@ class TestTeleversement:
         ]
         assert [item["position"] for item in posees] == [0, 1, 2, 3, 4, 5]
 
-        assert client.delete(
-            f"/api/v1/rooms/{salle.id}/photos/{posees[0]['id']}", headers=entetes
-        ).status_code == 204
+        assert (
+            client.delete(
+                f"/api/v1/rooms/{salle.id}/photos/{posees[0]['id']}", headers=entetes
+            ).status_code
+            == 204
+        )
 
         remplacante = client.post(
             f"/api/v1/rooms/{salle.id}/photos", headers=entetes, json=self._png()
@@ -499,9 +528,7 @@ class TestTeleversement:
         assert reponse.status_code == 422
         assert reponse.json()["error"]["code"] == "doublon"
 
-    def test_reordonner_sans_permission_refuse(
-        self, client, administrateur, salle
-    ):
+    def test_reordonner_sans_permission_refuse(self, client, administrateur, salle):
         entetes = connecter(client, administrateur.user.email, admin=True)
         reponse = client.put(
             f"/api/v1/rooms/{salle.id}/photos/order",
@@ -534,7 +561,9 @@ class TestTeleversement:
 
 
 class TestPlan:
-    def test_placement_hors_du_plan_refuse(self, client, session, administrateur, salle, etage):
+    def test_placement_hors_du_plan_refuse(
+        self, client, session, administrateur, salle, etage
+    ):
         accorder(session, administrateur, ROOMS_MANAGE)
         entetes = connecter(client, administrateur.user.email, admin=True)
 
@@ -544,15 +573,19 @@ class TestPlan:
             json=[
                 {
                     "room_id": str(salle.id),
-                    "pos_x": "90.0", "pos_y": "10.0",
-                    "width": "30.0", "height": "10.0",
+                    "pos_x": "90.0",
+                    "pos_y": "10.0",
+                    "width": "30.0",
+                    "height": "10.0",
                 }
             ],
         )
         assert reponse.status_code == 422
         assert "déborde" in reponse.json()["error"]["message"]
 
-    def test_placement_puis_retrait(self, client, session, administrateur, salle, etage):
+    def test_placement_puis_retrait(
+        self, client, session, administrateur, salle, etage
+    ):
         accorder(session, administrateur, ROOMS_MANAGE)
         entetes = connecter(client, administrateur.user.email, admin=True)
 
@@ -562,8 +595,10 @@ class TestPlan:
             json=[
                 {
                     "room_id": str(salle.id),
-                    "pos_x": "10.0", "pos_y": "10.0",
-                    "width": "20.0", "height": "15.0",
+                    "pos_x": "10.0",
+                    "pos_y": "10.0",
+                    "width": "20.0",
+                    "height": "15.0",
                     "is_entrance_marked": True,
                 }
             ],
@@ -571,9 +606,12 @@ class TestPlan:
         assert pose.status_code == 200
         assert Decimal(pose.json()[0]["pos_x"]) == Decimal("10.0")
 
-        assert client.post(
-            f"/api/v1/rooms/{salle.id}/unplace", headers=entetes
-        ).status_code == 204
+        assert (
+            client.post(
+                f"/api/v1/rooms/{salle.id}/unplace", headers=entetes
+            ).status_code
+            == 204
+        )
 
     def test_salle_archivee_non_placable(
         self, client, session, administrateur, creer_salle, etage
@@ -588,7 +626,10 @@ class TestPlan:
             json=[
                 {
                     "room_id": str(archivee.id),
-                    "pos_x": "5.0", "pos_y": "5.0", "width": "10.0", "height": "10.0",
+                    "pos_x": "5.0",
+                    "pos_y": "5.0",
+                    "width": "10.0",
+                    "height": "10.0",
                 }
             ],
         )
@@ -633,7 +674,9 @@ class TestCalendrier:
                 "to_date": creneau(jour_ouvre, 20).end.isoformat(),
             },
         ).json()
-        evenement = next(item for item in corps["events"] if item["title"] == "Chez Sam")
+        evenement = next(
+            item for item in corps["events"] if item["title"] == "Chez Sam"
+        )
         assert evenement["is_mine"] is False
 
     def test_les_plages_fermees_accompagnent_une_salle_unique(
@@ -664,7 +707,9 @@ class TestCalendrier:
             },
         )
 
-    def test_la_vue_mois_d_une_salle_est_servie(self, client, compte, salle, jour_ouvre):
+    def test_la_vue_mois_d_une_salle_est_servie(
+        self, client, compte, salle, jour_ouvre
+    ):
         """Six semaines : c'est la grille que rend la vue « mois » de l'écran.
 
         La borne unique de 31 jours la refusait, et deux vues sur quatre —
@@ -674,7 +719,9 @@ class TestCalendrier:
         reponse = self._plage(client, entetes, jour_ouvre, 42, room_ids=str(salle.id))
         assert reponse.status_code == 200
 
-    def test_la_vue_annee_d_une_salle_est_servie(self, client, compte, salle, jour_ouvre):
+    def test_la_vue_annee_d_une_salle_est_servie(
+        self, client, compte, salle, jour_ouvre
+    ):
         entetes = connecter(client, compte.email)
         reponse = self._plage(client, entetes, jour_ouvre, 371, room_ids=str(salle.id))
         assert reponse.status_code == 200

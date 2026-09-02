@@ -36,8 +36,13 @@ logger = logging.getLogger("app.ai.repli")
 SEUIL = 72
 
 _JOURS = {
-    "lundi": 0, "mardi": 1, "mercredi": 2, "jeudi": 3,
-    "vendredi": 4, "samedi": 5, "dimanche": 6,
+    "lundi": 0,
+    "mardi": 1,
+    "mercredi": 2,
+    "jeudi": 3,
+    "vendredi": 4,
+    "samedi": 5,
+    "dimanche": 6,
 }
 
 
@@ -191,7 +196,9 @@ class MoteurDeterministe:
             resultat = await self._chercher_salle(message, ctx)
             outils.append("rechercher_salles")
         elif code in {"mes_reservations", "reservation_liste"}:
-            resultat = await obtenir("lister_mes_reservations").execute({"etat": "a_venir"}, ctx)
+            resultat = await obtenir("lister_mes_reservations").execute(
+                {"etat": "a_venir"}, ctx
+            )
             outils.append("lister_mes_reservations")
         elif code in {"regles", "regle_reservation"}:
             resultat = await obtenir("consulter_regles").execute({}, ctx)
@@ -239,7 +246,11 @@ class MoteurDeterministe:
                 "debut": debut.isoformat().replace("+00:00", "Z"),
                 "fin": (debut + timedelta(hours=2)).isoformat().replace("+00:00", "Z"),
                 "effectif": arguments.get("capacite_min", 4),
-                **({"batiment": arguments["batiment"]} if "batiment" in arguments else {}),
+                **(
+                    {"batiment": arguments["batiment"]}
+                    if "batiment" in arguments
+                    else {}
+                ),
             },
             ctx,
         )

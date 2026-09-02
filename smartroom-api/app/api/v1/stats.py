@@ -246,7 +246,9 @@ def list_audit(
         target_type=target_type,
         query=q,
     )
-    return Page.build([AuditEntryOut.model_validate(item) for item in entrees], total, params)
+    return Page.build(
+        [AuditEntryOut.model_validate(item) for item in entrees], total, params
+    )
 
 
 @router.get(
@@ -255,7 +257,9 @@ def list_audit(
     summary="Détail d'une entrée",
     tags=["audit"],
 )
-def get_audit(entry_id: uuid.UUID, session: SessionDep, _admin=Systeme) -> AuditEntryOut:
+def get_audit(
+    entry_id: uuid.UUID, session: SessionDep, _admin=Systeme
+) -> AuditEntryOut:
     return AuditEntryOut.model_validate(audit_service.get(session, entry_id))
 
 

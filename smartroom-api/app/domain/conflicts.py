@@ -254,7 +254,6 @@ def propose_alternatives(
     return tuple(propositions[:limit])
 
 
-
 def _facteur(valeur: float, meilleures: set[float]) -> bool | None:
     """Oriente vers ce dossier si sa valeur est la meilleure et qu'elle départage.
 

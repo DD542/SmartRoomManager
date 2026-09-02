@@ -19,7 +19,6 @@ import pytest
 from sqlalchemy import select
 
 from app.core.errors import NotFoundError, RuleViolationError
-from app.db.enums import BookingStatus
 from app.models import BookingAccessCode
 from app.services import booking_service
 from tests.services.conftest import connecter, creneau
@@ -53,7 +52,9 @@ def reservation(session, compte, salle_a_badge, jour_ouvre):
 class TestReemission:
     def test_un_code_neuf_remplace_l_ancien(self, session, compte, reservation):
         ancien = session.scalars(
-            select(BookingAccessCode).where(BookingAccessCode.booking_id == reservation.id)
+            select(BookingAccessCode).where(
+                BookingAccessCode.booking_id == reservation.id
+            )
         ).one()
 
         nouveau = booking_service.reissue_access_code(
@@ -78,7 +79,9 @@ class TestReemission:
         session.flush()
 
         codes = session.scalars(
-            select(BookingAccessCode).where(BookingAccessCode.booking_id == reservation.id)
+            select(BookingAccessCode).where(
+                BookingAccessCode.booking_id == reservation.id
+            )
         ).all()
         assert len(codes) == 2
         assert sum(1 for item in codes if item.revoked_at is not None) == 1
@@ -156,7 +159,9 @@ class TestParHttp:
         # reste affichable.
         assert charge["code"] != charge["hint"]
 
-    def test_le_detail_dit_que_la_salle_exige_un_badge(self, client, compte, reservation):
+    def test_le_detail_dit_que_la_salle_exige_un_badge(
+        self, client, compte, reservation
+    ):
         entetes = connecter(client, compte.email)
 
         charge = client.get(

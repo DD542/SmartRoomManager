@@ -14,7 +14,7 @@ rien.
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, timedelta
 from typing import Any
 
 from sqlalchemy import text
@@ -28,13 +28,17 @@ settings = get_settings()
 FENETRE_JOURS = 30
 
 
-def _periode(first_day: date | None, last_day: date | None, jours: int) -> tuple[date, date]:
+def _periode(
+    first_day: date | None, last_day: date | None, jours: int
+) -> tuple[date, date]:
     fin = last_day or date.today()
     debut = first_day or (fin - timedelta(days=jours))
     return debut, fin
 
 
-def me(session: Session, user_id: uuid.UUID, *, days: int = FENETRE_JOURS) -> dict[str, Any]:
+def me(
+    session: Session, user_id: uuid.UUID, *, days: int = FENETRE_JOURS
+) -> dict[str, Any]:
     """Chiffres personnels : heures réservées, assiduité, quota restant.
 
     Une seule requête, sept agrégats. Le taux d'absence ne compte que les
@@ -79,7 +83,9 @@ def me(session: Session, user_id: uuid.UUID, *, days: int = FENETRE_JOURS) -> di
         "upcoming_bookings": ligne.a_venir or 0,
         "booked_hours": float(ligne.heures or 0),
         "distinct_rooms": ligne.salles or 0,
-        "attendance_rate": round((ligne.honorees or 0) / ecoulees, 4) if ecoulees else None,
+        "attendance_rate": round((ligne.honorees or 0) / ecoulees, 4)
+        if ecoulees
+        else None,
         "no_show_rate": (
             round(1 - (ligne.honorees or 0) / ecoulees, 4) if ecoulees else None
         ),
@@ -365,9 +371,7 @@ def occupancy_csv(
     entete = "Salle;Bâtiment;Capacité;Occupation %;Heures;Réservations;Absences"
     corps = "\n".join(
         ";".join(
-            str(
-                ligne[cle]
-            ).replace(";", ",")
+            str(ligne[cle]).replace(";", ",")
             for cle in (
                 "room_name",
                 "building_name",
@@ -391,7 +395,9 @@ def refresh_occupancy(session: Session) -> None:
     premier rafraîchissement, où l'option est refusée.
     """
     try:
-        session.execute(text("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_room_occupancy_hourly"))
+        session.execute(
+            text("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_room_occupancy_hourly")
+        )
     except Exception:  # noqa: BLE001
         session.rollback()
         session.execute(text("REFRESH MATERIALIZED VIEW mv_room_occupancy_hourly"))

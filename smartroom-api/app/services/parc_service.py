@@ -49,7 +49,14 @@ CHAMPS_SALLE = (
     "floor_id",
     "location_plan_url",
 )
-CHAMPS_EQUIPEMENT = ("code", "label", "category", "icon", "description", "is_filterable")
+CHAMPS_EQUIPEMENT = (
+    "code",
+    "label",
+    "category",
+    "icon",
+    "description",
+    "is_filterable",
+)
 CHAMPS_BATIMENT = ("code", "name", "address", "image_url", "sort_order")
 CHAMPS_ETAGE = ("code", "label", "level")
 CHAMPS_PLAN = ("kind", "file_url", "file_name", "file_size_bytes")
@@ -101,7 +108,9 @@ def list_buildings(session: Session) -> list[tuple[Building, int, int]]:
     )
     return list(
         session.execute(
-            select(Building, etages, salles).order_by(Building.sort_order, Building.name)
+            select(Building, etages, salles).order_by(
+                Building.sort_order, Building.name
+            )
         ).all()
     )
 
@@ -113,7 +122,9 @@ def get_building(session: Session, building_id: uuid.UUID) -> Building:
     return batiment
 
 
-def list_floors(session: Session, building_id: uuid.UUID) -> list[tuple[Floor, int, bool]]:
+def list_floors(
+    session: Session, building_id: uuid.UUID
+) -> list[tuple[Floor, int, bool]]:
     """Étages d'un bâtiment, avec leur décompte de salles et la présence d'un plan.
 
     `has_plan` évite à l'écran de demander un plan pour savoir s'il existe : la
@@ -169,7 +180,8 @@ def _remplacer_visuel(
     """
     if content_type not in TYPES_VISUEL:
         raise RuleViolationError(
-            "Format refusé : déposez une image PNG, JPEG ou WebP.", code="format_invalide"
+            "Format refusé : déposez une image PNG, JPEG ou WebP.",
+            code="format_invalide",
         )
     extension = storage.verifier(content_type, len(contenu))
     url = storage.enregistrer(dossier, contenu, extension)
@@ -262,7 +274,11 @@ def delete_building(session: Session, building_id: uuid.UUID) -> None:
 
 
 def set_building_image(
-    session: Session, building_id: uuid.UUID, *, contenu: bytes, content_type: str | None
+    session: Session,
+    building_id: uuid.UUID,
+    *,
+    contenu: bytes,
+    content_type: str | None,
 ) -> Building:
     batiment = get_building(session, building_id)
     avant = audit_service.snapshot(batiment, CHAMPS_BATIMENT)
@@ -357,7 +373,9 @@ def delete_floor(session: Session, floor_id: uuid.UUID) -> None:
             code="etage_occupe",
         )
 
-    plan = session.scalars(select(FloorPlan).where(FloorPlan.floor_id == floor_id)).one_or_none()
+    plan = session.scalars(
+        select(FloorPlan).where(FloorPlan.floor_id == floor_id)
+    ).one_or_none()
     if plan is not None:
         storage.supprimer(plan.file_url)
 
@@ -443,9 +461,7 @@ def replace_floor_plan(
         plan = FloorPlan(floor_id=floor_id)
         session.add(plan)
 
-    plan.kind = (
-        PlanDocumentKind.PDF if extension == ".pdf" else PlanDocumentKind.IMAGE
-    )
+    plan.kind = PlanDocumentKind.PDF if extension == ".pdf" else PlanDocumentKind.IMAGE
     plan.file_url = url
     plan.file_name = storage.nom_affiche(file_name)
     plan.file_size_bytes = len(contenu)
@@ -525,7 +541,9 @@ def set_placements(
             f"« {hors_etage[0].name} » n'appartient pas à cet étage.", code="etage"
         )
 
-    archivees = [item for item in connues.values() if item.status is RoomStatus.ARCHIVEE]
+    archivees = [
+        item for item in connues.values() if item.status is RoomStatus.ARCHIVEE
+    ]
     if archivees:
         raise RuleViolationError(
             f"« {archivees[0].name} » est archivée et ne peut pas être placée.",
@@ -595,9 +613,12 @@ def list_equipments(
     if params.sort is not None:
         requete = apply_sort(requete, params, TRI_EQUIPEMENTS)
 
-    total = session.scalar(
-        select(func.count()).select_from(requete.order_by(None).subquery())
-    ) or 0
+    total = (
+        session.scalar(
+            select(func.count()).select_from(requete.order_by(None).subquery())
+        )
+        or 0
+    )
     lignes = session.execute(requete.limit(params.size).offset(params.offset)).all()
     return list(lignes), total
 
@@ -618,7 +639,9 @@ def create_equipment(session: Session, payload: Any) -> Equipment:
     return materiel
 
 
-def update_equipment(session: Session, equipment_id: uuid.UUID, payload: Any) -> Equipment:
+def update_equipment(
+    session: Session, equipment_id: uuid.UUID, payload: Any
+) -> Equipment:
     materiel = session.get(Equipment, equipment_id)
     if materiel is None:
         raise NotFoundError("Équipement introuvable.")
@@ -650,11 +673,14 @@ def delete_equipment(session: Session, equipment_id: uuid.UUID) -> None:
     if materiel is None:
         raise NotFoundError("Équipement introuvable.")
 
-    utilise = session.scalar(
-        select(func.count())
-        .select_from(RoomEquipment)
-        .where(RoomEquipment.equipment_id == equipment_id)
-    ) or 0
+    utilise = (
+        session.scalar(
+            select(func.count())
+            .select_from(RoomEquipment)
+            .where(RoomEquipment.equipment_id == equipment_id)
+        )
+        or 0
+    )
     if utilise:
         raise RuleViolationError(
             f"« {materiel.label} » équipe encore {utilise} salle(s).", code="reference"
@@ -737,7 +763,9 @@ def list_rooms(
     if accessible_only:
         requete = requete.where(Room.is_accessible.is_(True))
     requete = requete.where(
-        Room.status == status if status is not None else Room.status != RoomStatus.ARCHIVEE
+        Room.status == status
+        if status is not None
+        else Room.status != RoomStatus.ARCHIVEE
     )
     if query:
         requete = requete.where(Room.name.ilike(f"%{query}%"))
@@ -760,9 +788,7 @@ def list_rooms(
     return paginate(session, requete, params, colonnes=TRI_SALLES)
 
 
-def booking_counts(
-    session: Session, room_ids: list[uuid.UUID]
-) -> dict[uuid.UUID, int]:
+def booking_counts(session: Session, room_ids: list[uuid.UUID]) -> dict[uuid.UUID, int]:
     """Nombre de réservations actives par salle, en une requête.
 
     Porté par la fiche salle et non lu depuis `/admin/bookings` : cette
@@ -862,7 +888,9 @@ def _slug_libre(session: Session, nom: str) -> str:
     """Dérive un identifiant du nom, suffixé s'il est déjà pris."""
     base = slugify(nom) or "salle"
     candidat, suffixe = base, 2
-    while session.scalar(select(func.count()).select_from(Room).where(Room.slug == candidat)):
+    while session.scalar(
+        select(func.count()).select_from(Room).where(Room.slug == candidat)
+    ):
         candidat, suffixe = f"{base}-{suffixe}", suffixe + 1
     return candidat
 
@@ -903,16 +931,21 @@ def archive_room(session: Session, room_id: uuid.UUID) -> Room:
     from sqlalchemy.dialects.postgresql import Range
 
     salle = get_room(session, room_id)
-    a_venir = session.scalar(
-        select(func.count())
-        .select_from(Booking)
-        .where(
-            Booking.room_id == room_id,
-            Booking.status != BookingStatus.ANNULEE,
-            Booking.deleted_at.is_(None),
-            Booking.time_range.op("&&")(Range(datetime.now(UTC), None, bounds="[)")),
+    a_venir = (
+        session.scalar(
+            select(func.count())
+            .select_from(Booking)
+            .where(
+                Booking.room_id == room_id,
+                Booking.status != BookingStatus.ANNULEE,
+                Booking.deleted_at.is_(None),
+                Booking.time_range.op("&&")(
+                    Range(datetime.now(UTC), None, bounds="[)")
+                ),
+            )
         )
-    ) or 0
+        or 0
+    )
     if a_venir:
         raise RuleViolationError(
             f"« {salle.name} » porte {a_venir} réservation(s) à venir. "
@@ -938,7 +971,9 @@ def archive_room(session: Session, room_id: uuid.UUID) -> Room:
     return salle
 
 
-def bulk_update_rooms(session: Session, payload: Any) -> tuple[list[uuid.UUID], list[dict]]:
+def bulk_update_rooms(
+    session: Session, payload: Any
+) -> tuple[list[uuid.UUID], list[dict]]:
     """Applique une action à plusieurs salles, chacune indépendamment.
 
     Une salle en échec n'annule pas les autres : le point de sauvegarde par
@@ -1065,9 +1100,7 @@ def reorder_photos(
     connues = {photo.id: photo for photo in existantes}
 
     if len(photo_ids) != len(set(photo_ids)):
-        raise RuleViolationError(
-            "La même photo est citée deux fois.", code="doublon"
-        )
+        raise RuleViolationError("La même photo est citée deux fois.", code="doublon")
     if set(photo_ids) != set(connues):
         raise RuleViolationError(
             "L'ordre doit citer toutes les photos de la salle, et elles seules.",

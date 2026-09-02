@@ -41,7 +41,9 @@ DIMENSION_VECTEUR = 768
 class FaqFragment(TimestampMixin, Base):
     __tablename__ = "faq_fragments"
     __table_args__ = (
-        UniqueConstraint("article_id", "position", name="uq_faq_fragments_article_position"),
+        UniqueConstraint(
+            "article_id", "position", name="uq_faq_fragments_article_position"
+        ),
         CheckConstraint("length(contenu) > 0", name="contenu_non_vide"),
         CheckConstraint("position >= 0", name="position_positive"),
         # Un vecteur sans le nom du modèle qui l'a produit serait inexploitable :
@@ -72,14 +74,18 @@ class FaqFragment(TimestampMixin, Base):
 
     id: Mapped[UuidPk]
     article_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("faq_articles.id", ondelete="CASCADE", name="fk_faq_fragments_article")
+        ForeignKey(
+            "faq_articles.id", ondelete="CASCADE", name="fk_faq_fragments_article"
+        )
     )
     #: Rang du fragment dans son article. Sert à restituer l'ordre de lecture
     #: quand plusieurs fragments du même article ressortent.
     position: Mapped[int] = mapped_column(SmallInteger)
     contenu: Mapped[str] = mapped_column(Text)
     empreinte: Mapped[str] = mapped_column(CHAR(32))
-    vecteur: Mapped[list[float] | None] = mapped_column(Vector(DIMENSION_VECTEUR), default=None)
+    vecteur: Mapped[list[float] | None] = mapped_column(
+        Vector(DIMENSION_VECTEUR), default=None
+    )
     modele: Mapped[str | None] = mapped_column(String(80), default=None)
     vectorise_le: Mapped[datetime | None] = mapped_column(default=None)
 

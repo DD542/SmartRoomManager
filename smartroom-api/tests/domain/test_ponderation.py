@@ -70,7 +70,9 @@ class TestClassementParCritere:
         video = uuid4()
         equipee = room("Équipée", equipment_ids=frozenset({video}))
         nue = room("Nue")
-        criteres = SearchCriteria(equipment_ids=frozenset({video}), equipment_strict=False)
+        criteres = SearchCriteria(
+            equipment_ids=frozenset({video}), equipment_strict=False
+        )
 
         classement = rank([nue, equipee], criteres)
         assert [item.room.name for item in classement] == ["Équipée", "Nue"]
@@ -81,7 +83,9 @@ class TestClassementParCritere:
         lointaine = room("Lointaine", building_id=uuid4())
         criteres = SearchCriteria()
 
-        classement = rank([lointaine, proche], criteres, user(preferred_building_id=prefere))
+        classement = rank(
+            [lointaine, proche], criteres, user(preferred_building_id=prefere)
+        )
         assert [item.room.name for item in classement] == ["Proche", "Lointaine"]
 
     def test_l_etage_prefere_devance_les_autres(self):
@@ -140,7 +144,9 @@ class TestHierarchieDesCriteres:
     def test_les_equipements_pesent_plus_que_le_batiment(self):
         video = uuid4()
         prefere = uuid4()
-        criteres = SearchCriteria(equipment_ids=frozenset({video}), equipment_strict=False)
+        criteres = SearchCriteria(
+            equipment_ids=frozenset({video}), equipment_strict=False
+        )
         equipee_ailleurs = room("Équipée", equipment_ids=frozenset({video}))
         nue_au_bon_endroit = room("Nue", building_id=prefere)
 

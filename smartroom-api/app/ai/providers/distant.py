@@ -108,7 +108,9 @@ class ClientDistant(LLMProvider):
             "max_tokens": max_jetons,
         }
         if outils:
-            charge["tools"] = [{"type": "function", "function": outil} for outil in outils]
+            charge["tools"] = [
+                {"type": "function", "function": outil} for outil in outils
+            ]
         if format_json:
             charge["response_format"] = {"type": "json_object"}
 
@@ -137,7 +139,9 @@ class ClientDistant(LLMProvider):
 
                 async for ligne in reponse.aiter_lines():
                     if time.perf_counter() - depart > self._delai_total:
-                        raise DelaiDepasse("Fournisseur distant : budget du tour dépassé.")
+                        raise DelaiDepasse(
+                            "Fournisseur distant : budget du tour dépassé."
+                        )
 
                     if not ligne.startswith("data:"):
                         continue
@@ -158,7 +162,9 @@ class ClientDistant(LLMProvider):
                     if contenu := delta.get("content"):
                         jetons_reponse += 1
                         if premier_jeton_ms is None:
-                            premier_jeton_ms = int((time.perf_counter() - depart) * 1000)
+                            premier_jeton_ms = int(
+                                (time.perf_counter() - depart) * 1000
+                            )
                         yield Fragment(type=TypeFragment.TEXTE, texte=contenu)
 
                     for morceau in delta.get("tool_calls") or []:
@@ -170,12 +176,18 @@ class ClientDistant(LLMProvider):
                         courant["nom"] += fonction.get("name") or ""
                         courant["arguments"] += fonction.get("arguments") or ""
                         if premier_jeton_ms is None:
-                            premier_jeton_ms = int((time.perf_counter() - depart) * 1000)
+                            premier_jeton_ms = int(
+                                (time.perf_counter() - depart) * 1000
+                            )
 
         except httpx.TimeoutException as souci:
-            raise DelaiDepasse(f"Fournisseur distant : délai dépassé ({souci}).") from souci
+            raise DelaiDepasse(
+                f"Fournisseur distant : délai dépassé ({souci})."
+            ) from souci
         except httpx.HTTPError as souci:
-            raise ErreurFournisseur(f"Fournisseur distant injoignable : {souci}") from souci
+            raise ErreurFournisseur(
+                f"Fournisseur distant injoignable : {souci}"
+            ) from souci
 
         if appels := _assembler(partiels):
             yield Fragment(type=TypeFragment.OUTILS, appels=appels)
@@ -192,7 +204,9 @@ class ClientDistant(LLMProvider):
             ),
         )
 
-    async def vectoriser(self, textes: Sequence[str], *, modele: str) -> list[list[float]]:
+    async def vectoriser(
+        self, textes: Sequence[str], *, modele: str
+    ) -> list[list[float]]:
         if not textes:
             return []
         try:
@@ -201,12 +215,17 @@ class ClientDistant(LLMProvider):
             )
             reponse.raise_for_status()
         except httpx.HTTPError as souci:
-            raise ErreurFournisseur(f"Vectorisation distante impossible : {souci}") from souci
+            raise ErreurFournisseur(
+                f"Vectorisation distante impossible : {souci}"
+            ) from souci
 
         lignes = reponse.json().get("data") or []
         if len(lignes) != len(textes):
             raise ErreurFournisseur("Nombre de vecteurs distant incohérent.")
-        return [ligne["embedding"] for ligne in sorted(lignes, key=lambda x: x.get("index", 0))]
+        return [
+            ligne["embedding"]
+            for ligne in sorted(lignes, key=lambda x: x.get("index", 0))
+        ]
 
 
 def _assembler(partiels: dict[int, dict[str, Any]]) -> tuple[AppelOutil, ...]:
@@ -219,13 +238,17 @@ def _assembler(partiels: dict[int, dict[str, Any]]) -> tuple[AppelOutil, ...]:
         try:
             arguments = json.loads(morceau["arguments"] or "{}")
         except json.JSONDecodeError:
-            logger.warning("Arguments distants illisibles", extra={"outil": morceau["nom"]})
+            logger.warning(
+                "Arguments distants illisibles", extra={"outil": morceau["nom"]}
+            )
             continue
         if not isinstance(arguments, dict):
             continue
         identifiant = morceau.get("id")
         appels.append(
-            AppelOutil(nom=morceau["nom"], arguments=arguments, identifiant=str(identifiant))
+            AppelOutil(
+                nom=morceau["nom"], arguments=arguments, identifiant=str(identifiant)
+            )
             if identifiant
             else AppelOutil(nom=morceau["nom"], arguments=arguments)
         )

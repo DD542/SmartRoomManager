@@ -68,7 +68,9 @@ def _emettre(
     # que l'écran des sessions sache laquelle est la sienne sans que le cookie
     # de rafraîchissement ait à sortir de son chemin.
     famille = family_id or uuid.uuid4()
-    acces, duree = create_access_token(subject=compte.id, scope=scope, family_id=famille)
+    acces, duree = create_access_token(
+        subject=compte.id, scope=scope, family_id=famille
+    )
     clair, empreinte = new_opaque_token()
 
     session.add(
@@ -85,7 +87,9 @@ def _emettre(
     return acces, clair, duree
 
 
-def login(session: Session, *, email: str, password: str, admin: bool = False) -> Session_:
+def login(
+    session: Session, *, email: str, password: str, admin: bool = False
+) -> Session_:
     """Ouvre une session sur l'espace demandé.
 
     Un administrateur qui se connecte sur l'espace public obtient un jeton de
@@ -95,13 +99,15 @@ def login(session: Session, *, email: str, password: str, admin: bool = False) -
     compte = _charger(session, email)
 
     if compte is None or not verify_password(password, compte.password_hash):
-        audit_service.record_login(session, label=email, scope="admin" if admin else "user",
-                                   success=False)
+        audit_service.record_login(
+            session, label=email, scope="admin" if admin else "user", success=False
+        )
         raise AuthenticationError(REFUS, code="identifiants_invalides")
 
     if compte.status is UserStatus.SUSPENDU:
-        audit_service.record_login(session, label=email, scope="admin" if admin else "user",
-                                   success=False)
+        audit_service.record_login(
+            session, label=email, scope="admin" if admin else "user", success=False
+        )
         raise PermissionError_(
             "Compte suspendu. Contactez l'administration.", code="compte_suspendu"
         )
@@ -120,7 +126,10 @@ def login(session: Session, *, email: str, password: str, admin: bool = False) -
 
     acces, rafraichissement, duree = _emettre(session, compte, scope)
     audit_service.record_login(
-        session, label=f"{compte.first_name} {compte.last_name}", scope=scope, success=True
+        session,
+        label=f"{compte.first_name} {compte.last_name}",
+        scope=scope,
+        success=True,
     )
     session.flush()
 
@@ -175,7 +184,9 @@ def login_google(session: Session, *, jeton: str) -> tuple[Session_, bool]:
         compte.avatar_url = identite.photo
 
     if compte.status is UserStatus.SUSPENDU:
-        audit_service.record_login(session, label=identite.email, scope="user", success=False)
+        audit_service.record_login(
+            session, label=identite.email, scope="user", success=False
+        )
         raise PermissionError_(
             "Compte suspendu. Contactez l'administration.", code="compte_suspendu"
         )
@@ -368,10 +379,14 @@ def reset_password(session: Session, *, token: str, password: str) -> User:
     return ligne.user
 
 
-def change_password(session: Session, compte: User, *, current: str, next_: str) -> User:
+def change_password(
+    session: Session, compte: User, *, current: str, next_: str
+) -> User:
     """Change le mot de passe d'une session ouverte, ancien mot de passe à l'appui."""
     if not verify_password(current, compte.password_hash):
-        raise AuthenticationError("Mot de passe actuel incorrect.", code="mot_de_passe_invalide")
+        raise AuthenticationError(
+            "Mot de passe actuel incorrect.", code="mot_de_passe_invalide"
+        )
 
     compte.password_hash = hash_password(next_)
     revoke_all(session, compte.id)

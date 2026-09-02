@@ -51,7 +51,9 @@ def _normaliser(valeur: str) -> str:
 
         base = unidecode(valeur)
     except ImportError:  # pragma: no cover - dépend de l'installation
-        table = str.maketrans("àâäéèêëîïôöùûüçÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ", "aaaeeeeiioouuucAAAEEEEIIOOUUUC")
+        table = str.maketrans(
+            "àâäéèêëîïôöùûüçÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ", "aaaeeeeiioouuucAAAEEEEIIOOUUUC"
+        )
         base = valeur.translate(table)
     return " ".join(base.lower().replace("-", " ").split())
 
@@ -69,7 +71,11 @@ def resoudre_batiment(session: Session, texte: str | None) -> uuid.UUID | None:
     cible = _normaliser(texte)
     batiments = session.scalars(select(Building).order_by(Building.sort_order)).all()
 
-    exacts = [b for b in batiments if _normaliser(b.code) == cible or _normaliser(b.name) == cible]
+    exacts = [
+        b
+        for b in batiments
+        if _normaliser(b.code) == cible or _normaliser(b.name) == cible
+    ]
     if len(exacts) == 1:
         return exacts[0].id
 
@@ -88,10 +94,14 @@ def resoudre_salle(session: Session, *, salle_id=None, nom: str | None = None) -
     Lève `Ambiguite` quand le nom ne tranche pas : la liste des candidates part
     alors au modèle, qui la présente à l'utilisateur.
     """
-    requete = select(Room).options(
-        selectinload(Room.floor).selectinload(Floor.building),
-        selectinload(Room.room_equipments),
-    ).where(Room.deleted_at.is_(None))
+    requete = (
+        select(Room)
+        .options(
+            selectinload(Room.floor).selectinload(Floor.building),
+            selectinload(Room.room_equipments),
+        )
+        .where(Room.deleted_at.is_(None))
+    )
 
     if salle_id is not None:
         salle = session.scalars(requete.where(Room.id == salle_id)).one_or_none()
@@ -117,13 +127,19 @@ def resoudre_salle(session: Session, *, salle_id=None, nom: str | None = None) -
 
     # Dernier recours : le mot le plus distinctif de la demande. « la salle
     # Curie » et « Curie » doivent aboutir au même endroit.
-    mots = [mot for mot in cible.split() if mot not in {"salle", "labo", "atelier", "amphi", "la", "le"}]
+    mots = [
+        mot
+        for mot in cible.split()
+        if mot not in {"salle", "labo", "atelier", "amphi", "la", "le"}
+    ]
     for mot in mots:
         candidates = [s for s in salles if mot in _normaliser(s.name)]
         if len(candidates) == 1:
             return candidates[0]
         if candidates:
-            raise Ambiguite(quoi="salles", candidats=tuple(s.name for s in candidates[:6]))
+            raise Ambiguite(
+                quoi="salles", candidats=tuple(s.name for s in candidates[:6])
+            )
 
     raise Ambiguite(quoi="salles", candidats=())
 
@@ -151,7 +167,9 @@ def codes_equipements(session: Session, identifiants) -> tuple[str, ...]:
     if not identifiants:
         return ()
     lignes = session.execute(
-        select(Equipment.code).where(Equipment.id.in_(list(identifiants))).order_by(Equipment.code)
+        select(Equipment.code)
+        .where(Equipment.id.in_(list(identifiants)))
+        .order_by(Equipment.code)
     ).all()
     return tuple(ligne.code for ligne in lignes)
 
@@ -171,7 +189,9 @@ def resume_salle(session: Session, salle: Room) -> dict:
         "surface_m2": float(salle.area_m2) if salle.area_m2 is not None else None,
         "accessible_pmr": salle.is_accessible,
         "badge_requis": salle.badge_required,
-        "statut": salle.status.value if hasattr(salle.status, "value") else str(salle.status),
+        "statut": salle.status.value
+        if hasattr(salle.status, "value")
+        else str(salle.status),
         "etage": etage.label if etage else None,
         "batiment": batiment.name if batiment else None,
         "adresse": batiment.address if batiment else None,

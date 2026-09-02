@@ -18,10 +18,9 @@ from __future__ import annotations
 from datetime import UTC, date, datetime, time, timedelta
 
 import pytest
-from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import Range
 
-from app.core.errors import RuleViolationError, SlotConflictError
+from app.core.errors import SlotConflictError
 from app.db.enums import ClosureKind, RuleScope
 from app.domain.types import TimeSlot
 from app.models import Booking, BookingRule, ClosurePeriod, ClosureRoom, OpeningHour
@@ -125,16 +124,21 @@ class TestMinuit:
         _ouvrir_en_continu(session, salle)
         veille = prochain(1) - timedelta(days=1)
         slot = TimeSlot(
-            start=local(23, 0, jour=veille), end=local(1, 0, jour=veille + timedelta(days=1))
+            start=local(23, 0, jour=veille),
+            end=local(1, 0, jour=veille + timedelta(days=1)),
         )
 
         reservation = _poser(session, salle, compte, slot)
         session.expire(reservation)
 
         relu = session.get(Booking, reservation.id)
-        assert _ecart_reel(relu.time_range.lower, relu.time_range.upper) == timedelta(hours=2)
+        assert _ecart_reel(relu.time_range.lower, relu.time_range.upper) == timedelta(
+            hours=2
+        )
         assert relu.time_range.lower.astimezone(PARIS).date() == veille
-        assert relu.time_range.upper.astimezone(PARIS).date() == veille + timedelta(days=1)
+        assert relu.time_range.upper.astimezone(PARIS).date() == veille + timedelta(
+            days=1
+        )
 
     def test_un_chevauchement_de_part_et_d_autre_de_minuit_est_refuse(
         self, session, salle, compte
@@ -167,9 +171,7 @@ class TestMinuit:
     def test_un_creneau_adjacent_a_minuit_est_accepte(self, session, salle, compte):
         """23:00–00:00 puis 00:00–01:00 : la borne haute est exclue."""
         _ouvrir_en_continu(session, salle)
-        session.add(
-            BookingRule(scope=RuleScope.SALLE, room_id=salle.id, buffer_min=0)
-        )
+        session.add(BookingRule(scope=RuleScope.SALLE, room_id=salle.id, buffer_min=0))
         session.flush()
 
         veille = prochain(1) - timedelta(days=1)
@@ -185,7 +187,9 @@ class TestMinuit:
             session,
             salle,
             compte,
-            TimeSlot(start=local(0, 0, jour=lendemain), end=local(1, 0, jour=lendemain)),
+            TimeSlot(
+                start=local(0, 0, jour=lendemain), end=local(1, 0, jour=lendemain)
+            ),
             titre="Juste après minuit",
         )
         assert suivante.id is not None
@@ -242,12 +246,19 @@ class TestChangementDHeure:
         assert slot.end - slot.start == timedelta(hours=2)
 
         reservation = _poser(
-            session, salle, compte, slot, "Nuit de printemps", maintenant=_veille_de(slot)
+            session,
+            salle,
+            compte,
+            slot,
+            "Nuit de printemps",
+            maintenant=_veille_de(slot),
         )
         session.expire(reservation)
 
         relu = session.get(Booking, reservation.id)
-        assert _ecart_reel(relu.time_range.lower, relu.time_range.upper) == timedelta(hours=2)
+        assert _ecart_reel(relu.time_range.lower, relu.time_range.upper) == timedelta(
+            hours=2
+        )
         assert relu.time_range.lower.astimezone(PARIS).hour == 1
         assert relu.time_range.upper.astimezone(PARIS).hour == 4
 
@@ -267,7 +278,9 @@ class TestChangementDHeure:
         session.expire(reservation)
 
         relu = session.get(Booking, reservation.id)
-        assert _ecart_reel(relu.time_range.lower, relu.time_range.upper) == timedelta(hours=4)
+        assert _ecart_reel(relu.time_range.lower, relu.time_range.upper) == timedelta(
+            hours=4
+        )
         assert relu.time_range.lower.astimezone(PARIS).hour == 1
         assert relu.time_range.upper.astimezone(PARIS).hour == 4
 
@@ -282,7 +295,8 @@ class TestChangementDHeure:
             salle,
             compte,
             TimeSlot(
-                start=local(1, 0, jour=PASSAGE_HIVER), end=local(4, 0, jour=PASSAGE_HIVER)
+                start=local(1, 0, jour=PASSAGE_HIVER),
+                end=local(4, 0, jour=PASSAGE_HIVER),
             ),
         )
 
@@ -367,9 +381,7 @@ class TestFermetureExceptionnelle:
             session.add(fermeture)
             session.flush()
             if ciblee:
-                session.add(
-                    ClosureRoom(closure_id=fermeture.id, room_id=salle.id)
-                )
+                session.add(ClosureRoom(closure_id=fermeture.id, room_id=salle.id))
                 session.flush()
             return fermeture
 
@@ -399,9 +411,15 @@ class TestFermetureExceptionnelle:
     ):
         """Une fermeture d'un jour qui déborderait sur le suivant se verrait ici."""
         fermer(jour_ouvre)
-        assert dispo.free_slots(
-            session, salle.id, jour_ouvre + timedelta(days=1), jour_ouvre + timedelta(days=1)
-        ) != ()
+        assert (
+            dispo.free_slots(
+                session,
+                salle.id,
+                jour_ouvre + timedelta(days=1),
+                jour_ouvre + timedelta(days=1),
+            )
+            != ()
+        )
 
     def test_une_fermeture_ciblant_une_autre_salle_ne_touche_pas_celle_ci(
         self, session, salle, creer_salle, jour_ouvre
@@ -435,9 +453,7 @@ class TestBattementContreAdjacence:
     def avec_battement(self, session, salle):
         def _poser_battement(minutes: int) -> None:
             session.add(
-                BookingRule(
-                    scope=RuleScope.SALLE, room_id=salle.id, buffer_min=minutes
-                )
+                BookingRule(scope=RuleScope.SALLE, room_id=salle.id, buffer_min=minutes)
             )
             session.flush()
 
@@ -512,6 +528,12 @@ class TestBattementContreAdjacence:
         # Aucun des cinq types de chevauchement : le refus vient du battement,
         # pas d'un recouvrement. C'est ce qui permet à l'écran de proposer un
         # simple décalage plutôt qu'un changement de salle.
-        recouvrements = {"identique", "englobant", "englobe", "partiel_debut", "partiel_fin"}
+        recouvrements = {
+            "identique",
+            "englobant",
+            "englobe",
+            "partiel_debut",
+            "partiel_fin",
+        }
         assert rapport.conflicts, "le battement doit produire un conflit signalé"
         assert not any(item.kind.value in recouvrements for item in rapport.conflicts)

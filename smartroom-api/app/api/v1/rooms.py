@@ -30,7 +30,12 @@ from app.api.v1.schemas import (
     UploadIn,
     VisuelIn,
 )
-from app.api.v1.serializers import batiment_sortie, equipement_sortie, etage_sortie, salle_sortie
+from app.api.v1.serializers import (
+    batiment_sortie,
+    equipement_sortie,
+    etage_sortie,
+    salle_sortie,
+)
 from app.core.pagination import Page
 from app.db.enums import RoomStatus
 from app.services import parc_service as service
@@ -130,9 +135,7 @@ def get_room(room_id: uuid.UUID, session: SessionDep, _: CurrentPrincipal) -> Ro
     description="L'identifiant lisible est dérivé du nom s'il n'est pas fourni.",
     responses={409: {"description": "Nom ou identifiant déjà pris."}},
 )
-def create_room(
-    payload: RoomIn, session: SessionDep, _admin=Ecriture
-) -> RoomOut:
+def create_room(payload: RoomIn, session: SessionDep, _admin=Ecriture) -> RoomOut:
     salle = service.create_room(session, payload)
     session.commit()
     return salle_sortie(salle)
@@ -179,7 +182,9 @@ def archive_room(room_id: uuid.UUID, session: SessionDep, _admin=Ecriture) -> No
         "pas les autres, et la réponse dit laquelle a échoué et pourquoi."
     ),
 )
-def bulk_rooms(payload: RoomBulkIn, session: SessionDep, _admin=Ecriture) -> RoomBulkOut:
+def bulk_rooms(
+    payload: RoomBulkIn, session: SessionDep, _admin=Ecriture
+) -> RoomBulkOut:
     reussies, echouees = service.bulk_update_rooms(session, payload)
     session.commit()
     return RoomBulkOut(succeeded=reussies, failed=echouees)
@@ -193,7 +198,10 @@ def bulk_rooms(payload: RoomBulkIn, session: SessionDep, _admin=Ecriture) -> Roo
 def list_photos(
     room_id: uuid.UUID, session: SessionDep, _: CurrentPrincipal
 ) -> list[RoomPhotoOut]:
-    return [RoomPhotoOut.model_validate(item) for item in service.list_photos(session, room_id)]
+    return [
+        RoomPhotoOut.model_validate(item)
+        for item in service.list_photos(session, room_id)
+    ]
 
 
 @router.put(
@@ -224,7 +232,9 @@ def upload_location_plan(
     response_model=RoomOut,
     summary="Retirer le plan de localisation d'une salle",
 )
-def delete_location_plan(room_id: uuid.UUID, session: SessionDep, _admin=Ecriture) -> RoomOut:
+def delete_location_plan(
+    room_id: uuid.UUID, session: SessionDep, _admin=Ecriture
+) -> RoomOut:
     salle = service.delete_room_location_plan(session, room_id)
     session.commit()
     return salle_sortie(salle)
@@ -241,7 +251,9 @@ def delete_location_plan(room_id: uuid.UUID, session: SessionDep, _admin=Ecritur
         "recherche, et laisser le client choisir un rang libre l'obligerait à "
         "connaître un état qu'il vient de lire."
     ),
-    responses={422: {"description": "Format refusé, fichier trop lourd, ou salle pleine."}},
+    responses={
+        422: {"description": "Format refusé, fichier trop lourd, ou salle pleine."}
+    },
 )
 def add_photo(
     room_id: uuid.UUID, payload: UploadIn, session: SessionDep, _admin=Ecriture

@@ -142,7 +142,8 @@ async def indexer_article(
             # vectorisé plus tard par `rattraper`.
             sans_vecteurs = True
             logger.info(
-                "Fragments écrits sans vecteur", extra={"article": article.slug, "n": len(cibles)}
+                "Fragments écrits sans vecteur",
+                extra={"article": article.slug, "n": len(cibles)},
             )
         else:
             maintenant = datetime.now(UTC)
@@ -168,7 +169,9 @@ async def desindexer_article(session: Session, article_id: uuid.UUID) -> Rapport
     retires = session.scalar(
         select(FaqFragment.id).where(FaqFragment.article_id == article_id).limit(1)
     )
-    resultat = session.execute(delete(FaqFragment).where(FaqFragment.article_id == article_id))
+    resultat = session.execute(
+        delete(FaqFragment).where(FaqFragment.article_id == article_id)
+    )
     return Rapport(articles=1, fragments_retires=resultat.rowcount if retires else 0)
 
 
@@ -179,11 +182,15 @@ async def reindexer_tout(
     vectoriseur = vectoriseur or vectoriseur_partage()
     rapport = Rapport()
     for article in session.scalars(select(FaqArticle).order_by(FaqArticle.slug)):
-        rapport = rapport.fusion(await indexer_article(session, article, vectoriseur=vectoriseur))
+        rapport = rapport.fusion(
+            await indexer_article(session, article, vectoriseur=vectoriseur)
+        )
     return rapport
 
 
-async def rattraper(session: Session, *, vectoriseur: Vectoriseur | None = None, lot: int = 32) -> Rapport:
+async def rattraper(
+    session: Session, *, vectoriseur: Vectoriseur | None = None, lot: int = 32
+) -> Rapport:
     """Vectorise les fragments écrits pendant une absence du modèle.
 
     Sans cette passe, un article publié alors qu'Ollama était éteint resterait
@@ -222,11 +229,15 @@ def etat_index(session: Session) -> dict[str, int | str | None]:
     return {
         "fragments": session.scalar(select(func.count()).select_from(FaqFragment)) or 0,
         "vectorises": session.scalar(
-            select(func.count()).select_from(FaqFragment).where(FaqFragment.vecteur.is_not(None))
+            select(func.count())
+            .select_from(FaqFragment)
+            .where(FaqFragment.vecteur.is_not(None))
         )
         or 0,
         "articles_indexes": session.scalar(
-            select(func.count(func.distinct(FaqFragment.article_id))).select_from(FaqFragment)
+            select(func.count(func.distinct(FaqFragment.article_id))).select_from(
+                FaqFragment
+            )
         )
         or 0,
         "modele": session.scalar(

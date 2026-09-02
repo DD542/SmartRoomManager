@@ -42,7 +42,6 @@ class TestRegle:
 
 @pytest.fixture
 def champs():
-    from datetime import UTC, datetime
     import uuid
 
     return dict(
@@ -89,7 +88,9 @@ class TestLesDeuxSchemas:
 
 
 class TestRoute:
-    def test_l_annuaire_rend_le_drapeau(self, client, session, administrateur, creer_compte):
+    def test_l_annuaire_rend_le_drapeau(
+        self, client, session, administrateur, creer_compte
+    ):
         from app.api.deps import USERS_MANAGE
         from tests.services.conftest import accorder, connecter
 
@@ -103,7 +104,9 @@ class TestRoute:
         # L'annuaire de l'administration, celui que lit l'écran des
         # utilisateurs. Il rend `UserDetailOut`, qui hérite de `UserOut` :
         # la règle posée sur le parent le suit.
-        reponse = client.get("/api/v1/admin/users", headers=entetes, params={"size": 100})
+        reponse = client.get(
+            "/api/v1/admin/users", headers=entetes, params={"size": 100}
+        )
         assert reponse.status_code == 200, reponse.text
 
         lignes = {item["email"]: item for item in reponse.json()["items"]}

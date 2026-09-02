@@ -20,7 +20,12 @@ from datetime import timedelta
 import pytest
 from sqlalchemy import select
 
-from app.models import BookingAccessCode, EmailTemplate, EmailTemplateVariable, Notification
+from app.models import (
+    BookingAccessCode,
+    EmailTemplate,
+    EmailTemplateVariable,
+    Notification,
+)
 from app.services import booking_service, mail_service
 from app.tasks import scheduler
 from tests.services.conftest import charge, connecter, creneau
@@ -64,7 +69,9 @@ def gabarits(session) -> None:
             select(EmailTemplateVariable).where(EmailTemplateVariable.code == code)
         ).one_or_none()
         if connu is None:
-            session.add(EmailTemplateVariable(code=code, label=code, sample_value=exemple))
+            session.add(
+                EmailTemplateVariable(code=code, label=code, sample_value=exemple)
+            )
 
     for code, (objet, corps) in GABARITS.items():
         session.add(
@@ -319,11 +326,15 @@ class TestRappel:
         assert "14:00 - 15:30" not in message.body
         # Le clair n'existe plus : l'indice est tout ce que le système sait
         # encore dire, et c'est ce qu'affiche déjà l'écran de la réservation.
-        indice = session.scalars(
-            select(BookingAccessCode).where(
-                BookingAccessCode.booking_id == reservation.id
+        indice = (
+            session.scalars(
+                select(BookingAccessCode).where(
+                    BookingAccessCode.booking_id == reservation.id
+                )
             )
-        ).one().code_hint
+            .one()
+            .code_hint
+        )
         assert indice in message.body
         assert code.clear not in message.body
 
@@ -409,7 +420,9 @@ class TestTransport:
         monkeypatch.setattr(mail_service._config(), "smtp_use_tls", True)
         monkeypatch.setattr(mail_service._config(), "smtp_port", 465)
 
-        await mail_service.send(mail_service.Message(to="a@ece.fr", subject="s", body="b"))
+        await mail_service.send(
+            mail_service.Message(to="a@ece.fr", subject="s", body="b")
+        )
 
         assert recus["use_tls"] is True
         assert recus["start_tls"] is False
@@ -428,7 +441,9 @@ class TestTransport:
         monkeypatch.setattr(mail_service._config(), "smtp_use_tls", True)
         monkeypatch.setattr(mail_service._config(), "smtp_port", 587)
 
-        await mail_service.send(mail_service.Message(to="a@ece.fr", subject="s", body="b"))
+        await mail_service.send(
+            mail_service.Message(to="a@ece.fr", subject="s", body="b")
+        )
 
         assert recus["start_tls"] is True
         assert recus["use_tls"] is False
@@ -444,7 +459,9 @@ class TestTransport:
         monkeypatch.setattr(mail_service.aiosmtplib, "send", _refuser)
         monkeypatch.setattr(mail_service._config(), "mail_enabled", True)
 
-        await mail_service.send(mail_service.Message(to="a@ece.fr", subject="s", body="b"))
+        await mail_service.send(
+            mail_service.Message(to="a@ece.fr", subject="s", body="b")
+        )
 
     def test_la_file_se_vide_en_une_fois(self):
         """`flush` lisait puis vidait : un dépôt entre les deux se perdait."""

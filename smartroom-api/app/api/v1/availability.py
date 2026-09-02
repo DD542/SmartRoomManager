@@ -65,7 +65,8 @@ def free_slots(
         raise RuleViolationError("Le dernier jour précède le premier.", code="periode")
     if (fin - first_day).days + 1 > PERIODE_MAX_JOURS:
         raise RuleViolationError(
-            f"Période trop longue : {PERIODE_MAX_JOURS} jours au maximum.", code="periode"
+            f"Période trop longue : {PERIODE_MAX_JOURS} jours au maximum.",
+            code="periode",
         )
 
     trous = service.free_slots(session, room_id, first_day, fin)
@@ -175,10 +176,16 @@ def calendar(
     building_id: uuid.UUID | None = None,
 ) -> CalendarOut:
     if to_date <= from_date:
-        raise RuleViolationError("La fin de la plage précède son début.", code="periode")
+        raise RuleViolationError(
+            "La fin de la plage précède son début.", code="periode"
+        )
 
-    une_seule_salle = building_id is None and room_ids is not None and len(room_ids) == 1
-    plafond = CALENDRIER_MAX_JOURS_SALLE if une_seule_salle else CALENDRIER_MAX_JOURS_PARC
+    une_seule_salle = (
+        building_id is None and room_ids is not None and len(room_ids) == 1
+    )
+    plafond = (
+        CALENDRIER_MAX_JOURS_SALLE if une_seule_salle else CALENDRIER_MAX_JOURS_PARC
+    )
     if (to_date - from_date).days > plafond:
         raise RuleViolationError(
             f"Plage trop large : {plafond} jours au maximum"

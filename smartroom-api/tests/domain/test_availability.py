@@ -70,8 +70,12 @@ class TestSubtract:
         ("occupes", "attendu"),
         [
             pytest.param([], (slot(8, 0, 18),), id="rien_d_occupe"),
-            pytest.param([slot(6, 0, 7)], (slot(8, 0, 18),), id="occupe_avant_la_fenetre"),
-            pytest.param([slot(19, 0, 20)], (slot(8, 0, 18),), id="occupe_apres_la_fenetre"),
+            pytest.param(
+                [slot(6, 0, 7)], (slot(8, 0, 18),), id="occupe_avant_la_fenetre"
+            ),
+            pytest.param(
+                [slot(19, 0, 20)], (slot(8, 0, 18),), id="occupe_apres_la_fenetre"
+            ),
             pytest.param([slot(8, 0, 18)], (), id="occupe_toute_la_fenetre"),
             pytest.param([slot(7, 0, 19)], (), id="occupe_deborde_des_deux_cotes"),
             pytest.param(
@@ -140,11 +144,14 @@ class TestFreeSlots:
         ) == (slot(8, 0, 9, 45), slot(11, 15, 18))
 
     def test_trou_trop_court_ecarte(self):
-        assert free_slots(
-            [slot(8, 0, 18)],
-            [slot(8, 0, 17, 45)],
-            min_duration=timedelta(minutes=30),
-        ) == ()
+        assert (
+            free_slots(
+                [slot(8, 0, 18)],
+                [slot(8, 0, 17, 45)],
+                min_duration=timedelta(minutes=30),
+            )
+            == ()
+        )
 
     def test_trou_exactement_a_la_duree_minimale_conserve(self):
         assert free_slots(
@@ -155,7 +162,9 @@ class TestFreeSlots:
 
     def test_battement_negatif_refuse(self):
         with pytest.raises(ValueError, match="négatif"):
-            free_slots([slot(8, 0, 18)], [], min_duration=timedelta(0), buffer=timedelta(-1))
+            free_slots(
+                [slot(8, 0, 18)], [], min_duration=timedelta(0), buffer=timedelta(-1)
+            )
 
 
 class TestIsFree:
@@ -167,9 +176,7 @@ class TestIsFree:
         ],
     )
     def test_adjacence(self, battement, attendu):
-        assert (
-            is_free(slot(11, 0, 12), [slot(9, 0, 11)], buffer=battement) is attendu
-        )
+        assert is_free(slot(11, 0, 12), [slot(9, 0, 11)], buffer=battement) is attendu
 
     def test_battement_negatif_refuse(self):
         with pytest.raises(ValueError, match="négatif"):
@@ -199,7 +206,9 @@ class TestIsWithin:
             TimeSlot(local(22), minuit),
             TimeSlot(minuit, minuit + timedelta(hours=2)),
         ]
-        a_cheval = TimeSlot(minuit - timedelta(minutes=30), minuit + timedelta(minutes=30))
+        a_cheval = TimeSlot(
+            minuit - timedelta(minutes=30), minuit + timedelta(minutes=30)
+        )
         assert is_within(a_cheval, fenetres) is True
 
 
@@ -272,7 +281,8 @@ class TestOpenWindows:
 
     def test_fermeture_supprime_la_journee(self, fermeture_du_jour):
         assert (
-            open_windows(JOUR, JOUR, toute_la_semaine(), [fermeture_du_jour], PARIS) == ()
+            open_windows(JOUR, JOUR, toute_la_semaine(), [fermeture_du_jour], PARIS)
+            == ()
         )
 
     def test_fermeture_partielle_d_une_periode(self):
@@ -292,7 +302,9 @@ class TestOpenWindows:
 
     def test_la_fermeture_coupe_le_debordement_de_la_veille(self):
         horaires = toute_la_semaine(opens=time(22, 0), closes=time(2, 0))
-        fenetres = open_windows(JOUR, JOUR, horaires, [Closure("Fermé", JOUR, JOUR)], PARIS)
+        fenetres = open_windows(
+            JOUR, JOUR, horaires, [Closure("Fermé", JOUR, JOUR)], PARIS
+        )
         assert fenetres == ()
 
     def test_aucun_horaire_defini(self):

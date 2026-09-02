@@ -15,7 +15,6 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 import pytest
-from sqlalchemy import select
 
 from app.api.deps import (
     DATA_EXPORT,
@@ -116,7 +115,9 @@ class TestAgregats:
         assert vise["bookings"] >= 1
 
     def test_les_heures_de_pointe_couvrent_la_semaine(self, client, exportateur):
-        points = client.get("/api/v1/admin/stats/peak-hours", headers=exportateur).json()
+        points = client.get(
+            "/api/v1/admin/stats/peak-hours", headers=exportateur
+        ).json()
         assert all(0 <= item["weekday"] <= 6 for item in points)
         assert all(0 <= item["hour"] <= 23 for item in points)
 
@@ -147,7 +148,9 @@ class TestExports:
         assert reponse.status_code == 200
         assert len(reponse.text.strip().split("\n")) <= 101
 
-    def test_mes_reservations_s_exportent(self, client, session, compte, salle, jour_ouvre):
+    def test_mes_reservations_s_exportent(
+        self, client, session, compte, salle, jour_ouvre
+    ):
         poser(session, salle, compte, creneau(jour_ouvre, 10, 0, 60))
         entetes = connecter(client, compte.email)
 
@@ -384,7 +387,9 @@ class TestBaseDeConnaissances:
         )
 
         publics = client.get(
-            "/api/v1/faq/articles", headers=connecter(client, compte.email), params={"size": 100}
+            "/api/v1/faq/articles",
+            headers=connecter(client, compte.email),
+            params={"size": 100},
         ).json()
         administres = client.get(
             "/api/v1/admin/faq/articles", headers=support, params={"size": 100}
@@ -397,7 +402,9 @@ class TestBaseDeConnaissances:
 
     def test_les_intentions_du_chatbot_sont_exposees_au_support(self, client, support):
         intentions = client.get("/api/v1/admin/chatbot/intents", headers=support).json()
-        assert all({"code", "label", "answer", "keywords"} <= set(item) for item in intentions)
+        assert all(
+            {"code", "label", "answer", "keywords"} <= set(item) for item in intentions
+        )
 
 
 class TestReferentielsDeRegles:
@@ -499,7 +506,10 @@ class TestReferentielsDeRegles:
         dans = client.get(
             "/api/v1/closures",
             headers=configurateur,
-            params={"first_day": jour_ouvre.isoformat(), "last_day": jour_ouvre.isoformat()},
+            params={
+                "first_day": jour_ouvre.isoformat(),
+                "last_day": jour_ouvre.isoformat(),
+            },
         ).json()
         hors = client.get(
             "/api/v1/closures",
@@ -518,8 +528,14 @@ class TestNotifications:
     def test_tout_marquer_comme_lu_vide_la_pastille(self, client, compte):
         entetes = connecter(client, compte.email)
 
-        assert client.post("/api/v1/notifications/read-all", headers=entetes).status_code == 204
-        assert client.get("/api/v1/notifications/unread-count", headers=entetes).json() == 0
+        assert (
+            client.post("/api/v1/notifications/read-all", headers=entetes).status_code
+            == 204
+        )
+        assert (
+            client.get("/api/v1/notifications/unread-count", headers=entetes).json()
+            == 0
+        )
 
     def test_marquer_lue_une_notification_d_autrui_repond_404(
         self, client, compte, creer_compte

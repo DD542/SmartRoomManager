@@ -54,9 +54,15 @@ class Anonymiseur:
         return jeton
 
     def masquer(self, texte: str) -> str:
-        propre = _COURRIEL.sub(lambda trouve: self._jeton(trouve.group(0), "COURRIEL"), texte)
-        propre = _TELEPHONE.sub(lambda trouve: self._jeton(trouve.group(0), "TELEPHONE"), propre)
-        return _PERSONNE.sub(lambda trouve: self._jeton(trouve.group(0), "PERSONNE"), propre)
+        propre = _COURRIEL.sub(
+            lambda trouve: self._jeton(trouve.group(0), "COURRIEL"), texte
+        )
+        propre = _TELEPHONE.sub(
+            lambda trouve: self._jeton(trouve.group(0), "TELEPHONE"), propre
+        )
+        return _PERSONNE.sub(
+            lambda trouve: self._jeton(trouve.group(0), "PERSONNE"), propre
+        )
 
     def restituer(self, texte: str) -> str:
         for jeton, clair in self._vers_clair.items():

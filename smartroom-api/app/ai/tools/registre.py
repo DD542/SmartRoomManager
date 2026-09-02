@@ -126,7 +126,14 @@ def verifier_coherence() -> Sequence[str]:
     anomalies: list[str] = []
     vus: set[str] = set()
 
-    interdits = {"utilisateur_id", "user_id", "owner_id", "email", "proprietaire", "principal"}
+    interdits = {
+        "utilisateur_id",
+        "user_id",
+        "owner_id",
+        "email",
+        "proprietaire",
+        "principal",
+    }
 
     for outil in OUTILS:
         nom = outil.SCHEMA.get("name", "")
@@ -139,10 +146,14 @@ def verifier_coherence() -> Sequence[str]:
         proprietes = outil.SCHEMA.get("parameters", {}).get("properties", {})
         for champ in proprietes:
             if champ in interdits:
-                anomalies.append(f"{nom} : le champ « {champ} » ne doit pas être exposé au modèle.")
+                anomalies.append(
+                    f"{nom} : le champ « {champ} » ne doit pas être exposé au modèle."
+                )
 
         for requis in outil.SCHEMA.get("parameters", {}).get("required", []):
             if requis not in proprietes:
-                anomalies.append(f"{nom} : « {requis} » est requis mais absent des propriétés.")
+                anomalies.append(
+                    f"{nom} : « {requis} » est requis mais absent des propriétés."
+                )
 
     return anomalies

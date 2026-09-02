@@ -16,7 +16,7 @@ from app.domain.types import (
     ScoreComponent,
     TimeSlot,
 )
-from tests.domain.conftest import JOUR, PARIS, booking, local, slot, utc
+from tests.domain.conftest import booking, local, slot, utc
 
 
 class TestConstructionTimeSlot:
@@ -53,7 +53,9 @@ class TestConstructionTimeSlot:
         assert plage.start.tzinfo is UTC
 
     def test_construction_par_duree(self):
-        assert TimeSlot.of(utc(10), timedelta(minutes=90)) == TimeSlot(utc(10), utc(11, 30))
+        assert TimeSlot.of(utc(10), timedelta(minutes=90)) == TimeSlot(
+            utc(10), utc(11, 30)
+        )
 
 
 class TestRelations:
@@ -126,7 +128,10 @@ class TestRelations:
 class TestOpeningWindow:
     @pytest.mark.parametrize("jour", [0, 6], ids=["dimanche", "samedi"])
     def test_jour_valide(self, jour):
-        assert OpeningWindow(weekday=jour, opens_at=time(8), closes_at=time(20)).weekday == jour
+        assert (
+            OpeningWindow(weekday=jour, opens_at=time(8), closes_at=time(20)).weekday
+            == jour
+        )
 
     @pytest.mark.parametrize("jour", [-1, 7], ids=["avant_dimanche", "apres_samedi"])
     def test_jour_hors_bornes(self, jour):
@@ -137,7 +142,9 @@ class TestOpeningWindow:
 class TestClosure:
     def test_periode_inversee_refusee(self):
         with pytest.raises(ValueError, match="précède"):
-            Closure(label="Travaux", first_day=date(2026, 8, 26), last_day=date(2026, 8, 25))
+            Closure(
+                label="Travaux", first_day=date(2026, 8, 26), last_day=date(2026, 8, 25)
+            )
 
     @pytest.mark.parametrize(
         ("jour", "attendu"),
@@ -204,7 +211,9 @@ class TestConflict:
 
 class TestScore:
     def test_ratio(self):
-        assert ScoreComponent("k", "L", points=15, max_points=30, detail="d").ratio == 0.5
+        assert (
+            ScoreComponent("k", "L", points=15, max_points=30, detail="d").ratio == 0.5
+        )
 
     def test_ratio_sans_poids(self):
         """Un critère de poids nul ne vaut pas une division par zéro."""

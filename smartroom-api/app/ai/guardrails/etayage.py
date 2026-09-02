@@ -28,7 +28,10 @@ import re
 from dataclasses import dataclass
 
 #: Nombres, heures, durées, pourcentages.
-_CHIFFRES = re.compile(r"\b\d{1,4}(?:[.,]\d{1,2})?\s*(?:h(?:\d{2})?|%|min|minutes?|heures?|jours?)?\b", re.I)
+_CHIFFRES = re.compile(
+    r"\b\d{1,4}(?:[.,]\d{1,2})?\s*(?:h(?:\d{2})?|%|min|minutes?|heures?|jours?)?\b",
+    re.I,
+)
 
 #: Adresses. Constaté en éprouvant la boucle : interrogé sur la localisation
 #: d'une salle, le modèle a rendu l'adresse du plan enveloppée dans une image
@@ -123,7 +126,9 @@ def verifier(reponse: str, preuves: str, *, outils_appeles: int = 0) -> Verdict:
         return Verdict(etaye=True)
 
     if not fond.strip() and outils_appeles == 0:
-        return Verdict(etaye=False, sans_preuve=True, orphelins=tuple(dict.fromkeys(faits))[:6])
+        return Verdict(
+            etaye=False, sans_preuve=True, orphelins=tuple(dict.fromkeys(faits))[:6]
+        )
 
     orphelins = []
     for fait in dict.fromkeys(faits):

@@ -161,7 +161,9 @@ class TestRoute:
         session.commit()
         entetes = connecter(client, compte.email)
 
-        reponse = client.post(f"/api/v1/bookings/{reservation.id}/late", headers=entetes)
+        reponse = client.post(
+            f"/api/v1/bookings/{reservation.id}/late", headers=entetes
+        )
 
         assert reponse.status_code == 200, reponse.text
 
@@ -196,7 +198,10 @@ class TestAnnulerApresValidation:
 
         with pytest.raises(RuleViolationError) as refus:
             booking_service.cancel_booking(
-                session, reservation.id, reason="Finalement non", actor_id=reservation.owner_id
+                session,
+                reservation.id,
+                reason="Finalement non",
+                actor_id=reservation.owner_id,
             )
 
         assert refus.value.code == "deja_validee"
@@ -221,7 +226,9 @@ class TestAnnulerApresValidation:
         reservation, _ = en_cours
 
         annulee = booking_service.cancel_booking(
-            session, reservation.id, reason="Changement de programme",
+            session,
+            reservation.id,
+            reason="Changement de programme",
             actor_id=reservation.owner_id,
         )
 

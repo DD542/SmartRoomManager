@@ -33,8 +33,8 @@ from app.api.v1.schemas.support import (
 )
 from app.core.errors import NotFoundError
 from app.core.pagination import Page
-from app.db.enums import ArticleStatus, TicketStatus
-from app.models import AdminAccount, Ticket
+from app.db.enums import TicketStatus
+from app.models import Ticket
 from app.ai.rag import indexation
 from app.services import support_service as service
 
@@ -115,7 +115,9 @@ def create_ticket(
     return _ticket_sortie(service.get_ticket(session, ticket.id), avec_internes=False)
 
 
-@router.get("/tickets/{ticket_id}", response_model=TicketOut, summary="Détail d'un ticket")
+@router.get(
+    "/tickets/{ticket_id}", response_model=TicketOut, summary="Détail d'un ticket"
+)
 def get_ticket(
     ticket_id: uuid.UUID, session: SessionDep, principal: CurrentPrincipal
 ) -> TicketOut:
@@ -205,7 +207,9 @@ def set_status(
 def set_assignee(
     ticket_id: uuid.UUID, payload: TicketAssigneeIn, session: SessionDep, _admin=Support
 ) -> TicketOut:
-    ticket = service.assign_ticket(session, ticket_id, admin_user_id=payload.admin_user_id)
+    ticket = service.assign_ticket(
+        session, ticket_id, admin_user_id=payload.admin_user_id
+    )
     session.commit()
     return _ticket_sortie(ticket, avec_internes=True)
 
@@ -215,9 +219,12 @@ def set_assignee(
     response_model=list[ResponseTemplateOut],
     summary="Réponses types",
 )
-def response_templates(session: SessionDep, _admin=Support) -> list[ResponseTemplateOut]:
+def response_templates(
+    session: SessionDep, _admin=Support
+) -> list[ResponseTemplateOut]:
     return [
-        ResponseTemplateOut.model_validate(item) for item in service.response_templates(session)
+        ResponseTemplateOut.model_validate(item)
+        for item in service.response_templates(session)
     ]
 
 
@@ -263,8 +270,12 @@ def faq_articles(
     category_id: uuid.UUID | None = None,
     q: Annotated[str | None, Query(max_length=120)] = None,
 ) -> Page[FaqArticleOut]:
-    articles, total = service.list_articles(session, params, category_id=category_id, query=q)
-    return Page.build([FaqArticleOut.model_validate(item) for item in articles], total, params)
+    articles, total = service.list_articles(
+        session, params, category_id=category_id, query=q
+    )
+    return Page.build(
+        [FaqArticleOut.model_validate(item) for item in articles], total, params
+    )
 
 
 @router.get(
@@ -294,7 +305,9 @@ def admin_articles(
     articles, total = service.list_articles(
         session, params, category_id=category_id, query=q, include_drafts=True
     )
-    return Page.build([FaqArticleOut.model_validate(item) for item in articles], total, params)
+    return Page.build(
+        [FaqArticleOut.model_validate(item) for item in articles], total, params
+    )
 
 
 @router.post(
@@ -354,7 +367,9 @@ async def set_article_status(
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Supprimer un article",
 )
-async def delete_article(article_id: uuid.UUID, session: SessionDep, _admin=Support) -> None:
+async def delete_article(
+    article_id: uuid.UUID, session: SessionDep, _admin=Support
+) -> None:
     # La contrainte `ON DELETE CASCADE` emporterait les fragments de toute
     # façon ; l'appel explicite garde la trace dans le rapport d'indexation et
     # ne dépend pas d'un détail de schéma.
@@ -415,7 +430,9 @@ async def reindexer_faq(session: SessionDep, _admin=Support) -> dict:
         "inventée ferait plus de dégâts qu'un renvoi vers le support."
     ),
 )
-def chat(payload: ChatMessageIn, session: SessionDep, _: CurrentPrincipal) -> ChatAnswerOut:
+def chat(
+    payload: ChatMessageIn, session: SessionDep, _: CurrentPrincipal
+) -> ChatAnswerOut:
     return ChatAnswerOut(**service.answer(session, payload.message))
 
 

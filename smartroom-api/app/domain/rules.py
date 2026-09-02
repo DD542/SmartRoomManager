@@ -199,9 +199,13 @@ def check_buffer(
             continue
 
         if voisine.slot.end <= slot.start:
-            situation = f"« {voisine.title} » se termine à {format_heure(voisine.slot.end, tz)}"
+            situation = (
+                f"« {voisine.title} » se termine à {format_heure(voisine.slot.end, tz)}"
+            )
         else:
-            situation = f"« {voisine.title} » commence à {format_heure(voisine.slot.start, tz)}"
+            situation = (
+                f"« {voisine.title} » commence à {format_heure(voisine.slot.start, tz)}"
+            )
 
         violations.append(
             RuleViolation(

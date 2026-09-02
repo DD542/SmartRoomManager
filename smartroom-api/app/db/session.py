@@ -19,7 +19,9 @@ engine = create_engine(
     future=True,
 )
 
-SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False, class_=Session)
+SessionLocal = sessionmaker(
+    bind=engine, autoflush=False, expire_on_commit=False, class_=Session
+)
 
 
 def get_session() -> Iterator[Session]:

@@ -52,7 +52,9 @@ def texte(morceau: str) -> Evenement:
     return Evenement(type=TypeEvenement.TEXTE, donnees={"texte": morceau})
 
 
-def outil(nom: str, *, etat: str, libelle: str = "", duree_ms: int | None = None) -> Evenement:
+def outil(
+    nom: str, *, etat: str, libelle: str = "", duree_ms: int | None = None
+) -> Evenement:
     charge: dict[str, Any] = {"outil": nom, "etat": etat}
     if libelle:
         charge["libelle"] = libelle
@@ -62,18 +64,27 @@ def outil(nom: str, *, etat: str, libelle: str = "", duree_ms: int | None = None
 
 
 def carte(sorte: str, donnees: Any) -> Evenement:
-    return Evenement(type=TypeEvenement.CARTE, donnees={"carte": sorte, "donnees": donnees})
+    return Evenement(
+        type=TypeEvenement.CARTE, donnees={"carte": sorte, "donnees": donnees}
+    )
 
 
 def confirmation(*, jeton: str, message: str, apercu: Any, outil_nom: str) -> Evenement:
     return Evenement(
         type=TypeEvenement.CONFIRMATION,
-        donnees={"jeton": jeton, "message": message, "apercu": apercu, "outil": outil_nom},
+        donnees={
+            "jeton": jeton,
+            "message": message,
+            "apercu": apercu,
+            "outil": outil_nom,
+        },
     )
 
 
 def erreur(code: str, message: str) -> Evenement:
-    return Evenement(type=TypeEvenement.ERREUR, donnees={"code": code, "message": message})
+    return Evenement(
+        type=TypeEvenement.ERREUR, donnees={"code": code, "message": message}
+    )
 
 
 #: Libellés d'activité affichés pendant l'exécution d'un outil. Écrits ici et

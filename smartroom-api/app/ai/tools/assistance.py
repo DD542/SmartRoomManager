@@ -249,7 +249,11 @@ class TransfererHumain(Outil):
                         "prendra la suite."
                     ),
                 },
-                "urgence": {"type": "string", "enum": ["normale", "haute"], "default": "normale"},
+                "urgence": {
+                    "type": "string",
+                    "enum": ["normale", "haute"],
+                    "default": "normale",
+                },
             },
             "required": ["resume"],
         },

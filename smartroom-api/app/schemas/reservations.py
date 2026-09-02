@@ -333,7 +333,9 @@ class ClosurePeriodCreate(ApiModel):
         if self.to_date < self.from_date:
             raise ValueError("La date de fin précède la date de début.")
         if self.building_ids and self.room_ids:
-            raise ValueError("Une fermeture cible des bâtiments ou des salles, pas les deux.")
+            raise ValueError(
+                "Une fermeture cible des bâtiments ou des salles, pas les deux."
+            )
         return self
 
     @property

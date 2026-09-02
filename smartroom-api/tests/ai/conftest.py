@@ -22,7 +22,13 @@ from app.ai.providers import FournisseurSimule, SelecteurModeles
 from app.ai.reglages import ReglagesIA
 from app.ai.tools import ToolContext
 from app.api.deps import Principal
-from app.models import ChatbotIntent, ChatbotIntentKeyword, FaqArticle, FaqCategory, User
+from app.models import (
+    ChatbotIntent,
+    ChatbotIntentKeyword,
+    FaqArticle,
+    FaqCategory,
+    User,
+)
 
 # Les fixtures d'intégration — session transactionnelle, client HTTP, parc de
 # démonstration — vivent avec les tests de services. Elles sont importées plutôt
@@ -78,29 +84,44 @@ def magasin() -> MagasinBrouillons:
 
 
 @pytest.fixture
-def principal(compte: User) -> Principal:
+def principal(compte: User) -> Principal:  # noqa: F811
     return Principal(user=compte, scope="user")
 
 
 @pytest.fixture
-def contexte(session: Session, principal: Principal) -> ToolContext:
+def contexte(session: Session, principal: Principal) -> ToolContext:  # noqa: F811
     return ToolContext(session=session, principal=principal)
 
 
 @pytest.fixture
-def intentions(session: Session, marque: str) -> list[ChatbotIntent]:
+def intentions(session: Session, marque: str) -> list[ChatbotIntent]:  # noqa: F811
     """Intentions minimales du moteur de repli, avec leurs mots-clés."""
     creees: list[ChatbotIntent] = []
     jeux = [
-        ("annuler", "Annuler", "Vous pouvez annuler depuis le détail.",
-         ["annuler", "annulation", "supprimer"]),
-        ("salle_libre", "Trouver une salle", "J'ai cherché une salle :",
-         ["salle", "libre", "disponible"]),
-        ("mes_reservations", "Mes réservations", "Voici vos réservations :",
-         ["mes reservations", "planning"]),
-        ("a_propos", "Découvrir l'application",
-         "SmartRoom Manager gère la réservation des salles du campus.",
-         ["a quoi sert", "application", "smartroom", "presentation"]),
+        (
+            "annuler",
+            "Annuler",
+            "Vous pouvez annuler depuis le détail.",
+            ["annuler", "annulation", "supprimer"],
+        ),
+        (
+            "salle_libre",
+            "Trouver une salle",
+            "J'ai cherché une salle :",
+            ["salle", "libre", "disponible"],
+        ),
+        (
+            "mes_reservations",
+            "Mes réservations",
+            "Voici vos réservations :",
+            ["mes reservations", "planning"],
+        ),
+        (
+            "a_propos",
+            "Découvrir l'application",
+            "SmartRoom Manager gère la réservation des salles du campus.",
+            ["a quoi sert", "application", "smartroom", "presentation"],
+        ),
     ]
     for code, libelle, reponse, mots in jeux:
         intention = ChatbotIntent(
@@ -116,7 +137,7 @@ def intentions(session: Session, marque: str) -> list[ChatbotIntent]:
 
 
 @pytest.fixture
-def categorie_faq(session: Session, marque: str) -> FaqCategory:
+def categorie_faq(session: Session, marque: str) -> FaqCategory:  # noqa: F811
     categorie = FaqCategory(
         code=f"proc_{marque}", label="Procédures", icon="BookOpen", sort_order=1
     )
@@ -126,7 +147,7 @@ def categorie_faq(session: Session, marque: str) -> FaqCategory:
 
 
 @pytest.fixture
-def creer_article(session: Session, categorie_faq: FaqCategory, marque: str):
+def creer_article(session: Session, categorie_faq: FaqCategory, marque: str):  # noqa: F811
     from datetime import UTC, datetime
 
     from app.db.enums import ArticleStatus
@@ -164,7 +185,7 @@ def creer_article(session: Session, categorie_faq: FaqCategory, marque: str):
 
 
 @pytest.fixture
-def client_assistant(client, session: Session, selecteur: SelecteurModeles) -> Iterator:
+def client_assistant(client, session: Session, selecteur: SelecteurModeles) -> Iterator:  # noqa: F811
     """Client HTTP dont le flux écrit dans la transaction du test.
 
     Sans cette substitution, l'endpoint ouvrirait sa propre session — c'est ce

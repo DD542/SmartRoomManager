@@ -37,14 +37,19 @@ def reservation(session, compte, salle, jour_ouvre):
         slot=creneau(jour_ouvre, 10),
         title="Comité de suivi",
         attendees=3,
-        participants=[("marie@edu.ece.fr", "Marie Laurent"), ("jean@edu.ece.fr", "Jean Dupont")],
+        participants=[
+            ("marie@edu.ece.fr", "Marie Laurent"),
+            ("jean@edu.ece.fr", "Jean Dupont"),
+        ],
     )
     session.flush()
     return ligne
 
 
 class TestDetail:
-    def test_le_detail_rend_les_participants(self, client, session, compte, reservation):
+    def test_le_detail_rend_les_participants(
+        self, client, session, compte, reservation
+    ):
         session.commit()
         entetes = connecter(client, compte.email)
 
@@ -52,7 +57,9 @@ class TestDetail:
 
         assert reponse.status_code == 200, reponse.text
         corps = reponse.json()
-        assert "participants" in corps, "le champ manque : l'ecran de modification plante"
+        assert "participants" in corps, (
+            "le champ manque : l'ecran de modification plante"
+        )
         adresses = {item["email"] for item in corps["participants"]}
         assert {"marie@edu.ece.fr", "jean@edu.ece.fr"} <= adresses
 

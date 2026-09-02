@@ -55,7 +55,7 @@ from tests.fabriques import (
     FabriqueEtage,
     FabriqueSalle,
 )
-from tests.horloge import PARIS, charge_creneau
+from tests.horloge import charge_creneau
 from tests.horloge import creneau as _creneau
 from tests.horloge import prochain
 
@@ -130,7 +130,9 @@ def batiment(session: Session, marque: str) -> Building:
 
 @pytest.fixture
 def etage(session: Session, batiment: Building) -> Floor:
-    return FabriqueEtage(building=batiment, code="V", label="Étage intégration", level=3)
+    return FabriqueEtage(
+        building=batiment, code="V", label="Étage intégration", level=3
+    )
 
 
 @pytest.fixture
@@ -213,7 +215,9 @@ def accorder(session: Session, admin: AdminAccount, *codes: str) -> None:
     resterait invisible et le test échouerait sur un 403 incompréhensible.
     """
     for code in codes:
-        permission = session.scalars(select(Permission).where(Permission.code == code)).one()
+        permission = session.scalars(
+            select(Permission).where(Permission.code == code)
+        ).one()
         session.add(
             AdminPermission(admin_user_id=admin.user_id, permission_id=permission.id)
         )

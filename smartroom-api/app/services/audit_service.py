@@ -109,7 +109,9 @@ def record(
     return entree
 
 
-def record_login(session: Session, *, label: str, scope: str, success: bool) -> AuditLog:
+def record_login(
+    session: Session, *, label: str, scope: str, success: bool
+) -> AuditLog:
     """Trace une tentative de connexion, réussie ou non.
 
     Les échecs comptent autant que les réussites : une série de refus sur un
@@ -194,7 +196,9 @@ def flag(session, entry_id, *, flagged: bool, reason: str | None = None):
 
     entree = get(session, entry_id)
     if flagged and not (reason or "").strip():
-        raise RuleViolationError("Un motif est requis pour signaler.", code="motif_requis")
+        raise RuleViolationError(
+            "Un motif est requis pour signaler.", code="motif_requis"
+        )
 
     entree.flagged_at = datetime.now(UTC) if flagged else None
     entree.flag_reason = reason.strip() if flagged and reason else None

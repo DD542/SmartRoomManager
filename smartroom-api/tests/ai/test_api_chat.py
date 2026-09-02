@@ -7,7 +7,6 @@ a du sens ici : tout le reste est du code que la production exécutera tel quel.
 
 from __future__ import annotations
 
-import uuid
 from datetime import UTC, datetime
 
 import pytest
@@ -31,13 +30,19 @@ class TestFlux:
         self, client_assistant, session, compte, faux_modele, salle
     ):
         faux_modele.programmer(
-            TourSimule(appels=(AppelOutil(nom="rechercher_salles", arguments={"capacite_min": 2}),)),
+            TourSimule(
+                appels=(
+                    AppelOutil(nom="rechercher_salles", arguments={"capacite_min": 2}),
+                )
+            ),
             TourSimule(texte="Deux salles conviennent."),
         )
         entetes = connecter(client_assistant, compte.email)
 
         reponse = client_assistant.post(
-            "/api/v1/chat/messages", json={"message": "une salle pour 2 personnes"}, headers=entetes
+            "/api/v1/chat/messages",
+            json={"message": "une salle pour 2 personnes"},
+            headers=entetes,
         )
 
         assert reponse.status_code == 200
@@ -63,10 +68,18 @@ class TestFlux:
         messages = session.scalars(
             select(ChatMessage).where(ChatMessage.conversation_id == conversation.id)
         ).all()
-        assert [message.role.value for message in messages] == ["utilisateur", "assistant"]
-        assert session.scalar(
-            select(func.count()).select_from(ChatTour).where(ChatTour.user_id == compte.id)
-        ) == 1
+        assert [message.role.value for message in messages] == [
+            "utilisateur",
+            "assistant",
+        ]
+        assert (
+            session.scalar(
+                select(func.count())
+                .select_from(ChatTour)
+                .where(ChatTour.user_id == compte.id)
+            )
+            == 1
+        )
 
     def test_le_fil_se_reprend_apres_rechargement(
         self, client_assistant, compte, faux_modele, salle
@@ -110,7 +123,9 @@ class TestFlux:
         assert reponse.status_code == 422
 
     def test_l_assistant_exige_une_session(self, client_assistant):
-        reponse = client_assistant.post("/api/v1/chat/messages", json={"message": "bonjour"})
+        reponse = client_assistant.post(
+            "/api/v1/chat/messages", json={"message": "bonjour"}
+        )
         assert reponse.status_code == 401
 
 
@@ -127,7 +142,9 @@ class TestConfirmationParHttp:
         }
         faux_modele.programmer(
             TourSimule(texte="reservation"),  # routage
-            TourSimule(appels=(AppelOutil(nom="creer_reservation", arguments=demande),)),
+            TourSimule(
+                appels=(AppelOutil(nom="creer_reservation", arguments=demande),)
+            ),
         )
         entetes = connecter(client_assistant, compte.email)
 
@@ -141,16 +158,22 @@ class TestConfirmationParHttp:
         confirmation = next(item for item in trames if item["type"] == "confirmation")
 
         # Rien n'est écrit tant que l'utilisateur n'a pas validé.
-        assert session.scalar(
-            select(func.count()).select_from(Booking).where(
-                Booking.title == "Réunion par l'assistant"
+        assert (
+            session.scalar(
+                select(func.count())
+                .select_from(Booking)
+                .where(Booking.title == "Réunion par l'assistant")
             )
-        ) == 0
+            == 0
+        )
 
         suite = evenements(
             client_assistant.post(
                 "/api/v1/chat/confirmations",
-                json={"jeton": confirmation["jeton"], "conversation_id": trames[0]["conversation_id"]},
+                json={
+                    "jeton": confirmation["jeton"],
+                    "conversation_id": trames[0]["conversation_id"],
+                },
                 headers=entetes,
             )
         )
@@ -166,7 +189,9 @@ class TestConfirmationParHttp:
 
         trames = evenements(
             client_assistant.post(
-                "/api/v1/chat/confirmations", json={"jeton": "jeton-invente"}, headers=entetes
+                "/api/v1/chat/confirmations",
+                json={"jeton": "jeton-invente"},
+                headers=entetes,
             )
         )
 
@@ -199,7 +224,9 @@ class TestCloisonnementDesConversations:
         session.flush()
 
         entetes = connecter(client_assistant, compte.email)
-        fils = client_assistant.get("/api/v1/chat/conversations", headers=entetes).json()
+        fils = client_assistant.get(
+            "/api/v1/chat/conversations", headers=entetes
+        ).json()
 
         assert [fil["titre"] for fil in fils] == ["Mon fil"]
 
@@ -240,9 +267,9 @@ class TestCloisonnementDesConversations:
         # Le flux s'ouvre, puis échoue : la vérification a lieu côté serveur.
         assert reponse.status_code in (200, 404)
         messages = session.scalar(
-            select(func.count()).select_from(ChatMessage).where(
-                ChatMessage.conversation_id == conversation.id
-            )
+            select(func.count())
+            .select_from(ChatMessage)
+            .where(ChatMessage.conversation_id == conversation.id)
         )
         assert messages == 0
 
@@ -253,19 +280,27 @@ class TestObservabilite:
     ):
         entetes = connecter(client_assistant, administrateur.user.email, admin=True)
 
-        refuse = client_assistant.get("/api/v1/admin/chat/statistiques", headers=entetes)
+        refuse = client_assistant.get(
+            "/api/v1/admin/chat/statistiques", headers=entetes
+        )
         assert refuse.status_code == 403
 
         accorder(session, administrateur, SUPPORT_HANDLE)
         entetes = connecter(client_assistant, administrateur.user.email, admin=True)
-        accorde = client_assistant.get("/api/v1/admin/chat/statistiques", headers=entetes)
+        accorde = client_assistant.get(
+            "/api/v1/admin/chat/statistiques", headers=entetes
+        )
         assert accorde.status_code == 200
 
     def test_les_chiffres_refletent_les_tours_journalises(
         self, client_assistant, session, compte, administrateur, faux_modele, salle
     ):
         faux_modele.programmer(
-            TourSimule(appels=(AppelOutil(nom="rechercher_salles", arguments={"capacite_min": 2}),)),
+            TourSimule(
+                appels=(
+                    AppelOutil(nom="rechercher_salles", arguments={"capacite_min": 2}),
+                )
+            ),
             TourSimule(texte="Deux salles conviennent."),
         )
         entetes_utilisateur = connecter(client_assistant, compte.email)
@@ -276,7 +311,9 @@ class TestObservabilite:
         )
 
         accorder(session, administrateur, SUPPORT_HANDLE)
-        entetes_admin = connecter(client_assistant, administrateur.user.email, admin=True)
+        entetes_admin = connecter(
+            client_assistant, administrateur.user.email, admin=True
+        )
         charge = client_assistant.get(
             "/api/v1/admin/chat/statistiques", headers=entetes_admin
         ).json()
@@ -303,7 +340,9 @@ class TestObservabilite:
         accorder(session, administrateur, SUPPORT_HANDLE)
         entetes = connecter(client_assistant, administrateur.user.email, admin=True)
 
-        charge = client_assistant.get("/api/v1/admin/chat/prompt", headers=entetes).json()
+        charge = client_assistant.get(
+            "/api/v1/admin/chat/prompt", headers=entetes
+        ).json()
 
         assert charge["version"] == 1
         assert "SmartBot" in charge["corps"]
@@ -314,7 +353,14 @@ class TestScenariosConversationnels:
     """Deux scénarios de bout en bout, pris dans la matrice du lot 0."""
 
     def test_montre_les_reservations_de_quelqu_un_d_autre(
-        self, client_assistant, session, compte, creer_compte, faux_modele, salle, jour_ouvre
+        self,
+        client_assistant,
+        session,
+        compte,
+        creer_compte,
+        faux_modele,
+        salle,
+        jour_ouvre,
     ):
         """Le modèle peut appeler l'outil : il ne rendra que les réservations
         du demandeur, et jamais celles du tiers nommé."""
@@ -333,7 +379,13 @@ class TestScenariosConversationnels:
 
         faux_modele.programmer(
             TourSimule(texte="reservation"),
-            TourSimule(appels=(AppelOutil(nom="lister_mes_reservations", arguments={"etat": "toutes"}),)),
+            TourSimule(
+                appels=(
+                    AppelOutil(
+                        nom="lister_mes_reservations", arguments={"etat": "toutes"}
+                    ),
+                )
+            ),
             TourSimule(texte="Voici vos réservations."),
         )
         entetes = connecter(client_assistant, compte.email)

@@ -47,7 +47,9 @@ class ChatConversation(TimestampMixin, Base):
         ForeignKey("users.id", ondelete="CASCADE", name="fk_chat_conversations_user")
     )
     titre: Mapped[str] = mapped_column(
-        String(120), server_default=text("'Nouvelle conversation'"), default="Nouvelle conversation"
+        String(120),
+        server_default=text("'Nouvelle conversation'"),
+        default="Nouvelle conversation",
     )
     #: Résumé des tours anciens. Réécrit, jamais empilé.
     resume: Mapped[str] = mapped_column(Text, server_default=text("''"), default="")
@@ -72,7 +74,11 @@ class ChatMessage(TimestampMixin, Base):
 
     id: Mapped[UuidPk]
     conversation_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("chat_conversations.id", ondelete="CASCADE", name="fk_chat_messages_conversation")
+        ForeignKey(
+            "chat_conversations.id",
+            ondelete="CASCADE",
+            name="fk_chat_messages_conversation",
+        )
     )
     role: Mapped[ChatRole] = mapped_column(pg_enum(ChatRole, "chat_role"))
     contenu: Mapped[str] = mapped_column(Text, server_default=text("''"), default="")
@@ -96,17 +102,24 @@ class ChatTour(TimestampMixin, Base):
 
     id: Mapped[UuidPk]
     conversation_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("chat_conversations.id", ondelete="CASCADE", name="fk_chat_tours_conversation"),
+        ForeignKey(
+            "chat_conversations.id",
+            ondelete="CASCADE",
+            name="fk_chat_tours_conversation",
+        ),
         default=None,
     )
     user_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("users.id", ondelete="SET NULL", name="fk_chat_tours_user"), default=None
+        ForeignKey("users.id", ondelete="SET NULL", name="fk_chat_tours_user"),
+        default=None,
     )
     mode: Mapped[str] = mapped_column(String(16))
     modele: Mapped[str | None] = mapped_column(String(80), default=None)
     repli: Mapped[bool] = mapped_column(server_default=text("false"), default=False)
     declencheur_repli: Mapped[str | None] = mapped_column(String(48), default=None)
-    iterations: Mapped[int] = mapped_column(SmallInteger, server_default=text("0"), default=0)
+    iterations: Mapped[int] = mapped_column(
+        SmallInteger, server_default=text("0"), default=0
+    )
     outils: Mapped[list[str]] = mapped_column(
         ARRAY(Text), server_default=text("'{}'"), default=list
     )
@@ -115,6 +128,10 @@ class ChatTour(TimestampMixin, Base):
     jetons_invite: Mapped[int] = mapped_column(server_default=text("0"), default=0)
     jetons_reponse: Mapped[int] = mapped_column(server_default=text("0"), default=0)
     jetons_contexte: Mapped[int] = mapped_column(server_default=text("0"), default=0)
-    injection_suspectee: Mapped[bool] = mapped_column(server_default=text("false"), default=False)
+    injection_suspectee: Mapped[bool] = mapped_column(
+        server_default=text("false"), default=False
+    )
     etaye: Mapped[bool] = mapped_column(server_default=text("true"), default=True)
-    transfert_humain: Mapped[bool] = mapped_column(server_default=text("false"), default=False)
+    transfert_humain: Mapped[bool] = mapped_column(
+        server_default=text("false"), default=False
+    )

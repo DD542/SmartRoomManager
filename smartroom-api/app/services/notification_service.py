@@ -52,11 +52,14 @@ def list_for_user(
 
 def unread_count(session: Session, user_id: uuid.UUID) -> int:
     """Compte les non lues. Un `COUNT`, jamais un chargement de la liste."""
-    return session.scalar(
-        select(func.count())
-        .select_from(Notification)
-        .where(Notification.user_id == user_id, Notification.read_at.is_(None))
-    ) or 0
+    return (
+        session.scalar(
+            select(func.count())
+            .select_from(Notification)
+            .where(Notification.user_id == user_id, Notification.read_at.is_(None))
+        )
+        or 0
+    )
 
 
 def mark_read(
@@ -119,7 +122,9 @@ def update_template(
     avant = audit_service.snapshot(gabarit, CHAMPS_GABARIT)
 
     donnees = payload.model_dump(exclude_unset=True)
-    valeurs = {item.code: item.sample_value for item in mail_service.known_variables(session)}
+    valeurs = {
+        item.code: item.sample_value for item in mail_service.known_variables(session)
+    }
     for champ in ("subject", "body"):
         if champ in donnees:
             mail_service.render(donnees[champ], valeurs)

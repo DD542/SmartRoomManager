@@ -59,9 +59,9 @@ router = APIRouter(prefix="/bookings", tags=["réservations"])
     response_model=Page[BookingOut],
     summary="Mes réservations",
     description=(
-        "Les réservations du compte connecté, les plus proches d\'abord. Aucun "
-        "`owner_id` n\'est accepté : lister celles d\'un tiers passe par "
-        "l\'espace d\'administration, pas par un paramètre. Le filtre de "
+        "Les réservations du compte connecté, les plus proches d'abord. Aucun "
+        "`owner_id` n'est accepté : lister celles d'un tiers passe par "
+        "l'espace d'administration, pas par un paramètre. Le filtre de "
         "propriété est appliqué dans la requête SQL, pas vérifié après "
         "chargement."
     ),
@@ -84,9 +84,13 @@ def list_mine(
     # Le chevauchement avec une plage semi-ouverte emprunte l'index GiST, là où
     # `lower(time_range) >= :date` le rendrait inutilisable.
     if from_date is not None:
-        requete = requete.where(Booking.time_range.op("&&")(Range(from_date, None, bounds="[)")))
+        requete = requete.where(
+            Booking.time_range.op("&&")(Range(from_date, None, bounds="[)"))
+        )
     if to_date is not None:
-        requete = requete.where(Booking.time_range.op("&&")(Range(None, to_date, bounds="[)")))
+        requete = requete.where(
+            Booking.time_range.op("&&")(Range(None, to_date, bounds="[)"))
+        )
 
     reservations, total = paginate(session, requete, params)
     return Page.build([BookingOut.of(item) for item in reservations], total, params)
@@ -119,7 +123,7 @@ def get_booking(
         409: {
             "description": (
                 "Créneau déjà pris. Le corps porte le conflit qualifié et les "
-                "alternatives calculées, pour que l\'écran de conflit les "
+                "alternatives calculées, pour que l'écran de conflit les "
                 "affiche sans second aller-retour réseau."
             )
         },
@@ -158,12 +162,16 @@ def create(
         access_code=(
             None
             if code is None
-            else AccessCodeOut(code=code.clear, hint=code.hint, expires_at=code.expires_at)
+            else AccessCodeOut(
+                code=code.clear, hint=code.hint, expires_at=code.expires_at
+            )
         ),
     )
 
 
-@router.patch("/{booking_id}", response_model=BookingOut, summary="Déplacer ou modifier")
+@router.patch(
+    "/{booking_id}", response_model=BookingOut, summary="Déplacer ou modifier"
+)
 def update(
     booking_id: uuid.UUID,
     payload: BookingPatchIn,
@@ -242,9 +250,7 @@ def reissue_access_code(
     session: SessionDep,
     principal: CurrentPrincipal,
 ) -> AccessCodeOut:
-    code = service.reissue_access_code(
-        session, booking_id, owner_id=principal.user.id
-    )
+    code = service.reissue_access_code(session, booking_id, owner_id=principal.user.id)
     session.commit()
     return AccessCodeOut(code=code.clear, hint=code.hint, expires_at=code.expires_at)
 
@@ -268,7 +274,9 @@ def alternatives(
     propositions = reco.suggest_alternatives(
         session,
         room_id=reservation.room_id,
-        slot=TimeSlot(start=reservation.time_range.lower, end=reservation.time_range.upper),
+        slot=TimeSlot(
+            start=reservation.time_range.lower, end=reservation.time_range.upper
+        ),
         attendees=reservation.attendee_count,
         user_id=principal.user.id,
         limit=limit,
@@ -369,7 +377,7 @@ def create_recurring(
 @router.get(
     "/{booking_id}/participants",
     response_model=list[ParticipantOut],
-    summary="Participants d\'une réservation",
+    summary="Participants d'une réservation",
 )
 def list_participants(
     booking_id: uuid.UUID, session: SessionDep, principal: CurrentPrincipal
@@ -397,11 +405,13 @@ def list_participants(
     status_code=status.HTTP_201_CREATED,
     summary="Inviter un participant",
     description=(
-        "Renvoie le jeton d\'invitation, qui part dans le courriel. Il expire "
-        "avec le créneau : répondre à une réunion passée n\'a aucun sens, ce qui "
-        "dispense d\'une table de révocation."
+        "Renvoie le jeton d'invitation, qui part dans le courriel. Il expire "
+        "avec le créneau : répondre à une réunion passée n'a aucun sens, ce qui "
+        "dispense d'une table de révocation."
     ),
-    responses={422: {"description": "Participant déjà invité, ou réservation annulée."}},
+    responses={
+        422: {"description": "Participant déjà invité, ou réservation annulée."}
+    },
 )
 def add_participant(
     booking_id: uuid.UUID,
@@ -440,7 +450,7 @@ def add_participant(
     "/{booking_id}/participants/{participant_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Retirer un participant",
-    responses={422: {"description": "L\'organisateur ne se retire pas."}},
+    responses={422: {"description": "L'organisateur ne se retire pas."}},
 )
 def remove_participant(
     booking_id: uuid.UUID,
@@ -460,8 +470,8 @@ def remove_participant(
     response_model=ParticipantOut,
     summary="Répondre à une invitation",
     description=(
-        "Ouverte sans session : le jeton porte l\'identité. Un participant "
-        "extérieur n\'a pas de compte, et lui en imposer un pour cliquer "
+        "Ouverte sans session : le jeton porte l'identité. Un participant "
+        "extérieur n'a pas de compte, et lui en imposer un pour cliquer "
         "« je viens » ferait tomber le taux de réponse à zéro."
     ),
     responses={404: {"description": "Invitation inconnue ou expirée."}},
@@ -491,7 +501,7 @@ def respond_to_invitation(
     summary="Signaler un retard",
     description=(
         "Le créneau reste réservé au-delà de la fenêtre de validation. Sans "
-        "cela, la tâche de libération rendrait la salle à quelqu\'un qui arrive "
+        "cela, la tâche de libération rendrait la salle à quelqu'un qui arrive "
         "avec dix minutes de retard. La marque vaut validation de présence. "
         "`delay_min` annonce la durée du retard : facultative, sans effet sur "
         "les règles, écrite au journal de la réservation."

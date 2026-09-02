@@ -7,8 +7,8 @@ from datetime import timedelta
 from sqlalchemy import select
 
 from app.api.deps import CONFLICTS_ARBITRATE, RULES_CONFIGURE
-from app.db.enums import BookingStatus, ParticipantResponse, RequestStatus
-from app.models import AccessRequest, Booking, BookingParticipant, BookingRule, OpeningHour
+from app.db.enums import BookingStatus
+from app.models import Booking, BookingParticipant, BookingRule, OpeningHour
 from tests.services.conftest import accorder, charge, connecter, creneau
 from tests.services.test_api_v1 import poser
 
@@ -47,7 +47,9 @@ class TestConflitEnrichi:
         poser(session, salle, compte, creneau(jour_ouvre, 10))
         entetes = connecter(client, compte.email)
 
-        erreur = reserver(client, entetes, salle, creneau(jour_ouvre, 10)).json()["error"]
+        erreur = reserver(client, entetes, salle, creneau(jour_ouvre, 10)).json()[
+            "error"
+        ]
         assert erreur["alternatives"]
         for item in erreur["alternatives"]:
             assert item["kind"] in {
@@ -117,7 +119,9 @@ class TestParticipants:
         ]["id"]
         corps = {"email": "invite@ece.fr", "display_name": "Alex"}
 
-        client.post(f"/api/v1/bookings/{identifiant}/participants", headers=entetes, json=corps)
+        client.post(
+            f"/api/v1/bookings/{identifiant}/participants", headers=entetes, json=corps
+        )
         seconde = client.post(
             f"/api/v1/bookings/{identifiant}/participants", headers=entetes, json=corps
         )
@@ -155,7 +159,9 @@ class TestParticipants:
 
 
 class TestRetard:
-    def test_le_retard_vaut_validation(self, client, session, compte, salle, maintenant):
+    def test_le_retard_vaut_validation(
+        self, client, session, compte, salle, maintenant
+    ):
         from sqlalchemy.dialects.postgresql import Range
 
         debut = maintenant - timedelta(minutes=30)
@@ -171,7 +177,9 @@ class TestRetard:
         session.flush()
 
         entetes = connecter(client, compte.email)
-        reponse = client.post(f"/api/v1/bookings/{reservation.id}/late", headers=entetes)
+        reponse = client.post(
+            f"/api/v1/bookings/{reservation.id}/late", headers=entetes
+        )
         assert reponse.status_code == 200
         assert reponse.json()["checked_in_at"] is not None
 
@@ -239,9 +247,12 @@ class TestDemandesDAcces:
 
         intrus = creer_compte("Sam")
         autres = connecter(client, intrus.email)
-        assert client.get(
-            f"/api/v1/access-requests/{demande['id']}", headers=autres
-        ).status_code == 404
+        assert (
+            client.get(
+                f"/api/v1/access-requests/{demande['id']}", headers=autres
+            ).status_code
+            == 404
+        )
 
     def test_accorder_cree_la_reservation(
         self, client, session, administrateur, compte, salle, jour_ouvre
@@ -328,10 +339,14 @@ class TestDemandesDAcces:
         corps = {"decision": "refuse", "comment": "Hors cadre"}
 
         client.post(
-            f"/api/v1/admin/access-requests/{demande['id']}/decide", headers=admin, json=corps
+            f"/api/v1/admin/access-requests/{demande['id']}/decide",
+            headers=admin,
+            json=corps,
         )
         seconde = client.post(
-            f"/api/v1/admin/access-requests/{demande['id']}/decide", headers=admin, json=corps
+            f"/api/v1/admin/access-requests/{demande['id']}/decide",
+            headers=admin,
+            json=corps,
         )
         assert seconde.status_code == 422
         assert seconde.json()["error"]["code"] == "deja_decidee"
@@ -410,12 +425,16 @@ class TestRegles:
         entetes = connecter(client, administrateur.user.email, admin=True)
 
         reponse = client.put(
-            "/api/v1/booking-rules/salle", headers=entetes, json={"min_duration_min": 60}
+            "/api/v1/booking-rules/salle",
+            headers=entetes,
+            json={"min_duration_min": 60},
         )
         assert reponse.status_code == 422
         assert reponse.json()["error"]["code"] == "cible"
 
-    def test_apercu_sans_ecriture(self, client, session, administrateur, compte, salle, jour_ouvre):
+    def test_apercu_sans_ecriture(
+        self, client, session, administrateur, compte, salle, jour_ouvre
+    ):
         poser(session, salle, compte, creneau(jour_ouvre, 10, 0, 60))
         accorder(session, administrateur, RULES_CONFIGURE)
         entetes = connecter(client, administrateur.user.email, admin=True)
@@ -500,7 +519,9 @@ class TestRegles:
 
 
 class TestFermetures:
-    def test_fermeture_globale_sans_cible(self, client, session, administrateur, jour_ouvre):
+    def test_fermeture_globale_sans_cible(
+        self, client, session, administrateur, jour_ouvre
+    ):
         accorder(session, administrateur, RULES_CONFIGURE)
         entetes = connecter(client, administrateur.user.email, admin=True)
 
@@ -540,7 +561,9 @@ class TestFermetures:
         assert reponse.status_code == 422
         assert reponse.json()["error"]["code"] == "cible"
 
-    def test_ciblee_sans_cible_refusee(self, client, session, administrateur, jour_ouvre):
+    def test_ciblee_sans_cible_refusee(
+        self, client, session, administrateur, jour_ouvre
+    ):
         accorder(session, administrateur, RULES_CONFIGURE)
         entetes = connecter(client, administrateur.user.email, admin=True)
 

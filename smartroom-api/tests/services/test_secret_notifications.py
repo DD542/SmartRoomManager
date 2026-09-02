@@ -61,8 +61,12 @@ def gabarits(session):
         if mail_service.get_template(session, code) is None:
             session.add(
                 EmailTemplate(
-                    code=code, name=code, trigger_label="test",
-                    subject=objet, body=corps, is_enabled=True,
+                    code=code,
+                    name=code,
+                    trigger_label="test",
+                    subject=objet,
+                    body=corps,
+                    is_enabled=True,
                 )
             )
     session.flush()
@@ -107,7 +111,9 @@ class TestNotification:
         ).all()[-1]
 
         assert "9101" not in stockee.body, "le code complet est reste en base"
-        assert "E-****" in stockee.body, "l'indice doit rester : il aide a reconnaitre le code"
+        assert "E-****" in stockee.body, (
+            "l'indice doit rester : il aide a reconnaitre le code"
+        )
         assert not CODE_EN_CLAIR.search(stockee.body)
         assert not CODE_EN_CLAIR.search(stockee.title)
 
@@ -117,7 +123,9 @@ class TestNotification:
         Masquer partout reviendrait a ne jamais lui donner son code.
         """
         envoyes = []
-        monkeypatch.setattr(mail_service, "_deposer", lambda message: envoyes.append(message))
+        monkeypatch.setattr(
+            mail_service, "_deposer", lambda message: envoyes.append(message)
+        )
 
         mail_service.notify(
             session,

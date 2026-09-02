@@ -18,7 +18,6 @@ import pytest
 
 from app.ai.tools import ArgumentsInvalides, ToolContext, obtenir, verifier_coherence
 from app.ai.tools.base import Statut
-from app.api.deps import Principal
 from app.db.enums import BookingStatus
 from app.services import booking_service
 from tests.services.conftest import creneau
@@ -64,8 +63,11 @@ class TestValidation:
     async def test_un_identifiant_malforme_est_refuse_avant_le_service(self, contexte):
         with pytest.raises(ArgumentsInvalides) as souci:
             await obtenir("consulter_disponibilite").execute(
-                {"salle_id": "pas-un-uuid", "debut": iso(datetime.now(UTC)),
-                 "fin": iso(datetime.now(UTC) + timedelta(hours=1))},
+                {
+                    "salle_id": "pas-un-uuid",
+                    "debut": iso(datetime.now(UTC)),
+                    "fin": iso(datetime.now(UTC) + timedelta(hours=1)),
+                },
                 contexte,
             )
         assert "salle_id" in souci.value.texte_pour_modele()
@@ -75,8 +77,11 @@ class TestValidation:
         debut = datetime.now(UTC) + timedelta(days=1)
         with pytest.raises(ArgumentsInvalides):
             await obtenir("consulter_disponibilite").execute(
-                {"salle_id": str(salle.id), "debut": iso(debut),
-                 "fin": iso(debut - timedelta(hours=1))},
+                {
+                    "salle_id": str(salle.id),
+                    "debut": iso(debut),
+                    "fin": iso(debut - timedelta(hours=1)),
+                },
                 contexte,
             )
 
@@ -101,12 +106,16 @@ class TestValidation:
 class TestLecture:
     @pytest.mark.asyncio
     async def test_rechercher_salles_rend_le_parc(self, contexte, salle):
-        resultat = await obtenir("rechercher_salles").execute({"capacite_min": 1}, contexte)
+        resultat = await obtenir("rechercher_salles").execute(
+            {"capacite_min": 1}, contexte
+        )
         assert resultat.statut is Statut.OK
         assert resultat.carte.value == "salles"
 
     @pytest.mark.asyncio
-    async def test_un_batiment_inconnu_rend_la_liste_plutot_qu_une_erreur(self, contexte, salle):
+    async def test_un_batiment_inconnu_rend_la_liste_plutot_qu_une_erreur(
+        self, contexte, salle
+    ):
         resultat = await obtenir("rechercher_salles").execute(
             {"batiment": "Tour Montparnasse"}, contexte
         )
@@ -115,7 +124,9 @@ class TestLecture:
 
     @pytest.mark.asyncio
     async def test_localiser_par_nom(self, contexte, salle):
-        resultat = await obtenir("localiser_salle").execute({"salle_nom": salle.name}, contexte)
+        resultat = await obtenir("localiser_salle").execute(
+            {"salle_nom": salle.name}, contexte
+        )
         assert resultat.statut is Statut.OK
         assert resultat.data["salle"]["nom"] == salle.name
 
@@ -152,8 +163,13 @@ class TestCloisonnement:
 
     @pytest.mark.asyncio
     async def test_lister_ne_rend_que_les_siennes(self, contexte, reservation_d_autrui):
-        resultat = await obtenir("lister_mes_reservations").execute({"etat": "toutes"}, contexte)
-        rendus = [item["reservation_id"] for item in (resultat.data or {}).get("reservations", [])]
+        resultat = await obtenir("lister_mes_reservations").execute(
+            {"etat": "toutes"}, contexte
+        )
+        rendus = [
+            item["reservation_id"]
+            for item in (resultat.data or {}).get("reservations", [])
+        ]
         assert str(reservation_d_autrui.id) not in rendus
 
     @pytest.mark.asyncio
@@ -162,7 +178,8 @@ class TestCloisonnement:
     ):
         """« Introuvable » et non « interdit » : le second confirmerait qu'elle existe."""
         resultat = await obtenir("annuler_reservation").execute(
-            {"reservation_id": str(reservation_d_autrui.id), "motif": "tentative"}, contexte
+            {"reservation_id": str(reservation_d_autrui.id), "motif": "tentative"},
+            contexte,
         )
         assert resultat.statut is Statut.VIDE
         assert "introuvable" in resultat.message.lower()
@@ -181,7 +198,8 @@ class TestCloisonnement:
         self, contexte, reservation_d_autrui
     ):
         resultat = await obtenir("modifier_reservation").execute(
-            {"reservation_id": str(reservation_d_autrui.id), "objet": "détourné"}, contexte
+            {"reservation_id": str(reservation_d_autrui.id), "objet": "détourné"},
+            contexte,
         )
         assert resultat.statut is Statut.VIDE
 
@@ -209,7 +227,9 @@ class TestEcritures:
         from app.models import Booking
 
         ecrites = session.scalar(
-            select(func.count()).select_from(Booking).where(Booking.title == "Essai sans confirmation")
+            select(func.count())
+            .select_from(Booking)
+            .where(Booking.title == "Essai sans confirmation")
         )
         assert ecrites == 0
 
@@ -259,13 +279,15 @@ class TestEcritures:
         assert resultat.statut is Statut.REFUS
 
     @pytest.mark.asyncio
-    async def test_creer_accepte_un_nom_de_salle(
-        self, contexte, salle, jour_ouvre
-    ):
+    async def test_creer_accepte_un_nom_de_salle(self, contexte, salle, jour_ouvre):
         """Le modèle ne porte pas les UUID de tête : le nom doit suffire."""
         fenetre = creneau(jour_ouvre, 14)
         resultat = await obtenir("creer_reservation").execute(
-            {"salle_nom": salle.name, "debut": iso(fenetre.start), "fin": iso(fenetre.end)},
+            {
+                "salle_nom": salle.name,
+                "debut": iso(fenetre.start),
+                "fin": iso(fenetre.end),
+            },
             contexte,
         )
         assert resultat.statut is Statut.CONFIRMATION
@@ -295,7 +317,8 @@ class TestCodeAcces:
         assert code is not None
 
         resultat = await obtenir("obtenir_code_acces").execute(
-            {"reservation_id": str(reservation.id)}, ToolContext(session=session, principal=principal)
+            {"reservation_id": str(reservation.id)},
+            ToolContext(session=session, principal=principal),
         )
 
         assert resultat.data["code_complet_recuperable"] is False

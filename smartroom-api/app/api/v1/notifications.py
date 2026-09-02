@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 import uuid
-from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, status
 
 from app.api.deps import (
     SYSTEM_CONFIGURE,
@@ -108,7 +107,10 @@ def mark_all_read(session: SessionDep, principal: CurrentPrincipal) -> None:
     description="Modifiables sans redéploiement : ils vivent en base.",
 )
 def list_templates(session: SessionDep, _admin=Systeme) -> list[EmailTemplateOut]:
-    return [EmailTemplateOut.model_validate(item) for item in service.list_templates(session)]
+    return [
+        EmailTemplateOut.model_validate(item)
+        for item in service.list_templates(session)
+    ]
 
 
 @router.get(
@@ -118,7 +120,8 @@ def list_templates(session: SessionDep, _admin=Systeme) -> list[EmailTemplateOut
 )
 def template_variables(session: SessionDep, _admin=Systeme) -> list[EmailVariableOut]:
     return [
-        EmailVariableOut.model_validate(item) for item in service.template_variables(session)
+        EmailVariableOut.model_validate(item)
+        for item in service.template_variables(session)
     ]
 
 

@@ -80,9 +80,7 @@ class RecurrenceRule(TimestampMixin, Base):
             name="weekdays",
         ),
         CheckConstraint("until_date >= start_date", name="dates"),
-        CheckConstraint(
-            "until_date <= start_date + INTERVAL '1 year'", name="horizon"
-        ),
+        CheckConstraint("until_date <= start_date + INTERVAL '1 year'", name="horizon"),
         CheckConstraint("end_time > start_time", name="times"),
         Index("idx_recurrence_rules_owner", "owner_id", text("start_date DESC")),
         Index("idx_recurrence_rules_room", "room_id"),
@@ -90,13 +88,27 @@ class RecurrenceRule(TimestampMixin, Base):
 
     id: Mapped[UuidPk]
     owner_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id", ondelete="RESTRICT", onupdate="CASCADE", name="fk_recurrence_rules_owner")
+        ForeignKey(
+            "users.id",
+            ondelete="RESTRICT",
+            onupdate="CASCADE",
+            name="fk_recurrence_rules_owner",
+        )
     )
     room_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("rooms.id", ondelete="RESTRICT", onupdate="CASCADE", name="fk_recurrence_rules_room")
+        ForeignKey(
+            "rooms.id",
+            ondelete="RESTRICT",
+            onupdate="CASCADE",
+            name="fk_recurrence_rules_room",
+        )
     )
-    freq: Mapped[RecurrenceFreq] = mapped_column(pg_enum(RecurrenceFreq, "recurrence_freq"))
-    interval_count: Mapped[int] = mapped_column(SmallInteger, server_default=text("1"), default=1)
+    freq: Mapped[RecurrenceFreq] = mapped_column(
+        pg_enum(RecurrenceFreq, "recurrence_freq")
+    )
+    interval_count: Mapped[int] = mapped_column(
+        SmallInteger, server_default=text("1"), default=1
+    )
     #: Jours visés, 0 = dimanche. Tableau : lu et réécrit d'un bloc.
     byweekday: Mapped[list[int]] = mapped_column(ARRAY(SmallInteger))
     start_date: Mapped[date]
@@ -106,7 +118,9 @@ class RecurrenceRule(TimestampMixin, Base):
 
     owner: Mapped["User"] = relationship(back_populates="recurrence_rules")
     room: Mapped["Room"] = relationship(back_populates="recurrence_rules")
-    occurrences: Mapped[list["Booking"]] = relationship(back_populates="recurrence_rule")
+    occurrences: Mapped[list["Booking"]] = relationship(
+        back_populates="recurrence_rule"
+    )
 
 
 class Booking(TimestampMixin, SoftDeleteMixin, Base):
@@ -220,11 +234,18 @@ class Booking(TimestampMixin, SoftDeleteMixin, Base):
 
     id: Mapped[UuidPk]
     room_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("rooms.id", ondelete="RESTRICT", onupdate="CASCADE", name="fk_bookings_room")
+        ForeignKey(
+            "rooms.id", ondelete="RESTRICT", onupdate="CASCADE", name="fk_bookings_room"
+        )
     )
     #: NULL pour un blocage administratif : personne ne l'organise.
     owner_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("users.id", ondelete="RESTRICT", onupdate="CASCADE", name="fk_bookings_owner"),
+        ForeignKey(
+            "users.id",
+            ondelete="RESTRICT",
+            onupdate="CASCADE",
+            name="fk_bookings_owner",
+        ),
         default=None,
     )
     created_by_admin_id: Mapped[uuid.UUID | None] = mapped_column(
@@ -266,12 +287,21 @@ class Booking(TimestampMixin, SoftDeleteMixin, Base):
     cancel_reason: Mapped[str | None] = mapped_column(String(255), default=None)
 
     room: Mapped["Room"] = relationship(back_populates="bookings", lazy="selectin")
-    owner: Mapped["User | None"] = relationship(back_populates="bookings", lazy="selectin")
-    created_by_admin: Mapped["AdminAccount | None"] = relationship(back_populates="created_bookings")
-    recurrence_rule: Mapped["RecurrenceRule | None"] = relationship(back_populates="occurrences")
+    owner: Mapped["User | None"] = relationship(
+        back_populates="bookings", lazy="selectin"
+    )
+    created_by_admin: Mapped["AdminAccount | None"] = relationship(
+        back_populates="created_bookings"
+    )
+    recurrence_rule: Mapped["RecurrenceRule | None"] = relationship(
+        back_populates="occurrences"
+    )
 
     participants: Mapped[list["BookingParticipant"]] = relationship(
-        back_populates="booking", cascade="all, delete-orphan", passive_deletes=True, lazy="select"
+        back_populates="booking",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="select",
     )
     events: Mapped[list["BookingEvent"]] = relationship(
         back_populates="booking",
@@ -281,9 +311,14 @@ class Booking(TimestampMixin, SoftDeleteMixin, Base):
         lazy="select",
     )
     access_codes: Mapped[list["BookingAccessCode"]] = relationship(
-        back_populates="booking", cascade="all, delete-orphan", passive_deletes=True, lazy="selectin"
+        back_populates="booking",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="selectin",
     )
-    access_requests: Mapped[list["AccessRequest"]] = relationship(back_populates="booking")
+    access_requests: Mapped[list["AccessRequest"]] = relationship(
+        back_populates="booking"
+    )
     tickets: Mapped[list["Ticket"]] = relationship(back_populates="booking")
     notifications: Mapped[list["Notification"]] = relationship(back_populates="booking")
 
@@ -304,9 +339,7 @@ class BookingParticipant(TimestampMixin, Base):
             "email ~ '^[^@[:space:]]+@[^@[:space:]]+\\.[^@[:space:]]+$'",
             name="email_format",
         ),
-        CheckConstraint(
-            "btrim(display_name) <> ''", name="name_not_blank"
-        ),
+        CheckConstraint("btrim(display_name) <> ''", name="name_not_blank"),
         CheckConstraint(
             "(response = 'en_attente') = (responded_at IS NULL)",
             name="responded",
@@ -318,7 +351,9 @@ class BookingParticipant(TimestampMixin, Base):
             postgresql_where=text("is_organizer"),
         ),
         Index(
-            "idx_booking_participants_user", "user_id", postgresql_where=text("user_id IS NOT NULL")
+            "idx_booking_participants_user",
+            "user_id",
+            postgresql_where=text("user_id IS NOT NULL"),
         ),
         Index("idx_booking_participants_email", "email"),
     )
@@ -326,13 +361,19 @@ class BookingParticipant(TimestampMixin, Base):
     id: Mapped[UuidPk]
     booking_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey(
-            "bookings.id", ondelete="CASCADE", onupdate="CASCADE", name="fk_booking_participants_booking"
+            "bookings.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE",
+            name="fk_booking_participants_booking",
         )
     )
     #: NULL pour un invité externe : l'adresse reste la source de vérité.
     user_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey(
-            "users.id", ondelete="SET NULL", onupdate="CASCADE", name="fk_booking_participants_user"
+            "users.id",
+            ondelete="SET NULL",
+            onupdate="CASCADE",
+            name="fk_booking_participants_user",
         ),
         default=None,
     )
@@ -343,7 +384,9 @@ class BookingParticipant(TimestampMixin, Base):
         server_default=text("'en_attente'"),
         default=ParticipantResponse.EN_ATTENTE,
     )
-    is_organizer: Mapped[bool] = mapped_column(server_default=text("false"), default=False)
+    is_organizer: Mapped[bool] = mapped_column(
+        server_default=text("false"), default=False
+    )
     responded_at: Mapped[datetime | None] = mapped_column(default=None)
 
     booking: Mapped["Booking"] = relationship(back_populates="participants")
@@ -362,17 +405,29 @@ class BookingEvent(TimestampMixin, Base):
     id: Mapped[UuidPk]
     booking_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey(
-            "bookings.id", ondelete="CASCADE", onupdate="CASCADE", name="fk_booking_events_booking"
+            "bookings.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE",
+            name="fk_booking_events_booking",
         )
     )
-    event_type: Mapped[BookingEventType] = mapped_column(pg_enum(BookingEventType, "booking_event_type"))
+    event_type: Mapped[BookingEventType] = mapped_column(
+        pg_enum(BookingEventType, "booking_event_type")
+    )
     #: Libellé figé au moment du fait, lisible même si la règle a changé depuis.
     label: Mapped[str] = mapped_column(String(160))
     actor_user_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("users.id", ondelete="SET NULL", onupdate="CASCADE", name="fk_booking_events_actor"),
+        ForeignKey(
+            "users.id",
+            ondelete="SET NULL",
+            onupdate="CASCADE",
+            name="fk_booking_events_actor",
+        ),
         default=None,
     )
-    occurred_at: Mapped[datetime] = mapped_column(server_default=text("now()"), default=None)
+    occurred_at: Mapped[datetime] = mapped_column(
+        server_default=text("now()"), default=None
+    )
 
     booking: Mapped["Booking"] = relationship(back_populates="events")
     actor: Mapped["User | None"] = relationship(back_populates="booking_events")
@@ -382,9 +437,7 @@ class BookingAccessCode(TimestampMixin, Base):
     __tablename__ = "booking_access_codes"
     __table_args__ = (
         CheckConstraint("expires_at > issued_at", name="expiry"),
-        CheckConstraint(
-            "code_hint ~ '^[A-Z0-9]-\\*{4}$'", name="hint_format"
-        ),
+        CheckConstraint("code_hint ~ '^[A-Z0-9]-\\*{4}$'", name="hint_format"),
         # Un seul code actif par réservation ; les révoqués restent pour l'audit.
         Index(
             "uq_booking_access_codes_active",
@@ -408,7 +461,9 @@ class BookingAccessCode(TimestampMixin, Base):
     code_hash: Mapped[str] = mapped_column(Text)
     #: Suffit à l'affichage masqué « A-**** ».
     code_hint: Mapped[str] = mapped_column(String(8))
-    issued_at: Mapped[datetime] = mapped_column(server_default=text("now()"), default=None)
+    issued_at: Mapped[datetime] = mapped_column(
+        server_default=text("now()"), default=None
+    )
     expires_at: Mapped[datetime] = mapped_column(default=None)
     revoked_at: Mapped[datetime | None] = mapped_column(default=None)
 
@@ -422,9 +477,7 @@ class BookingRule(TimestampMixin, Base):
     __table_args__ = (
         CheckConstraint(SCOPE_TARGET_CHECK, name="scope_target"),
         CheckConstraint("min_duration_min >= 15", name="min_duration"),
-        CheckConstraint(
-            "max_duration_min > min_duration_min", name="duration_order"
-        ),
+        CheckConstraint("max_duration_min > min_duration_min", name="duration_order"),
         CheckConstraint("buffer_min BETWEEN 0 AND 120", name="buffer"),
         CheckConstraint("max_advance_days BETWEEN 1 AND 365", name="advance"),
         CheckConstraint("min_advance_min BETWEEN 0 AND 1440", name="min_advance"),
@@ -446,44 +499,82 @@ class BookingRule(TimestampMixin, Base):
         ),
         # Une consigne vide n'est pas une consigne : sans cela, un champ effacé
         # mais enregistré produirait un encadré blanc dans le tunnel.
-        CheckConstraint("notice IS NULL OR btrim(notice) <> ''", name="notice_non_vide"),
-        Index("uq_booking_rules_global", "scope", unique=True, postgresql_where=text("scope = 'global'")),
+        CheckConstraint(
+            "notice IS NULL OR btrim(notice) <> ''", name="notice_non_vide"
+        ),
+        Index(
+            "uq_booking_rules_global",
+            "scope",
+            unique=True,
+            postgresql_where=text("scope = 'global'"),
+        ),
         Index(
             "uq_booking_rules_building",
             "building_id",
             unique=True,
             postgresql_where=text("scope = 'batiment'"),
         ),
-        Index("uq_booking_rules_room", "room_id", unique=True, postgresql_where=text("scope = 'salle'")),
+        Index(
+            "uq_booking_rules_room",
+            "room_id",
+            unique=True,
+            postgresql_where=text("scope = 'salle'"),
+        ),
     )
 
     id: Mapped[UuidPk]
     scope: Mapped[RuleScope] = mapped_column(pg_enum(RuleScope, "rule_scope"))
     building_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey(
-            "buildings.id", ondelete="CASCADE", onupdate="CASCADE", name="fk_booking_rules_building"
+            "buildings.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE",
+            name="fk_booking_rules_building",
         ),
         default=None,
     )
     room_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("rooms.id", ondelete="CASCADE", onupdate="CASCADE", name="fk_booking_rules_room"),
+        ForeignKey(
+            "rooms.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE",
+            name="fk_booking_rules_room",
+        ),
         default=None,
     )
-    min_duration_min: Mapped[int] = mapped_column(SmallInteger, server_default=text("30"), default=30)
-    max_duration_min: Mapped[int] = mapped_column(SmallInteger, server_default=text("240"), default=240)
-    buffer_min: Mapped[int] = mapped_column(SmallInteger, server_default=text("15"), default=15)
-    max_advance_days: Mapped[int] = mapped_column(SmallInteger, server_default=text("60"), default=60)
+    min_duration_min: Mapped[int] = mapped_column(
+        SmallInteger, server_default=text("30"), default=30
+    )
+    max_duration_min: Mapped[int] = mapped_column(
+        SmallInteger, server_default=text("240"), default=240
+    )
+    buffer_min: Mapped[int] = mapped_column(
+        SmallInteger, server_default=text("15"), default=15
+    )
+    max_advance_days: Mapped[int] = mapped_column(
+        SmallInteger, server_default=text("60"), default=60
+    )
     #: Délai minimal avant le début du créneau. Sans lui, une réservation
     #: posée pour « dans deux minutes » passerait toutes les autres règles.
     min_advance_min: Mapped[int] = mapped_column(
         SmallInteger, server_default=text("15"), default=15
     )
-    cancel_deadline_min: Mapped[int] = mapped_column(SmallInteger, server_default=text("60"), default=60)
-    checkin_window_min: Mapped[int] = mapped_column(SmallInteger, server_default=text("10"), default=10)
-    weekly_quota_hours: Mapped[int] = mapped_column(SmallInteger, server_default=text("12"), default=12)
-    max_active_bookings: Mapped[int] = mapped_column(SmallInteger, server_default=text("10"), default=10)
+    cancel_deadline_min: Mapped[int] = mapped_column(
+        SmallInteger, server_default=text("60"), default=60
+    )
+    checkin_window_min: Mapped[int] = mapped_column(
+        SmallInteger, server_default=text("10"), default=10
+    )
+    weekly_quota_hours: Mapped[int] = mapped_column(
+        SmallInteger, server_default=text("12"), default=12
+    )
+    max_active_bookings: Mapped[int] = mapped_column(
+        SmallInteger, server_default=text("10"), default=10
+    )
     #: Au-delà, la réservation passe en validation administrative.
-    validation_capacity_threshold: Mapped[int | None] = mapped_column(SmallInteger, default=None)
+    validation_capacity_threshold: Mapped[int | None] = mapped_column(
+        SmallInteger, default=None
+    )
     #: Consigne libre affichée à l'utilisateur au moment de réserver. Les dix
     #: réglages ci-dessus disent combien de temps et combien de fois ; aucun ne
     #: dit « laissez la salle rangée » ou « la clé se retire à l'accueil ».
@@ -501,7 +592,12 @@ class OpeningHour(TimestampMixin, Base):
         CheckConstraint(SCOPE_TARGET_CHECK, name="scope_target"),
         CheckConstraint("weekday BETWEEN 0 AND 6", name="weekday"),
         CheckConstraint("closes_at > opens_at", name="order"),
-        Index("uq_opening_hours_global", "weekday", unique=True, postgresql_where=text("scope = 'global'")),
+        Index(
+            "uq_opening_hours_global",
+            "weekday",
+            unique=True,
+            postgresql_where=text("scope = 'global'"),
+        ),
         Index(
             "uq_opening_hours_building",
             "building_id",
@@ -522,12 +618,20 @@ class OpeningHour(TimestampMixin, Base):
     scope: Mapped[RuleScope] = mapped_column(pg_enum(RuleScope, "rule_scope"))
     building_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey(
-            "buildings.id", ondelete="CASCADE", onupdate="CASCADE", name="fk_opening_hours_building"
+            "buildings.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE",
+            name="fk_opening_hours_building",
         ),
         default=None,
     )
     room_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("rooms.id", ondelete="CASCADE", onupdate="CASCADE", name="fk_opening_hours_room"),
+        ForeignKey(
+            "rooms.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE",
+            name="fk_opening_hours_room",
+        ),
         default=None,
     )
     #: 0 = dimanche, comme EXTRACT(DOW).
@@ -575,18 +679,28 @@ class ClosurePeriod(TimestampMixin, Base):
         default=None,
     )
 
-    created_by: Mapped["AdminAccount | None"] = relationship(back_populates="created_closures")
+    created_by: Mapped["AdminAccount | None"] = relationship(
+        back_populates="created_closures"
+    )
     buildings: Mapped[list["ClosureBuilding"]] = relationship(
-        back_populates="closure", cascade="all, delete-orphan", passive_deletes=True, lazy="selectin"
+        back_populates="closure",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="selectin",
     )
     rooms: Mapped[list["ClosureRoom"]] = relationship(
-        back_populates="closure", cascade="all, delete-orphan", passive_deletes=True, lazy="selectin"
+        back_populates="closure",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="selectin",
     )
 
 
 class ClosureBuilding(TimestampMixin, Base):
     __tablename__ = "closure_buildings"
-    __table_args__ = (Index("idx_closure_buildings_building", "building_id", "closure_id"),)
+    __table_args__ = (
+        Index("idx_closure_buildings_building", "building_id", "closure_id"),
+    )
 
     closure_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey(
@@ -625,7 +739,12 @@ class ClosureRoom(TimestampMixin, Base):
         primary_key=True,
     )
     room_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("rooms.id", ondelete="CASCADE", onupdate="CASCADE", name="fk_closure_rooms_room"),
+        ForeignKey(
+            "rooms.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE",
+            name="fk_closure_rooms_room",
+        ),
         primary_key=True,
     )
 
@@ -668,7 +787,9 @@ class AccessRequest(TimestampMixin, Base):
         Index("idx_access_requests_room", "room_id"),
         Index("idx_access_requests_requester", "requester_id"),
         Index(
-            "idx_access_requests_booking", "booking_id", postgresql_where=text("booking_id IS NOT NULL")
+            "idx_access_requests_booking",
+            "booking_id",
+            postgresql_where=text("booking_id IS NOT NULL"),
         ),
         Index(
             "idx_access_requests_decided_by",
@@ -687,17 +808,28 @@ class AccessRequest(TimestampMixin, Base):
     reference: Mapped[str] = mapped_column(String(16))
     requester_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey(
-            "users.id", ondelete="RESTRICT", onupdate="CASCADE", name="fk_access_requests_requester"
+            "users.id",
+            ondelete="RESTRICT",
+            onupdate="CASCADE",
+            name="fk_access_requests_requester",
         )
     )
     room_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("rooms.id", ondelete="RESTRICT", onupdate="CASCADE", name="fk_access_requests_room")
+        ForeignKey(
+            "rooms.id",
+            ondelete="RESTRICT",
+            onupdate="CASCADE",
+            name="fk_access_requests_room",
+        )
     )
     requested_range: Mapped[Range[datetime]] = mapped_column(TSTZRANGE)
     access_type: Mapped[AccessType] = mapped_column(pg_enum(AccessType, "access_type"))
     booking_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey(
-            "bookings.id", ondelete="SET NULL", onupdate="CASCADE", name="fk_access_requests_booking"
+            "bookings.id",
+            ondelete="SET NULL",
+            onupdate="CASCADE",
+            name="fk_access_requests_booking",
         ),
         default=None,
     )
@@ -729,7 +861,13 @@ class AccessRequest(TimestampMixin, Base):
     decided_at: Mapped[datetime | None] = mapped_column(default=None)
 
     requester: Mapped["User"] = relationship(back_populates="access_requests")
-    room: Mapped["Room"] = relationship(back_populates="access_requests", foreign_keys=[room_id])
-    alternative_room: Mapped["Room | None"] = relationship(foreign_keys=[alternative_room_id])
+    room: Mapped["Room"] = relationship(
+        back_populates="access_requests", foreign_keys=[room_id]
+    )
+    alternative_room: Mapped["Room | None"] = relationship(
+        foreign_keys=[alternative_room_id]
+    )
     booking: Mapped["Booking | None"] = relationship(back_populates="access_requests")
-    decided_by: Mapped["AdminAccount | None"] = relationship(back_populates="decided_requests")
+    decided_by: Mapped["AdminAccount | None"] = relationship(
+        back_populates="decided_requests"
+    )

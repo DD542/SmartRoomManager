@@ -30,11 +30,8 @@ from app.domain.types import (
 )
 from app.models import Booking, Floor, Room, User, UserPreference
 from app.services.availability_service import (
-    FENETRE_OCCUPATION,
     en_utc,
     free_slots,
-    load_rules,
-    charger_salle,
     room_profile,
     search_rooms,
 )
@@ -66,16 +63,19 @@ def load_user_profile(
         select(UserPreference).where(UserPreference.user_id == user_id)
     ).one_or_none()
 
-    actives = session.scalar(
-        select(func.count())
-        .select_from(Booking)
-        .where(
-            Booking.owner_id == user_id,
-            Booking.status != BookingStatus.ANNULEE,
-            Booking.deleted_at.is_(None),
-            Booking.time_range.op("&&")(Range(now, None, bounds="[)")),
+    actives = (
+        session.scalar(
+            select(func.count())
+            .select_from(Booking)
+            .where(
+                Booking.owner_id == user_id,
+                Booking.status != BookingStatus.ANNULEE,
+                Booking.deleted_at.is_(None),
+                Booking.time_range.op("&&")(Range(now, None, bounds="[)")),
+            )
         )
-    ) or 0
+        or 0
+    )
 
     depuis = now - timedelta(days=FENETRE_HISTORIQUE)
     lignes = session.execute(
@@ -105,7 +105,9 @@ def load_user_profile(
 
     return UserProfile(
         id=user_id,
-        preferred_building_id=preferences.preferred_building_id if preferences else None,
+        preferred_building_id=preferences.preferred_building_id
+        if preferences
+        else None,
         preferred_floor_level=_etage_habituel(session, habitudes),
         active_bookings=actives,
         no_show_rate=(1 - honorees / total) if total else 0.0,
@@ -123,7 +125,9 @@ def _etage_habituel(session: Session, habitudes: dict[uuid.UUID, int]) -> int | 
         return None
     favorite = max(habitudes, key=lambda salle: habitudes[salle])
     return session.scalar(
-        select(Floor.level).join(Room, Room.floor_id == Floor.id).where(Room.id == favorite)
+        select(Floor.level)
+        .join(Room, Room.floor_id == Floor.id)
+        .where(Room.id == favorite)
     )
 
 
@@ -260,11 +264,16 @@ def _reports_ailleurs(
     for proposition in classement:
         if proposition.room.id == exclure or len(propositions) >= profondeur:
             continue
-        for trou in free_slots(session, proposition.room.id, jour, jour,
-                               min_duration=slot.duration):
+        for trou in free_slots(
+            session, proposition.room.id, jour, jour, min_duration=slot.duration
+        ):
             if trou.start != slot.start:
                 propositions.append(
-                    (proposition.room, TimeSlot.of(trou.start, slot.duration), proposition.score)
+                    (
+                        proposition.room,
+                        TimeSlot.of(trou.start, slot.duration),
+                        proposition.score,
+                    )
                 )
                 break
     return tuple(propositions)

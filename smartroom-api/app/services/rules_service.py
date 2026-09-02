@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.core.errors import NotFoundError, RuleViolationError
 from app.core.pagination import PageParams, paginate
-from app.db.enums import AuditAction, ClosureKind, RuleScope
+from app.db.enums import AuditAction, RuleScope
 from app.models import (
     Booking,
     BookingRule,
@@ -77,7 +77,9 @@ def _perimetre(
     return "établissement entier"
 
 
-def _cible(scope: RuleScope, building_id: uuid.UUID | None, room_id: uuid.UUID | None) -> None:
+def _cible(
+    scope: RuleScope, building_id: uuid.UUID | None, room_id: uuid.UUID | None
+) -> None:
     """La portée dicte la cible : une contrainte de base l'exige déjà, autant
     l'expliquer avant que PostgreSQL ne s'en charge sans message lisible."""
     if scope is RuleScope.SALLE and room_id is None:
@@ -132,7 +134,9 @@ def resolve_rule_for_room(session: Session, room_id: uuid.UUID) -> BookingRule |
     return None
 
 
-def resolve_openings_for_room(session: Session, room_id: uuid.UUID) -> list[OpeningHour]:
+def resolve_openings_for_room(
+    session: Session, room_id: uuid.UUID
+) -> list[OpeningHour]:
     """Horaires effectivement appliqués à une salle, portée la plus fine d'abord.
 
     La résolution reproduit celle du moteur : par portée entière, la première qui
@@ -353,8 +357,9 @@ def list_closures(
         .order_by(ClosurePeriod.date_span)
     )
     if first_day is not None or last_day is not None:
-        periode = Range(first_day, (last_day + timedelta(days=1)) if last_day else None,
-                        bounds="[)")
+        periode = Range(
+            first_day, (last_day + timedelta(days=1)) if last_day else None, bounds="[)"
+        )
         requete = requete.where(ClosurePeriod.date_span.op("&&")(periode))
 
     return paginate(session, requete, params, colonnes=TRI_FERMETURES)
@@ -379,7 +384,9 @@ def create_closure(session: Session, payload: Any) -> ClosurePeriod:
         label=payload.label,
         # DATERANGE est stocké en [début, fin[ : le dernier jour fermé est la
         # veille de la borne supérieure.
-        date_span=Range(payload.first_day, payload.last_day + timedelta(days=1), bounds="[)"),
+        date_span=Range(
+            payload.first_day, payload.last_day + timedelta(days=1), bounds="[)"
+        ),
         kind=payload.kind,
         is_global=payload.is_global,
     )
@@ -442,8 +449,12 @@ def impacted_bookings(session: Session, closure_id: uuid.UUID) -> list[Booking]:
     if fermeture is None:
         raise NotFoundError("Fermeture introuvable.")
 
-    debut = datetime.combine(fermeture.date_span.lower, datetime.min.time(), tzinfo=FUSEAU)
-    fin = datetime.combine(fermeture.date_span.upper, datetime.min.time(), tzinfo=FUSEAU)
+    debut = datetime.combine(
+        fermeture.date_span.lower, datetime.min.time(), tzinfo=FUSEAU
+    )
+    fin = datetime.combine(
+        fermeture.date_span.upper, datetime.min.time(), tzinfo=FUSEAU
+    )
 
     requete = (
         select(Booking)

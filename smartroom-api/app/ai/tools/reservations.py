@@ -60,7 +60,11 @@ def _mienne(ctx: ToolContext, reservation_id: uuid.UUID) -> Booking | None:
     """
     return ctx.session.scalars(
         select(Booking)
-        .options(selectinload(Booking.room).selectinload(Room.floor).selectinload(Floor.building))
+        .options(
+            selectinload(Booking.room)
+            .selectinload(Room.floor)
+            .selectinload(Floor.building)
+        )
         .where(
             Booking.id == reservation_id,
             Booking.owner_id == ctx.utilisateur_id,
@@ -101,7 +105,12 @@ class ListerMesReservations(Outil):
                 },
                 "depuis": {"type": "string", "format": "date"},
                 "jusqu_a": {"type": "string", "format": "date"},
-                "limite": {"type": "integer", "minimum": 1, "maximum": 20, "default": 5},
+                "limite": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 20,
+                    "default": 5,
+                },
             },
             "required": [],
         },
@@ -112,16 +121,19 @@ class ListerMesReservations(Outil):
 
         requete = (
             select(Booking)
-            .options(selectinload(Booking.room).selectinload(Room.floor).selectinload(Floor.building))
+            .options(
+                selectinload(Booking.room)
+                .selectinload(Room.floor)
+                .selectinload(Floor.building)
+            )
             .where(Booking.owner_id == ctx.utilisateur_id, Booking.deleted_at.is_(None))
         )
 
         if params.etat == "a_venir":
             requete = requete.where(
                 Booking.status != BookingStatus.ANNULEE,
-                Booking.time_range.op(">>")(
-                    _instant_range(ctx.maintenant)
-                ) | Booking.time_range.op("@>")(ctx.maintenant),
+                Booking.time_range.op(">>")(_instant_range(ctx.maintenant))
+                | Booking.time_range.op("@>")(ctx.maintenant),
             ).order_by(Booking.time_range)
         elif params.etat == "passees":
             requete = requete.where(
@@ -222,7 +234,12 @@ class CreerReservation(Outil):
                     "maxLength": 200,
                     "description": "Intitulé de la réunion. À défaut : « Réunion ».",
                 },
-                "effectif": {"type": "integer", "minimum": 1, "maximum": 500, "default": 1},
+                "effectif": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 500,
+                    "default": 1,
+                },
                 "participants": {
                     "type": "array",
                     "maxItems": 20,
@@ -242,11 +259,15 @@ class CreerReservation(Outil):
         params: BrouillonReservation = self.valider(args)
 
         try:
-            salle = resoudre_salle(ctx.session, salle_id=params.salle_id, nom=params.salle_nom)
+            salle = resoudre_salle(
+                ctx.session, salle_id=params.salle_id, nom=params.salle_nom
+            )
         except Ambiguite as souci:
             return ToolResult.vide(souci.message())
 
-        creneau = TimeSlot(start=lire_instant(params.debut), end=lire_instant(params.fin))
+        creneau = TimeSlot(
+            start=lire_instant(params.debut), end=lire_instant(params.fin)
+        )
 
         if not ctx.confirmed:
             # Le créneau est éprouvé **avant** de demander confirmation : faire
@@ -296,10 +317,14 @@ class CreerReservation(Outil):
             charge["code_acces"] = code.clear
             charge["code_valide_jusqu_a"] = code.expires_at.isoformat()
 
-        return ToolResult.ok(data=charge, carte=Carte.RESERVATION, message="Réservation confirmée.")
+        return ToolResult.ok(
+            data=charge, carte=Carte.RESERVATION, message="Réservation confirmée."
+        )
 
 
-def availability_apercu(ctx: ToolContext, salle_id, creneau: TimeSlot, effectif: int) -> str | None:
+def availability_apercu(
+    ctx: ToolContext, salle_id, creneau: TimeSlot, effectif: int
+) -> str | None:
     """Rend le motif de refus si le créneau ne passe pas, `None` s'il passe."""
     from app.services import availability_service
 
@@ -332,11 +357,20 @@ class BrouillonModification(_Base):
 
     @model_validator(mode="after")
     def _quelque_chose_a_changer(self):
-        if self.debut is None and self.fin is None and self.objet is None and self.effectif is None:
+        if (
+            self.debut is None
+            and self.fin is None
+            and self.objet is None
+            and self.effectif is None
+        ):
             raise ValueError("Indiquer au moins un champ à modifier.")
         if (self.debut is None) != (self.fin is None):
             raise ValueError("`debut` et `fin` se donnent ensemble.")
-        if self.debut and self.fin and lire_instant(self.fin) <= lire_instant(self.debut):
+        if (
+            self.debut
+            and self.fin
+            and lire_instant(self.fin) <= lire_instant(self.debut)
+        ):
             raise ValueError("`fin` doit être postérieur à `debut`.")
         return self
 
@@ -395,7 +429,10 @@ class ModifierReservation(Outil):
                     f"({', '.join(changements)}) ?"
                 ),
                 preview=params,
-                data={"avant": _resume_reservation(reservation), "changements": changements},
+                data={
+                    "avant": _resume_reservation(reservation),
+                    "changements": changements,
+                },
             )
 
         try:

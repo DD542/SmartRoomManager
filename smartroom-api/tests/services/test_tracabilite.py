@@ -140,13 +140,17 @@ class TestAdresseDOrigine:
         )
         assert pose.status_code in (200, 201), pose.text
 
-        reponse = client.get("/api/v1/admin/audit-logs", headers=systeme, params={"size": 100})
+        reponse = client.get(
+            "/api/v1/admin/audit-logs", headers=systeme, params={"size": 100}
+        )
 
         assert reponse.status_code == 200, reponse.text
         avec_adresse = [
             item for item in reponse.json()["items"] if item["ip_address"] is not None
         ]
-        assert avec_adresse, "l'entrée écrite sous en-tête transmis doit porter une adresse"
+        assert avec_adresse, (
+            "l'entrée écrite sous en-tête transmis doit porter une adresse"
+        )
         assert "203.0.113.7" in {item["ip_address"] for item in avec_adresse}
         assert all(isinstance(item["ip_address"], str) for item in avec_adresse)
 
@@ -195,7 +199,11 @@ class TestTriDesCollections:
         transaction : sans valeurs distinctes, un tri faux et un tri juste
         rendent la même liste, et l'assertion ne prouverait rien.
         """
-        for acteur, cible in (("Zoe " + marque, "zeta"), ("Ana " + marque, "alpha"), ("Milo " + marque, "mu")):
+        for acteur, cible in (
+            ("Zoe " + marque, "zeta"),
+            ("Ana " + marque, "alpha"),
+            ("Milo " + marque, "mu"),
+        ):
             session.add(
                 AuditLog(
                     actor_label=acteur,
@@ -209,7 +217,9 @@ class TestTriDesCollections:
         return marque
 
     @pytest.mark.parametrize("champ", ["actor_label", "target_type"])
-    def test_le_tri_demande_est_bien_applique(self, client, systeme, entrees_variees, champ):
+    def test_le_tri_demande_est_bien_applique(
+        self, client, systeme, entrees_variees, champ
+    ):
         montant = client.get(
             "/api/v1/admin/audit-logs",
             headers=systeme,

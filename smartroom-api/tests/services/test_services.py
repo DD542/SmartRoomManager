@@ -18,7 +18,9 @@ from app.services import recommendation_service as reco
 from tests.services.conftest import creneau
 
 
-def poser(session: Session, salle, compte, slot: TimeSlot, titre="Réunion existante") -> Booking:
+def poser(
+    session: Session, salle, compte, slot: TimeSlot, titre="Réunion existante"
+) -> Booking:
     reservation = Booking(
         room_id=salle.id,
         owner_id=compte.id,
@@ -42,8 +44,12 @@ class TestChargement:
     def test_la_regle_de_salle_prime_sur_le_global(self, session, salle):
         """La migration pose déjà une règle globale : celle de la salle la coiffe."""
         session.add(
-            BookingRule(scope=RuleScope.SALLE, room_id=salle.id, min_duration_min=60,
-                        buffer_min=5)
+            BookingRule(
+                scope=RuleScope.SALLE,
+                room_id=salle.id,
+                min_duration_min=60,
+                buffer_min=5,
+            )
         )
         session.flush()
 
@@ -52,7 +58,9 @@ class TestChargement:
         assert regles.buffer == timedelta(minutes=5)
 
     def test_horaires_de_la_salle(self, session, salle):
-        horaires = service.load_openings(session, service.charger_salle(session, salle.id))
+        horaires = service.load_openings(
+            session, service.charger_salle(session, salle.id)
+        )
         assert len(horaires) == 7
         assert {item.weekday for item in horaires} == set(range(7))
 
@@ -91,10 +99,14 @@ class TestCreneauxLibres:
         # Battement de 15 min par défaut : le trou de l'après-midi ouvre à 13:15.
         assert trous[1].start == creneau(jour_ouvre, 13, 15, 60).start
 
-    def test_salle_sans_horaires_herite_du_global(self, creer_salle, session, jour_ouvre):
+    def test_salle_sans_horaires_herite_du_global(
+        self, creer_salle, session, jour_ouvre
+    ):
         """La résolution se fait par portée entière : salle, puis bâtiment, puis global."""
         muette = creer_salle("Muette", horaires=None)
-        heritees = service.load_openings(session, service.charger_salle(session, muette.id))
+        heritees = service.load_openings(
+            session, service.charger_salle(session, muette.id)
+        )
         assert heritees, "la salle doit hériter des horaires globaux"
         assert service.free_slots(session, muette.id, jour_ouvre, jour_ouvre) != ()
 
@@ -131,7 +143,9 @@ class TestVerification:
         assert rapport.forcible is False
         assert rapport.blocking[0].existing.title == "Atelier"
 
-    def test_battement_insuffisant_est_forcable(self, session, salle, compte, jour_ouvre):
+    def test_battement_insuffisant_est_forcable(
+        self, session, salle, compte, jour_ouvre
+    ):
         poser(session, salle, compte, creneau(jour_ouvre, 9, 0, 55), "Atelier")
         rapport = service.check_slot(
             session, room_id=salle.id, slot=creneau(jour_ouvre, 10), attendees=4
@@ -167,7 +181,9 @@ class TestVerification:
 
 
 class TestRecherche:
-    def test_une_seule_requete_filtrante(self, session, salle, creer_salle, jour_ouvre, video):
+    def test_une_seule_requete_filtrante(
+        self, session, salle, creer_salle, jour_ouvre, video
+    ):
         equipee = creer_salle("Equipee", equipements=[video])
         criteres = SearchCriteria(
             slot=creneau(jour_ouvre, 10),
@@ -184,20 +200,27 @@ class TestRecherche:
     ):
         poser(session, salle, compte, creneau(jour_ouvre, 10))
         criteres = SearchCriteria(slot=creneau(jour_ouvre, 10), attendees=4)
-        occupation = {profil.id: libre for profil, libre in service.search_rooms(session, criteres)}
+        occupation = {
+            profil.id: libre
+            for profil, libre in service.search_rooms(session, criteres)
+        }
         assert occupation[salle.id] is False
 
     def test_filtre_pmr(self, session, creer_salle, jour_ouvre):
         creer_salle("Etroite", accessible=False)
         accessible = creer_salle("Large", accessible=True)
         criteres = SearchCriteria(slot=creneau(jour_ouvre, 10), accessible_only=True)
-        identifiants = {profil.id for profil, _ in service.search_rooms(session, criteres)}
+        identifiants = {
+            profil.id for profil, _ in service.search_rooms(session, criteres)
+        }
         assert accessible.id in identifiants
 
     def test_salle_archivee_absente(self, session, creer_salle, jour_ouvre):
         archivee = creer_salle("Archivee", statut=RoomStatus.ARCHIVEE)
         criteres = SearchCriteria(slot=creneau(jour_ouvre, 10))
-        assert archivee.id not in {p.id for p, _ in service.search_rooms(session, criteres)}
+        assert archivee.id not in {
+            p.id for p, _ in service.search_rooms(session, criteres)
+        }
 
 
 class TestEcriture:
@@ -222,8 +245,11 @@ class TestEcriture:
         poser(session, salle, compte, creneau(jour_ouvre, 10))
         with pytest.raises(SlotConflictError):
             booking.create_booking(
-                session, room_id=salle.id, owner_id=compte.id,
-                slot=creneau(jour_ouvre, 10), attendees=4,
+                session,
+                room_id=salle.id,
+                owner_id=compte.id,
+                slot=creneau(jour_ouvre, 10),
+                attendees=4,
             )
 
     def test_fermeture_leve_une_erreur_dediee(self, session, salle, compte, jour_ouvre):
@@ -237,31 +263,48 @@ class TestEcriture:
         session.flush()
         with pytest.raises(ClosureError):
             booking.create_booking(
-                session, room_id=salle.id, owner_id=compte.id,
-                slot=creneau(jour_ouvre, 10), attendees=4,
+                session,
+                room_id=salle.id,
+                owner_id=compte.id,
+                slot=creneau(jour_ouvre, 10),
+                attendees=4,
             )
 
     def test_l_administration_force_une_regle_mais_pas_un_conflit(
         self, session, salle, compte, jour_ouvre
     ):
         forcee, _ = booking.create_booking(
-            session, room_id=salle.id, owner_id=compte.id,
-            slot=creneau(jour_ouvre, 22), attendees=4, ignore_rules=True,
+            session,
+            room_id=salle.id,
+            owner_id=compte.id,
+            slot=creneau(jour_ouvre, 22),
+            attendees=4,
+            ignore_rules=True,
         )
         assert forcee.is_forced is True
 
         with pytest.raises(SlotConflictError):
             booking.create_booking(
-                session, room_id=salle.id, owner_id=compte.id,
-                slot=creneau(jour_ouvre, 22), attendees=4, ignore_rules=True,
+                session,
+                room_id=salle.id,
+                owner_id=compte.id,
+                slot=creneau(jour_ouvre, 22),
+                attendees=4,
+                ignore_rules=True,
             )
 
-    def test_creneau_ecoule_n_est_pas_forcable(self, session, salle, compte, jour_ouvre):
+    def test_creneau_ecoule_n_est_pas_forcable(
+        self, session, salle, compte, jour_ouvre
+    ):
         passe = creneau(jour_ouvre - timedelta(days=14), 10)
         with pytest.raises(RuleViolationError) as refus:
             booking.create_booking(
-                session, room_id=salle.id, owner_id=compte.id,
-                slot=passe, attendees=4, ignore_rules=True,
+                session,
+                room_id=salle.id,
+                owner_id=compte.id,
+                slot=passe,
+                attendees=4,
+                ignore_rules=True,
             )
         assert refus.value.code == RuleCode.PASSE.value
 
@@ -319,7 +362,9 @@ class TestRecommandation:
         par_salle = {item.room.id: item for item in classement}
         assert par_salle[equipee.id].eligible is False
         assert par_salle[nue.id].eligible is True
-        assert classement.index(par_salle[nue.id]) < classement.index(par_salle[equipee.id])
+        assert classement.index(par_salle[nue.id]) < classement.index(
+            par_salle[equipee.id]
+        )
 
     def test_la_justification_cite_l_empechement(
         self, session, compte, salle, jour_ouvre
@@ -332,9 +377,12 @@ class TestRecommandation:
         assert "créneau déjà pris" in propose.justification
 
     def test_meilleure_salle_ou_rien(self, session, compte, salle, jour_ouvre):
-        assert reco.best_room(
-            session, SearchCriteria(slot=creneau(jour_ouvre, 10), attendees=4)
-        ) is not None
+        assert (
+            reco.best_room(
+                session, SearchCriteria(slot=creneau(jour_ouvre, 10), attendees=4)
+            )
+            is not None
+        )
         assert reco.best_room(session, SearchCriteria(attendees=5000)) is None
 
     def test_profil_utilisateur_agrege(self, session, compte, salle, jour_ouvre):

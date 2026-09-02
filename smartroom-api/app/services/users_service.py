@@ -47,7 +47,14 @@ TRI_ADMINS: dict[str, Any] = {
 #: différents selon l'écran consulté.
 QUOTA_PAR_DEFAUT = 12
 
-CHAMPS_PROFIL = ("first_name", "last_name", "phone", "promotion", "department", "status")
+CHAMPS_PROFIL = (
+    "first_name",
+    "last_name",
+    "phone",
+    "promotion",
+    "department",
+    "status",
+)
 
 #: Durée de validité d'une invitation d'administrateur.
 INVITATION_JOURS = 7
@@ -205,7 +212,9 @@ def get_preferences(session: Session, user_id: uuid.UUID) -> UserPreference:
     return compte.preferences
 
 
-def save_preferences(session: Session, user_id: uuid.UUID, payload: Any) -> UserPreference:
+def save_preferences(
+    session: Session, user_id: uuid.UUID, payload: Any
+) -> UserPreference:
     preferences = get_preferences(session, user_id)
     for champ, valeur in payload.model_dump(exclude_unset=True).items():
         setattr(preferences, champ, valeur)
@@ -247,7 +256,9 @@ def list_users(
         )
     elif role == "utilisateur":
         requete = requete.where(
-            ~select(AdminAccount.user_id).where(AdminAccount.user_id == User.id).exists()
+            ~select(AdminAccount.user_id)
+            .where(AdminAccount.user_id == User.id)
+            .exists()
         )
     if query:
         motif = f"%{query}%"
@@ -289,25 +300,29 @@ def user_metrics(session: Session, user_id: uuid.UUID) -> dict[str, Any]:
         ).where(Booking.owner_id == user_id, Booking.deleted_at.is_(None))
     ).one()
 
-    heures_semaine = session.scalar(
-        select(
-            func.coalesce(
-                func.sum(
-                    func.extract(
-                        "epoch",
-                        func.upper(Booking.time_range) - func.lower(Booking.time_range),
-                    )
-                    / 3600
-                ),
-                0,
+    heures_semaine = (
+        session.scalar(
+            select(
+                func.coalesce(
+                    func.sum(
+                        func.extract(
+                            "epoch",
+                            func.upper(Booking.time_range)
+                            - func.lower(Booking.time_range),
+                        )
+                        / 3600
+                    ),
+                    0,
+                )
+            ).where(
+                Booking.owner_id == user_id,
+                Booking.deleted_at.is_(None),
+                Booking.status != BookingStatus.ANNULEE,
+                Booking.time_range.op("&&")(Range(debut_semaine, None, bounds="[)")),
             )
-        ).where(
-            Booking.owner_id == user_id,
-            Booking.deleted_at.is_(None),
-            Booking.status != BookingStatus.ANNULEE,
-            Booking.time_range.op("&&")(Range(debut_semaine, None, bounds="[)")),
         )
-    ) or 0
+        or 0
+    )
 
     quota = (
         compte.preferences.weekly_quota_hours
@@ -372,7 +387,9 @@ def metrics_for(
                     / 3600
                 ).filter(
                     (Booking.status != BookingStatus.ANNULEE)
-                    & Booking.time_range.op("&&")(Range(debut_semaine, None, bounds="[)"))
+                    & Booking.time_range.op("&&")(
+                        Range(debut_semaine, None, bounds="[)")
+                    )
                 ),
                 0,
             ),
@@ -503,12 +520,15 @@ def _appliquer_permissions(
     """Remplace la matrice d'un administrateur par la liste fournie."""
     connues = {
         item.code: item.id
-        for item in session.scalars(select(Permission).where(Permission.code.in_(codes)))
+        for item in session.scalars(
+            select(Permission).where(Permission.code.in_(codes))
+        )
     }
     inconnues = set(codes) - set(connues)
     if inconnues:
         raise RuleViolationError(
-            f"Permission inconnue : {', '.join(sorted(inconnues))}.", code="permission_inconnue"
+            f"Permission inconnue : {', '.join(sorted(inconnues))}.",
+            code="permission_inconnue",
         )
 
     session.execute(
@@ -619,7 +639,9 @@ def list_invitations(session: Session) -> list[AdminInvitation]:
     )
 
 
-def invite_admin(session: Session, payload: Any, *, invited_by: uuid.UUID) -> tuple[AdminInvitation, str]:
+def invite_admin(
+    session: Session, payload: Any, *, invited_by: uuid.UUID
+) -> tuple[AdminInvitation, str]:
     """Invite une adresse à devenir administrateur.
 
     Le jeton n'est pas stocké en clair : la base garde son empreinte, le clair

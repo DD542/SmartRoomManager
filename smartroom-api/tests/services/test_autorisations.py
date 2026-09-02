@@ -78,7 +78,11 @@ ROUTES_PROTEGEES = [
         id="creation_de_salle",
     ),
     pytest.param(
-        "DELETE", f"/api/v1/rooms/{INCONNU}", None, ROOMS_MANAGE, id="archivage_de_salle"
+        "DELETE",
+        f"/api/v1/rooms/{INCONNU}",
+        None,
+        ROOMS_MANAGE,
+        id="archivage_de_salle",
     ),
     pytest.param(
         "POST",
@@ -104,10 +108,18 @@ ROUTES_PROTEGEES = [
         id="declaration_de_fermeture",
     ),
     pytest.param(
-        "GET", "/api/v1/admin/access-requests", None, CONFLICTS_ARBITRATE, id="file_d_arbitrage"
+        "GET",
+        "/api/v1/admin/access-requests",
+        None,
+        CONFLICTS_ARBITRATE,
+        id="file_d_arbitrage",
     ),
     pytest.param(
-        "GET", "/api/v1/admin/bookings", None, CONFLICTS_ARBITRATE, id="reservations_de_tous"
+        "GET",
+        "/api/v1/admin/bookings",
+        None,
+        CONFLICTS_ARBITRATE,
+        id="reservations_de_tous",
     ),
     pytest.param(
         "GET", "/api/v1/admin/tickets", None, SUPPORT_HANDLE, id="file_du_support"
@@ -140,7 +152,9 @@ def _appeler(client, methode: str, chemin: str, corps, entetes):
 
 
 class TestPermissionsAdministration:
-    @pytest.mark.parametrize(("methode", "chemin", "corps", "permission"), ROUTES_PROTEGEES)
+    @pytest.mark.parametrize(
+        ("methode", "chemin", "corps", "permission"), ROUTES_PROTEGEES
+    )
     def test_sans_la_permission_la_route_repond_403(
         self, client, session, administrateur, methode, chemin, corps, permission
     ):
@@ -154,7 +168,9 @@ class TestPermissionsAdministration:
         assert reponse.status_code == 403, reponse.text
         assert reponse.json()["error"]["code"] == "permission_manquante"
 
-    @pytest.mark.parametrize(("methode", "chemin", "corps", "permission"), ROUTES_PROTEGEES)
+    @pytest.mark.parametrize(
+        ("methode", "chemin", "corps", "permission"), ROUTES_PROTEGEES
+    )
     def test_avec_la_permission_la_route_repond(
         self, client, session, administrateur, methode, chemin, corps, permission
     ):
@@ -178,7 +194,9 @@ class TestPermissionsAdministration:
         if methode == "GET":
             assert reponse.status_code == 200, reponse.text
 
-    @pytest.mark.parametrize(("methode", "chemin", "corps", "permission"), ROUTES_PROTEGEES)
+    @pytest.mark.parametrize(
+        ("methode", "chemin", "corps", "permission"), ROUTES_PROTEGEES
+    )
     def test_un_utilisateur_simple_n_atteint_pas_l_administration(
         self, client, compte, methode, chemin, corps, permission
     ):
@@ -188,7 +206,9 @@ class TestPermissionsAdministration:
         reponse = _appeler(client, methode, chemin, corps, entetes)
         assert reponse.status_code == 403, reponse.text
 
-    @pytest.mark.parametrize(("methode", "chemin", "corps", "permission"), ROUTES_PROTEGEES)
+    @pytest.mark.parametrize(
+        ("methode", "chemin", "corps", "permission"), ROUTES_PROTEGEES
+    )
     def test_sans_jeton_la_route_repond_401(
         self, client, methode, chemin, corps, permission
     ):
@@ -222,7 +242,8 @@ class TestCompletude:
         entetes = connecter(client, administrateur.user.email, admin=True)
 
         assert (
-            client.get("/api/v1/admin/stats/overview", headers=entetes).status_code == 200
+            client.get("/api/v1/admin/stats/overview", headers=entetes).status_code
+            == 200
         )
 
     def test_les_statistiques_s_ouvrent_aussi_a_la_configuration(
@@ -232,7 +253,8 @@ class TestCompletude:
         entetes = connecter(client, administrateur.user.email, admin=True)
 
         assert (
-            client.get("/api/v1/admin/stats/overview", headers=entetes).status_code == 200
+            client.get("/api/v1/admin/stats/overview", headers=entetes).status_code
+            == 200
         )
 
     def test_sans_aucun_des_deux_les_statistiques_sont_refusees(
@@ -242,7 +264,8 @@ class TestCompletude:
         entetes = connecter(client, administrateur.user.email, admin=True)
 
         assert (
-            client.get("/api/v1/admin/stats/overview", headers=entetes).status_code == 403
+            client.get("/api/v1/admin/stats/overview", headers=entetes).status_code
+            == 403
         )
 
 
@@ -260,7 +283,9 @@ class TestProprieteDesReservations:
         poser(session, salle, tiers, creneau(jour_ouvre, 14, 0, 60))
         entetes = connecter(client, compte.email)
 
-        corps = client.get("/api/v1/bookings", headers=entetes, params={"size": 100}).json()
+        corps = client.get(
+            "/api/v1/bookings", headers=entetes, params={"size": 100}
+        ).json()
         assert {item["id"] for item in corps["items"]} == {str(mienne.id)}
 
     def test_le_total_pagine_ne_compte_pas_celles_des_autres(
@@ -277,7 +302,9 @@ class TestProprieteDesReservations:
         corps = client.get("/api/v1/bookings", headers=entetes).json()
         assert corps["total"] == 1
 
-    def test_lire_celle_d_un_tiers_repond_404(self, client, compte, reservation_d_autrui):
+    def test_lire_celle_d_un_tiers_repond_404(
+        self, client, compte, reservation_d_autrui
+    ):
         autre, _ = reservation_d_autrui
         entetes = connecter(client, compte.email)
 
@@ -331,7 +358,9 @@ class TestProprieteDesReservations:
         entetes = connecter(client, compte.email)
 
         reponse = client.post(
-            f"/api/v1/bookings/{autre.id}/check-in", headers=entetes, json={"code": "A-1234"}
+            f"/api/v1/bookings/{autre.id}/check-in",
+            headers=entetes,
+            json={"code": "A-1234"},
         )
         assert reponse.status_code == 404
 

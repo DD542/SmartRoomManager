@@ -20,7 +20,6 @@ from app.core.pagination import PageParams, paginate
 from app.db.enums import ArticleStatus, AuditAction, TicketStatus
 from app.models import (
     ChatbotIntent,
-    ChatbotIntentKeyword,
     FaqArticle,
     FaqCategory,
     Ticket,
@@ -112,13 +111,17 @@ def list_all(
         requete = requete.where(Ticket.assigned_admin_id == assigned_to)
     if query:
         requete = requete.where(
-            or_(Ticket.subject.ilike(f"%{query}%"), Ticket.reference.ilike(f"%{query}%"))
+            or_(
+                Ticket.subject.ilike(f"%{query}%"), Ticket.reference.ilike(f"%{query}%")
+            )
         )
     return paginate(session, requete, params, colonnes=TRI_TICKETS)
 
 
 def get_ticket(session: Session, ticket_id: uuid.UUID) -> Ticket:
-    ticket = session.scalars(_requete_ticket().where(Ticket.id == ticket_id)).one_or_none()
+    ticket = session.scalars(
+        _requete_ticket().where(Ticket.id == ticket_id)
+    ).one_or_none()
     if ticket is None:
         raise NotFoundError("Ticket introuvable.")
     return ticket
@@ -277,7 +280,9 @@ def list_categories(session: Session) -> list[tuple[FaqCategory, int]]:
     )
     return list(
         session.execute(
-            select(FaqCategory, articles).order_by(FaqCategory.sort_order, FaqCategory.label)
+            select(FaqCategory, articles).order_by(
+                FaqCategory.sort_order, FaqCategory.label
+            )
         ).all()
     )
 
@@ -410,9 +415,11 @@ def delete_article(session: Session, article_id: uuid.UUID) -> None:
 
 
 def list_intents(session: Session, *, active_only: bool = False) -> list[ChatbotIntent]:
-    requete = select(ChatbotIntent).options(
-        selectinload(ChatbotIntent.keywords)
-    ).order_by(ChatbotIntent.label)
+    requete = (
+        select(ChatbotIntent)
+        .options(selectinload(ChatbotIntent.keywords))
+        .order_by(ChatbotIntent.label)
+    )
     if active_only:
         requete = requete.where(ChatbotIntent.is_active.is_(True))
     return list(session.scalars(requete))
@@ -437,7 +444,9 @@ def answer(session: Session, message: str) -> dict[str, Any]:
         cles = [_sans_accent(item.keyword) for item in intention.keywords]
         if not cles:
             continue
-        trouves = sum(1 for cle in cles if any(cle in mot or mot in cle for mot in mots))
+        trouves = sum(
+            1 for cle in cles if any(cle in mot or mot in cle for mot in mots)
+        )
         score = trouves / len(cles)
         if score > meilleur_score:
             meilleure, meilleur_score = intention, score

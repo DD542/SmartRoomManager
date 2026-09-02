@@ -37,8 +37,12 @@ CANDIDAT = slot(10, 0, 12)
 MATRICE = [
     pytest.param(slot(10, 0, 12), OverlapKind.IDENTIQUE, 120, 0, id="identique"),
     pytest.param(slot(9, 0, 13), OverlapKind.ENGLOBANT, 120, 0, id="englobant_strict"),
-    pytest.param(slot(10, 0, 13), OverlapKind.ENGLOBANT, 120, 0, id="englobant_bord_debut"),
-    pytest.param(slot(9, 0, 12), OverlapKind.ENGLOBANT, 120, 0, id="englobant_bord_fin"),
+    pytest.param(
+        slot(10, 0, 13), OverlapKind.ENGLOBANT, 120, 0, id="englobant_bord_debut"
+    ),
+    pytest.param(
+        slot(9, 0, 12), OverlapKind.ENGLOBANT, 120, 0, id="englobant_bord_fin"
+    ),
     pytest.param(slot(10, 30, 11, 30), OverlapKind.ENGLOBE, 60, 0, id="englobe_strict"),
     pytest.param(slot(10, 0, 11), OverlapKind.ENGLOBE, 60, 0, id="englobe_bord_debut"),
     pytest.param(slot(11, 0, 12), OverlapKind.ENGLOBE, 60, 0, id="englobe_bord_fin"),
@@ -153,7 +157,9 @@ class TestDescribe:
         assert "12:00–14:00" in describe(conflit, PARIS)
 
     def test_rapport_complet(self):
-        conflits = detect(CANDIDAT, [booking(slot(10, 0, 12)), booking(slot(12, 0, 13))])
+        conflits = detect(
+            CANDIDAT, [booking(slot(10, 0, 12)), booking(slot(12, 0, 13))]
+        )
         assert len(report(conflits, PARIS)) == 2
 
 
@@ -185,14 +191,20 @@ class TestAlternatives:
     def test_le_report_colle_a_l_heure_visee(self):
         """Un trou qui englobe l'heure demandée n'entraîne aucun décalage utile."""
         salle = room("Vinci")
-        assert propose_alternatives(
-            CANDIDAT, salle, same_room_free=[slot(8, 0, 18)], tz=PARIS
-        ) == ()
+        assert (
+            propose_alternatives(
+                CANDIDAT, salle, same_room_free=[slot(8, 0, 18)], tz=PARIS
+            )
+            == ()
+        )
 
     def test_trou_trop_court_ecarte(self):
-        assert propose_alternatives(
-            CANDIDAT, room(), same_room_free=[slot(13, 0, 13, 30)], tz=PARIS
-        ) == ()
+        assert (
+            propose_alternatives(
+                CANDIDAT, room(), same_room_free=[slot(13, 0, 13, 30)], tz=PARIS
+            )
+            == ()
+        )
 
     def test_autre_salle_au_meme_creneau(self):
         visee, autre = room("Vinci"), room("Curie")
@@ -207,9 +219,15 @@ class TestAlternatives:
     def test_la_salle_visee_ne_se_propose_pas_elle_meme(self):
         visee = room("Vinci")
         critere = SearchCriteria(attendees=10)
-        assert propose_alternatives(
-            CANDIDAT, visee, other_rooms=[(visee, score_room(visee, critere))], tz=PARIS
-        ) == ()
+        assert (
+            propose_alternatives(
+                CANDIDAT,
+                visee,
+                other_rooms=[(visee, score_room(visee, critere))],
+                tz=PARIS,
+            )
+            == ()
+        )
 
     def test_salle_et_creneau_proches(self):
         visee, autre = room("Vinci"), room("Curie")
@@ -226,9 +244,15 @@ class TestAlternatives:
     def test_une_proposition_identique_est_ecartee(self):
         visee = room("Vinci")
         critere = SearchCriteria(attendees=10)
-        assert propose_alternatives(
-            CANDIDAT, visee, nearby=[(visee, CANDIDAT, score_room(visee, critere))], tz=PARIS
-        ) == ()
+        assert (
+            propose_alternatives(
+                CANDIDAT,
+                visee,
+                nearby=[(visee, CANDIDAT, score_room(visee, critere))],
+                tz=PARIS,
+            )
+            == ()
+        )
 
     def test_le_decalage_au_dela_de_l_horizon_ne_vaut_rien(self):
         salle = room("Vinci")
@@ -254,8 +278,18 @@ class TestAlternatives:
     def test_limite(self):
         visee = room("Vinci")
         critere = SearchCriteria(attendees=10)
-        autres = [(room(f"Salle {i}"), score_room(room(f"Salle {i}"), critere)) for i in range(6)]
-        assert len(propose_alternatives(CANDIDAT, visee, other_rooms=autres, tz=PARIS, limit=3)) == 3
+        autres = [
+            (room(f"Salle {i}"), score_room(room(f"Salle {i}"), critere))
+            for i in range(6)
+        ]
+        assert (
+            len(
+                propose_alternatives(
+                    CANDIDAT, visee, other_rooms=autres, tz=PARIS, limit=3
+                )
+            )
+            == 3
+        )
 
     def test_aucune_source(self):
         assert propose_alternatives(CANDIDAT, room(), tz=PARIS) == ()
@@ -263,20 +297,32 @@ class TestAlternatives:
 
 class TestArbitrage:
     def test_tri_par_anteriorite(self):
-        premier = ClaimantFile(user_id=uuid4(), requested_at=utc(8), display_name="Premier")
-        second = ClaimantFile(user_id=uuid4(), requested_at=utc(9), display_name="Second")
+        premier = ClaimantFile(
+            user_id=uuid4(), requested_at=utc(8), display_name="Premier"
+        )
+        second = ClaimantFile(
+            user_id=uuid4(), requested_at=utc(9), display_name="Second"
+        )
         brief = arbitration_brief(CANDIDAT, uuid4(), [second, premier], tz=PARIS)
         assert [item.display_name for item in brief.claimants] == ["Premier", "Second"]
 
     def test_les_trois_criteres_sont_exposes_separement(self):
         dossiers = [
             ClaimantFile(
-                user_id=uuid4(), requested_at=utc(8), active_bookings=2,
-                max_active_bookings=10, no_show_rate=0.05, display_name="Premier",
+                user_id=uuid4(),
+                requested_at=utc(8),
+                active_bookings=2,
+                max_active_bookings=10,
+                no_show_rate=0.05,
+                display_name="Premier",
             ),
             ClaimantFile(
-                user_id=uuid4(), requested_at=utc(9), active_bookings=8,
-                max_active_bookings=10, no_show_rate=0.30, display_name="Second",
+                user_id=uuid4(),
+                requested_at=utc(9),
+                active_bookings=8,
+                max_active_bookings=10,
+                no_show_rate=0.30,
+                display_name="Second",
             ),
         ]
         brief = arbitration_brief(CANDIDAT, uuid4(), dossiers, tz=PARIS)
@@ -302,12 +348,24 @@ class TestArbitrage:
 
     def test_critere_qui_ne_departage_pas(self):
         dossiers = [
-            ClaimantFile(user_id=uuid4(), requested_at=utc(8), active_bookings=2, no_show_rate=0.1),
-            ClaimantFile(user_id=uuid4(), requested_at=utc(8), active_bookings=2, no_show_rate=0.1),
+            ClaimantFile(
+                user_id=uuid4(),
+                requested_at=utc(8),
+                active_bookings=2,
+                no_show_rate=0.1,
+            ),
+            ClaimantFile(
+                user_id=uuid4(),
+                requested_at=utc(8),
+                active_bookings=2,
+                no_show_rate=0.1,
+            ),
         ]
         brief = arbitration_brief(CANDIDAT, uuid4(), dossiers, tz=PARIS)
         assert all(
-            item.favours is None for dossier in brief.claimants for item in dossier.factors
+            item.favours is None
+            for dossier in brief.claimants
+            for item in dossier.factors
         )
 
     def test_quota_illimite(self):
@@ -323,8 +381,11 @@ class TestArbitrage:
 
     def test_detail_en_francais(self):
         dossier = ClaimantFile(
-            user_id=uuid4(), requested_at=utc(8), active_bookings=7,
-            max_active_bookings=10, no_show_rate=0.12,
+            user_id=uuid4(),
+            requested_at=utc(8),
+            active_bookings=7,
+            max_active_bookings=10,
+            no_show_rate=0.12,
         )
         brief = arbitration_brief(CANDIDAT, uuid4(), [dossier], tz=PARIS)
         details = [item.detail for item in brief.claimants[0].factors]

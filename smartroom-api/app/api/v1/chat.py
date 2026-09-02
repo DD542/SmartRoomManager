@@ -27,7 +27,12 @@ from app.ai.providers.selection import SelecteurModeles
 from app.ai.rag import etat_index
 from app.ai.reglages import get_reglages_ia
 from app.ai.tools import resume_catalogue
-from app.api.deps import SUPPORT_HANDLE, CurrentPrincipal, SessionDep, require_permission
+from app.api.deps import (
+    SUPPORT_HANDLE,
+    CurrentPrincipal,
+    SessionDep,
+    require_permission,
+)
 from app.core.limiter import limiter
 from app.db.session import SessionLocal
 from app.models import ChatRole
@@ -125,14 +130,20 @@ async def poser_question(
                 else service.creer_conversation(session, user_id=principal.user.id)
             )
             service.ajouter_message(
-                session, conversation, role=ChatRole.UTILISATEUR, contenu=payload.message
+                session,
+                conversation,
+                role=ChatRole.UTILISATEUR,
+                contenu=payload.message,
             )
             session.commit()
 
             yield {
                 "data": json.dumps(
-                    {"type": "conversation", "conversation_id": str(conversation.id),
-                     "titre": conversation.titre},
+                    {
+                        "type": "conversation",
+                        "conversation_id": str(conversation.id),
+                        "titre": conversation.titre,
+                    },
                     ensure_ascii=False,
                 )
             }
@@ -152,7 +163,9 @@ async def poser_question(
                 if evenement.type is TypeEvenement.TEXTE:
                     texte.append(evenement.donnees["texte"])
                 elif evenement.type is TypeEvenement.CARTE:
-                    cartes.append((evenement.donnees["carte"], evenement.donnees["donnees"]))
+                    cartes.append(
+                        (evenement.donnees["carte"], evenement.donnees["donnees"])
+                    )
                 elif evenement.type is TypeEvenement.SOURCES:
                     sources = evenement.donnees["sources"]
                 elif evenement.type is TypeEvenement.CONFIRMATION:
@@ -176,7 +189,10 @@ async def poser_question(
                 sources=sources,
             )
             service.enregistrer_tour(
-                session, journal, conversation_id=conversation.id, user_id=principal.user.id
+                session,
+                journal,
+                conversation_id=conversation.id,
+                user_id=principal.user.id,
             )
             session.commit()
 
@@ -219,7 +235,9 @@ async def confirmer(
                 if evenement.type is TypeEvenement.TEXTE:
                     texte.append(evenement.donnees["texte"])
                 elif evenement.type is TypeEvenement.CARTE:
-                    cartes.append((evenement.donnees["carte"], evenement.donnees["donnees"]))
+                    cartes.append(
+                        (evenement.donnees["carte"], evenement.donnees["donnees"])
+                    )
                 elif evenement.type is TypeEvenement.ERREUR:
                     texte.append(evenement.donnees["message"])
                 elif evenement.type is TypeEvenement.FIN:
@@ -237,7 +255,10 @@ async def confirmer(
                     donnees=donnees,
                 )
                 service.enregistrer_tour(
-                    session, journal, conversation_id=conversation.id, user_id=principal.user.id
+                    session,
+                    journal,
+                    conversation_id=conversation.id,
+                    user_id=principal.user.id,
                 )
                 session.commit()
 
@@ -250,7 +271,9 @@ async def confirmer(
 
 
 @router.get("/chat/conversations", summary="Mes conversations")
-def lister_conversations(session: SessionDep, principal: CurrentPrincipal) -> list[dict[str, Any]]:
+def lister_conversations(
+    session: SessionDep, principal: CurrentPrincipal
+) -> list[dict[str, Any]]:
     return [
         {
             "id": str(conversation.id),
@@ -264,7 +287,9 @@ def lister_conversations(session: SessionDep, principal: CurrentPrincipal) -> li
     ]
 
 
-@router.get("/chat/conversations/{conversation_id}", summary="Reprendre une conversation")
+@router.get(
+    "/chat/conversations/{conversation_id}", summary="Reprendre une conversation"
+)
 def relire_conversation(
     conversation_id: uuid.UUID, session: SessionDep, principal: CurrentPrincipal
 ) -> dict[str, Any]:
@@ -366,7 +391,9 @@ async def etat(session: SessionDep, _admin=Support) -> dict[str, Any]:
     summary="Prompt système en vigueur",
     description="Versionné sur disque. La version servie est celle des réglages.",
 )
-def prompt(_admin=Support, version: Annotated[int | None, Query(ge=1)] = None) -> dict[str, Any]:
+def prompt(
+    _admin=Support, version: Annotated[int | None, Query(ge=1)] = None
+) -> dict[str, Any]:
     from app.ai.prompts.chargeur import charger, versions_disponibles
 
     reglages = get_reglages_ia()

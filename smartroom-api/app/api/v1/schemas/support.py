@@ -301,6 +301,7 @@ class AuditEntryOut(ReadModel):
     @classmethod
     def _adresse_en_texte(cls, valeur: object) -> str | None:
         return None if valeur is None else str(valeur)
+
     session_id: str | None
     flagged_at: datetime | None
     flag_reason: str | None

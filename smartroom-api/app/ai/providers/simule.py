@@ -17,7 +17,7 @@ import hashlib
 import struct
 import time
 from collections.abc import AsyncIterator, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from app.ai.providers.base import (
@@ -149,7 +149,9 @@ class FournisseurSimule(LLMProvider):
             ),
         )
 
-    async def vectoriser(self, textes: Sequence[str], *, modele: str) -> list[list[float]]:
+    async def vectoriser(
+        self, textes: Sequence[str], *, modele: str
+    ) -> list[list[float]]:
         """Vecteurs déterministes, dérivés du texte.
 
         Deux textes identiques rendent le même vecteur, deux textes différents
@@ -165,7 +167,9 @@ def _vecteur_stable(texte: str, dimension: int) -> list[float]:
     (valeur,) = struct.unpack("<Q", graine)
     composantes: list[float] = []
     for index in range(dimension):
-        valeur = (valeur * 6_364_136_223_846_793_005 + index * 1_442_695_040_888_963_407) % (2**64)
+        valeur = (
+            valeur * 6_364_136_223_846_793_005 + index * 1_442_695_040_888_963_407
+        ) % (2**64)
         composantes.append(((valeur >> 11) / float(1 << 53)) * 2.0 - 1.0)
 
     norme = sum(composante * composante for composante in composantes) ** 0.5 or 1.0

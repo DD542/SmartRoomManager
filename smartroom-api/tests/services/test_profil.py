@@ -19,7 +19,7 @@ from sqlalchemy import select
 
 from app.core import storage
 from app.models import RefreshToken, User
-from tests.services.conftest import MOT_DE_PASSE, connecter
+from tests.services.conftest import connecter
 
 pytestmark = pytest.mark.integration
 
@@ -40,7 +40,9 @@ def _png(largeur: int = 1, hauteur: int = 1) -> bytes:
             + zlib.crc32(corps).to_bytes(4, "big")
         )
 
-    entete = largeur.to_bytes(4, "big") + hauteur.to_bytes(4, "big") + bytes([8, 2, 0, 0, 0])
+    entete = (
+        largeur.to_bytes(4, "big") + hauteur.to_bytes(4, "big") + bytes([8, 2, 0, 0, 0])
+    )
     pixels = zlib.compress(b"\x00" + b"\x00\x00\x00" * largeur)
     return (
         b"\x89PNG\r\n\x1a\n"
@@ -58,11 +60,15 @@ def _corps(contenu: bytes, content_type: str = "image/png") -> dict:
 
 
 class TestPhotoDeProfil:
-    def test_le_depot_rend_le_profil_portant_son_adresse(self, client, session, creer_compte):
+    def test_le_depot_rend_le_profil_portant_son_adresse(
+        self, client, session, creer_compte
+    ):
         compte = creer_compte("Awa")
         entetes = connecter(client, compte.email)
 
-        reponse = client.put("/api/v1/users/me/avatar", headers=entetes, json=_corps(_png()))
+        reponse = client.put(
+            "/api/v1/users/me/avatar", headers=entetes, json=_corps(_png())
+        )
 
         assert reponse.status_code == 200, reponse.text
         adresse = reponse.json()["avatar_url"]
@@ -71,7 +77,9 @@ class TestPhotoDeProfil:
         # produirait une image cassee a l'ecran, et rien ici ne le dirait.
         assert (storage.racine() / adresse.split("/media/", 1)[1]).exists()
 
-    def test_un_second_depot_efface_le_fichier_precedent(self, client, session, creer_compte):
+    def test_un_second_depot_efface_le_fichier_precedent(
+        self, client, session, creer_compte
+    ):
         """Sans cela, chaque changement de photo laisse un fichier que plus rien
         ne reference — un volume qui grossit sans que personne ne le voie."""
         compte = creer_compte("Bilal")
@@ -90,7 +98,9 @@ class TestPhotoDeProfil:
         assert seconde != premiere
         assert not chemin_premier.exists()
 
-    def test_le_retrait_rend_le_compte_a_ses_initiales(self, client, session, creer_compte):
+    def test_le_retrait_rend_le_compte_a_ses_initiales(
+        self, client, session, creer_compte
+    ):
         compte = creer_compte("Chloe")
         entetes = connecter(client, compte.email)
         depose = client.put(
@@ -128,7 +138,9 @@ class TestPhotoDeProfil:
         entetes = connecter(client, creer_compte("Elias").email)
 
         reponse = client.put(
-            "/api/v1/users/me/avatar", headers=entetes, json=_corps(_png(), type_declare)
+            "/api/v1/users/me/avatar",
+            headers=entetes,
+            json=_corps(_png(), type_declare),
         )
 
         assert reponse.status_code == 422, raison
@@ -138,7 +150,9 @@ class TestPhotoDeProfil:
         entetes = connecter(client, creer_compte("Fanta").email)
         trop = b"\x89PNG\r\n\x1a\n" + b"\x00" * (storage.TAILLE_MAX + 1)
 
-        reponse = client.put("/api/v1/users/me/avatar", headers=entetes, json=_corps(trop))
+        reponse = client.put(
+            "/api/v1/users/me/avatar", headers=entetes, json=_corps(trop)
+        )
 
         assert reponse.status_code == 422
         assert "5 Mo" in reponse.json()["error"]["message"]
@@ -194,7 +208,9 @@ class TestSessionsOuvertes:
         reconnecter pour verifier que l'ordre a ete suivi."""
         compte = creer_compte("Jonas")
         entetes = connecter(client, compte.email)
-        courante = client.get("/api/v1/users/me/sessions", headers=entetes).json()[0]["id"]
+        courante = client.get("/api/v1/users/me/sessions", headers=entetes).json()[0][
+            "id"
+        ]
 
         # Une seconde session, comme si le compte s'etait connecte ailleurs.
         autre = uuid.UUID(courante)
@@ -205,7 +221,9 @@ class TestSessionsOuvertes:
                 family_id=uuid.uuid4(),
                 scope="user",
                 expires_at=session.scalar(
-                    select(RefreshToken.expires_at).where(RefreshToken.user_id == compte.id)
+                    select(RefreshToken.expires_at).where(
+                        RefreshToken.user_id == compte.id
+                    )
                 ),
             )
         )

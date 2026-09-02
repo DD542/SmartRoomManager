@@ -111,7 +111,11 @@ def traduire(erreur: dict[str, Any]) -> str:
     if type_erreur in {"int_parsing", "int_type", "float_parsing", "decimal_parsing"}:
         return f"{champ.capitalize()} doit être un nombre."
 
-    if type_erreur in {"datetime_parsing", "datetime_type", "datetime_from_date_parsing"}:
+    if type_erreur in {
+        "datetime_parsing",
+        "datetime_type",
+        "datetime_from_date_parsing",
+    }:
         return (
             f"{champ.capitalize()} doit être une date et une heure au format "
             "ISO 8601, par exemple 2026-08-25T14:30:00Z."
@@ -145,7 +149,12 @@ def traduire(erreur: dict[str, Any]) -> str:
         maximum = contexte.get("max_length")
         return f"{champ.capitalize()} ne peut pas dépasser {maximum} caractères."
 
-    if type_erreur in {"string_type", "list_type", "dict_type", "model_attributes_type"}:
+    if type_erreur in {
+        "string_type",
+        "list_type",
+        "dict_type",
+        "model_attributes_type",
+    }:
         return f"{champ.capitalize()} n'a pas le type attendu."
 
     if type_erreur == "extra_forbidden":

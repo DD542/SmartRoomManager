@@ -56,7 +56,9 @@ class TicketMessageCreate(ApiModel):
     @model_validator(mode="after")
     def _note_interne_ne_resout_pas(self) -> "TicketMessageCreate":
         if self.is_internal and self.resolve:
-            raise ValueError("Une note interne ne peut pas résoudre le ticket à elle seule.")
+            raise ValueError(
+                "Une note interne ne peut pas résoudre le ticket à elle seule."
+            )
         return self
 
 
@@ -229,7 +231,9 @@ class EmailTemplateUpdate(ApiModel):
 
     @model_validator(mode="after")
     def _variables_connues(self) -> "EmailTemplateUpdate":
-        inconnues = variables_inconnues(self.subject or "") + variables_inconnues(self.body or "")
+        inconnues = variables_inconnues(self.subject or "") + variables_inconnues(
+            self.body or ""
+        )
         if inconnues:
             raise ValueError(
                 f"Variable inconnue : {{{{{inconnues[0]}}}}}. "

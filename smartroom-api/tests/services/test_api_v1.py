@@ -108,14 +108,19 @@ class TestDisponibilite:
             f"/api/v1/availability/rooms/{salle.id}/check",
             headers=entetes,
             json={
-                "slot": {"starts_at": "2026-08-25T10:00:00", "ends_at": "2026-08-25T11:00:00"},
+                "slot": {
+                    "starts_at": "2026-08-25T10:00:00",
+                    "ends_at": "2026-08-25T11:00:00",
+                },
                 "attendees": 4,
             },
         )
         assert reponse.status_code == 422
         assert reponse.json()["error"]["code"] == "validation"
 
-    def test_recherche_multicritere(self, client, compte, creer_salle, video, jour_ouvre):
+    def test_recherche_multicritere(
+        self, client, compte, creer_salle, video, jour_ouvre
+    ):
         equipee = creer_salle("Equipee", capacity=12, equipements=[video])
         creer_salle("Nue", capacity=12)
         entetes = connecter(client, compte.email)
@@ -215,7 +220,10 @@ class TestReservation:
         entetes = connecter(client, intrus.email)
 
         # 404 et non 403 : l'existence d'une réservation tierce ne se confirme pas.
-        assert client.get(f"/api/v1/bookings/{autre.id}", headers=entetes).status_code == 404
+        assert (
+            client.get(f"/api/v1/bookings/{autre.id}", headers=entetes).status_code
+            == 404
+        )
 
     def test_liste_ne_montre_que_les_siennes(
         self, client, session, compte, creer_compte, salle, jour_ouvre
@@ -275,7 +283,10 @@ class TestInvitations:
     ):
         entetes = connecter(client, compte.email)
         reponse = self._creer(
-            client, entetes, salle, jour_ouvre,
+            client,
+            entetes,
+            salle,
+            jour_ouvre,
             [["ana@ece.fr", "Ana"], ["ANA@ece.fr", "Ana bis"]],
         )
 
@@ -294,7 +305,10 @@ class TestInvitations:
     def test_des_invites_distincts_passent(self, client, compte, salle, jour_ouvre):
         entetes = connecter(client, compte.email)
         reponse = self._creer(
-            client, entetes, salle, jour_ouvre,
+            client,
+            entetes,
+            salle,
+            jour_ouvre,
             [["ana@ece.fr", "Ana"], ["bo@ece.fr", "Bo"]],
         )
 
@@ -302,7 +316,9 @@ class TestInvitations:
 
 
 class TestRecommandation:
-    def test_classement_avec_le_detail_du_score(self, client, compte, salle, jour_ouvre):
+    def test_classement_avec_le_detail_du_score(
+        self, client, compte, salle, jour_ouvre
+    ):
         entetes = connecter(client, compte.email)
         reponse = client.post(
             "/api/v1/recommendations",
@@ -310,7 +326,9 @@ class TestRecommandation:
             json={"slot": charge(creneau(jour_ouvre, 10)), "attendees": 8, "limit": 10},
         )
         assert reponse.status_code == 200
-        propose = next(item for item in reponse.json() if item["room"]["id"] == str(salle.id))
+        propose = next(
+            item for item in reponse.json() if item["room"]["id"] == str(salle.id)
+        )
         assert 0 <= propose["score"] <= 100
         assert {item["key"] for item in propose["breakdown"]} == {
             "capacity",
@@ -355,7 +373,9 @@ class TestRecommandation:
             json={"slot": charge(creneau(jour_ouvre, 10)), "attendees": 4, "limit": 20},
         ).json()
 
-        vue = next(item["room"] for item in corps if item["room"]["id"] == str(salle.id))
+        vue = next(
+            item["room"] for item in corps if item["room"]["id"] == str(salle.id)
+        )
         # Celle de position 0 : l'ordre est celui qu'a choisi l'administration.
         assert vue["photo_url"] == "/media/photos/vinci-1.jpg"
         assert vue["building_name"] == salle.floor.building.name
@@ -373,7 +393,9 @@ class TestRecommandation:
             json={"slot": charge(creneau(jour_ouvre, 10)), "attendees": 4, "limit": 20},
         ).json()
 
-        vue = next(item["room"] for item in corps if item["room"]["id"] == str(salle.id))
+        vue = next(
+            item["room"] for item in corps if item["room"]["id"] == str(salle.id)
+        )
         assert vue["photo_url"] is None
         assert vue["building_name"]
 
@@ -465,7 +487,8 @@ class TestAuthentification:
             "/api/v1/auth/login", json={"email": compte.email, "password": "au-hasard"}
         )
         inconnu = client.post(
-            "/api/v1/auth/login", json={"email": "personne@ece.fr", "password": "au-hasard"}
+            "/api/v1/auth/login",
+            json={"email": "personne@ece.fr", "password": "au-hasard"},
         )
         assert faux.status_code == inconnu.status_code == 401
         assert faux.json()["error"]["message"] == inconnu.json()["error"]["message"]
@@ -609,7 +632,9 @@ class TestRecurrence:
         attendues = apercu.json()["accepted_count"]
         assert attendues >= 2
 
-        creation = client.post("/api/v1/bookings/recurring", headers=entetes, json=corps)
+        creation = client.post(
+            "/api/v1/bookings/recurring", headers=entetes, json=corps
+        )
         assert creation.status_code == 201, creation.text
         assert len(creation.json()["bookings"]) == attendues
 
@@ -620,7 +645,9 @@ class TestRecurrence:
         entetes = connecter(client, compte.email)
 
         reponse = client.post(
-            "/api/v1/bookings/recurring", headers=entetes, json=self._serie(salle, jour_ouvre)
+            "/api/v1/bookings/recurring",
+            headers=entetes,
+            json=self._serie(salle, jour_ouvre),
         )
         assert reponse.status_code == 201, reponse.text
         corps = reponse.json()

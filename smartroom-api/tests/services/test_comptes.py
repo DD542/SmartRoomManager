@@ -84,7 +84,9 @@ class TestAnnuaire:
         entetes = connecter(client, administrateur.user.email, admin=True)
 
         admins = client.get(
-            "/api/v1/admin/users", headers=entetes, params={"role": "admin", "size": 100}
+            "/api/v1/admin/users",
+            headers=entetes,
+            params={"role": "admin", "size": 100},
         ).json()
         assert all(item["is_admin"] for item in admins["items"])
         assert compte.email not in {item["email"] for item in admins["items"]}
@@ -155,9 +157,7 @@ class TestMatriceDePermissions:
         assert "conflicts.arbitrate" in codes
         assert len(codes) == 7
 
-    def test_promotion_et_permissions(
-        self, client, session, administrateur, compte
-    ):
+    def test_promotion_et_permissions(self, client, session, administrateur, compte):
         accorder(session, administrateur, USERS_MANAGE)
         entetes = connecter(client, administrateur.user.email, admin=True)
 
@@ -195,9 +195,7 @@ class TestMatriceDePermissions:
         ).json()
         assert corps["permissions"] == ["data.export"]
 
-    def test_permission_inconnue_refusee(
-        self, client, session, administrateur, compte
-    ):
+    def test_permission_inconnue_refusee(self, client, session, administrateur, compte):
         accorder(session, administrateur, USERS_MANAGE)
         entetes = connecter(client, administrateur.user.email, admin=True)
 
@@ -265,9 +263,12 @@ class TestInvitations:
         ).one()
         assert len(ligne.token_hash) == 64
 
-        assert client.delete(
-            f"/api/v1/admin/invitations/{corps['id']}", headers=entetes
-        ).status_code == 204
+        assert (
+            client.delete(
+                f"/api/v1/admin/invitations/{corps['id']}", headers=entetes
+            ).status_code
+            == 204
+        )
 
     def test_invitation_sans_permission_refusee(self, client, session, administrateur):
         entetes = connecter(client, administrateur.user.email, admin=True)

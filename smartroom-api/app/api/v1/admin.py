@@ -66,16 +66,22 @@ def list_bookings(
         requete = requete.where(Booking.room_id == room_id)
     if building_id is not None:
         requete = (
-            requete.join(Booking.room).join(Room.floor).where(Floor.building_id == building_id)
+            requete.join(Booking.room)
+            .join(Room.floor)
+            .where(Floor.building_id == building_id)
         )
     if owner_id is not None:
         requete = requete.where(Booking.owner_id == owner_id)
     if status_filter is not None:
         requete = requete.where(Booking.status == status_filter)
     if from_date is not None:
-        requete = requete.where(Booking.time_range.op("&&")(Range(from_date, None, bounds="[)")))
+        requete = requete.where(
+            Booking.time_range.op("&&")(Range(from_date, None, bounds="[)"))
+        )
     if to_date is not None:
-        requete = requete.where(Booking.time_range.op("&&")(Range(None, to_date, bounds="[)")))
+        requete = requete.where(
+            Booking.time_range.op("&&")(Range(None, to_date, bounds="[)"))
+        )
 
     reservations, total = paginate(session, requete, params)
     return Page.build([BookingOut.of(item) for item in reservations], total, params)

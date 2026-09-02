@@ -37,17 +37,26 @@ DELIMITEURS = (
 #: Tournures d'écrasement de consigne. La liste est indicative : elle sert à
 #: compter et à journaliser, jamais à décider seule d'un refus.
 _SOUPCONS = (
-    re.compile(r"\bignor\w*\s+(tes|les|toutes?\s+les|vos)\s+(instructions?|consignes?|règles?)", re.I),
+    re.compile(
+        r"\bignor\w*\s+(tes|les|toutes?\s+les|vos)\s+(instructions?|consignes?|règles?)",
+        re.I,
+    ),
     re.compile(r"\boubli\w*\s+(tout|ce qui précède|tes instructions)", re.I),
     re.compile(r"\b(tu es|vous êtes)\s+(maintenant|désormais)\b", re.I),
-    re.compile(r"\b(affiche|montre|révèle|donne)[^.]{0,30}\b(prompt|instructions? système|consignes système)", re.I),
+    re.compile(
+        r"\b(affiche|montre|révèle|donne)[^.]{0,30}\b(prompt|instructions? système|consignes système)",
+        re.I,
+    ),
     re.compile(r"\bmode\s+(développeur|debug|administrateur|sans restriction)\b", re.I),
     re.compile(r"\bagis\s+(comme|en tant que)\s+(si tu|un autre)", re.I),
     re.compile(r"\b(system|assistant)\s*:\s*", re.I),
     # Les mots peuvent s'empiler : « ignore all previous instructions ». Le
     # motif d'origine exigeait un seul qualificatif et laissait passer la
     # formulation la plus courante — constaté par un test.
-    re.compile(r"\bignore\s+(?:all\s+)?(?:previous\s+|above\s+|prior\s+)?(?:instructions?|rules?)", re.I),
+    re.compile(
+        r"\bignore\s+(?:all\s+)?(?:previous\s+|above\s+|prior\s+)?(?:instructions?|rules?)",
+        re.I,
+    ),
     re.compile(r"\b(au nom de|pour le compte de)\s+(un autre|quelqu'un d'autre)", re.I),
 )
 
@@ -97,7 +106,9 @@ def assainir(texte: str, *, taille_max: int = 2000) -> Inspection:
     if tronque:
         propre = propre[:taille_max]
 
-    motifs = tuple(sorted({motif.pattern for motif in _SOUPCONS if motif.search(propre)}))
+    motifs = tuple(
+        sorted({motif.pattern for motif in _SOUPCONS if motif.search(propre)})
+    )
 
     return Inspection(
         texte=propre.strip(),

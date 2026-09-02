@@ -35,9 +35,13 @@ def parc(session, creer_salle, batiment, etage, marque):
     c.floor_id = autre_etage.id
     session.flush()
     return {
-        "a": a, "b": b, "c": c,
-        "batiment": batiment, "autre": autre_batiment,
-        "etage": etage, "autre_etage": autre_etage,
+        "a": a,
+        "b": b,
+        "c": c,
+        "batiment": batiment,
+        "autre": autre_batiment,
+        "etage": etage,
+        "autre_etage": autre_etage,
     }
 
 
@@ -113,7 +117,9 @@ class TestAccessibilite:
         entetes = connecter(client, compte.email)
 
         reponse = client.get(
-            "/api/v1/rooms", headers=entetes, params={"accessible_only": True, "size": 100}
+            "/api/v1/rooms",
+            headers=entetes,
+            params={"accessible_only": True, "size": 100},
         )
 
         assert parc["a"].name not in noms(reponse)

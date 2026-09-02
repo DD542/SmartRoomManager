@@ -117,8 +117,16 @@ class ToolResult:
         return self.statut in (Statut.OK, Statut.VIDE)
 
     @classmethod
-    def ok(cls, *, data: Any, carte: Carte = Carte.TEXTE, message: str = "", sources=()) -> ToolResult:
-        return cls(statut=Statut.OK, data=data, carte=carte, message=message, sources=tuple(sources))
+    def ok(
+        cls, *, data: Any, carte: Carte = Carte.TEXTE, message: str = "", sources=()
+    ) -> ToolResult:
+        return cls(
+            statut=Statut.OK,
+            data=data,
+            carte=carte,
+            message=message,
+            sources=tuple(sources),
+        )
 
     @classmethod
     def vide(cls, message: str) -> ToolResult:
@@ -193,7 +201,8 @@ class Outil(ABC):
         except ValidationError as souci:
             details = [
                 {
-                    "champ": ".".join(str(part) for part in erreur["loc"]) or "(racine)",
+                    "champ": ".".join(str(part) for part in erreur["loc"])
+                    or "(racine)",
                     "probleme": erreur["msg"],
                 }
                 for erreur in souci.errors()
@@ -210,7 +219,9 @@ class ArgumentsInvalides(DomainError):
     http_status = 422
 
     def texte_pour_modele(self) -> str:
-        details = "; ".join(f"{item['champ']} : {item['probleme']}" for item in self.fields)
+        details = "; ".join(
+            f"{item['champ']} : {item['probleme']}" for item in self.fields
+        )
         return (
             f"{self.message} Corrigez et rappelez l'outil. Détail : {details}. "
             "N'inventez aucune valeur : si une information manque, demandez-la."

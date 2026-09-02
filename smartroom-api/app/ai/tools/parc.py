@@ -28,9 +28,22 @@ from app.ai.tools.resolution import (
 from app.core.pagination import PageParams
 from app.domain.types import SearchCriteria, TimeSlot
 from app.models import ClosurePeriod, Floor, RoomPlacement
-from app.services import availability_service, parc_service, recommendation_service, rules_service
+from app.services import (
+    availability_service,
+    parc_service,
+    recommendation_service,
+    rules_service,
+)
 
-CODES_EQUIPEMENT = ["visio", "screen4k", "projector", "mic", "whiteboard", "sockets", "aircon"]
+CODES_EQUIPEMENT = [
+    "visio",
+    "screen4k",
+    "projector",
+    "mic",
+    "whiteboard",
+    "sockets",
+    "aircon",
+]
 
 
 class _Base(BaseModel):
@@ -45,7 +58,9 @@ class _Base(BaseModel):
 class ArgsRechercherSalles(_Base):
     capacite_min: int | None = Field(default=None, ge=1, le=500)
     batiment: str | None = Field(default=None, max_length=60)
-    equipements: list[Literal[*CODES_EQUIPEMENT]] = Field(default_factory=list, max_length=8)
+    equipements: list[Literal[*CODES_EQUIPEMENT]] = Field(
+        default_factory=list, max_length=8
+    )
     accessible_pmr: bool = False
     limite: int = Field(default=5, ge=1, le=10)
 
@@ -89,7 +104,12 @@ class RechercherSalles(Outil):
                     "type": "boolean",
                     "description": "Vrai si la salle doit être accessible aux personnes à mobilité réduite.",
                 },
-                "limite": {"type": "integer", "minimum": 1, "maximum": 10, "default": 5},
+                "limite": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 10,
+                    "default": 5,
+                },
             },
             "required": [],
         },
@@ -172,13 +192,22 @@ class ConsulterDisponibilite(Outil):
                     "maxLength": 60,
                     "description": "Nom de la salle si l'identifiant n'est pas connu.",
                 },
-                "debut": {"type": "string", "format": "date-time", "description": "ISO 8601 UTC, suffixe Z."},
+                "debut": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "ISO 8601 UTC, suffixe Z.",
+                },
                 "fin": {
                     "type": "string",
                     "format": "date-time",
                     "description": "ISO 8601 UTC, suffixe Z. Doit être postérieur à debut.",
                 },
-                "effectif": {"type": "integer", "minimum": 1, "maximum": 500, "default": 1},
+                "effectif": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 500,
+                    "default": 1,
+                },
             },
             "required": ["debut", "fin"],
         },
@@ -189,11 +218,15 @@ class ConsulterDisponibilite(Outil):
 
         params = self.valider(args)
         try:
-            salle = resoudre_salle(ctx.session, salle_id=params.salle_id, nom=params.salle_nom)
+            salle = resoudre_salle(
+                ctx.session, salle_id=params.salle_id, nom=params.salle_nom
+            )
         except Ambiguite as souci:
             return ToolResult.vide(souci.message())
 
-        creneau = TimeSlot(start=lire_instant(params.debut), end=lire_instant(params.fin))
+        creneau = TimeSlot(
+            start=lire_instant(params.debut), end=lire_instant(params.fin)
+        )
         rapport = availability_service.check_slot(
             ctx.session,
             room_id=salle.id,
@@ -209,7 +242,11 @@ class ConsulterDisponibilite(Outil):
             {"type": "chevauchement", "detail": str(conflit.kind.value)}
             for conflit in rapport.blocking
         ] + [
-            {"type": "regle", "detail": violation.message, "forcable": violation.forcible}
+            {
+                "type": "regle",
+                "detail": violation.message,
+                "forcable": violation.forcible,
+            }
             for violation in rapport.violations
         ]
 
@@ -240,7 +277,9 @@ class ArgsRecommander(_Base):
     fin: str
     effectif: int = Field(ge=1, le=500)
     batiment: str | None = Field(default=None, max_length=60)
-    equipements: list[Literal[*CODES_EQUIPEMENT]] = Field(default_factory=list, max_length=8)
+    equipements: list[Literal[*CODES_EQUIPEMENT]] = Field(
+        default_factory=list, max_length=8
+    )
     accessible_pmr: bool = False
     limite: int = Field(default=3, ge=1, le=5)
 
@@ -293,7 +332,9 @@ class RecommanderSalle(Outil):
             return ToolResult.vide(souci.message())
 
         criteres = SearchCriteria(
-            slot=TimeSlot(start=lire_instant(params.debut), end=lire_instant(params.fin)),
+            slot=TimeSlot(
+                start=lire_instant(params.debut), end=lire_instant(params.fin)
+            ),
             attendees=params.effectif,
             building_id=batiment_id,
             equipment_ids=resoudre_equipements(ctx.session, params.equipements),
@@ -308,7 +349,9 @@ class RecommanderSalle(Outil):
             now=ctx.maintenant,
         )
         if not classement:
-            return ToolResult.vide("Aucune salle ne correspond à ce besoin sur ce créneau.")
+            return ToolResult.vide(
+                "Aucune salle ne correspond à ce besoin sur ce créneau."
+            )
 
         propositions = []
         for proposition in classement:
@@ -321,8 +364,12 @@ class RecommanderSalle(Outil):
             # à l'assistant de dire *pourquoi* une salle passe devant une autre.
             portrait["score"] = proposition.score.total
             portrait["score_detail"] = [
-                {"critere": composante.label, "points": composante.points,
-                 "sur": composante.max_points, "detail": composante.detail}
+                {
+                    "critere": composante.label,
+                    "points": composante.points,
+                    "sur": composante.max_points,
+                    "detail": composante.detail,
+                }
                 for composante in proposition.score.components
             ]
             portrait["justification"] = proposition.justification
@@ -380,7 +427,9 @@ class LocaliserSalle(Outil):
     async def execute(self, args: dict[str, Any], ctx: ToolContext) -> ToolResult:
         params = self.valider(args)
         try:
-            salle = resoudre_salle(ctx.session, salle_id=params.salle_id, nom=params.salle_nom)
+            salle = resoudre_salle(
+                ctx.session, salle_id=params.salle_id, nom=params.salle_nom
+            )
         except Ambiguite as souci:
             return ToolResult.vide(souci.message())
 
@@ -459,9 +508,13 @@ class ConsulterRegles(Outil):
             except Ambiguite:
                 batiment_id = None
 
-            requete = select(parc_service.Room).options(
-                selectinload(parc_service.Room.floor).selectinload(Floor.building)
-            ).where(parc_service.Room.deleted_at.is_(None))
+            requete = (
+                select(parc_service.Room)
+                .options(
+                    selectinload(parc_service.Room.floor).selectinload(Floor.building)
+                )
+                .where(parc_service.Room.deleted_at.is_(None))
+            )
             if batiment_id is not None:
                 requete = requete.join(Floor).where(Floor.building_id == batiment_id)
             salle = ctx.session.scalars(requete.limit(1)).one_or_none()
@@ -509,7 +562,9 @@ class ConsulterRegles(Outil):
                         "libelle": item.label,
                         "du": _borne(item, "lower"),
                         "au": _borne(item, "upper"),
-                        "nature": item.kind.value if hasattr(item.kind, "value") else str(item.kind),
+                        "nature": item.kind.value
+                        if hasattr(item.kind, "value")
+                        else str(item.kind),
                     }
                     for item in fermetures
                 ],

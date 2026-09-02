@@ -125,7 +125,9 @@ def register_exception_handlers(app: FastAPI) -> None:
         logger.exception("Violation d'intégrité non traduite", exc_info=erreur)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content=enveloppe("integrite", "L'enregistrement a été refusé par la base."),
+            content=enveloppe(
+                "integrite", "L'enregistrement a été refusé par la base."
+            ),
         )
 
     @app.exception_handler(StarletteHTTPException)
@@ -138,8 +140,16 @@ def register_exception_handlers(app: FastAPI) -> None:
         code, message = MESSAGES_HTTP.get(
             erreur.status_code, ("erreur", "La requête n'a pas abouti.")
         )
-        if isinstance(erreur.detail, str) and erreur.detail and erreur.status_code < 500:
-            message = erreur.detail if erreur.detail not in {"Not Found", "Forbidden"} else message
+        if (
+            isinstance(erreur.detail, str)
+            and erreur.detail
+            and erreur.status_code < 500
+        ):
+            message = (
+                erreur.detail
+                if erreur.detail not in {"Not Found", "Forbidden"}
+                else message
+            )
         return JSONResponse(
             status_code=erreur.status_code,
             content=enveloppe(code, message),

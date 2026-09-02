@@ -69,14 +69,18 @@ class Building(TimestampMixin, Base):
     address: Mapped[str | None] = mapped_column(String(255), default=None)
     #: Photographie du bâtiment, servie depuis le magasin de médias.
     image_url: Mapped[str | None] = mapped_column(String(255), default=None)
-    sort_order: Mapped[int] = mapped_column(SmallInteger, server_default=text("0"), default=0)
+    sort_order: Mapped[int] = mapped_column(
+        SmallInteger, server_default=text("0"), default=0
+    )
 
     floors: Mapped[list["Floor"]] = relationship(
         back_populates="building", cascade="all, delete-orphan", passive_deletes=True
     )
     booking_rules: Mapped[list["BookingRule"]] = relationship(back_populates="building")
     opening_hours: Mapped[list["OpeningHour"]] = relationship(back_populates="building")
-    user_preferences: Mapped[list["UserPreference"]] = relationship(back_populates="preferred_building")
+    user_preferences: Mapped[list["UserPreference"]] = relationship(
+        back_populates="preferred_building"
+    )
 
 
 class Floor(TimestampMixin, Base):
@@ -90,7 +94,12 @@ class Floor(TimestampMixin, Base):
 
     id: Mapped[UuidPk]
     building_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("buildings.id", ondelete="RESTRICT", onupdate="CASCADE", name="fk_floors_building")
+        ForeignKey(
+            "buildings.id",
+            ondelete="RESTRICT",
+            onupdate="CASCADE",
+            name="fk_floors_building",
+        )
     )
     #: Texte affiché (« RDC », « 2e »).
     code: Mapped[str] = mapped_column(String(8))
@@ -125,9 +134,16 @@ class FloorPlan(TimestampMixin, Base):
 
     id: Mapped[UuidPk]
     floor_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("floors.id", ondelete="CASCADE", onupdate="CASCADE", name="fk_floor_plans_floor")
+        ForeignKey(
+            "floors.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE",
+            name="fk_floor_plans_floor",
+        )
     )
-    kind: Mapped[PlanDocumentKind] = mapped_column(pg_enum(PlanDocumentKind, "plan_document_kind"))
+    kind: Mapped[PlanDocumentKind] = mapped_column(
+        pg_enum(PlanDocumentKind, "plan_document_kind")
+    )
     file_url: Mapped[str] = mapped_column(Text)
     file_name: Mapped[str] = mapped_column(String(160))
     file_size_bytes: Mapped[int]
@@ -140,10 +156,14 @@ class FloorPlan(TimestampMixin, Base):
         ),
         default=None,
     )
-    uploaded_at: Mapped[datetime] = mapped_column(server_default=text("now()"), default=None)
+    uploaded_at: Mapped[datetime] = mapped_column(
+        server_default=text("now()"), default=None
+    )
 
     floor: Mapped["Floor"] = relationship(back_populates="plan")
-    uploaded_by: Mapped["AdminAccount | None"] = relationship(back_populates="uploaded_plans")
+    uploaded_by: Mapped["AdminAccount | None"] = relationship(
+        back_populates="uploaded_plans"
+    )
 
 
 class Room(TimestampMixin, SoftDeleteMixin, Base):
@@ -168,7 +188,12 @@ class Room(TimestampMixin, SoftDeleteMixin, Base):
             unique=True,
             postgresql_where=text("deleted_at IS NULL"),
         ),
-        Index("uq_rooms_slug", "slug", unique=True, postgresql_where=text("deleted_at IS NULL")),
+        Index(
+            "uq_rooms_slug",
+            "slug",
+            unique=True,
+            postgresql_where=text("deleted_at IS NULL"),
+        ),
         Index("idx_rooms_floor_id", "floor_id"),
         # Index composite de la recherche de disponibilité.
         Index(
@@ -188,17 +213,25 @@ class Room(TimestampMixin, SoftDeleteMixin, Base):
 
     id: Mapped[UuidPk]
     floor_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("floors.id", ondelete="RESTRICT", onupdate="CASCADE", name="fk_rooms_floor")
+        ForeignKey(
+            "floors.id", ondelete="RESTRICT", onupdate="CASCADE", name="fk_rooms_floor"
+        )
     )
     name: Mapped[str] = mapped_column(String(120))
     slug: Mapped[str] = mapped_column(String(140))
     capacity: Mapped[int] = mapped_column(SmallInteger)
     area_m2: Mapped[Decimal] = mapped_column(NUMERIC(6, 2))
     status: Mapped[RoomStatus] = mapped_column(
-        pg_enum(RoomStatus, "room_status"), server_default=text("'disponible'"), default=RoomStatus.DISPONIBLE
+        pg_enum(RoomStatus, "room_status"),
+        server_default=text("'disponible'"),
+        default=RoomStatus.DISPONIBLE,
     )
-    is_accessible: Mapped[bool] = mapped_column(server_default=text("false"), default=False)
-    badge_required: Mapped[bool] = mapped_column(server_default=text("true"), default=True)
+    is_accessible: Mapped[bool] = mapped_column(
+        server_default=text("false"), default=False
+    )
+    badge_required: Mapped[bool] = mapped_column(
+        server_default=text("true"), default=True
+    )
     #: Code permanent du terminal, haché : le clair n'est jamais persisté.
     access_code_hash: Mapped[str | None] = mapped_column(Text, default=None)
     description: Mapped[str | None] = mapped_column(Text, default=None)
@@ -230,11 +263,15 @@ class Room(TimestampMixin, SoftDeleteMixin, Base):
         secondary="room_equipments", viewonly=True, lazy="selectin"
     )
     # Volontairement paresseuse : à charger avec un filtre de période.
-    bookings: Mapped[list["Booking"]] = relationship(back_populates="room", lazy="select")
+    bookings: Mapped[list["Booking"]] = relationship(
+        back_populates="room", lazy="select"
+    )
     booking_rule: Mapped["BookingRule | None"] = relationship(back_populates="room")
     opening_hours: Mapped[list["OpeningHour"]] = relationship(back_populates="room")
     closures: Mapped[list["ClosureRoom"]] = relationship(back_populates="room")
-    recurrence_rules: Mapped[list["RecurrenceRule"]] = relationship(back_populates="room")
+    recurrence_rules: Mapped[list["RecurrenceRule"]] = relationship(
+        back_populates="room"
+    )
     tickets: Mapped[list["Ticket"]] = relationship(back_populates="room")
     access_requests: Mapped[list["AccessRequest"]] = relationship(
         back_populates="room", foreign_keys="AccessRequest.room_id"
@@ -255,15 +292,24 @@ class RoomPlacement(TimestampMixin, Base):
     )
 
     room_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("rooms.id", ondelete="CASCADE", onupdate="CASCADE", name="fk_room_placements_room"),
+        ForeignKey(
+            "rooms.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE",
+            name="fk_room_placements_room",
+        ),
         primary_key=True,
     )
     pos_x: Mapped[Decimal] = mapped_column(NUMERIC(5, 2))
     pos_y: Mapped[Decimal] = mapped_column(NUMERIC(5, 2))
     width: Mapped[Decimal] = mapped_column(NUMERIC(5, 2))
     height: Mapped[Decimal] = mapped_column(NUMERIC(5, 2))
-    rotation: Mapped[int] = mapped_column(SmallInteger, server_default=text("0"), default=0)
-    is_entrance_marked: Mapped[bool] = mapped_column(server_default=text("false"), default=False)
+    rotation: Mapped[int] = mapped_column(
+        SmallInteger, server_default=text("0"), default=0
+    )
+    is_entrance_marked: Mapped[bool] = mapped_column(
+        server_default=text("false"), default=False
+    )
 
     room: Mapped["Room"] = relationship(back_populates="placement")
 
@@ -285,13 +331,19 @@ class Equipment(TimestampMixin, Base):
     id: Mapped[UuidPk]
     code: Mapped[str] = mapped_column(String(40))
     label: Mapped[str] = mapped_column(String(80))
-    category: Mapped[EquipmentCategory] = mapped_column(pg_enum(EquipmentCategory, "equipment_category"))
+    category: Mapped[EquipmentCategory] = mapped_column(
+        pg_enum(EquipmentCategory, "equipment_category")
+    )
     #: Clé de la table d'icônes du front, pas un chemin de fichier.
     icon: Mapped[str] = mapped_column(String(40))
     description: Mapped[str | None] = mapped_column(String(255), default=None)
-    is_filterable: Mapped[bool] = mapped_column(server_default=text("false"), default=False)
+    is_filterable: Mapped[bool] = mapped_column(
+        server_default=text("false"), default=False
+    )
 
-    room_equipments: Mapped[list["RoomEquipment"]] = relationship(back_populates="equipment")
+    room_equipments: Mapped[list["RoomEquipment"]] = relationship(
+        back_populates="equipment"
+    )
 
 
 class RoomEquipment(TimestampMixin, Base):
@@ -304,7 +356,12 @@ class RoomEquipment(TimestampMixin, Base):
     )
 
     room_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("rooms.id", ondelete="CASCADE", onupdate="CASCADE", name="fk_room_equipments_room"),
+        ForeignKey(
+            "rooms.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE",
+            name="fk_room_equipments_room",
+        ),
         primary_key=True,
     )
     equipment_id: Mapped[uuid.UUID] = mapped_column(
@@ -316,10 +373,14 @@ class RoomEquipment(TimestampMixin, Base):
         ),
         primary_key=True,
     )
-    quantity: Mapped[int] = mapped_column(SmallInteger, server_default=text("1"), default=1)
+    quantity: Mapped[int] = mapped_column(
+        SmallInteger, server_default=text("1"), default=1
+    )
 
     room: Mapped["Room"] = relationship(back_populates="room_equipments")
-    equipment: Mapped["Equipment"] = relationship(back_populates="room_equipments", lazy="joined")
+    equipment: Mapped["Equipment"] = relationship(
+        back_populates="room_equipments", lazy="joined"
+    )
 
 
 class RoomPhoto(TimestampMixin, Base):
@@ -342,7 +403,12 @@ class RoomPhoto(TimestampMixin, Base):
 
     id: Mapped[UuidPk]
     room_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("rooms.id", ondelete="CASCADE", onupdate="CASCADE", name="fk_room_photos_room")
+        ForeignKey(
+            "rooms.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE",
+            name="fk_room_photos_room",
+        )
     )
     file_url: Mapped[str] = mapped_column(Text)
     alt_text: Mapped[str | None] = mapped_column(String(160), default=None)

@@ -119,7 +119,9 @@ def get_request(
     request_id: uuid.UUID, session: SessionDep, principal: CurrentPrincipal
 ) -> AccessRequestOut:
     demande = service.get(session, request_id)
-    if demande.requester_id != principal.user.id and not principal.can(CONFLICTS_ARBITRATE):
+    if demande.requester_id != principal.user.id and not principal.can(
+        CONFLICTS_ARBITRATE
+    ):
         raise NotFoundError("Demande introuvable.")
     return _sortie(demande)
 

@@ -30,7 +30,11 @@ from app.core.errors import (
     RuleViolationError,
     SlotConflictError,
 )
-from app.core.security import TokenError, create_invitation_token, decode_invitation_token
+from app.core.security import (
+    TokenError,
+    create_invitation_token,
+    decode_invitation_token,
+)
 from app.db.enums import (
     AuditAction,
     BookingEventType,
@@ -142,7 +146,9 @@ def _appliquer(rapport: SlotReport, *, ignore_rules: bool) -> None:
 
     non_forcables = [item for item in rapport.violations if not item.forcible]
     if non_forcables:
-        raise RuleViolationError(non_forcables[0].message, code=non_forcables[0].code.value)
+        raise RuleViolationError(
+            non_forcables[0].message, code=non_forcables[0].code.value
+        )
 
     if ignore_rules or not rapport.violations:
         return
@@ -265,7 +271,9 @@ def reissue_access_code(
 
     code = issue_access_code(session, reservation, now=now)
     if code is None:  # pragma: no cover - `badge_required` est déjà vérifié
-        raise RuleViolationError("Aucun code n'a pu être émis.", code="code_indisponible")
+        raise RuleViolationError(
+            "Aucun code n'a pu être émis.", code="code_indisponible"
+        )
 
     audit_service.record(
         session,
@@ -279,7 +287,9 @@ def reissue_access_code(
     return code
 
 
-def _inviter(session: Session, reservation: Booking, participant: BookingParticipant) -> str:
+def _inviter(
+    session: Session, reservation: Booking, participant: BookingParticipant
+) -> str:
     """Émet le jeton de réponse d'un participant et prépare son courriel.
 
     Les deux ensemble, et jamais l'un sans l'autre : le jeton était bien créé
@@ -296,7 +306,9 @@ def _inviter(session: Session, reservation: Booking, participant: BookingPartici
         expires_at=reservation.time_range.upper,
     )
 
-    proprietaire = session.get(User, reservation.owner_id) if reservation.owner_id else None
+    proprietaire = (
+        session.get(User, reservation.owner_id) if reservation.owner_id else None
+    )
     salle = charger_salle(session, reservation.room_id)
     mail_service.queue_invitation(
         email=participant.email,
@@ -451,7 +463,9 @@ def create_booking(
         session.flush()
         _inviter(session, reservation, invite)
 
-    _journaliser(session, reservation, BookingEventType.CREATION, "Réservation créée", owner_id)
+    _journaliser(
+        session, reservation, BookingEventType.CREATION, "Réservation créée", owner_id
+    )
     code = issue_access_code(session, reservation, now=now)
     # Le clair n'existe qu'ici, et le courriel de confirmation est le seul
     # endroit où l'utilisateur pourra le relire : l'écran ne le montre qu'une
@@ -483,7 +497,9 @@ def create_blocking(
     """
     now = en_utc(now or datetime.now(UTC))
     if not reason.strip():
-        raise RuleViolationError("Le motif du blocage est obligatoire.", code="motif_requis")
+        raise RuleViolationError(
+            "Le motif du blocage est obligatoire.", code="motif_requis"
+        )
 
     rapport = check_slot(
         session, room_id=room_id, slot=slot, attendees=1, now=now, check_quotas=False
@@ -510,7 +526,9 @@ def create_blocking(
     except IntegrityError as erreur:
         _traduire_course(erreur)
 
-    _journaliser(session, blocage, BookingEventType.CREATION, f"Blocage : {reason.strip()}")
+    _journaliser(
+        session, blocage, BookingEventType.CREATION, f"Blocage : {reason.strip()}"
+    )
     session.flush()
     return blocage
 
@@ -535,9 +553,13 @@ def update_booking(
     reservation = _charger(session, booking_id)
 
     if reservation.status is BookingStatus.ANNULEE:
-        raise RuleViolationError("Une réservation annulée ne se modifie plus.", code="deja_annulee")
+        raise RuleViolationError(
+            "Une réservation annulée ne se modifie plus.", code="deja_annulee"
+        )
     if reservation.time_range.upper <= now:
-        raise RuleViolationError("Une réservation passée ne se modifie plus.", code="deja_passee")
+        raise RuleViolationError(
+            "Une réservation passée ne se modifie plus.", code="deja_passee"
+        )
 
     vise = slot or to_slot(reservation.time_range)
     effectif = attendees if attendees is not None else reservation.attendee_count
@@ -563,7 +585,11 @@ def update_booking(
         reservation.attendee_count = attendees
 
     _journaliser(
-        session, reservation, BookingEventType.MODIFICATION, "Réservation modifiée", actor_id
+        session,
+        reservation,
+        BookingEventType.MODIFICATION,
+        "Réservation modifiée",
+        actor_id,
     )
     try:
         session.flush()
@@ -594,7 +620,9 @@ def cancel_booking(
     reservation = _charger(session, booking_id)
 
     if not reason.strip():
-        raise RuleViolationError("Le motif d'annulation est obligatoire.", code="motif_requis")
+        raise RuleViolationError(
+            "Le motif d'annulation est obligatoire.", code="motif_requis"
+        )
     if reservation.status is BookingStatus.ANNULEE:
         raise RuleViolationError("Réservation déjà annulée.", code="deja_annulee")
     if reservation.checked_in_at is not None:
@@ -677,8 +705,13 @@ def check_in(
             raise RuleViolationError("Code d'accès incorrect.", code="code_invalide")
 
     reservation.checked_in_at = now
-    _journaliser(session, reservation, BookingEventType.CHECKIN, "Présence validée",
-                 reservation.owner_id)
+    _journaliser(
+        session,
+        reservation,
+        BookingEventType.CHECKIN,
+        "Présence validée",
+        reservation.owner_id,
+    )
     session.flush()
     return reservation
 
@@ -707,7 +740,9 @@ def release_no_shows(session: Session, now: datetime | None = None) -> list[Book
     for reservation in candidates:
         salle = charger_salle(session, reservation.room_id)
         regles = load_rules(session, salle)
-        if not dom_rules.is_releasable(to_slot(reservation.time_range), now, None, regles):
+        if not dom_rules.is_releasable(
+            to_slot(reservation.time_range), now, None, regles
+        ):
             continue
 
         reservation.status = BookingStatus.ANNULEE
@@ -717,7 +752,10 @@ def release_no_shows(session: Session, now: datetime | None = None) -> list[Book
             f"{dom_rules.format_duree(regles.checkin_window)}."
         )
         _journaliser(
-            session, reservation, BookingEventType.LIBERATION_AUTO, "Libérée automatiquement"
+            session,
+            reservation,
+            BookingEventType.LIBERATION_AUTO,
+            "Libérée automatiquement",
         )
         liberees.append(reservation)
 
@@ -757,7 +795,9 @@ def _charger(session: Session, booking_id: uuid.UUID) -> Booking:
 # --------------------------------------------------------------------------- #
 
 
-def list_participants(session: Session, booking_id: uuid.UUID) -> list[BookingParticipant]:
+def list_participants(
+    session: Session, booking_id: uuid.UUID
+) -> list[BookingParticipant]:
     _charger(session, booking_id)
     return list(
         session.scalars(
@@ -854,7 +894,9 @@ def respond_to_invitation(
 
     reservation = _charger(session, booking_id)
     if reservation.status is BookingStatus.ANNULEE:
-        raise RuleViolationError("Cette réservation a été annulée.", code="deja_annulee")
+        raise RuleViolationError(
+            "Cette réservation a été annulée.", code="deja_annulee"
+        )
 
     participant.response = response
     participant.responded_at = datetime.now(FUSEAU)

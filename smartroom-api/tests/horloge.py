@@ -88,7 +88,9 @@ class Horloge:
     instant: datetime
 
     @classmethod
-    def a(cls, heure: int, minute: int = 0, *, jour: date = JOUR_ORDINAIRE) -> "Horloge":
+    def a(
+        cls, heure: int, minute: int = 0, *, jour: date = JOUR_ORDINAIRE
+    ) -> "Horloge":
         return cls(instant=local(heure, minute, jour=jour))
 
     @classmethod

@@ -121,7 +121,9 @@ class Agent:
         journal = JournalTour()
         maintenant = maintenant or datetime.now(UTC)
 
-        inspection = injection.assainir(message, taille_max=self._reglages.taille_message)
+        inspection = injection.assainir(
+            message, taille_max=self._reglages.taille_message
+        )
         journal.injection = inspection.pour_journal()
         if inspection.suspect:
             # Journalisé, jamais bloqué à ce stade : c'est la structure du
@@ -131,7 +133,9 @@ class Agent:
 
         if not inspection.texte:
             yield ev.erreur("message_vide", "Le message est vide.")
-            yield ev.Evenement(type=ev.TypeEvenement.FIN, donnees=journal.pour_journal())
+            yield ev.Evenement(
+                type=ev.TypeEvenement.FIN, donnees=journal.pour_journal()
+            )
             return
 
         contexte_outils = ToolContext(
@@ -202,7 +206,9 @@ class Agent:
         prompt = charger(self._reglages.prompt_systeme_version)
         constructeur = ConstructeurContexte(self._reglages)
         messages, mesures_contexte, _ = await constructeur.construire(
-            systeme=prompt.avec_contexte(maintenant=maintenant, fuseau=get_settings().timezone),
+            systeme=prompt.avec_contexte(
+                maintenant=maintenant, fuseau=get_settings().timezone
+            ),
             message_courant=message,
             historique=historique,
             resume_existant=resume,
@@ -222,7 +228,9 @@ class Agent:
         for iteration in range(1, self._reglages.max_iterations + 1):
             journal.iterations = iteration
 
-            if (time.perf_counter() - debut_tour) * 1000 > self._reglages.budget_tour_ms:
+            if (
+                time.perf_counter() - debut_tour
+            ) * 1000 > self._reglages.budget_tour_ms:
                 yield ev.texte(
                     "\n\nJe m'arrête là : la recherche prend trop de temps. "
                     "Reformulez, ou ouvrez un ticket."
@@ -259,7 +267,9 @@ class Agent:
                     break
                 relance_faite = True
                 journal.relances += 1
-                messages.append(Message(role=RoleMessage.ASSISTANT, contenu="".join(reponse)))
+                messages.append(
+                    Message(role=RoleMessage.ASSISTANT, contenu="".join(reponse))
+                )
                 messages.append(Message(role=RoleMessage.SYSTEME, contenu=RAPPEL_ACTE))
                 continue
 
@@ -269,7 +279,9 @@ class Agent:
             # Un appel d'écriture termine le tour : il ne s'exécute pas, il se
             # propose. Les lectures qui l'accompagnent sont abandonnées — leur
             # résultat ne servirait qu'au tour suivant, qui les redemandera.
-            ecriture = next((appel for appel in appels if _est_ecriture(appel.nom)), None)
+            ecriture = next(
+                (appel for appel in appels if _est_ecriture(appel.nom)), None
+            )
             if ecriture is not None:
                 async for evenement in self._proposer_ecriture(
                     ecriture, contexte_outils, conversation_id, journal
@@ -278,7 +290,11 @@ class Agent:
                 return
 
             messages.append(
-                Message(role=RoleMessage.ASSISTANT, contenu="".join(reponse), appels=tuple(appels))
+                Message(
+                    role=RoleMessage.ASSISTANT,
+                    contenu="".join(reponse),
+                    appels=tuple(appels),
+                )
             )
             reponse.clear()
 
@@ -290,7 +306,11 @@ class Agent:
                     etat="fini",
                     libelle=ev.LIBELLES.get(appel.nom, appel.nom),
                     duree_ms=next(
-                        (item["duree_ms"] for item in journal.outils if item["appel"] == appel.identifiant),
+                        (
+                            item["duree_ms"]
+                            for item in journal.outils
+                            if item["appel"] == appel.identifiant
+                        ),
                         None,
                     ),
                 )
@@ -327,7 +347,9 @@ class Agent:
         )
         journal.etayage = verdict.pour_journal()
         if (reserve := verdict.reserve) is not None:
-            yield ev.Evenement(type=ev.TypeEvenement.RESERVE, donnees={"message": reserve})
+            yield ev.Evenement(
+                type=ev.TypeEvenement.RESERVE, donnees={"message": reserve}
+            )
 
     # -------------------------------------------------------------- outils
 
@@ -368,7 +390,12 @@ class Agent:
             # Nom inventé par le modèle. Le lui dire vaut mieux que l'ignorer :
             # il rappellera le bon outil au tour suivant.
             journal.outils.append(
-                {"outil": appel.nom, "appel": appel.identifiant, "statut": "inconnu", "duree_ms": 0}
+                {
+                    "outil": appel.nom,
+                    "appel": appel.identifiant,
+                    "statut": "inconnu",
+                    "duree_ms": 0,
+                }
             )
             return ToolResult.refus(
                 f"L'outil « {appel.nom} » n'existe pas. Outils disponibles : "
@@ -407,19 +434,31 @@ class Agent:
             yield ev.erreur("outil_inconnu", f"L'outil « {appel.nom} » n'existe pas.")
             return
 
-        yield ev.outil(appel.nom, etat="debut", libelle=ev.LIBELLES.get(appel.nom, appel.nom))
+        yield ev.outil(
+            appel.nom, etat="debut", libelle=ev.LIBELLES.get(appel.nom, appel.nom)
+        )
 
         try:
             resultat = await outil.execute(appel.arguments, ctx)
         except ArgumentsInvalides as souci:
             yield ev.erreur("arguments_invalides", souci.message)
-            journal.outils.append({"outil": appel.nom, "appel": appel.identifiant,
-                                   "statut": "arguments_invalides", "duree_ms": 0})
+            journal.outils.append(
+                {
+                    "outil": appel.nom,
+                    "appel": appel.identifiant,
+                    "statut": "arguments_invalides",
+                    "duree_ms": 0,
+                }
+            )
             return
 
         journal.outils.append(
-            {"outil": appel.nom, "appel": appel.identifiant, "statut": resultat.statut.value,
-             "duree_ms": 0}
+            {
+                "outil": appel.nom,
+                "appel": appel.identifiant,
+                "statut": resultat.statut.value,
+                "duree_ms": 0,
+            }
         )
 
         if resultat.statut is Statut.CONFIRMATION and resultat.brouillon is not None:
@@ -459,13 +498,17 @@ class Agent:
                 "confirmation_expiree",
                 "Cette demande n'est plus valable. Reformulez-la, le créneau a pu changer.",
             )
-            yield ev.Evenement(type=ev.TypeEvenement.FIN, donnees=journal.pour_journal())
+            yield ev.Evenement(
+                type=ev.TypeEvenement.FIN, donnees=journal.pour_journal()
+            )
             return
 
         outil = obtenir(brouillon.outil)
         if outil is None:
             yield ev.erreur("outil_inconnu", "L'action demandée n'existe plus.")
-            yield ev.Evenement(type=ev.TypeEvenement.FIN, donnees=journal.pour_journal())
+            yield ev.Evenement(
+                type=ev.TypeEvenement.FIN, donnees=journal.pour_journal()
+            )
             return
 
         ctx = ToolContext(
@@ -475,11 +518,17 @@ class Agent:
             maintenant=maintenant,
         )
 
-        yield ev.outil(brouillon.outil, etat="debut", libelle=ev.LIBELLES.get(brouillon.outil, ""))
+        yield ev.outil(
+            brouillon.outil, etat="debut", libelle=ev.LIBELLES.get(brouillon.outil, "")
+        )
         resultat = await outil.execute(brouillon.arguments, ctx)
         journal.outils.append(
-            {"outil": brouillon.outil, "appel": jeton[:8], "statut": resultat.statut.value,
-             "duree_ms": int((time.perf_counter() - journal.debut) * 1000)}
+            {
+                "outil": brouillon.outil,
+                "appel": jeton[:8],
+                "statut": resultat.statut.value,
+                "duree_ms": int((time.perf_counter() - journal.debut) * 1000),
+            }
         )
 
         yield ev.texte(resultat.message)

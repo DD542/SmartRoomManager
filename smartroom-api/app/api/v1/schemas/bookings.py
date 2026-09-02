@@ -149,12 +149,16 @@ class BookingOut(ReadModel):
                 else None
             ),
             floor_label=(
-                salle.floor.label if salle is not None and salle.floor is not None else None
+                salle.floor.label
+                if salle is not None and salle.floor is not None
+                else None
             ),
             room_photo_url=(
                 salle.photos[0].file_url if salle is not None and salle.photos else None
             ),
-            room_location_plan_url=(salle.location_plan_url if salle is not None else None),
+            room_location_plan_url=(
+                salle.location_plan_url if salle is not None else None
+            ),
             floor_id=(salle.floor_id if salle is not None else None),
             owner_name=(
                 f"{proprietaire.first_name} {proprietaire.last_name}"
@@ -165,7 +169,9 @@ class BookingOut(ReadModel):
             room_badge_required=salle.badge_required,
             floor_has_plan=salle.floor.plan is not None,
             slot=SlotOut.of(
-                TimeSlot(start=reservation.time_range.lower, end=reservation.time_range.upper)
+                TimeSlot(
+                    start=reservation.time_range.lower, end=reservation.time_range.upper
+                )
             ),
             attendees=reservation.attendee_count,
             status=reservation.status.value,

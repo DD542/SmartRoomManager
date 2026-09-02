@@ -136,7 +136,8 @@ def verifier(jeton: str) -> IdentiteGoogle:
 
     if not charge.get("email_verified"):
         raise AuthenticationError(
-            "Cette adresse Google n'est pas vérifiée.", code="google_adresse_non_verifiee"
+            "Cette adresse Google n'est pas vérifiée.",
+            code="google_adresse_non_verifiee",
         )
 
     email = (charge.get("email") or "").strip().lower()

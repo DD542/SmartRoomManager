@@ -34,9 +34,15 @@ def _png(largeur: int = 1) -> bytes:
 
     def bloc(nom: bytes, donnees: bytes) -> bytes:
         corps = nom + donnees
-        return len(donnees).to_bytes(4, "big") + corps + zlib.crc32(corps).to_bytes(4, "big")
+        return (
+            len(donnees).to_bytes(4, "big")
+            + corps
+            + zlib.crc32(corps).to_bytes(4, "big")
+        )
 
-    entete = largeur.to_bytes(4, "big") + (1).to_bytes(4, "big") + bytes([8, 2, 0, 0, 0])
+    entete = (
+        largeur.to_bytes(4, "big") + (1).to_bytes(4, "big") + bytes([8, 2, 0, 0, 0])
+    )
     return (
         b"\x89PNG\r\n\x1a\n"
         + bloc(b"IHDR", entete)
@@ -48,7 +54,9 @@ def _png(largeur: int = 1) -> bytes:
 def _visuel(contenu: bytes | None = None, content_type: str = "image/png") -> dict:
     return {
         "content_type": content_type,
-        "content": base64.b64encode(contenu if contenu is not None else _png()).decode(),
+        "content": base64.b64encode(
+            contenu if contenu is not None else _png()
+        ).decode(),
     }
 
 
@@ -67,7 +75,11 @@ def batiment_cree(client, gestionnaire, marque):
     reponse = client.post(
         "/api/v1/buildings",
         headers=gestionnaire,
-        json={"code": marque[:4].upper(), "name": f"Eiffel {marque}", "address": "1 rue du test"},
+        json={
+            "code": marque[:4].upper(),
+            "name": f"Eiffel {marque}",
+            "address": "1 rue du test",
+        },
     )
     assert reponse.status_code == 201, reponse.text
     return reponse.json()
@@ -96,7 +108,9 @@ class TestBatiments:
         assert reponse.json()["error"]["code"] == "code_pris"
         assert batiment_cree["code"] in reponse.json()["error"]["message"]
 
-    def test_le_nom_et_l_adresse_se_modifient(self, client, gestionnaire, batiment_cree):
+    def test_le_nom_et_l_adresse_se_modifient(
+        self, client, gestionnaire, batiment_cree
+    ):
         reponse = client.patch(
             f"/api/v1/buildings/{batiment_cree['id']}",
             headers=gestionnaire,
@@ -115,7 +129,9 @@ class TestBatiments:
         )
         assert reponse.status_code == 204, reponse.text
         assert (
-            client.get(f"/api/v1/buildings/{batiment_cree['id']}", headers=gestionnaire).status_code
+            client.get(
+                f"/api/v1/buildings/{batiment_cree['id']}", headers=gestionnaire
+            ).status_code
             == 404
         )
 
@@ -147,7 +163,9 @@ class TestBatiments:
 
 
 class TestEtages:
-    def test_un_etage_s_ajoute_a_son_batiment(self, client, gestionnaire, batiment_cree):
+    def test_un_etage_s_ajoute_a_son_batiment(
+        self, client, gestionnaire, batiment_cree
+    ):
         reponse = client.post(
             f"/api/v1/buildings/{batiment_cree['id']}/floors",
             headers=gestionnaire,
@@ -163,11 +181,15 @@ class TestEtages:
     ):
         corps = {"code": "R0", "label": "Rez-de-chaussée", "level": 0}
         client.post(
-            f"/api/v1/buildings/{batiment_cree['id']}/floors", headers=gestionnaire, json=corps
+            f"/api/v1/buildings/{batiment_cree['id']}/floors",
+            headers=gestionnaire,
+            json=corps,
         )
 
         reponse = client.post(
-            f"/api/v1/buildings/{batiment_cree['id']}/floors", headers=gestionnaire, json=corps
+            f"/api/v1/buildings/{batiment_cree['id']}/floors",
+            headers=gestionnaire,
+            json=corps,
         )
 
         assert reponse.status_code == 422, reponse.text
@@ -178,7 +200,11 @@ class TestEtages:
     ):
         """`level` est un entier de tri distinct de `code` : « RDC », « 1er » et
         « 2e » ne s'ordonnent pas comme du texte."""
-        for code, label, niveau in (("R2", "2e", 2), ("R0", "RDC", 0), ("R1", "1er", 1)):
+        for code, label, niveau in (
+            ("R2", "2e", 2),
+            ("R0", "RDC", 0),
+            ("R1", "1er", 1),
+        ):
             client.post(
                 f"/api/v1/buildings/{batiment_cree['id']}/floors",
                 headers=gestionnaire,
@@ -192,7 +218,9 @@ class TestEtages:
         assert [item["level"] for item in etages] == [0, 1, 2]
 
     def test_un_etage_peuple_ne_se_supprime_pas(self, client, gestionnaire, salle):
-        reponse = client.delete(f"/api/v1/floors/{salle.floor_id}", headers=gestionnaire)
+        reponse = client.delete(
+            f"/api/v1/floors/{salle.floor_id}", headers=gestionnaire
+        )
 
         assert reponse.status_code == 422, reponse.text
         assert reponse.json()["error"]["code"] == "etage_occupe"
@@ -204,7 +232,12 @@ class TestEtages:
             json={"code": "R9", "label": "9e", "level": 9},
         ).json()
 
-        assert client.delete(f"/api/v1/floors/{etage['id']}", headers=gestionnaire).status_code == 204
+        assert (
+            client.delete(
+                f"/api/v1/floors/{etage['id']}", headers=gestionnaire
+            ).status_code
+            == 204
+        )
 
 
 class TestVisuels:
@@ -261,9 +294,13 @@ class TestVisuels:
         assert reponse.status_code == 422
         assert reponse.json()["error"]["code"] == "format_invalide"
 
-    def test_le_plan_de_localisation_accompagne_la_salle(self, client, gestionnaire, salle):
+    def test_le_plan_de_localisation_accompagne_la_salle(
+        self, client, gestionnaire, salle
+    ):
         depose = client.put(
-            f"/api/v1/rooms/{salle.id}/location-plan", headers=gestionnaire, json=_visuel()
+            f"/api/v1/rooms/{salle.id}/location-plan",
+            headers=gestionnaire,
+            json=_visuel(),
         )
 
         assert depose.status_code == 200, depose.text
@@ -277,10 +314,14 @@ class TestVisuels:
 
     def test_le_plan_de_localisation_se_retire(self, client, gestionnaire, salle):
         url = client.put(
-            f"/api/v1/rooms/{salle.id}/location-plan", headers=gestionnaire, json=_visuel()
+            f"/api/v1/rooms/{salle.id}/location-plan",
+            headers=gestionnaire,
+            json=_visuel(),
         ).json()["location_plan_url"]
 
-        reponse = client.delete(f"/api/v1/rooms/{salle.id}/location-plan", headers=gestionnaire)
+        reponse = client.delete(
+            f"/api/v1/rooms/{salle.id}/location-plan", headers=gestionnaire
+        )
 
         assert reponse.status_code == 200, reponse.text
         assert reponse.json()["location_plan_url"] is None

@@ -15,7 +15,13 @@ from pydantic import Field, SecretStr, computed_field, model_validator
 
 from app.db.enums import UserStatus
 from app.domain.organisation import est_externe
-from app.schemas.common import ApiModel, Email, PermissionCode, ReadModel, TimestampedRead
+from app.schemas.common import (
+    ApiModel,
+    Email,
+    PermissionCode,
+    ReadModel,
+    TimestampedRead,
+)
 
 # --------------------------------------------------------------------------- #
 # Utilisateurs
@@ -84,7 +90,10 @@ class PasswordChange(ApiModel):
 
     @model_validator(mode="after")
     def _mot_de_passe_different(self) -> "PasswordChange":
-        if self.current_password.get_secret_value() == self.new_password.get_secret_value():
+        if (
+            self.current_password.get_secret_value()
+            == self.new_password.get_secret_value()
+        ):
             raise ValueError("Le nouveau mot de passe doit différer de l'ancien.")
         return self
 

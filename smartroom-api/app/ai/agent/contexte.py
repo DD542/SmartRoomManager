@@ -31,6 +31,7 @@ logger = logging.getLogger("app.ai.contexte")
 #: Reçoit le texte des tours à condenser, rend le résumé.
 Resumeur = Callable[[str], Awaitable[str]]
 
+
 def cout(message: Message) -> int:
     """Coût d'un message, arguments d'outils compris.
 
@@ -171,7 +172,9 @@ class ConstructeurContexte:
         )
 
         cout_historique = sum(tour.cout() for tour in retenus)
-        total = cout_systeme + cout_resume + cout_extraits + cout_historique + cout_message
+        total = (
+            cout_systeme + cout_resume + cout_extraits + cout_historique + cout_message
+        )
 
         if total > reglages.budget_contexte_total:
             # Ne devrait pas arriver : les budgets par poste s'additionnent en
@@ -237,7 +240,11 @@ def _texte_brut(tours: Sequence[Tour], resume_existant: str) -> str:
         for message in tour.messages:
             if message.role is RoleMessage.OUTIL or not message.contenu:
                 continue
-            qui = "Utilisateur" if message.role is RoleMessage.UTILISATEUR else "Assistant"
+            qui = (
+                "Utilisateur"
+                if message.role is RoleMessage.UTILISATEUR
+                else "Assistant"
+            )
             morceaux.append(f"{qui} : {message.contenu}")
     return "\n".join(morceaux)
 

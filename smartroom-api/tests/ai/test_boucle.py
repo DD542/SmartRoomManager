@@ -12,7 +12,6 @@ partition doit le prévoir, comme en production.
 
 from __future__ import annotations
 
-import uuid
 from datetime import UTC, datetime
 
 import pytest
@@ -68,7 +67,11 @@ class TestPromesseNonTenue:
     ):
         faux_modele.programmer(
             TourSimule(texte="Je recherche une salle. Veuillez patienter un instant."),
-            TourSimule(appels=(AppelOutil(nom="rechercher_salles", arguments={"capacite_min": 2}),)),
+            TourSimule(
+                appels=(
+                    AppelOutil(nom="rechercher_salles", arguments={"capacite_min": 2}),
+                )
+            ),
             TourSimule(texte="Deux salles conviennent."),
         )
         agent = Agent(session, principal, selecteur=selecteur, magasin=magasin)
@@ -118,7 +121,11 @@ class TestTourNominal:
         self, session, principal, selecteur, faux_modele, magasin, salle
     ):
         faux_modele.programmer(
-            TourSimule(appels=(AppelOutil(nom="rechercher_salles", arguments={"capacite_min": 2}),)),
+            TourSimule(
+                appels=(
+                    AppelOutil(nom="rechercher_salles", arguments={"capacite_min": 2}),
+                )
+            ),
             TourSimule(texte="Deux salles conviennent."),
         )
         agent = Agent(session, principal, selecteur=selecteur, magasin=magasin)
@@ -140,7 +147,9 @@ class TestTourNominal:
             TourSimule(
                 appels=(
                     AppelOutil(nom="consulter_regles", arguments={}),
-                    AppelOutil(nom="localiser_salle", arguments={"salle_nom": salle.name}),
+                    AppelOutil(
+                        nom="localiser_salle", arguments={"salle_nom": salle.name}
+                    ),
                 )
             ),
             TourSimule(texte="Voici les deux."),
@@ -198,7 +207,10 @@ class TestTourNominal:
             *[
                 TourSimule(
                     appels=(
-                        AppelOutil(nom="rechercher_salles", arguments={"capacite_min": index + 1}),
+                        AppelOutil(
+                            nom="rechercher_salles",
+                            arguments={"capacite_min": index + 1},
+                        ),
                     )
                 )
                 for index in range(6)
@@ -232,7 +244,9 @@ class TestEcritureEnDeuxTours:
             # « réserve cette salle » touche deux domaines : le routage
             # interroge donc le modèle, et consomme un tour.
             TourSimule(texte="reservation"),
-            TourSimule(appels=(AppelOutil(nom="creer_reservation", arguments=demande),)),
+            TourSimule(
+                appels=(AppelOutil(nom="creer_reservation", arguments=demande),)
+            ),
         )
         agent = Agent(session, principal, selecteur=selecteur, magasin=magasin)
 
@@ -240,7 +254,9 @@ class TestEcritureEnDeuxTours:
 
         assert "confirmation" in types(trace)
         ecrites = session.scalar(
-            select(func.count()).select_from(Booking).where(Booking.title == "Point d'équipe")
+            select(func.count())
+            .select_from(Booking)
+            .where(Booking.title == "Point d'équipe")
         )
         assert ecrites == 0
 
@@ -252,7 +268,9 @@ class TestEcritureEnDeuxTours:
             # « réserve cette salle » touche deux domaines : le routage
             # interroge donc le modèle, et consomme un tour.
             TourSimule(texte="reservation"),
-            TourSimule(appels=(AppelOutil(nom="creer_reservation", arguments=demande),)),
+            TourSimule(
+                appels=(AppelOutil(nom="creer_reservation", arguments=demande),)
+            ),
         )
         agent = Agent(session, principal, selecteur=selecteur, magasin=magasin)
         trace = await jouer(agent, "réserve cette salle")
@@ -276,11 +294,15 @@ class TestEcritureEnDeuxTours:
             # « réserve cette salle » touche deux domaines : le routage
             # interroge donc le modèle, et consomme un tour.
             TourSimule(texte="reservation"),
-            TourSimule(appels=(AppelOutil(nom="creer_reservation", arguments=demande),)),
+            TourSimule(
+                appels=(AppelOutil(nom="creer_reservation", arguments=demande),)
+            ),
         )
         agent = Agent(session, principal, selecteur=selecteur, magasin=magasin)
         trace = await jouer(agent, "réserve cette salle")
-        jeton = next(e.donnees["jeton"] for e in trace if e.type is TypeEvenement.CONFIRMATION)
+        jeton = next(
+            e.donnees["jeton"] for e in trace if e.type is TypeEvenement.CONFIRMATION
+        )
 
         [e async for e in agent.confirmer(jeton)]
         rejeu = [e async for e in agent.confirmer(jeton)]
@@ -297,11 +319,15 @@ class TestEcritureEnDeuxTours:
             # « réserve cette salle » touche deux domaines : le routage
             # interroge donc le modèle, et consomme un tour.
             TourSimule(texte="reservation"),
-            TourSimule(appels=(AppelOutil(nom="creer_reservation", arguments=demande),)),
+            TourSimule(
+                appels=(AppelOutil(nom="creer_reservation", arguments=demande),)
+            ),
         )
         agent = Agent(session, principal, selecteur=selecteur, magasin=magasin)
         trace = await jouer(agent, "réserve cette salle")
-        jeton = next(e.donnees["jeton"] for e in trace if e.type is TypeEvenement.CONFIRMATION)
+        jeton = next(
+            e.donnees["jeton"] for e in trace if e.type is TypeEvenement.CONFIRMATION
+        )
 
         voleur = Agent(
             session,
@@ -313,12 +339,16 @@ class TestEcritureEnDeuxTours:
 
         assert trace_volee[0].type is TypeEvenement.ERREUR
         ecrites = session.scalar(
-            select(func.count()).select_from(Booking).where(Booking.title == "Point d'équipe")
+            select(func.count())
+            .select_from(Booking)
+            .where(Booking.title == "Point d'équipe")
         )
         assert ecrites == 0
 
     @pytest.mark.asyncio
-    async def test_un_jeton_inconnu_est_refuse(self, session, principal, selecteur, magasin):
+    async def test_un_jeton_inconnu_est_refuse(
+        self, session, principal, selecteur, magasin
+    ):
         agent = Agent(session, principal, selecteur=selecteur, magasin=magasin)
         trace = [e async for e in agent.confirmer("jeton-invente-par-un-tiers")]
         assert trace[0].donnees["code"] == "confirmation_expiree"
@@ -376,7 +406,11 @@ class TestJournal:
         self, session, principal, selecteur, faux_modele, magasin, salle
     ):
         faux_modele.programmer(
-            TourSimule(appels=(AppelOutil(nom="rechercher_salles", arguments={"capacite_min": 2}),)),
+            TourSimule(
+                appels=(
+                    AppelOutil(nom="rechercher_salles", arguments={"capacite_min": 2}),
+                )
+            ),
             TourSimule(texte="Voilà."),
         )
         agent = Agent(session, principal, selecteur=selecteur, magasin=magasin)
