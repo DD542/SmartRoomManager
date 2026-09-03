@@ -31,7 +31,20 @@ export default function RoomDetailPage() {
   const { permissions } = useAdminSession();
   const room = useAsync(() => getRoom(id), [id]);
   const nextSlot = useAsync(() => getNextFreeSlot(id, NOW), [id]);
-  const planDocument = useAsync(() => getPlanDocument(id), [id]);
+  // Le plan n'est demandé que si l'étage en porte un. Sans cette condition,
+  // chaque ouverture de fiche produisait un `404 /floors/…/plan` en rouge dans
+  // la console — une réponse parfaitement juste, l'étage n'ayant pas de plan,
+  // mais qui se lit comme une panne. `getPlanDocumentForPlan` prévoyait déjà
+  // ce cas ; quatre écrans s'en servaient, celui-ci non, faute d'avoir
+  // l'information dans sa charge utile.
+  //
+  // La dépendance porte sur `room.data` : `planIdForRoom` lit une table
+  // alimentée par la fiche, et l'appeler avant elle rendrait `null`.
+  const planDocument = useAsync(
+    () =>
+      getPlanDocument(id, { exists: Boolean(room.data?.floorHasPlan) }),
+    [id, room.data?.floorHasPlan],
+  );
 
   // Le dépôt du plan est une opération d'administration, gouvernée par la
   // permission `rooms.manage` — la même que côté back. Elle s'appuyait
@@ -40,6 +53,24 @@ export default function RoomDetailPage() {
   // zone d'import était donc invisible pour tout le monde.
   const canManage = permissions.includes('rooms.manage');
   const planId = planIdForRoom(id);
+
+  // Deux documents répondent à « où est cette salle ? », et l'écran n'en
+  // montrait qu'un. Le plan d'étage, déposé par l'administration, situe la
+  // salle parmi les autres — c'est le plus riche, il reste prioritaire. Le
+  // repère de la salle, lui, accompagne chaque fiche du parc.
+  //
+  // Sans ce recours, une salle qui avait son repère affichait « Aucun plan
+  // déposé pour cet étage » : la donnée existait, l'API la rendait, et seuls
+  // les écrans d'administration s'en servaient.
+  const repere = room.data?.locationPlanUrl
+    ? {
+        id: `repere-${room.data.id}`,
+        type: 'image',
+        name: `Repère de ${room.data.name}`,
+        url: room.data.locationPlanUrl,
+      }
+    : null;
+  const planAffiche = planDocument.data ?? repere;
 
   useEffect(() => {
     if (room.data) document.title = `${room.data.name} — SmartRoom Manager`;
@@ -135,8 +166,8 @@ export default function RoomDetailPage() {
                 />
                 <div className="flex flex-col gap-3 px-4 pb-4">
                   <PlanPreview
-                    document={planDocument.data}
-                    isLoading={planDocument.isLoading}
+                    document={planAffiche}
+                    isLoading={planDocument.isLoading || room.isLoading}
                     actionLabel="Ouvrir le plan en grand"
                   />
                   {canManage && planId && (

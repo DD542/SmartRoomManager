@@ -297,6 +297,11 @@ class RoomOut(ReadModel):
     #: Plan portant le repère de la salle. Distinct de `photos`, qui montrent
     #: la salle elle-même, et du plan de l'étage, qui vaut pour tout un niveau.
     location_plan_url: str | None = None
+    #: L'etage porte-t-il un plan depose ? La fiche s'en sert pour ne pas le
+    #: demander quand il n'y en a pas : la reponse serait un 404 legitime, que
+    #: la console du navigateur affiche en rouge, ou il se lit comme une panne.
+    #: `BookingOut` porte deja la meme information, sous le meme nom.
+    floor_has_plan: bool = False
     equipments: list[RoomEquipmentOut] = Field(default_factory=list)
     photos: list[RoomPhotoOut] = Field(default_factory=list)
     placement: RoomPlacementOut | None = None

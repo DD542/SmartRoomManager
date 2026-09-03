@@ -93,6 +93,7 @@ def salle_sortie(salle: Room, occupation: int = 0, reservations: int = 0) -> Roo
         badge_required=salle.badge_required,
         description=salle.description,
         location_plan_url=salle.location_plan_url,
+        floor_has_plan=salle.floor.plan is not None,
         equipments=[
             RoomEquipmentOut(
                 equipment_id=lien.equipment_id,

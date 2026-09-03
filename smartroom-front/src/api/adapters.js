@@ -169,6 +169,9 @@ export const room = (data) => {
     floorId: data.floor_id,
     floor: data.floor_label,
     locationPlanUrl: data.location_plan_url ?? null,
+    //: L'etage porte-t-il un plan ? La fiche s'en sert pour ne pas demander un
+    //: document absent : le 404 est legitime, mais il s'affiche en rouge.
+    floorHasPlan: data.floor_has_plan ?? false,
     floorLevel: data.floor_level,
     capacity: data.capacity,
     area: Number(data.area_m2),
