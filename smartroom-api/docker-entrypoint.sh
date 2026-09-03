@@ -24,22 +24,40 @@ echo '{"level":"INFO","logger":"entrypoint","message":"Attente de la base de don
 
 # La base peut n'accepter les connexions qu'après le démarrage du conteneur :
 # `depends_on: service_healthy` le couvre en compose, pas ailleurs.
-tentative=0
-until python -c "
+# La sonde ecrit la raison du refus, et non le seul fait qu'il y en ait un.
+# « Base injoignable » sans le message de PostgreSQL laisse le choix entre un
+# mot de passe faux, un hote inconnu, un pare-feu et une base endormie : quatre
+# pistes, aucune preuve. Le detail part sur la sortie d'erreur a chaque essai
+# manque, jamais le mot de passe — il ne figure pas dans ces messages.
+sonde() {
+    python - <<'PYSONDE'
 import sys
 from sqlalchemy import create_engine, text
 from app.core.config import get_settings
+
 try:
     moteur = create_engine(get_settings().database_url, pool_pre_ping=True)
     with moteur.connect() as connexion:
-        connexion.execute(text('SELECT 1'))
-except Exception:
+        connexion.execute(text("SELECT 1"))
+except Exception as erreur:
+    # `str(erreur)` porte le message du serveur, pas la chaine de connexion.
+    # Guillemets et retours a la ligne neutralises : la raison est reinjectee
+    # dans un journal JSON, qu ils casseraient.
+    detail = " ".join(str(erreur).split())[:300].replace('"', "'")
+    print(detail, file=sys.stderr)
     sys.exit(1)
-" 2>/dev/null; do
+PYSONDE
+}
+
+tentative=0
+until raison=$(sonde 2>&1 >/dev/null); do
     tentative=$((tentative + 1))
     if [ "$tentative" -ge 30 ]; then
-        echo '{"level":"ERROR","logger":"entrypoint","message":"Base injoignable après 30 tentatives."}' >&2
+        echo "{\"level\":\"ERROR\",\"logger\":\"entrypoint\",\"message\":\"Base injoignable apres 30 tentatives.\",\"raison\":\"${raison}\"}" >&2
         exit 1
+    fi
+    if [ "$tentative" = "1" ] || [ "$tentative" = "10" ]; then
+        echo "{\"level\":\"INFO\",\"logger\":\"entrypoint\",\"message\":\"Base pas encore prete.\",\"tentative\":${tentative},\"raison\":\"${raison}\"}"
     fi
     sleep 2
 done
