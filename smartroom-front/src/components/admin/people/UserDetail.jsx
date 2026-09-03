@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Ban, Check, ShieldCheck } from 'lucide-react';
+import { Ban, Check, ShieldCheck, UserMinus } from 'lucide-react';
 import { Badge } from '../../ui/Badge';
 import { EtiquetteExterne } from './EtiquetteExterne';
 import { Button } from '../../ui/Button';
@@ -15,7 +15,7 @@ import { BOOKING_STATUS_LABEL, fmtPercent, fullName } from '../../../utils/forma
  * Les métriques viennent du magasin de réservations : annuler ou créer une
  * réservation les déplace immédiatement, elles ne sont pas figées à la fiche.
  */
-export function UserDetail({ user, onStatus, onCredits, busy = false }) {
+export function UserDetail({ user, onStatus, onCredits, onRemove, busy = false }) {
   const [quota, setQuota] = useState(user.preferences?.weeklyQuotaHours ?? 12);
   // Le changement de statut passe par une modale qui recueille le motif :
   // l'API l'exige (trois caractères au moins) parce qu'il constitue la trace
@@ -23,6 +23,12 @@ export function UserDetail({ user, onStatus, onCredits, busy = false }) {
   // « Suspension administrative » identiques, sans dire pourquoi.
   const [motif, setMotif] = useState('');
   const [confirme, setConfirme] = useState(false);
+  // Le retrait a sa propre saisie : reutiliser celle de la suspension
+  // laisserait un motif ecrit pour une decision servir a une autre, bien plus
+  // grave, et l'audit garderait la mauvaise phrase.
+  const [motifRetrait, setMotifRetrait] = useState('');
+  const [retraitConfirme, setRetraitConfirme] = useState(false);
+  const retraitCourt = motifRetrait.trim().length < 3;
   const suspendu = user.status === 'suspendu';
   const motifCourt = motif.trim().length < 3;
 
@@ -108,6 +114,24 @@ export function UserDetail({ user, onStatus, onCredits, busy = false }) {
         >
           {suspendu ? 'Réactiver le compte' : 'Suspendre le compte'}
         </Button>
+
+        {onRemove && (
+          <>
+            <p className="mb-2 mt-3 text-xs text-content-muted">
+              Le retrait efface l’identité du compte et libère ses créneaux à
+              venir. Son historique reste, sans nom. C’est définitif.
+            </p>
+            <Button
+              variant="danger"
+              size="sm"
+              icon={UserMinus}
+              loading={busy}
+              onClick={() => setRetraitConfirme(true)}
+            >
+              Retirer le compte
+            </Button>
+          </>
+        )}
       </div>
 
       <Modal
@@ -153,6 +177,55 @@ export function UserDetail({ user, onStatus, onCredits, busy = false }) {
               : 'Trois absences non excusées en deux semaines.'
           }
           hint="Obligatoire : il est consigné au journal d’audit et notifié au compte."
+        />
+      </Modal>
+
+      <Modal
+        open={retraitConfirme}
+        onClose={() => {
+          setRetraitConfirme(false);
+          setMotifRetrait('');
+        }}
+        icon={UserMinus}
+        tone="danger"
+        size="sm"
+        title="Retirer le compte"
+        description={`${fullName(user)} ne pourra plus se connecter, son identité sera effacée et ses réservations à venir annulées. Son historique restera au parc, sans nom. Cette décision ne se défait pas.`}
+        footer={
+          <>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setRetraitConfirme(false);
+                setMotifRetrait('');
+              }}
+              disabled={busy}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="danger"
+              icon={UserMinus}
+              loading={busy}
+              disabled={retraitCourt}
+              onClick={() => {
+                onRemove(motifRetrait.trim());
+                setRetraitConfirme(false);
+                setMotifRetrait('');
+              }}
+            >
+              Retirer définitivement
+            </Button>
+          </>
+        }
+      >
+        <Textarea
+          label="Motif du retrait"
+          rows={3}
+          value={motifRetrait}
+          onChange={(event) => setMotifRetrait(event.target.value)}
+          placeholder="Départ de l’établissement, demande du service scolarité."
+          hint="Obligatoire : c’est ce que le journal d’audit conservera de la décision, une fois le nom parti."
         />
       </Modal>
     </>

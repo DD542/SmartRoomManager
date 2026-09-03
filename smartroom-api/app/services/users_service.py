@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.core import storage
 from app.core.errors import NotFoundError, RuleViolationError
 from app.core.pagination import PageParams, paginate
-from app.core.security import new_opaque_token
+from app.core.security import hash_password, new_opaque_token
 from app.db.enums import AuditAction, BookingStatus, UserStatus
 from app.models import (
     AdminAccount,
@@ -32,7 +32,7 @@ from app.models import (
     User,
     UserPreference,
 )
-from app.services import audit_service, auth_service, mail_service
+from app.services import audit_service, auth_service, booking_service, mail_service
 
 #: Champs de tri acceptés des comptes d'administration.
 TRI_ADMINS: dict[str, Any] = {
@@ -485,6 +485,120 @@ def set_status(
         target_id=compte.id,
         before={"status": avant.value},
         after={"status": status.value, "reason": reason.strip()},
+    )
+    session.flush()
+    return compte
+
+
+#: Domaine reserve par la RFC 2606 : aucune adresse en `.invalid` ne peut etre
+#: remise, et aucun envoi accidentel n'atteindra quelqu'un.
+DOMAINE_ANONYME = "anonyme.invalid"
+
+
+def anonymiser(
+    session: Session,
+    user_id: uuid.UUID,
+    *,
+    reason: str,
+    par_admin_id: uuid.UUID | None = None,
+) -> User:
+    """Retire un compte du parc en conservant ce que l'exploitation doit garder.
+
+    Effacer la ligne casserait le journal d'audit, les frises de reservation et
+    les agregats d'occupation, qui referencent tous ce compte. Ce que le
+    reglement demande n'est pas la disparition de l'historique : c'est celle de
+    l'identite. On efface donc ce qui designe la personne, et on laisse ce qui
+    decrit l'usage des salles.
+
+    Trois refus, avant toute ecriture :
+
+    * un motif vide — la meme exigence que pour une suspension, et pour la meme
+      raison : c'est ce que l'audit conservera de la decision ;
+    * un compte porteur de droits d'administration — les retirer est une
+      decision distincte, qui a son propre ecran et sa propre trace ;
+    * son propre compte — se retirer soi-meme laisserait une administration
+      sans administrateur, et la trace de l'acte sans auteur joignable.
+
+    Les reservations a venir sont annulees et les creneaux liberes : les
+    laisser occuperait des salles au nom de quelqu'un qui n'existe plus. Les
+    reservations passees restent, sans nom.
+    """
+    if not reason.strip():
+        raise RuleViolationError("Un motif est requis.", code="motif_requis")
+
+    compte = _charger(session, user_id)
+
+    if compte.admin_account is not None:
+        raise RuleViolationError(
+            "Ce compte porte des droits d'administration : retirez-les d'abord.",
+            code="droits_a_retirer",
+        )
+    if par_admin_id is not None and par_admin_id == compte.id:
+        raise RuleViolationError(
+            "Vous ne pouvez pas retirer votre propre compte.",
+            code="compte_de_l_auteur",
+        )
+
+    maintenant = datetime.now(UTC)
+
+    # Filtre etroit : `cancel_booking` refuse une reservation deja annulee ou
+    # dont la presence est validee. Les ecarter ici plutot que d'attraper le
+    # refus laisse toute autre erreur remonter, comme elle le doit.
+    a_venir = session.scalars(
+        select(Booking).where(
+            Booking.owner_id == compte.id,
+            Booking.deleted_at.is_(None),
+            Booking.status != BookingStatus.ANNULEE,
+            Booking.checked_in_at.is_(None),
+            Booking.time_range.op(">>")(Range(maintenant, maintenant, bounds="[]")),
+        )
+    ).all()
+    for reservation in a_venir:
+        booking_service.cancel_booking(
+            session,
+            reservation.id,
+            reason=f"Compte retire par l'administration : {reason.strip()}",
+            actor_id=par_admin_id,
+            now=maintenant,
+        )
+
+    auth_service.revoke_all(session, compte.id)
+
+    if compte.avatar_url:
+        storage.supprimer(compte.avatar_url)
+
+    avant = {"email": compte.email, "nom": f"{compte.first_name} {compte.last_name}"}
+
+    # L'adresse doit rester unique et satisfaire `ck_users_email_format` : un
+    # fragment de l'identifiant suffit, il ne dit rien de la personne.
+    compte.email = f"compte-retire-{compte.id.hex[:12]}@{DOMAINE_ANONYME}"
+    compte.first_name = "Compte"
+    compte.last_name = "retire"
+    compte.phone = None
+    compte.promotion = None
+    compte.department = None
+    compte.badge_number = None
+    compte.avatar_url = None
+    # Le mot de passe est remplace par une valeur sans antecedent : le laisser
+    # permettrait de rouvrir la session d'un compte retire, dont l'adresse
+    # d'origine est connue de qui l'a cotoye. `new_opaque_token` rend un couple
+    # (clair, empreinte) ; seul le clair sert ici, et il est jete aussitot.
+    secret, _ = new_opaque_token()
+    compte.password_hash = hash_password(secret)
+    compte.status = UserStatus.SUSPENDU
+    compte.deleted_at = maintenant
+
+    audit_service.record(
+        session,
+        action=AuditAction.SUPPRESSION,
+        target_type="user",
+        target_label=avant["email"],
+        target_id=compte.id,
+        before=avant,
+        after={
+            "reason": reason.strip(),
+            "reservations_annulees": len(a_venir),
+        },
     )
     session.flush()
     return compte

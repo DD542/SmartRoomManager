@@ -135,6 +135,12 @@ class UserStatusIn(ApiModel):
     reason: Annotated[str, Field(min_length=3, max_length=255)]
 
 
+class AnonymisationIn(ApiModel):
+    """Motif du retrait. Exige, comme celui d'une suspension."""
+
+    reason: Annotated[str, Field(min_length=3, max_length=255)]
+
+
 class QuotaIn(ApiModel):
     weekly_quota_hours: Annotated[int, Field(ge=1, le=168)]
 

@@ -5,6 +5,7 @@ import {
   getManagedUser,
   listManagedUsers,
   listUserFilters,
+  anonymiseUser,
   setUserStatus,
 } from '../../../api/admin/users';
 import { useAsync } from '../../../hooks/useAsync';
@@ -62,6 +63,30 @@ export default function UsersPage() {
       await Promise.all([fiche.reload(), utilisateurs.reload()]);
     } catch (erreur) {
       toast.error('Action impossible', erreur.message);
+    } finally {
+      setEnvoi(false);
+    }
+  };
+
+  /**
+   * Retrait d'un compte.
+   *
+   * Volontairement hors de `agir` : celui-ci recharge la fiche apres coup, et
+   * la redemander ici rendrait un 404 — le compte a quitte le parc. Le panneau
+   * se ferme, la liste seule est relue.
+   */
+  const retirer = async (raison) => {
+    setEnvoi(true);
+    try {
+      await anonymiseUser(selectionId, { reason: raison });
+      toast.success(
+        'Compte retiré',
+        'L’identité est effacée, les créneaux à venir libérés. L’historique du parc reste.',
+      );
+      setSelectionId(null);
+      await utilisateurs.reload();
+    } catch (erreur) {
+      toast.error('Retrait impossible', erreur.message);
     } finally {
       setEnvoi(false);
     }
@@ -137,6 +162,7 @@ export default function UsersPage() {
               onCredits={(heures) =>
                 agir(() => adjustCredits(selectionId, heures), 'Quota mis à jour')
               }
+              onRemove={retirer}
             />
           )}
         </DetailPanel>

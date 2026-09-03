@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, Response, status
 
 
 from app.api.deps import (
@@ -31,6 +31,7 @@ from app.api.v1.schemas.comptes import (
     UserDetailOut,
     UserMetricsOut,
     UserOut,
+    AnonymisationIn,
     UserStatusIn,
 )
 from app.core.pagination import Page
@@ -337,6 +338,46 @@ def set_user_status(
     background.add_task(mail_service.expedier)
 
     return _utilisateur(compte)
+
+
+@router.delete(
+    "/admin/users/{user_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Retirer un compte",
+    description=(
+        "Anonymise le compte plutôt que d'effacer sa ligne. Le journal "
+        "d'audit, les frises de réservation et les agrégats d'occupation "
+        "référencent tous ce compte : les rompre ferait disparaître "
+        "l'historique du parc, quand le règlement ne demande que celle de "
+        "l'identité. "
+        "Les réservations à venir sont annulées et les créneaux libérés. Les "
+        "réservations passées restent, sans nom."
+    ),
+    responses={
+        404: {"description": "Compte inconnu ou déjà retiré."},
+        422: {
+            "description": (
+                "Motif manquant, compte porteur de droits d'administration, "
+                "ou compte de l'auteur de la demande."
+            )
+        },
+    },
+)
+def anonymiser_user(
+    user_id: uuid.UUID,
+    payload: AnonymisationIn,
+    session: SessionDep,
+    principal: CurrentPrincipal,
+    _admin=Gestion,
+) -> Response:
+    service.anonymiser(
+        session,
+        user_id,
+        reason=payload.reason,
+        par_admin_id=principal.user.id,
+    )
+    session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.patch(

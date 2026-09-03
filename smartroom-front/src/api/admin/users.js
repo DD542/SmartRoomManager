@@ -7,7 +7,7 @@
 //   GET   /api/v1/admin/bookings?owner_id=      dernières réservations du compte
 
 import * as adapt from '../adapters';
-import { ApiError, abortable, get, items, patch } from '../client';
+import { ApiError, abortable, del, get, items, patch } from '../client';
 
 /**
  * Métriques d'un compte, sous les noms que lit `UsersTable`.
@@ -100,6 +100,27 @@ export async function getManagedUser(id, { signal } = {}) {
  * Les réservations à venir ne sont pas annulées d'office : l'administrateur
  * décide ensuite, depuis la liste des réservations.
  */
+/**
+ * Retrait d'un compte, par anonymisation.
+ *
+ * La ligne n'est pas effacee : le journal d'audit, les frises de reservation
+ * et les agregats d'occupation la referencent tous. Ce que le reglement
+ * demande n'est pas la disparition de l'historique, c'est celle de l'identite.
+ *
+ * Le motif suit la meme exigence qu'une suspension, et pour la meme raison :
+ * c'est ce que l'audit conservera de la decision.
+ */
+export async function anonymiseUser(id, { reason } = {}) {
+  const motif = reason?.trim() ?? '';
+  if (motif.length < 3) {
+    throw new ApiError('Indiquez le motif du retrait.', 422, 'motif_requis');
+  }
+
+  await del(`/admin/users/${id}`, { body: { reason: motif } });
+  return { id, reason: motif };
+}
+
+
 export async function setUserStatus(id, status, { reason } = {}) {
   if (!['actif', 'suspendu'].includes(status)) {
     throw new ApiError('Statut inconnu.', 422, 'statut_invalide');
