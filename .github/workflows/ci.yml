@@ -186,6 +186,18 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Démarrer la pile
+        # `.env.example` porte la valeur de production du limiteur, 5/minute.
+        # Copié tel quel, il écrase le défaut de `docker-compose.yml`, qui le
+        # relève à 100/minute précisément pour cette campagne : elle ouvre une
+        # session par test, la rotation des jetons interdisant d'en partager
+        # une. Sous le plafond de production, la suite tombe sur des 429 qui ne
+        # disent rien du produit — la connexion reste sur `/connexion`, et le
+        # test repasse au réessai suivant, une minute plus tard.
+        #
+        # L'environnement du shell l'emporte sur le fichier `.env` : la valeur
+        # ci-dessous gagne sans modifier le fichier copié.
+        env:
+          RATE_LIMIT_LOGIN: 100/minute
         run: |
           cp .env.example .env
           docker compose up -d --build db api

@@ -157,7 +157,13 @@ test.describe('administration au doigt', () => {
     // sans le moindre bouton de menu pour les rouvrir.
     await seConnecterAdmin(page);
 
-    const menu = page.getByRole('button', { name: /Ouvrir la navigation/i });
+    // Le declencheur porte le mot « Menu » **ecrit**, et pas seulement lu par
+    // les lecteurs d'ecran : trois traits ne disent pas qu'ils cachent
+    // dix-huit ecrans, et la navigation avait ete rapportee comme absente
+    // alors qu'elle etait la. Le chercher sous un autre nom accessible
+    // reviendrait a exiger un `aria-label` qui masquerait ce texte visible,
+    // contre WCAG 2.5.3.
+    const menu = page.getByRole('button', { name: /^menu$/i });
     await expect(menu).toBeVisible();
     await menu.click();
 
