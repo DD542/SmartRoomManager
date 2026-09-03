@@ -77,6 +77,7 @@ from app.models import (
     FaqArticle,
     FaqCategory,
     Floor,
+    FloorPlan,
     Notification,
     OpeningHour,
     Permission,
@@ -575,6 +576,75 @@ def relever_visuels(session: Session) -> dict[str, str]:
             releve[f"salle:{salle.name}"] = salle.location_plan_url
 
     return releve
+
+
+def relever_plans(session: Session) -> dict[str, dict]:
+    """Note les plans d'etage deposes par l'administration avant de vider.
+
+    Meme raison que `relever_visuels`, et meme oubli repare : `_vider` efface
+    les batiments, la cascade emporte les etages puis leurs plans. Les fichiers
+    survivent sous `MEDIA_ROOT` — on les retrouve orphelins dans `media/plans`
+    — mais la ligne qui disait a quel etage ils appartenaient disparait, et
+    l'ecran affiche « Aucun plan depose pour cet etage » sur un etage qui en
+    avait un.
+
+    Constate en production locale : un plan depose le 27 aout, des placements
+    de salles poses le 29 et le 31, et plus aucun plan en base apres un
+    `--reset`. Le seed a le droit de refaire ses donnees, pas d'effacer ce
+    qu'on lui a confie.
+
+    La cle est le code du batiment et celui de l'etage : ils portent une
+    contrainte d'unicite et survivent d'un jeu a l'autre, contrairement aux
+    identifiants, regeneres a chaque purge.
+    """
+    releve: dict[str, dict] = {}
+
+    for plan in session.scalars(select(FloorPlan)):
+        etage = plan.floor
+        cle = f"{etage.building.code}:{etage.code}"
+        releve[cle] = {
+            "kind": plan.kind,
+            "file_url": plan.file_url,
+            "file_name": plan.file_name,
+            "file_size_bytes": plan.file_size_bytes,
+            "uploaded_by_admin_id": plan.uploaded_by_admin_id,
+        }
+
+    return releve
+
+
+def rendre_plans(session: Session, releve: dict[str, dict]) -> int:
+    """Repose les plans releves sur les etages homonymes du nouveau parc."""
+    if not releve:
+        return 0
+
+    rendus = 0
+    for etage in session.scalars(select(Floor)):
+        champs = releve.get(f"{etage.building.code}:{etage.code}")
+        if champs is None:
+            continue
+        # L'administrateur qui avait depose le plan n'existe plus forcement :
+        # le seed refait les comptes. Le lien est facultatif, on l'oublie
+        # plutot que de perdre le plan pour une cle etrangere.
+        connu = (
+            session.get(AdminAccount, champs["uploaded_by_admin_id"])
+            if champs["uploaded_by_admin_id"]
+            else None
+        )
+        session.add(
+            FloorPlan(
+                floor_id=etage.id,
+                kind=champs["kind"],
+                file_url=champs["file_url"],
+                file_name=champs["file_name"],
+                file_size_bytes=champs["file_size_bytes"],
+                uploaded_by_admin_id=connu.user_id if connu else None,
+            )
+        )
+        rendus += 1
+
+    session.flush()
+    return rendus
 
 
 def _est_depose(url: str | None, nom_du_seed: str) -> bool:
@@ -1948,12 +2018,14 @@ def main() -> int:
     arguments = analyseur.parse_args()
 
     visuels: dict[str, str] = {}
+    plans: dict[str, dict] = {}
 
     with SessionLocal() as session:
         if arguments.reset:
             # Relevé **avant** la purge : après, plus rien ne dit quelle image
-            # appartenait à quel bâtiment.
+            # appartenait à quel bâtiment, ni quel plan à quel étage.
             visuels = relever_visuels(session)
+            plans = relever_plans(session)
             vider(session)
         elif session.scalar(select(Building).limit(1)) is not None:
             print(
@@ -1963,7 +2035,7 @@ def main() -> int:
             return 1
 
         batiments, salles, _ = creer_parc(session)
-        rendus = rendre_visuels(session, visuels)
+        rendus = rendre_visuels(session, visuels) + rendre_plans(session, plans)
         utilisateurs, administrateurs = creer_comptes(session, batiments)
         creer_regles(session, batiments, salles, administrateurs)
         reservations = creer_reservations(session, salles, utilisateurs)
