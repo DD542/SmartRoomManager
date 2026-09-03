@@ -127,20 +127,104 @@ class TestSuspension:
         assert courriels(expedies) == []
         assert session.get(User, compte.id).status is UserStatus.ACTIF
 
-    def test_la_reactivation_n_envoie_pas_le_courriel_de_suspension(
+    def test_le_courriel_part_avec_la_reponse_et_non_plus_tard(
         self, client, session, compte, gestionnaire, expedies
     ):
-        """Le message annonce une suspension : le poster à la réactivation
-        dirait exactement le contraire de ce qui vient de se produire."""
+        """La file d'envoi est un état du processus : rien ne la vide seul.
+
+        Chaque route qui notifie doit programmer `mail_service.expedier` en
+        tâche de fond après sa réponse. Celle-ci ne le faisait pas : le message
+        restait en file et n'était expédié qu'au passage suivant de
+        l'ordonnanceur — jusqu'à cinq minutes plus tard, et jamais du tout si
+        l'ordonnanceur était arrêté. Un administrateur qui vérifiait aussitôt
+        ne voyait rien arriver.
+
+        L'assertion porte donc sur ce qui est **parti**, et sur une file vide.
+        La regarder au travers de `pending()` laissait passer le défaut.
+        """
+        suspendre(client, gestionnaire, compte)
+
+        assert mail_service.pending() == []
+        assert len(expedies) == 1
+
+    def test_deux_suspensions_de_suite_n_envoient_qu_un_message(
+        self, client, session, compte, gestionnaire, expedies
+    ):
+        """Réappliquer un statut déjà porté n'apprend rien à personne.
+
+        Un courriel de trop est un courriel de moins qu'on lit.
+        """
         suspendre(client, gestionnaire, compte)
         expedies.clear()
         mail_service.flush()
 
-        reponse = client.patch(
-            f"/api/v1/admin/users/{compte.id}/status",
-            headers=gestionnaire,
-            json={"status": "actif", "reason": "Situation régularisée."},
-        )
+        suspendre(client, gestionnaire, compte, motif="Toujours suspendu.")
+
+        assert courriels(expedies) == []
+
+
+MOTIF_LEVEE = "Situation régularisée, justificatif reçu."
+
+
+def reactiver(client, entetes, compte: User, motif: str = MOTIF_LEVEE):
+    return client.patch(
+        f"/api/v1/admin/users/{compte.id}/status",
+        headers=entetes,
+        json={"status": "actif", "reason": motif},
+    )
+
+
+class TestReactivation:
+    """La levée d'une suspension se dit aussi.
+
+    Sans message, la personne continue de se croire bloquée jusqu'à ce qu'elle
+    retente une réservation — si elle retente.
+    """
+
+    def test_le_gabarit_est_pose_par_la_migration(self, session):
+        gabarit = session.scalars(
+            select(EmailTemplate).where(EmailTemplate.code == "compte_reactive")
+        ).one()
+
+        assert gabarit.is_enabled
+        assert "{{motif}}" in gabarit.body
+
+    def test_la_reactivation_previent_le_compte_avec_son_motif(
+        self, client, session, compte, gestionnaire, expedies
+    ):
+        suspendre(client, gestionnaire, compte)
+        expedies.clear()
+        mail_service.flush()
+
+        reponse = reactiver(client, gestionnaire, compte)
         assert reponse.status_code == 200, reponse.text
 
+        [message] = courriels(expedies)
+        assert message.to == compte.email
+        assert "réactivé" in message.subject
+        assert MOTIF_LEVEE in message.body
+
+    def test_le_message_de_reactivation_n_est_pas_celui_de_suspension(
+        self, client, session, compte, gestionnaire, expedies
+    ):
+        """Poster l'annonce d'une suspension au moment de sa levée dirait
+        exactement le contraire de ce qui vient de se produire."""
+        suspendre(client, gestionnaire, compte)
+        expedies.clear()
+        mail_service.flush()
+
+        reactiver(client, gestionnaire, compte)
+
+        [message] = courriels(expedies)
+        assert "suspendu" not in message.subject.lower()
+
+    def test_reactiver_un_compte_deja_actif_n_envoie_rien(
+        self, client, session, compte, gestionnaire, expedies
+    ):
+        """Le compte est actif à la création : rien n'a change."""
+        assert session.get(User, compte.id).status is UserStatus.ACTIF
+
+        reponse = reactiver(client, gestionnaire, compte)
+
+        assert reponse.status_code == 200, reponse.text
         assert courriels(expedies) == []

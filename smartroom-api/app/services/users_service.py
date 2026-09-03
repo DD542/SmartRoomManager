@@ -451,17 +451,29 @@ def set_status(
     compte = _charger(session, user_id)
     avant = compte.status
     compte.status = status
+    change = avant is not status
 
     if status is UserStatus.SUSPENDU:
         auth_service.revoke_all(session, user_id)
-        # Le motif est deja exige plus haut et journalise plus bas. Il manquait
-        # au seul endroit ou il sert vraiment : chez la personne concernee.
-        # Un compte suspendu sans explication se traduit par un ticket de
-        # support, ou par un abandon.
+
+    # Le motif est deja exige plus haut et journalise plus bas. Il manquait au
+    # seul endroit ou il sert vraiment : chez la personne concernee. Un compte
+    # suspendu sans explication se traduit par un ticket de support, ou par un
+    # abandon ; une reactivation muette laisse quelqu'un croire qu'il est
+    # toujours bloque.
+    #
+    # Seul un changement reel donne lieu a un message : reappliquer un statut
+    # deja porte n'apprend rien, et un courriel de trop est un courriel de
+    # moins qu'on lit.
+    if change:
         mail_service.notify(
             session,
             user=compte,
-            code="compte_suspendu",
+            code=(
+                "compte_suspendu"
+                if status is UserStatus.SUSPENDU
+                else "compte_reactive"
+            ),
             variables={"motif": reason.strip()},
         )
 

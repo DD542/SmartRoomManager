@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
 
 
 from app.api.deps import (
@@ -37,6 +37,7 @@ from app.core.pagination import Page
 from app.db.enums import UserStatus
 from app.models import AdminAccount, AdminInvitation, User, UserPreference
 from app.services import users_service as service
+from app.services import mail_service
 
 router = APIRouter(tags=["comptes"])
 
@@ -316,12 +317,25 @@ def get_user(user_id: uuid.UUID, session: SessionDep, _admin=Gestion) -> UserDet
     responses={422: {"description": "Motif manquant."}},
 )
 def set_user_status(
-    user_id: uuid.UUID, payload: UserStatusIn, session: SessionDep, _admin=Gestion
+    user_id: uuid.UUID,
+    payload: UserStatusIn,
+    session: SessionDep,
+    #: L'expedition a lieu apres la reponse, comme partout ailleurs : un relais
+    #: SMTP lent ne doit pas faire attendre l'administrateur, et un relais
+    #: injoignable ne doit pas transformer une suspension ecrite en erreur.
+    #:
+    #: Sans cette tache, le message reste dans la file du processus et personne
+    #: ne la vide : il part au prochain appel d'une *autre* route qui expedie,
+    #: des heures plus tard, ou jamais.
+    background: BackgroundTasks,
+    _admin=Gestion,
 ) -> UserOut:
     compte = service.set_status(
         session, user_id, status=payload.status, reason=payload.reason
     )
     session.commit()
+    background.add_task(mail_service.expedier)
+
     return _utilisateur(compte)
 
 

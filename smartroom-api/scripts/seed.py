@@ -1791,6 +1791,16 @@ def creer_support(
             "l'application.\n\nL'équipe Support.",
         ),
         (
+            "compte_reactive",
+            "Réactivation de compte",
+            "Déclenché lorsqu'un administrateur lève une suspension",
+            "Votre compte SmartRoom Manager est réactivé",
+            "Bonjour {{prenom}},\n\nVotre compte SmartRoom Manager a été réactivé par "
+            "l'administration.\n\nMotif : {{motif}}\n\nVous pouvez de nouveau réserver "
+            "une salle. Vos réservations à venir, conservées pendant la suspension, "
+            "restent valables.\n\nL'équipe Support.",
+        ),
+        (
             "reservation_annulation",
             "Annulation de réservation",
             "Déclenché lors de l'annulation d'une réservation",
