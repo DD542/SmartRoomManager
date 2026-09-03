@@ -43,8 +43,14 @@ import sys
 
 
 def lisible(erreur: Exception) -> str:
-    """Message d'une ligne, sans guillemet : il repart dans un journal JSON."""
-    return " ".join(str(erreur).split())[:300].replace('"', "'")
+    """Message d'une ligne, sans guillemet : il repart dans un journal JSON.
+
+    Mille-deux-cents caracteres et non trois cents : psycopg enumere chaque
+    adresse essayee, et c'est cette liste qui dit si la bascule IPv6 vers IPv4
+    a eu lieu. Coupee a trois cents, elle s'arretait juste avant — le journal
+    montrait une adresse IPv6 injoignable et taisait les cinq suivantes.
+    """
+    return " ".join(str(erreur).split())[:1200].replace('"', "'")
 
 
 try:
