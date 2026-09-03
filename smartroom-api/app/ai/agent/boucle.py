@@ -29,7 +29,7 @@ from sqlalchemy.orm import Session
 from app.ai.agent import evenements as ev
 from app.ai.agent.brouillons import MAGASIN, MagasinBrouillons
 from app.ai.agent.contexte import ConstructeurContexte, Tour
-from app.ai.agent.routage import router_domaines
+from app.ai.agent.routage import router_domaines, sans_accent
 from app.ai.guardrails import etayage, injection
 from app.ai.guardrails.repli import MoteurDeterministe
 from app.ai.prompts.chargeur import charger
@@ -64,6 +64,10 @@ class JournalTour:
         #: Relances après une annonce d'acte non tenue. Chiffre utile à A-13 :
         #: s'il monte, c'est le prompt qu'il faut reprendre, pas la boucle.
         self.relances = 0
+        #: Lectures executees d'office, avant que le modele ne parle. Utile a
+        #: A-13 : elles disent quelle part des reponses ne repose plus sur la
+        #: bonne volonte du modele.
+        self.imposees: list[str] = []
         self.outils: list[dict] = []
         self.mesures: Mesures | None = None
         self.contexte: dict | None = None
@@ -78,6 +82,7 @@ class JournalTour:
             "declencheur_repli": self.declencheur_repli,
             "iterations": self.iterations,
             "relances": self.relances,
+            "imposees": list(self.imposees),
             "outils": [item["outil"] for item in self.outils],
             "duree_ms": int((time.perf_counter() - self.debut) * 1000),
             "modele": self.mesures.modele if self.mesures else None,
@@ -141,6 +146,25 @@ class Agent:
         contexte_outils = ToolContext(
             session=self._session, principal=self._principal, maintenant=maintenant
         )
+
+        # Une demande sans ambiguite sur son propre agenda ne passe pas par le
+        # modele. Mesure faite sur cinq essais identiques : qwen2.5:7b appelle
+        # l'outil trois fois sur cinq, et meme le resultat mis d'office dans son
+        # contexte ne l'empeche pas d'ecrire « je n'ai pas trouve cette
+        # information » a cote de la carte qui liste les reservations. Le moteur
+        # deterministe, lui, repond juste a chaque fois.
+        #
+        # Ce n'est pas un repli subi : c'est le bon outil pour une question
+        # fermee. Le journal le distingue par son declencheur.
+        if intention_certaine(inspection.texte):
+            async for evenement in self._repli(
+                inspection.texte,
+                contexte_outils,
+                journal,
+                declencheur="intention_certaine",
+            ):
+                yield evenement
+            return
 
         try:
             fournisseur, modele = await self._selecteur.pour(RoleModele.RAISONNEMENT)
@@ -224,6 +248,8 @@ class Agent:
         debut_tour = time.perf_counter()
 
         relance_faite = False
+        #: Signatures deja executees dans ce tour, pre-appel compris.
+        deja_vus: set[str] = set()
 
         for iteration in range(1, self._reglages.max_iterations + 1):
             journal.iterations = iteration
@@ -298,37 +324,13 @@ class Agent:
             )
             reponse.clear()
 
-            resultats = await self._executer(appels, contexte_outils, journal)
-
-            for appel, resultat in resultats:
-                yield ev.outil(
-                    appel.nom,
-                    etat="fini",
-                    libelle=ev.LIBELLES.get(appel.nom, appel.nom),
-                    duree_ms=next(
-                        (
-                            item["duree_ms"]
-                            for item in journal.outils
-                            if item["appel"] == appel.identifiant
-                        ),
-                        None,
-                    ),
-                )
-                if resultat.reussi and resultat.data is not None:
-                    yield ev.carte(resultat.carte.value, resultat.data)
-                if resultat.sources:
-                    journal.sources.extend(resultat.sources)
-
-                charge = resultat.pour_modele()
-                preuves.append(str(charge))
-                messages.append(
-                    Message(
-                        role=RoleMessage.OUTIL,
-                        contenu=str(charge),
-                        outil_nom=appel.nom,
-                        outil_id=appel.identifiant,
-                    )
-                )
+            resultats = await self._executer(
+                appels, contexte_outils, journal, deja_vus=deja_vus
+            )
+            async for evenement in self._restituer(
+                resultats, journal=journal, messages=messages, preuves=preuves
+            ):
+                yield evenement
         else:
             yield ev.texte(
                 "\n\nJe n'ai pas abouti après plusieurs recherches. "
@@ -351,10 +353,60 @@ class Agent:
                 type=ev.TypeEvenement.RESERVE, donnees={"message": reserve}
             )
 
+    async def _restituer(
+        self,
+        resultats: Sequence[tuple[AppelOutil, ToolResult]],
+        *,
+        journal: JournalTour,
+        messages: list[Message],
+        preuves: list[str],
+    ) -> AsyncIterator[ev.Evenement]:
+        """Rend des résultats d'outils à l'écran **et** au modèle.
+
+        Extraite parce que deux chemins y mènent : les appels décidés par le
+        modèle, et les lectures imposées avant qu'il ne parle. Les deux doivent
+        produire exactement les mêmes événements, sans quoi une carte
+        apparaîtrait dans un cas et pas dans l'autre.
+        """
+        for appel, resultat in resultats:
+            yield ev.outil(
+                appel.nom,
+                etat="fini",
+                libelle=ev.LIBELLES.get(appel.nom, appel.nom),
+                duree_ms=next(
+                    (
+                        item["duree_ms"]
+                        for item in journal.outils
+                        if item["appel"] == appel.identifiant
+                    ),
+                    None,
+                ),
+            )
+            if resultat.reussi and resultat.data is not None:
+                yield ev.carte(resultat.carte.value, resultat.data)
+            if resultat.sources:
+                journal.sources.extend(resultat.sources)
+
+            charge = resultat.pour_modele()
+            preuves.append(str(charge))
+            messages.append(
+                Message(
+                    role=RoleMessage.OUTIL,
+                    contenu=str(charge),
+                    outil_nom=appel.nom,
+                    outil_id=appel.identifiant,
+                )
+            )
+
     # -------------------------------------------------------------- outils
 
     async def _executer(
-        self, appels: Sequence[AppelOutil], ctx: ToolContext, journal: JournalTour
+        self,
+        appels: Sequence[AppelOutil],
+        ctx: ToolContext,
+        journal: JournalTour,
+        *,
+        deja_vus: set[str] | None = None,
     ) -> list[tuple[AppelOutil, ToolResult]]:
         """Exécute les appels, en parallèle quand ils sont indépendants.
 
@@ -364,7 +416,10 @@ class Agent:
         coroutines s'entrelacent, la session reste utilisée par une seule à la
         fois puisque SQLAlchemy y est synchrone.
         """
-        deja_vus: set[str] = set()
+        # Le jeu est desormais fourni par l'appelant et couvre le tour entier :
+        # une lecture imposee avant que le modele ne parle, puis le meme appel
+        # redemande par lui, affichaient deux fois la meme carte.
+        deja_vus = set() if deja_vus is None else deja_vus
         taches = []
         retenus: list[AppelOutil] = []
 
@@ -583,6 +638,37 @@ _ANNONCE = re.compile(
     r"je (?:vais|vais vous|recherche|cherche|regarde|consulte|vérifie|verifie))\b",
     re.IGNORECASE,
 )
+
+#: Intentions pour lesquelles la lecture ne se decide pas.
+#:
+#: Mesure faite sur cinq essais identiques de « donne moi mes prochaines
+#: reservations » : qwen2.5:7b appelle l'outil trois fois sur cinq, et
+#: qwen2.5:14b zero fois sur trois. Quand il ne l'appelle pas, il ecrit une
+#: phrase plausible — parfois « je n'ai pas trouve » — devant un agenda qui
+#: contient cinq reservations. L'utilisateur ne peut pas distinguer les deux.
+#:
+#: Laisser un petit modele decider s'il faut aller chercher les donnees
+#: personnelles de la personne qui parle est le defaut de conception. La
+#: lecture est donc executee avant qu'il ne parle, et il ne lui reste qu'a
+#: formuler ce qu'il a sous les yeux.
+#:
+#: Le declenchement reste etroit et deterministe. Le pluriel « mes » est exige :
+#: « annuler ma reservation » est une ecriture, et doit garder son chemin de
+#: confirmation.
+_VERBES_ECRITURE = ("annul", "modifi", "decal", "supprim", "reserve-moi", "cree ")
+
+_SUJETS_PERSONNELS = ("reservation", "creneau", "reunion", "planning")
+
+
+def intention_certaine(message: str) -> bool:
+    """La demande porte-t-elle sans ambiguite sur l'agenda de celui qui parle ?"""
+    texte = sans_accent(message.lower())
+    if "mes " not in texte and "mon planning" not in texte:
+        return False
+    if any(verbe in texte for verbe in _VERBES_ECRITURE):
+        return False
+    return any(sujet in texte for sujet in _SUJETS_PERSONNELS)
+
 
 RAPPEL_ACTE = (
     "Tu viens d'annoncer une recherche sans l'exécuter. Appelle maintenant "

@@ -80,7 +80,7 @@ _INVITE = (
 )
 
 
-def _sans_accent(valeur: str) -> str:
+def sans_accent(valeur: str) -> str:
     """Les indices sont écrits sans accent ; le message, lui, en porte.
 
     Constaté par un test : « quelles sont les règles » ne rapprochait rien du
@@ -98,7 +98,7 @@ def _sans_accent(valeur: str) -> str:
 
 
 def _lexical(message: str) -> set[Domaine]:
-    texte = _sans_accent(message)
+    texte = sans_accent(message)
     return {
         domaine
         for domaine, indices in _INDICES.items()
