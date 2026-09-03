@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Download, FileSpreadsheet, FileText, Table2 } from 'lucide-react';
+import { Download, Table2 } from 'lucide-react';
 import { Modal } from '../../ui/Modal';
 import { Button } from '../../ui/Button';
 import { Checkbox } from '../../ui/Form';
@@ -7,11 +7,19 @@ import { SegmentedControl } from '../../ui/Tabs';
 import { fmtDate } from '../../../utils/dates';
 import { plural } from '../../../utils/format';
 
-const FORMATS = [
-  { value: 'csv', label: 'CSV', icon: Table2 },
-  { value: 'excel', label: 'Excel', icon: FileSpreadsheet },
-  { value: 'pdf', label: 'PDF', icon: FileText },
-];
+// Un seul format, parce qu'un seul existe. « Excel » et « PDF » etaient
+// proposes a cote de « CSV » et la couche de donnees les refusait a chaque
+// fois : `format_indisponible`, 422, apres avoir choisi ses colonnes et
+// clique sur « Generer le fichier ».
+//
+// C'est la regle que ce projet applique deja au bouton Google : un bouton
+// present qui echoue a chaque clic est pire que pas de bouton — il fait
+// croire a une panne la ou il n'y a qu'une option non ecrite.
+//
+// Les deux formats reviendront le jour ou ils seront implementes. Aucun des
+// deux ne se produit sans une dependance nouvelle, cote serveur comme cote
+// navigateur ; c'est une decision, pas un oubli.
+const FORMATS = [{ value: 'csv', label: 'CSV', icon: Table2 }];
 
 /**
  * A-02 — panneau d'export.
