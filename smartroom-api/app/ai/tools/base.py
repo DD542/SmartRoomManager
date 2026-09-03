@@ -154,15 +154,49 @@ class ToolResult:
         )
 
     def pour_modele(self) -> dict[str, Any]:
-        """Vue compacte, celle que le modèle relira."""
+        """Vue compacte, celle que le modèle relira.
+
+        Les adresses de fichiers en sont retirées : elles servent à l'écran,
+        jamais à la phrase.
+        """
         charge: dict[str, Any] = {"statut": self.statut.value}
         if self.message:
             charge["message"] = self.message
         if self.data is not None:
-            charge["donnees"] = self.data
+            charge["donnees"] = _sans_adresses(self.data)
         if self.sources:
             charge["sources"] = list(self.sources)
         return charge
+
+
+#: Suffixe des clés réservées à l'affichage. Leur valeur part dans la carte,
+#: que le front sait rendre, et jamais dans ce que le modèle relit.
+#:
+#: Constaté sur « où se trouve la salle Vinci ? » : le modèle recevait
+#: `plan_localisation_url` valant `/media/reperes/….jpg`, et le recopiait dans
+#: sa phrase sous forme d'image Markdown — en lui inventant un hôte :
+#:
+#:     ![](http://media/reperes/bce1c0f355e743d4a4c440de8cfa6fcd.jpg)
+#:
+#: « media » y devient un nom de domaine. Le navigateur n'affiche qu'un lien
+#: mort, à côté de la carte qui montrait déjà l'image, correctement.
+#:
+#: La règle est ici et non chez l'appelant : un outil peut oublier de signaler
+#: qu'il rend une adresse, ce fichier ne peut pas oublier de la retirer.
+SUFFIXE_ECRAN = "_url"
+
+
+def _sans_adresses(valeur: Any) -> Any:
+    """Recopie la donnée sans les clés d'affichage, à toute profondeur."""
+    if isinstance(valeur, dict):
+        return {
+            cle: _sans_adresses(item)
+            for cle, item in valeur.items()
+            if not (isinstance(cle, str) and cle.endswith(SUFFIXE_ECRAN))
+        }
+    if isinstance(valeur, list):
+        return [_sans_adresses(item) for item in valeur]
+    return valeur
 
 
 class Outil(ABC):
