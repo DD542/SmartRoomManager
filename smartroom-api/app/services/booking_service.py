@@ -18,7 +18,7 @@ from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
 from passlib.context import CryptContext
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.dialects.postgresql import Range
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -70,6 +70,31 @@ CRYPT = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 #: `exclusion_violation` : la contrainte EXCLUDE a refusé l'écriture.
 EXCLUSION_VIOLATION = "23P01"
+
+#: Verrou consultatif pris avant toute reservation, porte par la transaction et
+#: relache au COMMIT comme au ROLLBACK. Il serialise les candidats d'une meme
+#: salle.
+#:
+#: Sans lui, dix demandes simultanees lisent toutes un creneau libre, puis
+#: s'affrontent sur la contrainte EXCLUDE. PostgreSQL arbitre, mais au-dela de
+#: deux ou trois concurrents il detecte un cycle d'attente et sacrifie une
+#: transaction : le perdant recoit alors `40P01 deadlock_detected`, une erreur
+#: technique, la ou il devait lire « ce creneau vient d'etre pris ».
+#:
+#: Le verrou porte sur la salle et non sur le creneau : la contrainte parle de
+#: chevauchement, pas d'egalite, et deux creneaux differents qui se recouvrent
+#: doivent s'exclure. Une cle par creneau les laisserait passer de front.
+#:
+#: `hashtextextended` rend un entier 64 bits ; une collision entre deux salles
+#: ferait attendre l'une pour rien, jamais accepter deux reservations en
+#: conflit.
+_VERROU_SALLE = text("SELECT pg_advisory_xact_lock(hashtextextended(:cle, 0))")
+
+
+def _reserver_le_tour(session: Session, room_id: uuid.UUID) -> None:
+    """Prend le tour pour cette salle. Rendu au COMMIT ou au ROLLBACK."""
+    session.execute(_VERROU_SALLE.bindparams(cle=f"booking:{room_id}"))
+
 
 #: Les codes qui ne relèvent pas d'un refus de règle mais d'un état de la salle.
 FERMETURES = {RuleCode.FERMETURE, RuleCode.HORS_OUVERTURE}
@@ -397,6 +422,11 @@ def create_booking(
     sait si d'autres écritures l'accompagnent.
     """
     now = en_utc(now or datetime.now(UTC))
+
+    # Pris avant la verification, et non juste avant l'insertion : c'est la
+    # sequence « lire puis ecrire » qui doit etre indivisible. Verrouiller plus
+    # tard laisserait dix lecteurs conclure ensemble que le creneau est libre.
+    _reserver_le_tour(session, room_id)
 
     proprietaire = session.get(User, owner_id)
     if proprietaire is None or proprietaire.deleted_at is not None:
