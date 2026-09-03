@@ -46,7 +46,26 @@ router = APIRouter(tags=["statistiques"])
 Export = Depends(require_any(DATA_EXPORT, SYSTEM_CONFIGURE))
 Systeme = Depends(require_permission(SYSTEM_CONFIGURE))
 
-PRIVE = f"private, max-age={settings.stats_cache_seconds}"
+#: Chiffres personnels : jamais gardes, meme par le navigateur de leur
+#: destinataire.
+#:
+#: `private, max-age=300` semblait suffire — le cache est celui du poste, pas
+#: celui d'un intermediaire. Mais un cache navigateur est indexe par URL, et
+#: `/stats/me` est la meme URL pour tout le monde. Deux comptes ouverts
+#: successivement dans le meme navigateur, a moins de cinq minutes d'intervalle,
+#: et le second lisait les chiffres du premier : nombre de reservations, heures,
+#: annulations, salles frequentees.
+#:
+#: Constate sur deux comptes distincts affichant les memes dix reservations et
+#: les memes huit annulations, alors que l'un d'eux n'en avait aucune.
+#:
+#: `Vary: Authorization` isolerait les reponses, mais le jeton tourne a chaque
+#: rafraichissement : le cache serait manque a tous les coups. Autant ne rien
+#: garder, et le dire.
+PRIVE = "private, no-store"
+
+#: Chiffres publics : anonymes, identiques pour tous, affiches sur la page
+#: d'accueil. Rien n'y designe personne, le cache est donc sans risque.
 PUBLIC = f"public, max-age={settings.stats_cache_seconds}"
 
 
@@ -80,7 +99,13 @@ def export_mine(session: SessionDep, principal: CurrentPrincipal) -> PlainTextRe
     return PlainTextResponse(
         service.my_bookings_csv(session, principal.user.id),
         media_type="text/csv; charset=utf-8",
-        headers={"Content-Disposition": 'attachment; filename="mes-reservations.csv"'},
+        headers={
+            "Content-Disposition": 'attachment; filename="mes-reservations.csv"',
+            # Sans en-tete, un navigateur decide seul de garder la reponse
+            # — et ce fichier porte les memes donnees que `/stats/me`, ligne
+            # a ligne, sous la meme URL pour tout le monde.
+            "Cache-Control": PRIVE,
+        },
     )
 
 
