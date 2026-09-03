@@ -64,3 +64,20 @@ class TestChiffresPublics:
         assert reponse.status_code == 200
         assert "max-age" in reponse.headers["cache-control"]
         assert "no-store" not in reponse.headers["cache-control"]
+
+    def test_la_fenetre_fraiche_est_courte(self, client):
+        """Une salle passée en maintenance doit se voir sans attendre.
+
+        `max-age` seul gardait la réponse cinq minutes : le compteur de la
+        vitrine ne bougeait pas après un changement fait dans
+        l'administration, et cela se lisait comme une panne.
+
+        `stale-while-revalidate` sert la copie immédiatement puis la renouvelle
+        en arrière-plan : le visiteur n'attend jamais, et l'écart se compte en
+        dizaines de secondes.
+        """
+        cache = client.get("/api/v1/stats/public").headers["cache-control"]
+
+        assert "stale-while-revalidate" in cache
+        fraicheur = int(cache.split("max-age=")[1].split(",")[0])
+        assert fraicheur <= 60

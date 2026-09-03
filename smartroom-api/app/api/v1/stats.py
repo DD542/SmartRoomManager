@@ -66,7 +66,21 @@ PRIVE = "private, no-store"
 
 #: Chiffres publics : anonymes, identiques pour tous, affiches sur la page
 #: d'accueil. Rien n'y designe personne, le cache est donc sans risque.
-PUBLIC = f"public, max-age={settings.stats_cache_seconds}"
+#:
+#: Deux fenetres plutot qu'une. `max-age` seul gardait la reponse cinq
+#: minutes : une salle passee en maintenance depuis l'administration ne
+#: changeait pas le compteur de la vitrine avant l'expiration, et cela se
+#: lisait comme une panne.
+#:
+#: `stale-while-revalidate` sert la copie immediatement puis la renouvelle en
+#: arriere-plan. Le visiteur n'attend jamais, et l'ecart se compte desormais en
+#: dizaines de secondes. La fenetre totale reste celle que `STATS_CACHE_SECONDS`
+#: gouverne ; seule la part fraiche est plus courte.
+FRAIS = max(1, settings.stats_cache_seconds // 5)
+PUBLIC = (
+    f"public, max-age={FRAIS}, "
+    f"stale-while-revalidate={settings.stats_cache_seconds - FRAIS}"
+)
 
 
 @router.get(
