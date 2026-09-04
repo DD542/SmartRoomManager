@@ -56,17 +56,39 @@ def lisible(erreur: Exception) -> str:
 try:
     from app.core.config import get_settings
 
-    reglages = get_settings()
+    # `database_url` est une propriete calculee : la lire ici, et non plus bas,
+    # range les adresses mal formees avec les configurations refusees. Un hote
+    # portant deja son port passait le controle de `Settings` et n'echouait
+    # qu'a la construction du DSN — le journal annoncait alors « base pas
+    # encore prete » pour une variable qui ne guerira jamais en attendant.
+    dsn = get_settings().database_url
 except Exception as erreur:  # noqa: BLE001 - toute cause vaut le meme verdict
     # Levee avant tout contact avec la base : variable absente, mal formee, ou
     # refusee par les garde-fous de `Settings`.
-    print(lisible(erreur), file=sys.stderr)
+    #
+    # Les quatre variables de connexion accompagnent le message. Pydantic elide
+    # le milieu des chaines trop longues — « postgresql+psycopg://neo...neon.
+    # tech:5432/neondb » — et l'anomalie se cache justement dans ce qu'il
+    # coupe : un hote qui porte deja son port, un espace en fin de valeur, une
+    # chaine entiere collee dans le mauvais champ.
+    #
+    # Le mot de passe n'y figure pas. Sa longueur suffit a distinguer un champ
+    # vide d'un champ rempli, sans rien reveler.
+    import os
+
+    champs = " ".join(
+        f"{cle}={os.environ.get(cle, '(absent)')!r}"
+        for cle in ("POSTGRES_HOST", "POSTGRES_PORT", "POSTGRES_USER", "POSTGRES_DB")
+    )
+    longueur = len(os.environ.get("POSTGRES_PASSWORD", ""))
+    detail = f"{lisible(erreur)} | {champs} POSTGRES_PASSWORD=({longueur} caracteres)"
+    print(detail.replace('"', "'"), file=sys.stderr)
     sys.exit(2)
 
 from sqlalchemy import create_engine, text
 
 try:
-    moteur = create_engine(reglages.database_url, pool_pre_ping=True)
+    moteur = create_engine(dsn, pool_pre_ping=True)
     with moteur.connect() as connexion:
         connexion.execute(text("SELECT 1"))
 except Exception as erreur:  # noqa: BLE001 - le detail part au journal
