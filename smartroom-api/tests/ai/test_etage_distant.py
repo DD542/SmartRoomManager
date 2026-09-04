@@ -15,8 +15,12 @@ veut plus rien dire — la recherche ne trouve simplement plus.
 
 from __future__ import annotations
 
+import json
+
+import httpx
 import pytest
 
+from app.ai.providers import agreger
 from app.ai.providers.base import (
     FournisseurIndisponible,
     LLMProvider,
@@ -125,3 +129,62 @@ class TestCoherenceDesVecteurs:
 
         with pytest.raises(FournisseurIndisponible):
             await choix.pour(RoleModele.VECTEURS)
+
+
+class TestAppelsSansIndex:
+    """Certaines façades rendent l'appel entier, sans champ `index`.
+
+    Mesuré sur la façade OpenAI de Gemini : un appel complet dans un seul
+    fragment, `index` absent. Le code correlait les morceaux par cet index et
+    repliait les absents sur zéro — deux appels simultanés s'y fondaient, noms
+    et arguments concaténés, et l'agent recevait un outil inexistant.
+    """
+
+    @staticmethod
+    def _client(gestionnaire):
+        from app.ai.providers.distant import ClientDistant
+
+        # La garde d'anonymisation a son propre test dans test_fournisseurs ;
+        # ici on eprouve la recomposition des appels, rien d'autre.
+        client = ClientDistant(
+            base_url="http://distant.invalide", cle="k", exiger_anonymisation=False
+        )
+        client._client = httpx.AsyncClient(  # noqa: SLF001 - transport simulé
+            base_url="http://distant.invalide",
+            transport=httpx.MockTransport(gestionnaire),
+            headers={"Authorization": "Bearer k"},
+        )
+        return client
+
+    @pytest.mark.asyncio
+    async def test_deux_appels_sans_index_restent_distincts(self):
+        from app.ai.providers.base import Message, RoleMessage
+
+        def sans_index(nom: str, arguments: str) -> dict:
+            return {
+                "type": "function",
+                "id": nom,
+                "function": {"name": nom, "arguments": arguments},
+            }
+
+        corps = (
+            'data: {"choices":[{"delta":{"tool_calls":['
+            + json.dumps(sans_index("lister_mes_reservations", '{"etat":"a_venir"}'))
+            + ","
+            + json.dumps(sans_index("consulter_regles", "{}"))
+            + "]}}]}\r\n\r\ndata: [DONE]\r\n\r\n"
+        )
+
+        client = self._client(
+            lambda requete: httpx.Response(200, content=corps.encode())
+        )
+        reponse = await agreger(
+            client.discuter(
+                [Message(role=RoleMessage.UTILISATEUR, contenu="x")], modele="m"
+            )
+        )
+        await client.fermer()
+
+        noms = sorted(appel.nom for appel in reponse.appels)
+        assert noms == ["consulter_regles", "lister_mes_reservations"]
+        assert reponse.appels[0].arguments == {"etat": "a_venir"}

@@ -177,7 +177,19 @@ class ClientDistant(LLMProvider):
                         yield Fragment(type=TypeFragment.TEXTE, texte=contenu)
 
                     for morceau in delta.get("tool_calls") or []:
-                        index = int(morceau.get("index", 0))
+                        # L'index correle les morceaux d'un meme appel d'un
+                        # fragment a l'autre. Certaines facades — celle de
+                        # Gemini — rendent l'appel entier d'un coup et
+                        # l'omettent : deux appels simultanes tomberaient alors
+                        # sous la meme cle, noms et arguments concatenes,
+                        # l'appel devenant inexploitable. Sans index, chacun
+                        # prend donc une place neuve.
+                        brut = morceau.get("index")
+                        index = (
+                            int(brut)
+                            if brut is not None
+                            else max(partiels, default=-1) + 1
+                        )
                         courant = partiels.setdefault(
                             index, {"id": morceau.get("id"), "nom": "", "arguments": ""}
                         )
