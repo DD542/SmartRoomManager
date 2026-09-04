@@ -24,15 +24,27 @@ from dataclasses import dataclass, field
 from app.ai.providers.base import Message
 
 _COURRIEL = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")
+#: Mots qui désignent un lieu du parc, jamais une personne.
+_LIEUX = ("Salle", "Labo", "Amphi", "Atelier", "Bâtiment", "Batiment", "Eiffel")
+
 #: Prénom Nom, deux capitales successives.
 #:
-#: L'exclusion porte sur le **premier** mot, par anticipation. Écrite en
-#: rétrospection — `(?<!Salle )` — elle ne servait à rien : la correspondance
-#: commence sur « Salle », et ce qui la précède est « la ». « Salle Curie »
-#: partait donc masqué en `PERSONNE_1`, ce qui rendait les réponses
-#: incompréhensibles. Constaté par un test.
+#: Deux exclusions, et non une : l'anticipation seule ne suffit pas.
+#:
+#: Elle écarte la paire dont le **premier** mot désigne un lieu, et « Salle
+#: Curie » reste lisible. Mais un nom de lieu en trois mots la contourne : sur
+#: « Salle Conseil Alpha », le moteur écarte « Salle Conseil », repart un mot
+#: plus loin, et masque « Conseil Alpha ». Constaté en ligne, l'assistant
+#: annonçant « Salle PERSONNE_2 » au milieu de sa liste de salles.
+#:
+#: La rétrospection ferme cette porte. Elle avait été essayée puis retirée
+#: comme inutile — elle l'était **seule**, la correspondance commençant sur
+#: « Salle » ; elle ne l'est pas en complément de l'anticipation.
 _PERSONNE = re.compile(
-    r"\b(?!(?:Salle|Labo|Amphi|Atelier|Bâtiment|Batiment|Eiffel)\b)"
+    "".join(f"(?<!{lieu} )" for lieu in _LIEUX)
+    + r"\b(?!(?:"
+    + "|".join(_LIEUX)
+    + r")\b)"
     r"[A-ZÀ-Þ][a-zà-ÿ]+\s+[A-ZÀ-Þ][a-zà-ÿ]{2,}\b"
 )
 _TELEPHONE = re.compile(r"\b0[1-9](?:[ .-]?\d{2}){4}\b")

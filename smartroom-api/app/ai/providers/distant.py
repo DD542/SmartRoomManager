@@ -90,6 +90,20 @@ class ClientDistant(LLMProvider):
             return False
         return True
 
+    def _rendre(self, texte: str) -> str:
+        """Retraduit les jetons d'anonymisation avant l'affichage.
+
+        Ce que l'anonymiseur a masqué à l'aller doit revenir au retour, sinon
+        l'utilisateur lit « PERSONNE_1 » là où il attendait un nom. La table de
+        correspondance ne quitte pas le serveur : elle vit dans l'anonymiseur,
+        que le sélecteur crée pour la durée du tour.
+
+        Sans anonymiseur — un fournisseur qui n'en exige pas — le texte passe
+        inchangé.
+        """
+        rendre = getattr(self._anonymiseur, "restituer", None)
+        return rendre(texte) if rendre else texte
+
     def _preparer(self, messages: Sequence[Message]) -> list[dict[str, Any]]:
         if self._exiger and self._anonymiseur is None:
             raise ErreurFournisseur(
@@ -130,6 +144,14 @@ class ClientDistant(LLMProvider):
         partiels: dict[int, dict[str, Any]] = {}
         jetons_reponse = 0
         arret = "fin"
+        #: Texte reçu mais pas encore rendu, retenu jusqu'au prochain blanc.
+        #:
+        #: Les jetons d'anonymisation — `PERSONNE_1` — ne contiennent aucune
+        #: espace, mais le modèle les diffuse en plusieurs morceaux. Rendre
+        #: chaque morceau tel quel laisserait passer « PERSON », puis « NE_1 » :
+        #: la retraduction ne reconnaîtrait ni l'un ni l'autre. Attendre le
+        #: blanc suivant garantit qu'un jeton est entier quand on le traduit.
+        tampon = ""
 
         # Même politique que pour Ollama : le silence est surveillé par httpx,
         # en `read`, ce qui couvre l'attente des en-têtes ; le budget total du
@@ -174,7 +196,12 @@ class ClientDistant(LLMProvider):
                             premier_jeton_ms = int(
                                 (time.perf_counter() - depart) * 1000
                             )
-                        yield Fragment(type=TypeFragment.TEXTE, texte=contenu)
+                        tampon += contenu
+                        for texte in _mots_complets(tampon):
+                            tampon = tampon[len(texte) :]
+                            yield Fragment(
+                                type=TypeFragment.TEXTE, texte=self._rendre(texte)
+                            )
 
                     for morceau in delta.get("tool_calls") or []:
                         # L'index correle les morceaux d'un meme appel d'un
@@ -209,6 +236,11 @@ class ClientDistant(LLMProvider):
             raise ErreurFournisseur(
                 f"Fournisseur distant injoignable : {souci}"
             ) from souci
+
+        # Le dernier mot n'est suivi d'aucun blanc : sans cette vidange, la fin
+        # de chaque réponse manquerait à l'écran.
+        if tampon:
+            yield Fragment(type=TypeFragment.TEXTE, texte=self._rendre(tampon))
 
         if appels := _assembler(partiels):
             yield Fragment(type=TypeFragment.OUTILS, appels=appels)
@@ -248,6 +280,22 @@ class ClientDistant(LLMProvider):
             ligne["embedding"]
             for ligne in sorted(lignes, key=lambda x: x.get("index", 0))
         ]
+
+
+def _mots_complets(tampon: str) -> tuple[str, ...]:
+    """Rend la part du tampon dont on sait qu'elle ne coupe aucun mot.
+
+    Soit tout ce qui précède le dernier blanc, ce blanc compris ; soit rien,
+    quand le tampon n'en contient aucun. Le reste attend le fragment suivant.
+
+    Un tuple plutôt qu'une valeur simple : l'appelant écrit une boucle, qui
+    n'émet rien quand il n'y a rien à émettre.
+    """
+    dernier = max(
+        (position for position, lettre in enumerate(tampon) if lettre.isspace()),
+        default=-1,
+    )
+    return (tampon[: dernier + 1],) if dernier >= 0 else ()
 
 
 def _arguments_en_chaine(charge: dict[str, Any]) -> dict[str, Any]:

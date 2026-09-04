@@ -259,3 +259,72 @@ class TestArgumentsRenvoyes:
         )
 
         assert "tool_calls" not in charge[0]
+
+
+class TestRetraduction:
+    """Ce qui est masqué à l'aller doit revenir au retour.
+
+    La docstring de l'anonymiseur promettait « les réponses sont retraduites à
+    l'affichage » ; rien ne le faisait. `restituer()` existait et n'était appelé
+    nulle part, et `anonymiser()` fabriquait un anonymiseur sans mémoire à
+    chaque appel — la table de correspondance mourait avec lui.
+
+    Le modèle diffuse le jeton en plusieurs morceaux : « PERSON », puis
+    « NE_1 ». Retraduire chaque morceau ne reconnaîtrait ni l'un ni l'autre,
+    d'où l'attente du blanc suivant.
+    """
+
+    @staticmethod
+    def _flux(*morceaux: str) -> bytes:
+        corps = "".join(
+            'data: {"choices":[{"delta":{"content":%s}}]}\r\n\r\n' % json.dumps(m)
+            for m in morceaux
+        )
+        return (corps + "data: [DONE]\r\n\r\n").encode()
+
+    async def _repondre(self, anonymiseur, *morceaux: str) -> str:
+        from app.ai.providers.base import Message, RoleMessage
+        from app.ai.providers.distant import ClientDistant
+
+        client = ClientDistant(
+            base_url="http://x.invalide", cle="k", anonymiseur=anonymiseur
+        )
+        client._client = httpx.AsyncClient(  # noqa: SLF001 - transport simulé
+            base_url="http://x.invalide",
+            transport=httpx.MockTransport(
+                lambda requete: httpx.Response(200, content=self._flux(*morceaux))
+            ),
+        )
+        reponse = await agreger(
+            client.discuter(
+                [Message(role=RoleMessage.UTILISATEUR, contenu="x")], modele="m"
+            )
+        )
+        await client.fermer()
+        return reponse.texte
+
+    @pytest.mark.asyncio
+    async def test_un_jeton_coupe_en_deux_est_retraduit(self):
+        from app.ai.guardrails.anonymisation import Anonymiseur
+
+        anonymiseur = Anonymiseur()
+        anonymiseur.masquer("reserve pour Marie Laurent")
+
+        rendu = await self._repondre(
+            anonymiseur, "La ", "reunion ", "de ", "PERSON", "NE_1", " est ", "posee."
+        )
+
+        assert rendu == "La reunion de Marie Laurent est posee."
+
+    @pytest.mark.asyncio
+    async def test_le_dernier_mot_n_est_pas_perdu(self):
+        """Contre-épreuve : le tampon doit être vidé en fin de flux.
+
+        Le dernier mot n'est suivi d'aucun blanc ; sans vidange, chaque réponse
+        s'arrêterait un mot trop tôt — une perte silencieuse.
+        """
+        from app.ai.guardrails.anonymisation import Anonymiseur
+
+        rendu = await self._repondre(Anonymiseur(), "deux ", "mots")
+
+        assert rendu == "deux mots"

@@ -188,6 +188,32 @@ class TestBrouillons:
 
 
 class TestAnonymisation:
+    def test_un_nom_de_salle_en_trois_mots_reste_lisible(self):
+        """« Salle Conseil Alpha » partait masquee en « Salle PERSONNE_1 ».
+
+        L'exclusion ne portait que sur le premier mot de la paire : le moteur
+        ecartait « Salle Conseil », repartait un mot plus loin, et masquait
+        « Conseil Alpha ». Constate en ligne, l'assistant annoncant une
+        « Salle PERSONNE_2 » au milieu de sa liste de salles.
+        """
+        anonymiseur = Anonymiseur()
+
+        masque = anonymiseur.masquer(
+            "Salle Conseil Alpha, Salle Hopper et Amphi Eiffel sont libres."
+        )
+
+        assert "PERSONNE" not in masque
+        assert "Salle Conseil Alpha" in masque
+
+    def test_une_vraie_personne_reste_masquee(self):
+        """Contre-epreuve : elargir l'exclusion ne doit rien laisser passer."""
+        anonymiseur = Anonymiseur()
+
+        masque = anonymiseur.masquer("Invite Marie Laurent en Salle Conseil Alpha")
+
+        assert "Marie Laurent" not in masque
+        assert "Salle Conseil Alpha" in masque
+
     def test_les_adresses_et_les_noms_sont_remplaces(self):
         anonymiseur = Anonymiseur()
         sortants = anonymiseur(

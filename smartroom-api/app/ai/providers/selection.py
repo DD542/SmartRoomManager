@@ -42,12 +42,21 @@ class SelecteurModeles:
         #: mesurer le refus passe explicitement `anonymiseur=None`… ce que la
         #: signature ne permet plus : les tests construisent `ClientDistant`
         #: directement, ce qui reste le bon niveau pour éprouver sa garde.
+        #: Une **instance**, et non la fonction sans mémoire : elle porte la
+        #: table de correspondance, sans laquelle rien ne peut être retraduit
+        #: au retour. `anonymiser()` masquait sans jamais permettre de rendre,
+        #: et « PERSONNE_1 » s'affichait à la place du nom.
+        #:
+        #: Sa portée est celle du sélecteur, donc celle du tour de conversation
+        #: — un jeton qui survivrait d'une session à l'autre redeviendrait un
+        #: identifiant, ce que la table est censée empêcher.
+        #:
         #: Import différé : `app.ai.guardrails` tire le moteur de repli, qui
         #: redescend jusqu'ici par les outils et le RAG. En tête de module,
         #: il rendrait le paquet inimportable.
-        from app.ai.guardrails.anonymisation import anonymiser
+        from app.ai.guardrails.anonymisation import Anonymiseur
 
-        self._anonymiseur = anonymiseur if anonymiseur is not None else anonymiser
+        self._anonymiseur = anonymiseur if anonymiseur is not None else Anonymiseur()
         self._local: LLMProvider | None = None
         self._distant: LLMProvider | None = None
         #: Fournisseur imposé — les tests y placent le simulateur, et A-13 peut
