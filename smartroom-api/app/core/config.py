@@ -135,11 +135,32 @@ class Settings(BaseSettings):
     #: en deçà, la vue matérialisée serait relue pour rien.
     stats_cache_seconds: int = 300
 
+    #: Mode TLS de la connexion à PostgreSQL. Vide, il est déduit de
+    #: l'environnement : `require` partout sauf en local. Le renseigner permet
+    #: d'imposer `verify-full` là où l'autorité de certification est connue,
+    #: ou `disable` sur un réseau privé où le chiffrement est déjà assuré.
+    postgres_sslmode: str = ""
+
     @computed_field
     @property
     def database_url(self) -> str:
-        """DSN SQLAlchemy. `psycopg` désigne bien psycopg 3, pas psycopg2."""
-        return str(
+        """DSN SQLAlchemy. `psycopg` désigne bien psycopg 3, pas psycopg2.
+
+        Le mode TLS est ajouté hors environnement local. Sans lui, `libpq`
+        applique son défaut — `prefer` — qui se rabat en clair lorsque la
+        négociation échoue, et un hébergeur qui l'exige refuse la connexion :
+
+            ERROR: connection is insecure (try using `sslmode=require`)
+
+        Constaté sur Neon depuis Render : la bascule IPv6 vers IPv4 avait bien
+        lieu, les trois adresses répondaient, et toutes refusaient une session
+        non chiffrée. Le message qui précédait — « password authentication
+        failed » — désignait le mauvais coupable.
+
+        En local, rien n'est ajouté : la base tourne dans un conteneur voisin,
+        sans certificat, et l'exiger empêcherait tout démarrage.
+        """
+        dsn = str(
             PostgresDsn.build(
                 scheme="postgresql+psycopg",
                 username=self.postgres_user,
@@ -149,6 +170,8 @@ class Settings(BaseSettings):
                 path=self.postgres_db,
             )
         )
+        mode = self.postgres_sslmode or ("" if self.is_local else "require")
+        return f"{dsn}?sslmode={mode}" if mode else dsn
 
     @computed_field
     @property
