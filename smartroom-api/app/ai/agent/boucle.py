@@ -179,6 +179,16 @@ class Agent:
             type=ev.TypeEvenement.DEBUT, donnees={"mode": "modele", "modele": modele}
         )
 
+        #: Le tour a-t-il déjà mis quelque chose sous les yeux de la personne ?
+        #:
+        #: Un texte ou une carte parvenus à l'écran ne se reprennent pas. Si le
+        #: fournisseur lâche ensuite, rejouer une réponse complète en écrit une
+        #: seconde, différente, par-dessus la première : l'utilisateur voit le
+        #: plan de la salle apparaître, puis disparaître au profit d'une liste
+        #: de salles et d'un « j'ai cherché une salle correspondant à votre
+        #: besoin ». Constaté en ligne, quota Gemini epuisé en cours de tour.
+        deja_affiche = False
+
         try:
             async for evenement in self._tour_modele(
                 inspection.texte,
@@ -191,6 +201,8 @@ class Agent:
                 journal=journal,
                 maintenant=maintenant,
             ):
+                if evenement.type in (ev.TypeEvenement.TEXTE, ev.TypeEvenement.CARTE):
+                    deja_affiche = True
                 yield evenement
         except ErreurFournisseur as souci:
             # Le code seul ne suffit pas. « ia_fournisseur » couvre un quota
@@ -203,6 +215,25 @@ class Agent:
                 "Bascule sur le repli",
                 extra={"code": souci.code, "detail": str(souci)[:400]},
             )
+            # Ce qui est affiché reste affiché. Le repli sait répondre depuis
+            # une page blanche, pas corriger une réponse en cours : sa phrase
+            # et sa carte contrediraient celles du modèle, et l'écran passerait
+            # du plan de la salle à une liste de salles sans que rien ne
+            # l'explique. Mieux vaut une réponse incomplète qu'une réponse qui
+            # se dédit.
+            if deja_affiche:
+                journal.mode = "repli"
+                journal.declencheur_repli = souci.code
+                yield ev.texte(
+                    "\n\nJe n'ai pas pu terminer cette réponse. "
+                    "Les éléments ci-dessus restent valables ; "
+                    "reformulez si vous voulez la suite."
+                )
+                yield ev.Evenement(
+                    type=ev.TypeEvenement.FIN, donnees=journal.pour_journal()
+                )
+                return
+
             # Le début a déjà été annoncé en mode « modèle » : le réannoncer
             # ferait afficher deux ouvertures de tour à l'écran. La bascule est
             # signalée par le seul champ `mode` de l'événement de fin.

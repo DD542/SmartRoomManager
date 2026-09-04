@@ -400,6 +400,58 @@ class TestBascule:
         assert fin(trace)["declencheur_repli"] == "ia_indisponible"
 
 
+class TestBasculeApresAffichage:
+    """Ce qui est affiche reste affiche.
+
+    Constate en ligne, quota du fournisseur epuise en cours de tour : la carte
+    du plan apparaissait, puis disparaissait au profit d'une liste de salles et
+    d'un « j'ai cherche une salle correspondant a votre besoin ». Deux reponses
+    differentes a la meme question, la seconde effacant la premiere.
+
+    Le repli sait repondre depuis une page blanche, pas corriger une reponse en
+    cours. Mieux vaut une reponse incomplete qu'une reponse qui se dedit.
+    """
+
+    @pytest.mark.asyncio
+    async def test_le_repli_ne_rejoue_pas_par_dessus_une_carte(
+        self, session, principal, selecteur, faux_modele, magasin, salle, intentions
+    ):
+        faux_modele.programmer(
+            TourSimule(
+                appels=(
+                    AppelOutil(nom="rechercher_salles", arguments={"capacite_min": 2}),
+                )
+            ),
+            TourSimule(erreur=DelaiDepasse("plus de quota")),
+        )
+        agent = Agent(session, principal, selecteur=selecteur, magasin=magasin)
+
+        trace = await jouer(agent, "une salle pour 2 personnes")
+
+        assert types(trace).count("carte") == 1, (
+            "la seconde carte contredirait la premiere"
+        )
+        assert "j'ai cherché une salle" not in texte(trace).lower()
+        assert fin(trace)["repli"] is True
+
+    @pytest.mark.asyncio
+    async def test_la_page_blanche_garde_le_repli_complet(
+        self, session, principal, selecteur, faux_modele, magasin, intentions
+    ):
+        """Contre-epreuve : rien n'etant affiche, le repli doit repondre.
+
+        Sans elle, on supprimerait la bascule pour de bon, et une panne du
+        fournisseur laisserait l'utilisateur devant une reponse vide.
+        """
+        faux_modele.programmer(TourSimule(erreur=DelaiDepasse("plus de quota")))
+        agent = Agent(session, principal, selecteur=selecteur, magasin=magasin)
+
+        trace = await jouer(agent, "je veux annuler ma réservation")
+
+        assert texte(trace)
+        assert fin(trace)["repli"] is True
+
+
 class TestJournal:
     @pytest.mark.asyncio
     async def test_le_journal_porte_ce_qu_il_faut_au_tableau_de_bord(
