@@ -166,8 +166,9 @@ app.include_router(v1_router)
 app.mount(settings.media_url, StaticFiles(directory=racine_media()), name="media")
 
 
-@app.get(
+@app.api_route(
     "/health",
+    methods=["GET", "HEAD"],
     tags=["technique"],
     summary="Le processus est-il vivant ?",
     description=(
