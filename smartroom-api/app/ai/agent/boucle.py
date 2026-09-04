@@ -193,7 +193,16 @@ class Agent:
             ):
                 yield evenement
         except ErreurFournisseur as souci:
-            logger.info("Bascule sur le repli", extra={"code": souci.code})
+            # Le code seul ne suffit pas. « ia_fournisseur » couvre un quota
+            # epuise, un modele inconnu, une cle refusee et une panne reseau :
+            # quatre causes, quatre remedes, et aucune trace pour choisir. Il a
+            # fallu reproduire un tour en local pour lire « 429, limit: 20 ».
+            #
+            # Le message porte le refus du fournisseur, jamais la conversation.
+            logger.info(
+                "Bascule sur le repli",
+                extra={"code": souci.code, "detail": str(souci)[:400]},
+            )
             # Le début a déjà été annoncé en mode « modèle » : le réannoncer
             # ferait afficher deux ouvertures de tour à l'écran. La bascule est
             # signalée par le seul champ `mode` de l'événement de fin.
