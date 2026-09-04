@@ -188,3 +188,74 @@ class TestAppelsSansIndex:
         noms = sorted(appel.nom for appel in reponse.appels)
         assert noms == ["consulter_regles", "lister_mes_reservations"]
         assert reponse.appels[0].arguments == {"etat": "a_venir"}
+
+
+class TestArgumentsRenvoyes:
+    """Le second aller-retour renvoie l'appel au modèle. En quelle forme ?
+
+    `AppelOutil.arguments` est un dictionnaire — la forme utile à la boucle
+    d'agent — et Ollama l'accepte. Le protocole OpenAI transporte une chaîne :
+
+        Value is not a string: {"question":"absence"}
+
+    Mesuré sur la façade Gemini. L'erreur ne survient qu'au second appel, et le
+    tour bascule au repli avec « ia_fournisseur » pour seul indice : à l'écran,
+    la bonne carte, puis « je n'ai pas compris la demande » sous elle.
+    """
+
+    @pytest.mark.asyncio
+    async def test_les_arguments_repartent_en_texte(self):
+        from app.ai.providers.base import AppelOutil, Message, RoleMessage
+        from app.ai.providers.distant import ClientDistant
+
+        vus: dict = {}
+
+        def repondre(requete: httpx.Request) -> httpx.Response:
+            vus.update(json.loads(requete.content))
+            return httpx.Response(200, content=b"data: [DONE]\r\n\r\n")
+
+        client = ClientDistant(
+            base_url="http://distant.invalide", cle="k", exiger_anonymisation=False
+        )
+        client._client = httpx.AsyncClient(  # noqa: SLF001 - transport simulé
+            base_url="http://distant.invalide",
+            transport=httpx.MockTransport(repondre),
+        )
+        await agreger(
+            client.discuter(
+                [
+                    Message(
+                        role=RoleMessage.ASSISTANT,
+                        contenu="",
+                        appels=(
+                            AppelOutil(
+                                nom="rechercher_faq",
+                                arguments={"question": "absence"},
+                                identifiant="a1",
+                            ),
+                        ),
+                    )
+                ],
+                modele="m",
+            )
+        )
+        await client.fermer()
+
+        envoye = vus["messages"][0]["tool_calls"][0]["function"]["arguments"]
+        assert isinstance(envoye, str), "le protocole OpenAI refuse un objet ici"
+        assert json.loads(envoye) == {"question": "absence"}
+
+    @pytest.mark.asyncio
+    async def test_un_message_sans_appel_est_laisse_intact(self):
+        """Contre-épreuve : ne pas fabriquer une clé là où il n'y en avait pas."""
+        from app.ai.providers.base import Message, RoleMessage
+        from app.ai.providers.distant import ClientDistant
+
+        client = ClientDistant(
+            base_url="http://x.invalide", cle="k", exiger_anonymisation=False
+        )
+        charge = client._preparer(  # noqa: SLF001 - la traduction est le sujet
+            [Message(role=RoleMessage.UTILISATEUR, contenu="bonjour")]
+        )
+
+        assert "tool_calls" not in charge[0]

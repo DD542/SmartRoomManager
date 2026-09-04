@@ -97,7 +97,7 @@ class ClientDistant(LLMProvider):
                 code="ia_anonymisation_absente",
             )
         sortants = self._anonymiseur(messages) if self._anonymiseur else messages
-        return [message.pour_api() for message in sortants]
+        return [_arguments_en_chaine(message.pour_api()) for message in sortants]
 
     async def discuter(
         self,
@@ -248,6 +248,45 @@ class ClientDistant(LLMProvider):
             ligne["embedding"]
             for ligne in sorted(lignes, key=lambda x: x.get("index", 0))
         ]
+
+
+def _arguments_en_chaine(charge: dict[str, Any]) -> dict[str, Any]:
+    """Reserialise les arguments d'appel d'outil, que ce protocole veut en texte.
+
+    Troisieme divergence avec Ollama, apres le flux `data:` et les morceaux
+    indexes. `AppelOutil.arguments` est un dictionnaire — c'est la forme utile
+    a la boucle d'agent — et Ollama l'accepte tel quel. Le protocole OpenAI,
+    lui, transporte une chaine JSON :
+
+        Value is not a string: {"question":"absence"}
+
+    Mesure sur la facade Gemini. L'erreur ne survient qu'au **second** aller-
+    retour, celui qui renvoie le resultat de l'outil au modele : le premier
+    appel reussit, l'outil s'execute, puis le tour bascule au repli avec pour
+    seul indice « ia_fournisseur » au journal. L'utilisateur voit la bonne
+    carte et, sous elle, « je n'ai pas compris la demande ».
+
+    Invisible en local, ou Ollama sert seul.
+    """
+    appels = charge.get("tool_calls")
+    if not appels:
+        return charge
+    return charge | {
+        "tool_calls": [
+            appel
+            | {
+                "function": appel["function"]
+                | {
+                    "arguments": (
+                        arguments
+                        if isinstance(arguments := appel["function"]["arguments"], str)
+                        else json.dumps(arguments, ensure_ascii=False)
+                    )
+                }
+            }
+            for appel in appels
+        ]
+    }
 
 
 def _assembler(partiels: dict[int, dict[str, Any]]) -> tuple[AppelOutil, ...]:
