@@ -36,6 +36,19 @@ class ReglagesIA(BaseSettings):
     distant_modele_rapide: str = ""
     distant_modele_vecteurs: str = ""
 
+    #: Réserve le rôle « vecteurs » à l'étage B, même quand Ollama répond.
+    #:
+    #: Les fragments stockés en base ont été produits par **un** modèle. Une
+    #: question vectorisée par un autre tombe dans un espace différent : la
+    #: similarité cosinus reste calculable, et ne veut plus rien dire. Le
+    #: symptôme n'est pas une erreur mais un silence — la recherche ne trouve
+    #: plus, sans que rien ne l'explique.
+    #:
+    #: Poste local et hébergement partagent la même base ; sans ce réglage, le
+    #: premier vectorise avec Ollama et le second avec l'étage B, et l'un des
+    #: deux cherche à côté. Vrai des deux côtés, il rend le corpus cohérent.
+    vecteurs_toujours_distants: bool = False
+
     #: Refuse d'émettre vers l'étage B tant qu'aucune fonction d'anonymisation
     #: n'est branchée. Un oubli de configuration ne doit pas se traduire par une
     #: fuite de noms et d'adresses vers un tiers.

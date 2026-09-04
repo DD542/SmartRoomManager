@@ -50,6 +50,7 @@ class ClientDistant(LLMProvider):
         timeout_total_ms: int = 20_000,
         anonymiseur: Anonymiseur | None = None,
         exiger_anonymisation: bool = True,
+        dimensions: int | None = None,
     ) -> None:
         self._base = base_url.rstrip("/")
         self._cle = cle
@@ -57,6 +58,14 @@ class ClientDistant(LLMProvider):
         self._delai_total = timeout_total_ms / 1000
         self._anonymiseur = anonymiseur
         self._exiger = exiger_anonymisation
+        #: Dimension reclamee aux embeddings. La colonne pgvector est figee par
+        #: la migration 0007 ; un modele qui rend davantage ne degrade pas la
+        #: recherche, il fait echouer l'insertion.
+        #:
+        #: Mesure sur gemini-embedding-001 : 3 072 dimensions par defaut, 768
+        #: avec ce parametre. La troncature est sans consequence ici, la
+        #: recherche comparant par cosinus — une mesure qui ignore la norme.
+        self._dimensions = dimensions
         self._client: httpx.AsyncClient | None = None
 
     def _http(self) -> httpx.AsyncClient:
@@ -210,9 +219,10 @@ class ClientDistant(LLMProvider):
         if not textes:
             return []
         try:
-            reponse = await self._http().post(
-                "/embeddings", json={"model": modele, "input": list(textes)}
-            )
+            corps: dict[str, Any] = {"model": modele, "input": list(textes)}
+            if self._dimensions:
+                corps["dimensions"] = self._dimensions
+            reponse = await self._http().post("/embeddings", json=corps)
             reponse.raise_for_status()
         except httpx.HTTPError as souci:
             raise ErreurFournisseur(

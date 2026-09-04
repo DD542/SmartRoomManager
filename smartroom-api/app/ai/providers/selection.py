@@ -32,7 +32,22 @@ class SelecteurModeles:
         anonymiseur: Anonymiseur | None = None,
     ) -> None:
         self._reglages = reglages or get_reglages_ia()
-        self._anonymiseur = anonymiseur
+        #: Branché par défaut, et non laissé à `None`. Le fournisseur distant
+        #: refuse d'émettre sans anonymisation — c'est voulu — mais aucun des
+        #: cinq points de construction du sélecteur ne lui en passait une :
+        #: l'étage B était donc configurable et inatteignable, `disponible()`
+        #: rendant `False` avec « anonymisation absente » au journal.
+        #:
+        #: Le défaut sûr est de masquer, pas de se taire. Un appelant qui veut
+        #: mesurer le refus passe explicitement `anonymiseur=None`… ce que la
+        #: signature ne permet plus : les tests construisent `ClientDistant`
+        #: directement, ce qui reste le bon niveau pour éprouver sa garde.
+        #: Import différé : `app.ai.guardrails` tire le moteur de repli, qui
+        #: redescend jusqu'ici par les outils et le RAG. En tête de module,
+        #: il rendrait le paquet inimportable.
+        from app.ai.guardrails.anonymisation import anonymiser
+
+        self._anonymiseur = anonymiseur if anonymiseur is not None else anonymiser
         self._local: LLMProvider | None = None
         self._distant: LLMProvider | None = None
         #: Fournisseur imposé — les tests y placent le simulateur, et A-13 peut
@@ -66,6 +81,7 @@ class SelecteurModeles:
                 timeout_total_ms=self._reglages.timeout_total_ms,
                 anonymiseur=self._anonymiseur,
                 exiger_anonymisation=self._reglages.distant_exiger_anonymisation,
+                dimensions=self._reglages.dimension_vecteurs,
             )
         return self._distant
 
@@ -112,6 +128,19 @@ class SelecteurModeles:
 
         if self._reglages.forcer_repli:
             raise FournisseurIndisponible("Repli déterministe forcé par configuration.")
+
+        # Les vecteurs avant l'ordre habituel : le corpus indexé impose son
+        # modèle. Chercher avec un autre ne rend pas d'erreur, il rend de
+        # mauvais voisins — l'échec le plus coûteux à diagnostiquer.
+        if role is RoleModele.VECTEURS and self._reglages.vecteurs_toujours_distants:
+            distant = self._distant_ou_rien()
+            if distant is not None and await distant.disponible():
+                return distant, self.modele_pour(role, distant)
+            logger.warning(
+                "Vecteurs distants exiges mais l'etage B ne repond pas ; "
+                "la recherche retombe sur son seul volet lexical."
+            )
+            raise FournisseurIndisponible("Vecteurs distants exigés, étage B muet.")
 
         for fabrique in (self._ollama, self._distant_ou_rien):
             fournisseur = fabrique()
