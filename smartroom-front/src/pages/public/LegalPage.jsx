@@ -46,7 +46,7 @@ export default function LegalPage() {
         <Section titre="Éditeur">
           <p>
             SmartRoom Manager est un <strong className="text-content">projet académique</strong>{' '}
-            réalisé dans le cadre de la troisième année du cycle ingénieur de l’ECE Paris. Il
+            réalisé dans le cadre du Bachelor 3 Data &amp; IA de l’ECE Paris. Il
             n’est pas exploité commercialement et ne constitue pas un service ouvert au public.
           </p>
           <p>

@@ -4,7 +4,7 @@ Réservation de salles pour un campus : trouver une salle qui convient, la
 réserver, y entrer, et arbitrer les conflits quand deux personnes veulent le
 même créneau.
 
-Projet de troisième année du cycle ingénieur, ECE Paris.
+Projet de Bachelor 3 Data & IA, ECE Paris.
 
 ---
 
