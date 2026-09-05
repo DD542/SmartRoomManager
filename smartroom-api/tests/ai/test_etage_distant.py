@@ -328,3 +328,100 @@ class TestRetraduction:
         rendu = await self._repondre(Anonymiseur(), "deux ", "mots")
 
         assert rendu == "deux mots"
+
+
+class TestSignatureDeRaisonnement:
+    """Gemini 3 exige de retrouver sa signature au tour suivant.
+
+        400 Function call is missing a thought_signature in functionCall parts.
+            This is required for tools to work correctly.
+
+    Elle voyage dans `extra_content`, hors du protocole OpenAI, et se perdait
+    donc à la traduction. Le premier appel passait, l'outil s'exécutait, et le
+    second échouait : à l'écran, la carte apparaissait puis la réponse
+    s'arrêtait.
+    """
+
+    SIGNATURE = {"google": {"thought_signature": "El4KXAERTTIP"}}
+
+    @staticmethod
+    def _client(gestionnaire):
+        from app.ai.providers.distant import ClientDistant
+
+        client = ClientDistant(
+            base_url="http://x.invalide", cle="k", exiger_anonymisation=False
+        )
+        client._client = httpx.AsyncClient(  # noqa: SLF001 - transport simulé
+            base_url="http://x.invalide", transport=httpx.MockTransport(gestionnaire)
+        )
+        return client
+
+    @pytest.mark.asyncio
+    async def test_elle_repart_avec_l_appel_qu_elle_accompagnait(self):
+        from app.ai.providers.base import AppelOutil, Message, RoleMessage
+
+        flux = (
+            'data: {"choices":[{"delta":{"tool_calls":[{"id":"call_1",'
+            '"type":"function","extra_content":'
+            + json.dumps(self.SIGNATURE)
+            + ',"function":{"name":"localiser_salle","arguments":"{}"}}]}}]}'
+            "\r\n\r\ndata: [DONE]\r\n\r\n"
+        )
+        vus: list[dict] = []
+
+        def repondre(requete: httpx.Request) -> httpx.Response:
+            vus.append(json.loads(requete.content))
+            return httpx.Response(200, content=flux.encode())
+
+        client = self._client(repondre)
+        await agreger(
+            client.discuter(
+                [Message(role=RoleMessage.UTILISATEUR, contenu="ou est Hopper")],
+                modele="m",
+            )
+        )
+        # Second tour : l'appel repart, accompagné de sa signature.
+        await agreger(
+            client.discuter(
+                [
+                    Message(
+                        role=RoleMessage.ASSISTANT,
+                        contenu="",
+                        appels=(
+                            AppelOutil(
+                                nom="localiser_salle",
+                                arguments={},
+                                identifiant="call_1",
+                            ),
+                        ),
+                    )
+                ],
+                modele="m",
+            )
+        )
+        await client.fermer()
+
+        renvoye = vus[1]["messages"][0]["tool_calls"][0]
+        assert renvoye["extra_content"] == self.SIGNATURE
+
+    @pytest.mark.asyncio
+    async def test_rien_n_est_fabrique_quand_rien_n_a_ete_recu(self):
+        """Contre-épreuve : Ollama, OpenAI et Gemini 2 n'en envoient aucune.
+
+        Ajouter une clé vide ferait échouer les fournisseurs qui ne la
+        connaissent pas.
+        """
+        from app.ai.providers.base import AppelOutil, Message, RoleMessage
+
+        client = self._client(lambda r: httpx.Response(200, content=b""))
+        charge = client._preparer(  # noqa: SLF001 - la traduction est le sujet
+            [
+                Message(
+                    role=RoleMessage.ASSISTANT,
+                    contenu="",
+                    appels=(AppelOutil(nom="x", arguments={}, identifiant="inconnu"),),
+                )
+            ]
+        )
+
+        assert "extra_content" not in charge[0]["tool_calls"][0]

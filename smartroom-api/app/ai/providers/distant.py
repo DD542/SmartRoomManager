@@ -66,6 +66,23 @@ class ClientDistant(LLMProvider):
         #: avec ce parametre. La troncature est sans consequence ici, la
         #: recherche comparant par cosinus — une mesure qui ignore la norme.
         self._dimensions = dimensions
+        #: Signatures de raisonnement, par identifiant d'appel d'outil.
+        #:
+        #: Les modèles Gemini 3 joignent à chaque appel une `thought_signature`
+        #: et exigent de la retrouver au tour suivant :
+        #:
+        #:   400 Function call is missing a thought_signature in functionCall
+        #:       parts. This is required for tools to work correctly.
+        #:
+        #: Elle voyage dans `extra_content`, hors du protocole OpenAI, et se
+        #: perdait donc à la traduction. Le premier appel passait, l'outil
+        #: s'exécutait, et le second échouait — l'utilisateur voyait la carte
+        #: apparaître puis la réponse s'arrêter.
+        #:
+        #: Gardée ici plutôt que dans `AppelOutil` : c'est une particularité de
+        #: ce protocole, que la boucle d'agent n'a pas à connaître. La table vit
+        #: le temps du client, donc celui du tour.
+        self._signatures: dict[str, Any] = {}
         self._client: httpx.AsyncClient | None = None
 
     def _http(self) -> httpx.AsyncClient:
@@ -111,7 +128,28 @@ class ClientDistant(LLMProvider):
                 code="ia_anonymisation_absente",
             )
         sortants = self._anonymiseur(messages) if self._anonymiseur else messages
-        return [_arguments_en_chaine(message.pour_api()) for message in sortants]
+        return [
+            self._rendre_signature(_arguments_en_chaine(message.pour_api()))
+            for message in sortants
+        ]
+
+    def _rendre_signature(self, charge: dict[str, Any]) -> dict[str, Any]:
+        """Rattache à chaque appel la signature reçue avec lui.
+
+        Sans mémoire de signature — Ollama, OpenAI, Gemini 2 — la charge repart
+        inchangée : rien n'est fabriqué là où rien n'a été reçu.
+        """
+        appels = charge.get("tool_calls")
+        if not appels or not self._signatures:
+            return charge
+        return charge | {
+            "tool_calls": [
+                appel | {"extra_content": signature}
+                if (signature := self._signatures.get(str(appel.get("id"))))
+                else appel
+                for appel in appels
+            ]
+        }
 
     async def discuter(
         self,
@@ -223,6 +261,8 @@ class ClientDistant(LLMProvider):
                         fonction = morceau.get("function") or {}
                         courant["nom"] += fonction.get("name") or ""
                         courant["arguments"] += fonction.get("arguments") or ""
+                        if extra := morceau.get("extra_content"):
+                            courant["extra"] = extra
                         if premier_jeton_ms is None:
                             premier_jeton_ms = int(
                                 (time.perf_counter() - depart) * 1000
@@ -241,6 +281,16 @@ class ClientDistant(LLMProvider):
         # de chaque réponse manquerait à l'écran.
         if tampon:
             yield Fragment(type=TypeFragment.TEXTE, texte=self._rendre(tampon))
+
+        # Retenues avant l'assemblage, qui ne garde que ce que la boucle
+        # d'agent doit connaître — nom, arguments, identifiant.
+        self._signatures.update(
+            {
+                str(morceau["id"]): morceau["extra"]
+                for morceau in partiels.values()
+                if morceau.get("id") and morceau.get("extra")
+            }
+        )
 
         if appels := _assembler(partiels):
             yield Fragment(type=TypeFragment.OUTILS, appels=appels)
