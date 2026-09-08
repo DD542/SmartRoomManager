@@ -1,0 +1,158 @@
+{
+ "batiments": {
+  "EIF1": "/media/batiments/53789550bc4647f28dce0b2972b2870a.webp",
+  "EIF2": "/media/batiments/26d751b711714eb49bd8914717cbff87.webp",
+  "EIF3": "/media/batiments/33c901c4021b4d319a507171f7a80b7c.webp",
+  "EIF4": "/media/batiments/463f5b4a38544bf8af8ae0056e97e477.webp",
+  "EIF5": "/media/batiments/1573dc3d1daf48cead76f87086bcb201.webp",
+  "EIF6": "/media/batiments/832b348c0fff4b0ea2df578ed9dee6db.webp"
+ },
+ "salles": {
+  "amphi-eiffel": {
+   "repere": "/media/reperes/b1f8d0080d144413b90548126c8eb229.jpg",
+   "photos": [
+    {
+     "url": "/media/photos/eba2183f28e943339e1fd9fc987cade1.jpg",
+     "alt": null,
+     "position": 1
+    }
+   ]
+  },
+  "atelier-monge": {
+   "repere": "/media/reperes/5fa76997166c437e97b3e874fc18ac7b.jpg",
+   "photos": [
+    {
+     "url": "/media/photos/00a247e469fa49caa13970b5bb5a807e.jpg",
+     "alt": null,
+     "position": 1
+    }
+   ]
+  },
+  "labo-becquerel": {
+   "repere": "/media/reperes/7267007a68c94b9b8b20d4bfc3b7dcdd.jpg",
+   "photos": [
+    {
+     "url": "/media/photos/2be058372c3c48a5bf677d58fb8cd76c.jpg",
+     "alt": null,
+     "position": 1
+    }
+   ]
+  },
+  "labo-pasteur": {
+   "repere": "/media/reperes/6144c91212f34bda925ace8b244f9b82.jpg",
+   "photos": [
+    {
+     "url": "/media/photos/81d02bc13f41495db6eaafbdc4e7d354.jpg",
+     "alt": null,
+     "position": 1
+    }
+   ]
+  },
+  "salle-ampere": {
+   "repere": "/media/reperes/7bab1823b56544a8baea7ec998645ca0.jpg",
+   "photos": [
+    {
+     "url": "/media/photos/62758c96bcb146b7b85c8345b9617528.jpg",
+     "alt": null,
+     "position": 1
+    }
+   ]
+  },
+  "salle-conseil-alpha": {
+   "repere": "/media/reperes/addf1b52f3c94a539fa35d6814c73763.jpg",
+   "photos": [
+    {
+     "url": "/media/photos/d4232b0bca49411f980317d0d0c52b5c.jpg",
+     "alt": null,
+     "position": 1
+    }
+   ]
+  },
+  "salle-curie": {
+   "repere": "/media/reperes/8a931302dd0e4b79924dfdbaebcc5d2d.jpg",
+   "photos": [
+    {
+     "url": "/media/photos/35a2444773da4ad5ae6056cea2714bd7.jpg",
+     "alt": null,
+     "position": 1
+    }
+   ]
+  },
+  "salle-descartes": {
+   "repere": "/media/reperes/c2782df21992462da0c51fd32ca871d3.jpg",
+   "photos": [
+    {
+     "url": "/media/photos/22568e1e138f4a2f940cdad3b85640ea.jpg",
+     "alt": null,
+     "position": 1
+    }
+   ]
+  },
+  "salle-fermat": {
+   "repere": "/media/reperes/628c03927a064bafb25bb0d4ff22dc89.jpg",
+   "photos": [
+    {
+     "url": "/media/photos/fd37efe182a84119af547d0469ea0b13.jpg",
+     "alt": null,
+     "position": 1
+    },
+    {
+     "url": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20640%20400%22%3E%3Crect%20width%3D%22640%22%20height%3D%22400%22%20fill%3D%22%231A2231%22/%3E%3Crect%20x%3D%22120%22%20y%3D%22150%22%20width%3D%22400%22%20height%3D%22110%22%20rx%3D%2210%22%20fill%3D%22none%22%20stroke%3D%22%235B9BFF%22%20stroke-opacity%3D%220.35%22%20stroke-width%3D%223%22/%3E%3Ctext%20x%3D%22320%22%20y%3D%22330%22%20fill%3D%22%23B4C0D4%22%20font-family%3D%22monospace%22%20font-size%3D%2222%22%20text-anchor%3D%22middle%22%3ESalle%20Fermat%20-%20vue%203%3C/text%3E%3C/svg%3E",
+     "alt": "Salle Fermat, vue 3",
+     "position": 2
+    }
+   ]
+  },
+  "salle-hopper": {
+   "repere": "/media/reperes/fefd1765c047467181ee8dd160e1c2af.jpg",
+   "photos": [
+    {
+     "url": "/media/photos/882cfeda44d442fe9183dce58c0ea129.jpg",
+     "alt": null,
+     "position": 1
+    }
+   ]
+  },
+  "salle-joule": {
+   "repere": "/media/reperes/08de618757884c5f97fcdbb78fa4fc3e.jpg",
+   "photos": [
+    {
+     "url": "/media/photos/09007d4b71d44e5f9fba48f03f333e80.jpg",
+     "alt": null,
+     "position": 1
+    }
+   ]
+  },
+  "salle-pascal": {
+   "repere": "/media/reperes/53103850ee394ca4b8e4bf0be0fca2af.jpg",
+   "photos": [
+    {
+     "url": "/media/photos/79973c1f99d640038c4e812dd2ad1e6e.jpg",
+     "alt": null,
+     "position": 1
+    }
+   ]
+  },
+  "salle-riemann": {
+   "repere": "/media/reperes/fc37190905624bd9b01815e0ca2bdd29.jpg",
+   "photos": [
+    {
+     "url": "/media/photos/1ee80860beb04d64ae4472ed67043df6.jpg",
+     "alt": null,
+     "position": 1
+    }
+   ]
+  },
+  "salle-vinci": {
+   "repere": "/media/reperes/4ce97f7c58e546fab677ae550dc367f0.jpg",
+   "photos": [
+    {
+     "url": "/media/photos/2ad0f65492c94e64b7e096bc8f34bbdb.jpg",
+     "alt": null,
+     "position": 1
+    }
+   ]
+  }
+ },
+ "plans": {}
+}
