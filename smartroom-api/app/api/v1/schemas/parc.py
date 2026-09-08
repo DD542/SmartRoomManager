@@ -200,6 +200,27 @@ class EquipmentIn(ApiModel):
     is_filterable: bool = True
 
 
+class EquipmentPatch(ApiModel):
+    """Modification partielle d'un équipement.
+
+    `EquipmentIn` exige `code`, `label`, `category` et `icon` : c'est correct
+    pour une création, faux pour un `PATCH`. L'écran d'administration bascule
+    « Proposer comme filtre » en n'envoyant que ce seul champ, et recevait en
+    retour « Le code est obligatoire » — la bascule n'a donc jamais fonctionné.
+
+    Tous les champs sont ici facultatifs. Le service applique déjà
+    `exclude_unset=True` : seuls les champs réellement transmis sont écrits, un
+    `null` explicite restant distinct d'un champ absent.
+    """
+
+    code: CodeEquipement | None = None
+    label: Annotated[str | None, Field(min_length=1, max_length=80)] = None
+    category: EquipmentCategory | None = None
+    icon: Annotated[str | None, Field(min_length=1, max_length=40)] = None
+    description: Annotated[str | None, Field(max_length=255)] = None
+    is_filterable: bool | None = None
+
+
 class EquipmentOut(ReadModel):
     id: uuid.UUID
     code: str

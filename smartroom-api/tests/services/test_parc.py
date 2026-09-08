@@ -256,6 +256,35 @@ class TestEquipements:
         vise = next(item for item in corps["items"] if item["id"] == str(video.id))
         assert vise["room_count"] == 1
 
+    def test_modification_partielle_sans_les_champs_de_creation(
+        self, client, session, administrateur, video
+    ):
+        """La bascule « Proposer comme filtre » n'envoie que ce champ.
+
+        La route validait contre `EquipmentIn`, où `code`, `label`, `category`
+        et `icon` sont obligatoires : l'écran recevait « Le code est
+        obligatoire » et la bascule n'a jamais fonctionné. L'édition depuis la
+        modale échouait de même, faute d'envoyer `code`.
+
+        Sans `EquipmentPatch`, ce test rend 422.
+        """
+        accorder(session, administrateur, ROOMS_MANAGE)
+        entetes = connecter(client, administrateur.user.email, admin=True)
+        avant = video.label
+
+        reponse = client.patch(
+            f"/api/v1/equipments/{video.id}",
+            headers=entetes,
+            json={"is_filterable": False},
+        )
+
+        assert reponse.status_code == 200
+        corps = reponse.json()
+        assert corps["is_filterable"] is False
+        # Les champs absents de la charge ne sont pas écrasés.
+        assert corps["label"] == avant
+        assert corps["code"] == video.code
+
     def test_suppression_refusee_si_utilise(
         self, client, session, administrateur, creer_salle, video
     ):

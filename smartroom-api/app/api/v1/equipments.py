@@ -14,7 +14,7 @@ from app.api.deps import (
     SessionDep,
     require_permission,
 )
-from app.api.v1.schemas import EquipmentIn, EquipmentOut
+from app.api.v1.schemas import EquipmentIn, EquipmentOut, EquipmentPatch
 from app.api.v1.serializers import equipement_sortie
 from app.core.pagination import Page
 from app.db.enums import EquipmentCategory
@@ -68,7 +68,10 @@ def create_equipment(
     summary="Modifier un équipement",
 )
 def update_equipment(
-    equipment_id: uuid.UUID, payload: EquipmentIn, session: SessionDep, _admin=Ecriture
+    equipment_id: uuid.UUID,
+    payload: EquipmentPatch,
+    session: SessionDep,
+    _admin=Ecriture,
 ) -> EquipmentOut:
     materiel = service.update_equipment(session, equipment_id, payload)
     session.commit()

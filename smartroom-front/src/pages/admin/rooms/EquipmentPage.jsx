@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Pencil, Plus, Wrench } from 'lucide-react';
+import { Pencil, Plus, Trash2, Wrench } from 'lucide-react';
 import {
+  deleteEquipment,
   equipmentCategories,
   listEquipmentCatalog,
   listIcons,
@@ -16,6 +17,7 @@ import { Badge } from '../../../components/ui/Badge';
 import { Button, IconButton } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Switch } from '../../../components/ui/Form';
+import { Modal } from '../../../components/ui/Modal';
 import { AsyncBoundary, EmptyState, SkeletonCard } from '../../../components/ui/States';
 import { DataTable } from '../../../components/admin/DataTable';
 import { EquipmentModal } from '../../../components/admin/rooms/EquipmentModal';
@@ -34,6 +36,8 @@ export default function EquipmentPage() {
 
   const [edition, setEdition] = useState(null);
   const [envoi, setEnvoi] = useState(false);
+  const [suppression, setSuppression] = useState(null);
+  const [retrait, setRetrait] = useState(false);
 
   const catalogue = useAsync(listEquipmentCatalog, []);
   const icones = useAsync(listIcons, []);
@@ -71,6 +75,43 @@ export default function EquipmentPage() {
       setEnvoi(false);
     }
   };
+
+  /**
+   * Retrait d'un équipement.
+   *
+   * L'API refuse tant qu'une salle le déclare : la retirer sous les pieds des
+   * fiches de salle les ferait mentir. Le bouton reste donc visible sur les
+   * lignes utilisées — il porte l'explication — mais il est désactivé : un
+   * bouton absent laisserait croire que la suppression n'existe pas, un bouton
+   * actif qui échoue à chaque clic ferait croire à une panne.
+   */
+  const supprimer = async () => {
+    setRetrait(true);
+    try {
+      await deleteEquipment(suppression.id);
+      toast.success('Équipement supprimé', suppression.label);
+      setSuppression(null);
+      await catalogue.reload();
+    } catch (erreur) {
+      toast.error('Suppression impossible', erreur.message);
+    } finally {
+      setRetrait(false);
+    }
+  };
+
+  const boutonSupprimer = (row) => (
+    <IconButton
+      icon={Trash2}
+      variant="danger"
+      disabled={row.roomCount > 0}
+      label={
+        row.roomCount > 0
+          ? `${row.label} équipe ${plural(row.roomCount, 'salle')} : retirez-le d’abord de ces salles`
+          : `Supprimer ${row.label}`
+      }
+      onClick={() => setSuppression(row)}
+    />
+  );
 
   const colonnes = [
     {
@@ -125,11 +166,14 @@ export default function EquipmentPage() {
       sortable: false,
       align: 'right',
       render: (row) => (
-        <IconButton
-          icon={Pencil}
-          label={`Modifier ${row.label}`}
-          onClick={() => setEdition(row)}
-        />
+        <span className="flex items-center justify-end gap-1">
+          <IconButton
+            icon={Pencil}
+            label={`Modifier ${row.label}`}
+            onClick={() => setEdition(row)}
+          />
+          {boutonSupprimer(row)}
+        </span>
       ),
     },
   ];
@@ -187,11 +231,14 @@ export default function EquipmentPage() {
                         {row.categoryLabel} · {plural(row.roomCount, 'salle équipée', 'salles équipées')}
                       </p>
                     </div>
-                    <IconButton
-                      icon={Pencil}
-                      label={`Modifier ${row.label}`}
-                      onClick={() => setEdition(row)}
-                    />
+                    <span className="flex shrink-0 items-center gap-1">
+                      <IconButton
+                        icon={Pencil}
+                        label={`Modifier ${row.label}`}
+                        onClick={() => setEdition(row)}
+                      />
+                      {boutonSupprimer(row)}
+                    </span>
                   </div>
                   <div className="mt-2.5 border-t border-line pt-2.5">
                     <Switch
@@ -216,6 +263,31 @@ export default function EquipmentPage() {
         categories={categories}
         loading={envoi}
       />
+
+      <Modal
+        open={Boolean(suppression)}
+        onClose={() => setSuppression(null)}
+        icon={Trash2}
+        tone="danger"
+        title="Supprimer cet équipement"
+        description="Le retrait est définitif : l’équipement disparaît du catalogue et des filtres de recherche."
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setSuppression(null)}>
+              Revenir
+            </Button>
+            <Button variant="danger-solid" loading={retrait} onClick={supprimer}>
+              Supprimer définitivement
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm leading-relaxed text-content-muted">
+          <span className="text-content">« {suppression?.label} »</span> n’équipe aucune salle : sa
+          suppression ne modifie aucune fiche. Les réservations passées ne s’en trouvent pas
+          changées, l’équipement n’y étant pas recopié.
+        </p>
+      </Modal>
     </div>
   );
 }
