@@ -114,6 +114,11 @@ class Settings(BaseSettings):
     smtp_user: str | None = None
     smtp_password: SecretStr | None = None
     smtp_use_tls: bool = False
+    #: Délai de connexion au relais, en secondes. Le défaut d'aiosmtplib est de
+    #: 60 s, entièrement consommées lorsqu'un pare-feu jette les paquets plutôt
+    #: que de refuser la connexion. Une réservation envoyant jusqu'à trois
+    #: courriels, l'attente se cumulait.
+    smtp_timeout: float = 15.0
     mail_from: str = "no-reply@smartroom.ece.fr"
     #: En local, les e-mails sont écrits dans le journal plutôt qu'envoyés :
     #: aucune boîte réelle ne reçoit les données du jeu de démonstration.

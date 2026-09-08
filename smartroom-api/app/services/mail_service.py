@@ -189,6 +189,16 @@ async def send(message: Message) -> None:
             courriel,
             hostname=_config().smtp_host,
             port=_config().smtp_port,
+            # Le délai par défaut d'aiosmtplib est de 60 secondes, et il se
+            # consomme entièrement quand le pare-feu de l'hébergeur jette les
+            # paquets au lieu de refuser la connexion — ce que fait le palier
+            # gratuit de Render sur les ports 25, 465 et 587.
+            #
+            # Une réservation envoie jusqu'à trois courriels : l'organisateur
+            # et ses participants. À 60 secondes chacun, trois minutes de
+            # tâche de fond partaient en attente, pour un échec certain.
+            # Quinze secondes suffisent largement à un relais joignable.
+            timeout=_config().smtp_timeout,
             username=_config().smtp_user,
             password=(
                 _config().smtp_password.get_secret_value()
