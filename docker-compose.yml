@@ -73,7 +73,30 @@ services:
       TIMEZONE: ${TIMEZONE:-Europe/Paris}
       JWT_SECRET: ${JWT_SECRET:-secret-de-developpement-suffisamment-long-pour-passer}
       REFRESH_COOKIE_SECURE: "false"
-      MAIL_ENABLED: "false"
+      # Les courriels partent, mais vers Mailpit : le service `courriel` les
+      # capte tous et n'en remet aucun, quelle que soit l'adresse inscrite
+      # dessus. Rien ne quitte la machine, et la boîte se lit sur
+      # http://localhost:8025.
+      #
+      # Avec MAIL_ENABLED=false, l'expédition s'arrêtait avant le transport :
+      # une ligne « Courriel non envoyé » au journal, et une boîte de
+      # développement définitivement vide — donc aucun moyen de relire le
+      # rendu d'un gabarit, ni de vérifier qu'un envoi est bien déclenché.
+      MAIL_ENABLED: "true"
+      SMTP_HOST: courriel
+      SMTP_PORT: "1025"
+      SMTP_USE_TLS: "false"
+      MAIL_FROM: no-reply@smartroom.local
+      # Neutralisés explicitement. Le service monte tout `smartroom-api/` sur
+      # /app, `.env` compris, et c'est de là que Pydantic lit ce qu'aucune
+      # variable d'environnement ne recouvre. Sans ces deux lignes, la pile
+      # locale récupérait les identifiants Gmail du fichier et tentait de
+      # s'authentifier auprès de Mailpit, qui ne connaît pas l'extension AUTH :
+      # « The SMTP AUTH extension is not supported by this server ». Les
+      # identifiants réels n'ont, au passage, rien à faire dans la pile de
+      # développement.
+      SMTP_USER: ""
+      SMTP_PASSWORD: ""
       CORS_ORIGINS: '["http://localhost:5180","http://127.0.0.1:5180"]'
       # Texte lisible plutôt que JSON : un développeur lit son terminal, il ne
       # l'interroge pas.
@@ -128,6 +151,12 @@ services:
       # Vite doit écouter sur toutes les interfaces pour être joignable depuis
       # l'hôte ; par défaut il n'écoute que la boucle locale du conteneur.
       VITE_HOST: "0.0.0.0"
+      # Depuis ce conteneur, `127.0.0.1` désigne le front lui-même, pas l'API :
+      # le relais de Vite tombait sur ECONNREFUSED et toute requête partait en
+      # 500, connexion comprise. Le nom du service est la seule adresse valable
+      # sur le réseau de la pile. La valeur par défaut de `vite.config.js` reste
+      # `127.0.0.1:8000`, correcte quand le front tourne sur l'hôte.
+      VITE_API_TARGET: "http://api:8000"
     ports:
       - "5180:5180"
     volumes:
