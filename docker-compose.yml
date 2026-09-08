@@ -83,20 +83,30 @@ services:
       # développement définitivement vide — donc aucun moyen de relire le
       # rendu d'un gabarit, ni de vérifier qu'un envoi est bien déclenché.
       MAIL_ENABLED: "true"
-      SMTP_HOST: courriel
-      SMTP_PORT: "1025"
-      SMTP_USE_TLS: "false"
-      MAIL_FROM: no-reply@smartroom.local
-      # Neutralisés explicitement. Le service monte tout `smartroom-api/` sur
-      # /app, `.env` compris, et c'est de là que Pydantic lit ce qu'aucune
-      # variable d'environnement ne recouvre. Sans ces deux lignes, la pile
-      # locale récupérait les identifiants Gmail du fichier et tentait de
-      # s'authentifier auprès de Mailpit, qui ne connaît pas l'extension AUTH :
-      # « The SMTP AUTH extension is not supported by this server ». Les
-      # identifiants réels n'ont, au passage, rien à faire dans la pile de
-      # développement.
-      SMTP_USER: ""
-      SMTP_PASSWORD: ""
+      # Le relais est surchargeable, mais son défaut est Mailpit : un dépôt
+      # cloné n'envoie rien au dehors tant que personne ne l'a décidé.
+      #
+      # Les valeurs viennent du `.env` de la racine, que git ignore — les
+      # identifiants d'un relais réel n'ont pas à être versionnés. Elles sont
+      # posées ici explicitement, y compris vides, parce que le service monte
+      # tout `smartroom-api/` sur /app, `.env` compris : sans ces lignes,
+      # Pydantic lisait les identifiants Gmail de ce fichier et tentait de
+      # s'authentifier auprès de Mailpit, qui ne connaît pas l'extension AUTH
+      # — « The SMTP AUTH extension is not supported by this server ».
+      #
+      # Pour des envois réels, renseigner dans le `.env` de la racine :
+      #   SMTP_HOST=smtp.gmail.com
+      #   SMTP_PORT=587
+      #   SMTP_USE_TLS=true
+      #   SMTP_USER / SMTP_PASSWORD
+      #   MAIL_FROM  ← doit être l'adresse authentifiée : Gmail refuse
+      #                d'expédier au nom d'une autre.
+      SMTP_HOST: ${SMTP_HOST:-courriel}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@smartroom.local}
       CORS_ORIGINS: '["http://localhost:5180","http://127.0.0.1:5180"]'
       # Texte lisible plutôt que JSON : un développeur lit son terminal, il ne
       # l'interroge pas.
