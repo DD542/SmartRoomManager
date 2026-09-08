@@ -11,7 +11,14 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, PostgresDsn, SecretStr, computed_field, model_validator
+from pydantic import (
+    Field,
+    PostgresDsn,
+    SecretStr,
+    computed_field,
+    field_validator,
+    model_validator,
+)
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -224,6 +231,47 @@ class Settings(BaseSettings):
                 f"\n  - {details}"
             )
         return self
+
+    @field_validator("smtp_user", "smtp_password", mode="before")
+    @classmethod
+    def _identifiants_smtp(cls, valeur: object) -> object:
+        """Nettoie les identifiants du relais de courriel.
+
+        Deux corrections, pour deux pièges distincts.
+
+        **Les espaces d'un mot de passe d'application.**
+
+        Google affiche les mots de passe d'application en quatre groupes de
+        quatre caractères, séparés par des espaces, pour qu'ils se lisent. Le
+        mot de passe réel est la suite de seize caractères, sans les espaces —
+        mais c'est la forme affichée que l'on recopie.
+
+        Envoyée telle quelle à `login()`, elle est refusée par un
+        « 535 Username and Password not accepted » qui accuse l'identifiant.
+        Le diagnostic est d'autant plus long que le mot de passe n'apparaît
+        dans aucun journal : on cherche une valeur fausse là où seule sa mise
+        en forme l'était.
+
+        Le retrait porte sur tous les espaces internes, pas seulement sur ceux
+        des extrémités : un secret ne contient jamais d'espace chez les relais
+        que nous visons, et le doute coûte moins cher qu'une authentification
+        qui échoue sans dire pourquoi.
+
+        **La chaîne vide, qui n'est pas l'absence d'identifiant.**
+        Un relais sans authentification — Mailpit en développement, un relais
+        interne en réseau privé — se configure en laissant ces deux variables
+        vides. Mais `aiosmtplib` distingue `None` de `""` : la chaîne vide lui
+        fait tenter un `AUTH`, que le serveur refuse avec « The SMTP AUTH
+        extension is not supported by this server ». Le message accuse le
+        serveur là où c'est la configuration du client qui insiste.
+
+        La chaîne vide devient donc `None`, seule valeur qui veuille dire
+        « ne t'authentifie pas ».
+        """
+        if isinstance(valeur, str):
+            sans = "".join(valeur.split())
+            return sans or None
+        return valeur
 
     @model_validator(mode="after")
     def _cookie_sur_https_hors_local(self) -> Settings:
