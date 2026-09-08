@@ -1,0 +1,1643 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>SmartRoom Manager — Rapport de projet</title>
+<style>
+  :root {
+    --encre: #16181d;
+    --gris: #4a4f5a;
+    --gris-clair: #8a9099;
+    --trait: #d9dce1;
+    --accent: #1f4fd8;
+    --accent-pale: #eef2fd;
+    --fond-code: #f6f7f9;
+    --vert: #0d7a4a;
+    --rouge: #b3261e;
+    --ambre: #8a6100;
+  }
+
+  @page { size: A4; margin: 18mm 16mm 20mm 16mm; }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 10.2pt;
+    line-height: 1.55;
+    color: var(--encre);
+    margin: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ------------------------------------------------------------ couverture */
+
+  .couverture {
+    height: 253mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    page-break-after: always;
+  }
+  .couverture .haut { padding-top: 30mm; }
+  .couverture .ecole {
+    font-size: 10pt;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gris-clair);
+    margin-bottom: 6mm;
+  }
+  .couverture h1 {
+    font-size: 34pt;
+    line-height: 1.1;
+    margin: 0 0 4mm;
+    letter-spacing: -0.02em;
+  }
+  .couverture .sous {
+    font-size: 14pt;
+    color: var(--gris);
+    font-weight: 400;
+    margin: 0 0 10mm;
+    max-width: 130mm;
+    line-height: 1.4;
+  }
+  .couverture .filet {
+    width: 40mm; height: 3px; background: var(--accent); margin-bottom: 10mm;
+  }
+  .couverture dl {
+    display: grid;
+    grid-template-columns: 42mm 1fr;
+    row-gap: 2.4mm;
+    margin: 0;
+    font-size: 10.5pt;
+  }
+  .couverture dt { color: var(--gris-clair); }
+  .couverture dd { margin: 0; }
+  .couverture .bas {
+    border-top: 1px solid var(--trait);
+    padding-top: 4mm;
+    font-size: 9pt;
+    color: var(--gris-clair);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* ------------------------------------------------------------- sommaire */
+
+  .sommaire { page-break-after: always; }
+  .sommaire h2 { margin-top: 0; }
+  .sommaire ol { list-style: none; padding: 0; margin: 0; counter-reset: s; }
+  .sommaire > ol > li {
+    counter-increment: s;
+    padding: 1.6mm 0;
+    border-bottom: 1px dotted var(--trait);
+    font-weight: 600;
+  }
+  .sommaire > ol > li::before {
+    content: counter(s) ".";
+    display: inline-block;
+    width: 9mm;
+    color: var(--accent);
+  }
+  .sommaire ol ol { margin: 1.2mm 0 0 9mm; counter-reset: t; }
+  .sommaire ol ol li {
+    counter-increment: t;
+    font-weight: 400;
+    font-size: 9.4pt;
+    color: var(--gris);
+    padding: 0.5mm 0;
+    border: 0;
+  }
+  .sommaire ol ol li::before {
+    content: counter(s) "." counter(t);
+    display: inline-block;
+    width: 11mm;
+    color: var(--gris-clair);
+  }
+
+  /* ------------------------------------------------------------- titraille */
+
+  h2 {
+    font-size: 18pt;
+    letter-spacing: -0.01em;
+    margin: 0 0 5mm;
+    padding-bottom: 2.5mm;
+    border-bottom: 2px solid var(--accent);
+    page-break-after: avoid;
+  }
+  h2 .num { color: var(--accent); margin-right: 3mm; }
+  h3 {
+    font-size: 12.5pt;
+    margin: 8mm 0 3mm;
+    color: var(--encre);
+    page-break-after: avoid;
+  }
+  h4 {
+    font-size: 10.6pt;
+    margin: 6mm 0 2mm;
+    color: var(--gris);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    page-break-after: avoid;
+  }
+  section { page-break-before: always; }
+  section.suite { page-break-before: auto; }
+
+  p { margin: 0 0 3mm; text-align: justify; hyphens: auto; }
+  ul, ol { margin: 0 0 3mm; padding-left: 6mm; }
+  li { margin-bottom: 1.2mm; }
+  strong { font-weight: 600; }
+
+  /* --------------------------------------------------------------- blocs */
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 3mm 0 5mm;
+    font-size: 9.2pt;
+    page-break-inside: avoid;
+  }
+  th {
+    text-align: left;
+    background: var(--accent-pale);
+    color: var(--encre);
+    font-weight: 600;
+    padding: 2mm 2.5mm;
+    border-bottom: 1.5px solid var(--accent);
+  }
+  td { padding: 1.8mm 2.5mm; border-bottom: 1px solid var(--trait); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  td code, th code { font-size: 8.4pt; }
+
+  pre {
+    background: var(--fond-code);
+    border-left: 3px solid var(--accent);
+    padding: 3mm 4mm;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 8.6pt;
+    line-height: 1.45;
+    overflow-x: hidden;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 3mm 0 4mm;
+    page-break-inside: avoid;
+  }
+  code {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 9pt;
+    background: var(--fond-code);
+    padding: 0.3mm 1mm;
+    border-radius: 2px;
+  }
+
+  .encadre {
+    border: 1px solid var(--trait);
+    border-left: 3px solid var(--gris-clair);
+    background: #fbfbfc;
+    padding: 3mm 4mm;
+    margin: 4mm 0;
+    page-break-inside: avoid;
+  }
+  .encadre .titre {
+    font-size: 8.6pt;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gris-clair);
+    margin-bottom: 1.5mm;
+    font-weight: 600;
+  }
+  .encadre p:last-child { margin-bottom: 0; }
+  .encadre.choix { border-left-color: var(--accent); }
+  .encadre.mesure { border-left-color: var(--vert); }
+  .encadre.attention { border-left-color: var(--ambre); }
+
+  .incident {
+    border: 1px solid var(--trait);
+    border-radius: 3px;
+    padding: 3mm 4mm;
+    margin: 4mm 0;
+    page-break-inside: avoid;
+  }
+  .incident h4 {
+    margin: 0 0 2.5mm;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 11pt;
+    color: var(--encre);
+  }
+  .incident h4 .no {
+    display: inline-block;
+    background: var(--encre);
+    color: #fff;
+    font-size: 8pt;
+    padding: 0.4mm 1.8mm;
+    border-radius: 2px;
+    margin-right: 2.5mm;
+    vertical-align: 1px;
+  }
+  .incident dl { display: grid; grid-template-columns: 24mm 1fr; row-gap: 1.4mm; margin: 0; }
+  .incident dt {
+    font-size: 8.4pt; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--gris-clair); padding-top: 0.4mm; font-weight: 600;
+  }
+  .incident dd { margin: 0; }
+  .incident dd p { margin-bottom: 1.5mm; }
+  .incident dd pre { margin: 1.5mm 0; }
+
+  .schema {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 8pt;
+    line-height: 1.35;
+    background: #fff;
+    border: 1px solid var(--trait);
+    padding: 4mm;
+    white-space: pre;
+    margin: 3mm 0 5mm;
+    page-break-inside: avoid;
+    text-align: center;
+  }
+
+  .chiffres { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm; margin: 4mm 0 6mm; }
+  .chiffre { border: 1px solid var(--trait); border-top: 3px solid var(--accent); padding: 3mm; text-align: center; }
+  .chiffre .v { font-size: 17pt; font-weight: 700; display: block; line-height: 1.1; }
+  .chiffre .l { font-size: 8pt; color: var(--gris-clair); text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .ok { color: var(--vert); font-weight: 600; }
+  .ko { color: var(--rouge); font-weight: 600; }
+  .att { color: var(--ambre); font-weight: 600; }
+
+  .legende { font-size: 8.6pt; color: var(--gris-clair); margin: -3mm 0 5mm; font-style: italic; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════ COUVERTURE ══ -->
+<div class="couverture">
+  <div class="haut">
+    <div class="ecole">ECE Paris · Bachelor 3 Data &amp; IA</div>
+    <h1>SmartRoom&nbsp;Manager</h1>
+    <p class="sous">Réservation intelligente de salles de campus — de l’analyse du besoin à la mise en production, en passant par la conception, la réalisation, la qualité logicielle et l’exploitation.</p>
+    <div class="filet"></div>
+    <dl>
+      <dt>Nature</dt><dd>Rapport de projet</dd>
+      <dt>Formation</dt><dd>Bachelor 3 Data &amp; Intelligence Artificielle</dd>
+      <dt>Établissement</dt><dd>ECE Paris</dd>
+      <dt>Auteur</dt><dd>Dylan Menga Wanda</dd>
+      <dt>Application</dt><dd>https://smartroommanager.vercel.app</dd>
+      <dt>Dépôt</dt><dd>https://github.com/DD542/SmartRoomManager</dd>
+    </dl>
+  </div>
+  <div class="bas">
+    <span>Rapport de projet — SmartRoom Manager</span>
+    <span>Septembre 2026</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ SOMMAIRE ══ -->
+<div class="sommaire">
+  <h2>Sommaire</h2>
+  <ol>
+    <li>Contexte, problème et périmètre
+      <ol><li>La situation observée</li><li>Les trois problèmes traités</li><li>Ce que le projet livre</li><li>Cadre académique et dimension Data &amp; IA</li><li>Méthode de travail</li></ol>
+    </li>
+    <li>Analyse
+      <ol><li>Acteurs</li><li>Cas d’usage</li><li>Exigences fonctionnelles</li><li>Exigences non fonctionnelles</li><li>Contraintes et leurs conséquences</li></ol>
+    </li>
+    <li>Conception fonctionnelle et maquettage Figma
+      <ol><li>Démarche de maquettage</li><li>Inventaire des écrans</li><li>Système de design</li><li>Le tunnel de réservation</li><li>Du maquettage au code</li></ol>
+    </li>
+    <li>Architecture technique
+      <ol><li>Vue d’ensemble</li><li>Découpage en couches</li><li>Justification des choix</li><li>Le flux de l’assistant</li></ol>
+    </li>
+    <li>Modèle de données
+      <ol><li>Volumétrie et domaines</li><li>La contrainte qui porte l’intégrité</li><li>Recherche vectorielle</li><li>Stratégie de migration</li></ol>
+    </li>
+    <li>Réalisation — back-end
+      <ol><li>Authentification et sessions</li><li>Permissions</li><li>Concurrence et interblocages</li><li>Ordonnanceur</li><li>Moteur de recommandation</li><li>Notifications et courriels</li></ol>
+    </li>
+    <li>Réalisation — front-end
+      <ol><li>Organisation</li><li>Couche d’accès et adaptateurs</li><li>Gardes de routage</li><li>Un piège de fuseau horaire</li></ol>
+    </li>
+    <li>L’assistant conversationnel
+      <ol><li>Catalogue d’outils</li><li>Architecture à trois étages</li><li>Un repli parfois choisi</li><li>Recherche documentaire hybride</li><li>Garde-fous</li><li>Budget et observabilité</li></ol>
+    </li>
+    <li>Sécurité et conformité
+      <ol><li>Gestion des secrets</li><li>Cloisonnement des données personnelles</li><li>Retrait d’un compte par anonymisation</li><li>Journal d’audit</li></ol>
+    </li>
+    <li>Stratégie de tests
+      <ol><li>Cinq niveaux, cinq intentions</li><li>Chiffres</li><li>Le principe de la contre-épreuve</li><li>Ce que les tests ont réellement attrapé</li></ol>
+    </li>
+    <li>Intégration continue
+      <ol><li>Composition de la chaîne</li><li>Trois causes d’échec indépendantes</li><li>Deux pièges d’environnement</li></ol>
+    </li>
+    <li>Fonctionnement en local
+      <ol><li>Démarrage de la pile</li><li>Le préchauffage des modèles</li><li>Le budget de premier jeton</li><li>Jeu de démonstration</li></ol>
+    </li>
+    <li>Déploiement en production
+      <ol><li>Cible retenue</li><li>Le front devant l’API</li><li>Point d’entrée du conteneur</li><li>La sonde de démarrage</li><li>Chaîne d’incidents de connexion</li><li>Persistance des médias</li><li>L’assistant en ligne</li><li>Supervision</li></ol>
+    </li>
+    <li>Journal complet des incidents</li>
+    <li>Écarts entre local et production</li>
+    <li>Limites connues et perspectives</li>
+    <li>Bilan et enseignements</li>
+    <li>Annexes</li>
+  </ol>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ 1 ══ -->
+<section>
+<h2><span class="num">1</span>Contexte, problème et périmètre</h2>
+
+<h3>1.1 La situation observée</h3>
+<p>Un campus dispose de salles de natures très différentes — amphithéâtres de quatre-vingt-dix places, laboratoires équipés, salles de réunion de quatre à douze personnes — réparties dans plusieurs bâtiments parfois distants de plusieurs rues. Leur réservation se fait couramment par un tableur partagé, un courriel au secrétariat, ou un affichage papier collé sur la porte.</p>
+<p>Ces trois mécanismes ont un point commun : <strong>aucun ne peut garantir qu’une salle n’est pas déjà prise.</strong> Le tableur autorise deux écritures simultanées. Le courriel dépend de la disponibilité d’une personne. Le papier n’est visible que par celui qui passe devant.</p>
+
+<h3>1.2 Les trois problèmes traités</h3>
+
+<h4>On ne sait pas ce qui est libre</h4>
+<p>Chercher une salle revient à ouvrir plusieurs sources et à les recouper mentalement. Le coût n’est pas le temps passé : c’est le renoncement. La personne réserve « au cas où », ce qui bloque un créneau dont elle ne se servira peut-être pas, et aggrave la pénurie qu’elle subissait.</p>
+
+<h4>Deux personnes réservent le même créneau</h4>
+<p>Sans arbitre technique, le conflit ne se découvre pas au moment de la réservation mais devant la porte. Le coût réel n’est pas la double écriture en base : c’est la réunion qui n’a pas lieu, et les six personnes qui repartent.</p>
+
+<h4>Les salles réservées restent vides</h4>
+<p>Personne ne vient, et le créneau reste bloqué pour tous les autres. Un système qui ne mesure pas la présence effective ne peut pas libérer ce qui ne sert pas. C’est le problème le moins visible et le plus coûteux, parce qu’il est invisible : la salle apparaît occupée dans le système et vide dans la réalité.</p>
+
+<h3>1.3 Ce que le projet livre</h3>
+<p>Une application web complète — interface utilisateur, interface d’administration, API documentée, base de données, ordonnanceur et assistant conversationnel — qui répond aux trois problèmes par trois mécanismes distincts :</p>
+<ul>
+  <li><strong>Trouver</strong> — une recherche multicritère et un moteur de recommandation qui n’affichent que des salles réellement libres <em>et</em> conformes aux règles en vigueur.</li>
+  <li><strong>Réserver</strong> — une écriture atomique dont la garantie de non-chevauchement est portée par la base de données elle-même, et non par du code applicatif qu’on pourrait contourner.</li>
+  <li><strong>Entrer et libérer</strong> — un code d’accès émis à l’approche du créneau, une validation de présence dans une fenêtre courte, et une libération automatique du créneau lorsque personne ne se présente.</li>
+</ul>
+
+<h3>1.4 Cadre académique et dimension Data &amp; IA</h3>
+<p>Projet individuel de <strong>Bachelor 3 Data &amp; Intelligence Artificielle</strong> à l’ECE Paris. L’application n’est pas exploitée commercialement et ne constitue pas un service ouvert au public — ce que rappellent explicitement ses mentions légales.</p>
+<p>La dimension Data &amp; IA n’est pas un habillage ajouté après coup : elle porte deux briques fonctionnelles réelles du produit.</p>
+<p><strong>Le moteur de recommandation</strong> ordonne les salles compatibles selon un score composite dont chaque composante est calculée séparément et exposée. L’interface peut donc dire <em>pourquoi</em> une salle arrive en tête — exigence d’explicabilité qui a orienté toute sa conception.</p>
+<p><strong>L’assistant conversationnel</strong> répond en langage naturel en s’appuyant sur quatorze outils qui interrogent la vraie base, et sur une base de connaissances vectorisée interrogée par recherche hybride. Il est encadré par trois garde-fous : détection d’injection, contrôle d’étayage, et anonymisation avant tout envoi à un tiers.</p>
+
+<h3>1.5 Méthode de travail</h3>
+<p>Une règle a structuré tout le projet, et particulièrement sa seconde moitié : <strong>mesurer avant d’affirmer</strong>. Plusieurs diagnostics initiaux se sont révélés faux, et à chaque fois c’est une mesure — souvent qu’il a d’abord fallu rendre possible — qui a tranché.</p>
+<p>Cette discipline a une conséquence visible dans le dépôt : les messages de commit ne décrivent pas seulement ce qui change, mais ce qui a été observé, ce qui a été essayé et abandonné, et ce qui prouve que la correction fonctionne.</p>
+
+<div class="encadre choix">
+  <div class="titre">Principe retenu</div>
+  <p><strong>Un test qui ne peut pas échouer ne prouve rien.</strong> Chaque correction d’importance est accompagnée d’une contre-épreuve : on vérifie que le test échoue bien lorsqu’on retire le correctif. Cette pratique a, à elle seule, invalidé un correctif qui semblait bon — le motif de recherche avait été replié sur plusieurs lignes par le formateur, et le remplacement n’avait rien changé.</p>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ 2 ══ -->
+<section>
+<h2><span class="num">2</span>Analyse</h2>
+
+<h3>2.1 Acteurs</h3>
+<table>
+  <tr><th style="width:26mm">Acteur</th><th>Ce qu’il fait</th><th>Ce qu’il ne peut pas faire</th></tr>
+  <tr><td><strong>Utilisateur</strong></td><td>Cherche une salle, réserve, modifie, annule, valide sa présence, consulte ses statistiques, ouvre un ticket, dialogue avec l’assistant</td><td>Voir les données d’autrui, modifier le parc, changer les règles</td></tr>
+  <tr><td><strong>Administrateur</strong></td><td>Gère le parc, arbitre les conflits, configure les règles, traite le support, exporte les données</td><td>Agir hors de son périmètre de permissions</td></tr>
+  <tr><td><strong>Propriétaire</strong></td><td>Administrateur portant les sept permissions, gère les autres administrateurs et leurs invitations</td><td>—</td></tr>
+  <tr><td><strong>Ordonnanceur</strong></td><td>Libère les créneaux sans présence, clôt les réservations passées, envoie rappels et courriels, rafraîchit les agrégats, purge les jetons</td><td>—</td></tr>
+</table>
+
+<div class="encadre choix">
+  <div class="titre">Pourquoi séparer administrateur et propriétaire</div>
+  <p>Une matrice de permissions où tout le monde a tout ne prouve rien, et l’écran des rôles n’aurait rien à montrer. Le jeu de démonstration porte donc <strong>cinq comptes d’administration aux périmètres volontairement différents</strong> : un propriétaire, un directeur de site limité aux salles, au support et aux conflits, une référente support limitée au support et aux conflits, et deux périmètres partiels. La démonstration du cloisonnement devient alors possible devant un jury.</p>
+</div>
+
+<h3>2.2 Cas d’usage</h3>
+<table>
+  <tr><th style="width:12mm">Réf.</th><th style="width:44mm">Cas d’usage</th><th>Déroulé et règles appliquées</th></tr>
+  <tr><td>U1</td><td>Réserver une salle</td><td>L’utilisateur décrit son besoin (date, plage, effectif, équipements). Le système ne propose que des salles libres et conformes. Confirmation par courriel ; code d’accès une heure avant le créneau.</td></tr>
+  <tr><td>U2</td><td>Valider sa présence</td><td>À l’ouverture du créneau, saisie du code affiché sur l’écran de la salle. Fenêtre de dix minutes ; passé ce délai, le créneau est libéré automatiquement.</td></tr>
+  <tr><td>U3</td><td>Annuler ou modifier</td><td>Jusqu’à une heure avant le début, délai configurable par salle. Motif obligatoire. Les participants sont prévenus par courriel.</td></tr>
+  <tr><td>U4</td><td>Demander un accès</td><td>Certaines salles exigent un badge. L’utilisateur formule une demande motivée, un administrateur arbitre avec trace.</td></tr>
+  <tr><td>U5</td><td>Arbitrer un conflit</td><td>Deux demandes concurrentes sur un créneau contraint remontent à l’administration, sous une référence lisible (<code>#CONF-8492</code>).</td></tr>
+  <tr><td>U6</td><td>Configurer les règles</td><td>Durées minimale et maximale, battement, préavis, horizon, quota hebdomadaire, délai d’annulation, fenêtre de validation. Portée établissement, bâtiment ou salle.</td></tr>
+  <tr><td>U7</td><td>Interroger l’assistant</td><td>En langage naturel : ses réservations, une salle libre, l’emplacement d’une salle, une procédure, l’ouverture d’un ticket.</td></tr>
+  <tr><td>U8</td><td>Administrer le parc</td><td>Bâtiments, étages, plans d’étage, salles, photos, repères de localisation, équipements, statuts.</td></tr>
+  <tr><td>U9</td><td>Suivre l’occupation</td><td>Tableaux de bord, heures de pointe, taux d’occupation par salle, exports CSV.</td></tr>
+  <tr><td>U10</td><td>Gérer les comptes</td><td>Suspension motivée avec courriel, réactivation avec courriel, retrait définitif par anonymisation.</td></tr>
+</table>
+
+<h3>2.3 Exigences fonctionnelles</h3>
+<ul>
+  <li>Recherche multicritère : date, plage horaire, capacité, équipements, accessibilité PMR, bâtiment.</li>
+  <li>Recommandation ordonnée, avec explication du score attribué.</li>
+  <li>Réservation atomique, sans chevauchement possible en aucune circonstance.</li>
+  <li>Réservations récurrentes, avec possibilité d’annuler une occurrence isolée sans toucher à la série.</li>
+  <li>Participants, invitations et réponses.</li>
+  <li>Code d’accès à usage unique par réservation, émis à l’approche du créneau.</li>
+  <li>Validation de présence dans une fenêtre courte et bornée.</li>
+  <li>Libération automatique du créneau en cas d’absence constatée.</li>
+  <li>Fermetures exceptionnelles à trois portées, et horaires d’ouverture par bâtiment.</li>
+  <li>Notifications applicatives <em>et</em> courriels, rendus depuis des gabarits modifiables sans redéploiement.</li>
+  <li>Journal d’audit de toute décision d’administration, exportable.</li>
+  <li>Statistiques personnelles et globales, exportables.</li>
+  <li>Assistant conversationnel outillé, citant ses sources.</li>
+</ul>
+
+<h3>2.4 Exigences non fonctionnelles</h3>
+<table>
+  <tr><th style="width:34mm">Exigence</th><th>Traduction technique retenue</th></tr>
+  <tr><td><strong>Intégrité</strong></td><td>Contrainte <code>EXCLUDE USING gist</code> en base : aucun chevauchement n’est représentable, quel que soit le chemin d’écriture.</td></tr>
+  <tr><td><strong>Confidentialité</strong></td><td>Portées de session distinctes, permissions granulaires, en-têtes de cache stricts sur toute route personnelle.</td></tr>
+  <tr><td><strong>Traçabilité</strong></td><td>Journal d’audit métier, journal par tour d’assistant, journaux applicatifs structurés en JSON.</td></tr>
+  <tr><td><strong>Robustesse</strong></td><td>Dégradations prévues <em>et testées</em> : sans modèle de langage, sans modèle de vecteurs, sans relais de courriel, l’application continue de fonctionner.</td></tr>
+  <tr><td><strong>Testabilité</strong></td><td>Couche métier pure, sans dépendance, exigée à 100 % de couverture de branches.</td></tr>
+  <tr><td><strong>Portabilité</strong></td><td>Conteneurisation, migrations versionnées, aucune valeur de configuration codée en dur.</td></tr>
+  <tr><td><strong>Accessibilité</strong></td><td>Libellés visibles <em>et</em> lisibles par lecteur d’écran ; conformité WCAG 2.5.3 sur les déclencheurs.</td></tr>
+</table>
+
+<h3>2.5 Contraintes et leurs conséquences</h3>
+<p><strong>Budget nul.</strong> L’hébergement devait tenir sur des paliers gratuits. Cette contrainte n’a pas été subie mais intégrée à la conception : elle a directement produit l’architecture à trois étages de l’assistant, la stratégie de versionnement des médias, et la dégradation propre décrite au chapitre 13.</p>
+<p><strong>Un seul développeur.</strong> D’où le choix d’outils à faible coût d’exploitation, et d’une chaîne d’intégration continue exigeante qui remplace la relecture par un pair : c’est elle qui a détecté trois défauts que la relecture aurait pu laisser passer.</p>
+<p><strong>Pas de GPU en production.</strong> Aucun hébergement gratuit ne fait tourner un modèle de sept milliards de paramètres. L’assistant devait donc fonctionner sans modèle local — ce qui a imposé une architecture où le modèle est un <em>confort</em> et non une <em>dépendance</em>.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ 3 ══ -->
+<section>
+<h2><span class="num">3</span>Conception fonctionnelle et maquettage Figma</h2>
+
+<h3>3.1 Démarche de maquettage</h3>
+<p>L’ensemble des écrans a été maquetté sur <strong>Figma</strong> avant toute ligne de code. Ce choix n’était pas cosmétique : le maquettage a servi trois usages, dont deux n’ont rien à voir avec l’apparence.</p>
+
+<h4>Figer le vocabulaire</h4>
+<p>Les maquettes ont imposé un vocabulaire unique avant l’implémentation — <em>créneau</em>, <em>battement</em>, <em>préavis</em>, <em>horizon</em>, <em>repère</em>, <em>plan d’étage</em>. Sans cette étape, un même objet aurait porté trois noms entre l’interface, l’API et la base de données, comme cela arrive régulièrement lorsque l’écran est dessiné après le schéma.</p>
+<p>La distinction entre <strong>repère de localisation</strong> (une image attachée à la salle, qui montre où elle se trouve) et <strong>plan d’étage</strong> (un document déposé par l’administration, sur lequel les salles sont positionnées) vient directement du maquettage. Elle a plus tard produit un vrai défaut, décrit à l’incident n° 12, précisément parce que l’implémentation avait oublié l’un des deux côté utilisateur.</p>
+
+<h4>Révéler les trous fonctionnels</h4>
+<p>Deux besoins ont été découverts en dessinant, et non en analysant.</p>
+<p>L’écran de <strong>validation de présence</strong> a fait apparaître qu’une validation sans borne temporelle n’a pas de sens : si l’on peut valider à tout moment, la libération automatique devient impossible. D’où la fenêtre de dix minutes, qui n’était pas dans l’analyse initiale.</p>
+<p>L’écran d’<strong>arbitrage des conflits</strong> a fait apparaître le besoin d’une référence lisible et prononçable pour chaque conflit. Un identifiant UUID ne se lit pas à voix haute dans un couloir ; <code>#CONF-8492</code> si.</p>
+
+<h4>Fixer le système de design</h4>
+<p>Le troisième usage est le plus classique : les maquettes ont défini les jetons de couleur, les espacements, les états et les composants récurrents. Cela a permis d’écrire les composants React une fois pour toutes, plutôt que de styler chaque page.</p>
+
+<h3>3.2 Inventaire des écrans</h3>
+<p>Vingt écrans ont été maquettés, répartis en trois familles. Ils ont donné, à l’implémentation, <strong>52 écrans React</strong> — un écran maquetté produisant parfois plusieurs vues (liste, détail, création, édition).</p>
+<table>
+  <tr><th style="width:26mm">Famille</th><th>Écrans</th></tr>
+  <tr><td><strong>Public</strong></td><td>Page de présentation, connexion utilisateur, connexion administration, création de compte, mot de passe oublié, mentions légales</td></tr>
+  <tr><td><strong>Utilisateur</strong></td><td>Tableau de bord, catalogue des salles, fiche de salle, tunnel de réservation (4 étapes), mes réservations, détail d’une réservation, validation de présence, notifications, profil, statistiques personnelles</td></tr>
+  <tr><td><strong>Administration</strong></td><td>Tableau de bord d’occupation, parc (bâtiments, étages, plans, salles), comptes et rôles, règles de réservation, arbitrage des conflits, support et FAQ, réglages de l’assistant, journal d’audit, rapports et exports</td></tr>
+</table>
+
+<h3>3.3 Système de design</h3>
+<p>Le produit est en <strong>thème sombre</strong>. Choix assumé pour un outil consulté plusieurs fois par jour, souvent dans des salles peu éclairées, et souvent sur mobile en marchant d’un bâtiment à l’autre.</p>
+<p>Il repose sur des <strong>jetons</strong> — fond, surface, contenu, accent, états — déclarés une fois et consommés par tous les composants. Un statut de salle (<code>disponible</code>, <code>maintenance</code>, <code>indisponible</code>) porte donc la même couleur partout, sans qu’aucun écran ne la redéfinisse.</p>
+<p>Les composants récurrents ont été extraits dès le maquettage : carte, section, badge de statut, barre d’occupation, sélecteur de créneau, modale de confirmation avec champ de motif, zone de danger. Le dépôt en compte <strong>152</strong>.</p>
+
+<div class="encadre choix">
+  <div class="titre">Une règle d’interface appliquée deux fois</div>
+  <p><strong>Un bouton présent qui échoue à chaque clic est pire que pas de bouton</strong> — il fait croire à une panne là où il n’y a qu’une fonctionnalité non écrite.</p>
+  <p>Cette règle, posée d’abord pour le bouton de connexion Google (masqué tant que l’identifiant client n’est pas configuré), a plus tard servi à retirer les formats d’export PDF et Excel du panneau de rapports : ils y figuraient, et la couche de données les refusait systématiquement.</p>
+</div>
+
+<h3>3.4 Le tunnel de réservation</h3>
+<p>Le tunnel comporte quatre étapes, et cet ordre a été discuté au maquettage.</p>
+<table>
+  <tr><th style="width:8mm">#</th><th style="width:32mm">Étape</th><th>Contenu et justification</th></tr>
+  <tr><td>1</td><td><strong>Le besoin</strong></td><td>Date, plage horaire, effectif, équipements souhaités. Aucune salle n’est encore affichée.</td></tr>
+  <tr><td>2</td><td><strong>La salle</strong></td><td>Uniquement celles qui sont libres <em>et</em> conformes aux règles, ordonnées par score de recommandation, avec l’explication du score.</td></tr>
+  <tr><td>3</td><td><strong>Le créneau</strong></td><td>Confirmation de l’horaire exact, battement appliqué, contraintes d’ouverture vérifiées.</td></tr>
+  <tr><td>4</td><td><strong>La confirmation</strong></td><td>Objet, participants, récapitulatif, conditions d’accès.</td></tr>
+</table>
+<p>Montrer les salles avant d’avoir recueilli le besoin obligerait l’utilisateur à filtrer lui-même une liste dont la plupart des entrées lui sont inutiles. L’ordre retenu fait porter ce travail au système — ce qui est exactement l’objet du produit.</p>
+
+<h3>3.5 Du maquettage au code</h3>
+<p>Le passage s’est fait composant par composant plutôt qu’écran par écran. Concrètement : les jetons d’abord, puis les primitives (carte, badge, bouton, champ), puis les composants métier (sélecteur de créneau, carte de salle, frise de réservation), puis les écrans qui les assemblent.</p>
+<p>Le bénéfice s’est mesuré tard dans le projet : lorsqu’il a fallu ajouter l’affichage du repère de localisation sur la fiche de salle côté utilisateur, la modification a tenu en quelques lignes, le composant d’affichage de plan existant déjà et étant utilisé par trois écrans d’administration.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ 4 ══ -->
+<section>
+<h2><span class="num">4</span>Architecture technique</h2>
+
+<h3>4.1 Vue d’ensemble</h3>
+<div class="schema">Navigateur
+     │
+     │  HTTPS — même origine, aucun préflight CORS
+     ▼
+┌─────────────────────────────────────────────┐
+│  Front React (Vite, Tailwind) — Vercel      │
+│  réécritures : /api/* et /media/* → Render  │
+└──────────────────┬──────────────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────────────┐
+│  API FastAPI — Render (image Docker)        │
+│                                             │
+│  app/api        routage, validation         │
+│  app/services   orchestration métier        │
+│  app/domain     règles pures, testables     │
+│  app/models     cartographie SQLAlchemy     │
+│  app/ai         agent, outils, RAG, gardes  │
+│  app/tasks      ordonnanceur APScheduler    │
+└──────┬───────────────────────┬──────────────┘
+       │                       │
+       ▼                       ▼
+┌──────────────┐      ┌────────────────────────┐
+│ PostgreSQL   │      │  Étage A : Ollama      │
+│ + pgvector   │      │  Étage B : API OpenAI  │
+│ (Neon)       │      │  Étage C : déterministe│
+└──────────────┘      └────────────────────────┘</div>
+
+<h3>4.2 Découpage en couches</h3>
+<p>Le back-end est découpé en quatre couches, avec une règle de dépendance stricte : <strong>chacune ne connaît que la suivante, jamais la précédente.</strong></p>
+<table>
+  <tr><th style="width:30mm">Couche</th><th>Responsabilité</th><th style="width:34mm">Interdit</th></tr>
+  <tr><td><code>app/api</code></td><td>Routage, validation d’entrée, sérialisation de sortie, dépendances d’authentification, en-têtes de cache</td><td>Toute règle métier</td></tr>
+  <tr><td><code>app/services</code></td><td>Orchestration : lire, appliquer les règles, écrire, journaliser l’audit, programmer les notifications (17 services)</td><td>Connaître HTTP</td></tr>
+  <tr><td><code>app/domain</code></td><td>Cœur métier <strong>pur</strong> : créneaux libres, application des règles, détection de conflits, pondération des recommandations</td><td>Importer SQLAlchemy, FastAPI, ou quoi que ce soit d’extérieur</td></tr>
+  <tr><td><code>app/models</code></td><td>Cartographie SQLAlchemy et rien d’autre</td><td>Contenir de la logique</td></tr>
+</table>
+<p>C’est la pureté de <code>app/domain</code> qui permet d’en exiger <strong>100 % de couverture de branches</strong> sans monter la moindre base de données : ses tests s’exécutent en millisecondes et n’ont besoin d’aucun environnement.</p>
+<p>Le bénéfice s’est vérifié à l’usage : un défaut de pondération se corrige dans le domaine, avec un test qui tourne instantanément, sans toucher au reste de l’application.</p>
+
+<h3>4.3 Justification des choix</h3>
+<table>
+  <tr><th style="width:30mm">Choix</th><th style="width:34mm">Alternative écartée</th><th>Raison</th></tr>
+  <tr><td><strong>PostgreSQL</strong></td><td>MySQL, SQLite</td><td>Seul à offrir <code>EXCLUDE USING gist</code> sur des intervalles. La garantie d’intégrité devient native au lieu d’être applicative — c’est le choix structurant du projet.</td></tr>
+  <tr><td><strong>pgvector</strong></td><td>Pinecone, Qdrant, Chroma</td><td>Une seule base à exploiter, à sauvegarder, à migrer et à déployer. Pour un projet à un développeur, la simplicité d’exploitation prime.</td></tr>
+  <tr><td><strong>FastAPI</strong></td><td>Django, Flask</td><td>Validation par annotations de type, OpenAPI généré gratuitement, et asynchrone natif — nécessaire au flux SSE de l’assistant.</td></tr>
+  <tr><td><strong>SQLAlchemy 2 + psycopg3</strong></td><td>ORM Django</td><td>Accès aux types PostgreSQL avancés : <code>tstzrange</code>, <code>vector</code>, contraintes d’exclusion.</td></tr>
+  <tr><td><strong>Alembic</strong></td><td><code>create_all</code> au démarrage</td><td>Une migration se relit, se rejoue, se corrige et se raconte. Un <code>create_all</code> ne laisse aucune trace de l’évolution du schéma.</td></tr>
+  <tr><td><strong>React + Vite</strong></td><td>Next.js</td><td>Aucun besoin de rendu serveur ; un binaire statique se déploie sur n’importe quel hébergeur, y compris gratuit.</td></tr>
+  <tr><td><strong>Tailwind</strong></td><td>CSS modules, styled-components</td><td>Le système de design vit dans les jetons, pas dans des feuilles éparses qui divergent avec le temps.</td></tr>
+  <tr><td><strong>Server-Sent Events</strong></td><td>WebSocket</td><td>Le flux est unidirectionnel. SSE traverse les proxys sans configuration — ce qui s’est vérifié : le flux passe la réécriture Vercel sans réglage particulier.</td></tr>
+  <tr><td><strong>Ollama en local</strong></td><td>API distante uniquement</td><td>Développement hors ligne, sans coût, et sans qu’aucune donnée ne quitte le poste.</td></tr>
+</table>
+
+<h3>4.4 Le flux de l’assistant</h3>
+<div class="schema">Question ──► Inspection ──► Routage lexical ──► Choix du fournisseur
+                (injection)      (domaines)         (A → B → C)
+                                                          │
+                              ┌───────────────────────────┘
+                              ▼
+                    Tour de modèle (SSE)
+                              │
+                 ┌────────────┴────────────┐
+                 ▼                         ▼
+          Appels d’outils            Texte diffusé
+                 │                         │
+      ┌──────────┴──────────┐              │
+      ▼                     ▼              ▼
+  Lecture directe    Écriture → brouillon  Garde-fou
+  (carte + modèle)   (confirmation requise) d’étayage
+                                            │
+                                            ▼
+                                      Anonymisation
+                                      inverse, puis
+                                      affichage</div>
+<p>Les outils d’<strong>écriture</strong> ne s’exécutent jamais directement. Ils produisent un brouillon conservé côté serveur sous un jeton à usage unique, que l’utilisateur doit confirmer. Au moment de l’exécution, <strong>la sortie du modèle n’est jamais relue</strong> : c’est le brouillon validé qui part au service métier. Un modèle qui aurait changé d’avis entre les deux tours ne peut donc rien écrire.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ 5 ══ -->
+<section>
+<h2><span class="num">5</span>Modèle de données</h2>
+
+<div class="chiffres">
+  <div class="chiffre"><span class="v">46</span><span class="l">tables</span></div>
+  <div class="chiffre"><span class="v">13</span><span class="l">migrations</span></div>
+  <div class="chiffre"><span class="v">7</span><span class="l">domaines</span></div>
+  <div class="chiffre"><span class="v">768</span><span class="l">dimensions</span></div>
+</div>
+
+<h3>5.1 Volumétrie et domaines</h3>
+<table>
+  <tr><th style="width:32mm">Domaine</th><th>Tables principales</th></tr>
+  <tr><td><strong>Parc</strong></td><td><code>buildings</code>, <code>floors</code>, <code>floor_plans</code>, <code>rooms</code>, <code>room_photos</code>, <code>equipments</code>, <code>room_equipments</code>, <code>room_placements</code></td></tr>
+  <tr><td><strong>Réservations</strong></td><td><code>bookings</code>, <code>booking_participants</code>, <code>booking_series</code>, <code>booking_access_codes</code>, <code>access_requests</code>, <code>conflicts</code></td></tr>
+  <tr><td><strong>Règles</strong></td><td><code>booking_rules</code>, <code>opening_hours</code>, <code>closures</code></td></tr>
+  <tr><td><strong>Comptes</strong></td><td><code>users</code>, <code>user_preferences</code>, <code>admin_accounts</code>, <code>admin_permissions</code>, <code>permissions</code>, <code>admin_invitations</code>, <code>refresh_tokens</code>, <code>password_reset_tokens</code></td></tr>
+  <tr><td><strong>Support</strong></td><td><code>faq_categories</code>, <code>faq_articles</code>, <code>faq_fragments</code>, <code>tickets</code>, <code>ticket_messages</code>, <code>response_templates</code>, <code>chatbot_intents</code>, <code>chatbot_intent_keywords</code></td></tr>
+  <tr><td><strong>Notifications</strong></td><td><code>notifications</code>, <code>notification_templates</code></td></tr>
+  <tr><td><strong>Assistant</strong></td><td><code>chat_conversations</code>, <code>chat_messages</code>, <code>chat_tours</code></td></tr>
+  <tr><td><strong>Traçabilité</strong></td><td><code>audit_logs</code></td></tr>
+</table>
+
+<h3>5.2 La contrainte qui porte l’intégrité</h3>
+<pre>ALTER TABLE bookings ADD CONSTRAINT ex_bookings_no_overlap
+EXCLUDE USING gist (
+    room_id WITH =,
+    tstzrange(start_at, end_at, '[)') WITH &amp;&amp;
+) WHERE (status &lt;&gt; 'annulee');</pre>
+<p>Cette contrainte est le cœur de l’intégrité du produit. Elle rend <strong>impossible</strong> l’enregistrement de deux réservations qui se chevauchent dans la même salle. Pas improbable : impossible — quelle que soit la concurrence, quel que soit le chemin d’écriture, y compris une insertion faite à la main en SQL par un administrateur de base.</p>
+
+<h4>Le choix des bornes</h4>
+<p><code>'[)'</code> — borne de début incluse, borne de fin exclue. Une réservation de 9 h à 10 h et une autre de 10 h à 11 h peuvent donc coexister, ce qu’attend l’intuition. Avec <code>'[]'</code>, elles se chevaucheraient à 10 h précises et la seconde serait refusée.</p>
+
+<h4>La clause conditionnelle</h4>
+<p><code>WHERE (status &lt;&gt; 'annulee')</code> exclut les réservations annulées. Une annulation doit libérer le créneau <em>sans effacer la trace</em> : la ligne reste, l’historique est préservé, mais elle cesse d’occuper l’espace-temps.</p>
+
+<div class="encadre mesure">
+  <div class="titre">Ce que cette contrainte a réellement empêché</div>
+  <p>La suite de tests de concurrence lance dix demandes simultanées sur le même créneau. Sans la contrainte, plusieurs passeraient. Avec elle, exactement une réussit, et les neuf autres reçoivent une erreur applicative traduite en message métier. Le test s’exécute en 14 secondes — le temps de la sérialisation, qui fait précisément son office.</p>
+</div>
+
+<h3>5.3 Recherche vectorielle</h3>
+<p>La table <code>faq_fragments</code> porte une colonne <code>vector(768)</code>, indexée en <strong>HNSW</strong> avec l’opérateur <code>vector_cosine_ops</code>.</p>
+<pre>CREATE INDEX ix_faq_fragments_vecteur ON faq_fragments
+USING hnsw (vecteur vector_cosine_ops);</pre>
+<p>Le choix du <strong>cosinus</strong> plutôt que de la distance euclidienne a eu une conséquence heureuse au déploiement : le cosinus ignore la norme du vecteur, ce qui rend sans conséquence la troncature d’un modèle produisant 3 072 dimensions vers les 768 attendues (voir incident n° 21).</p>
+<p>La dimension est <strong>figée par la migration 0007</strong>. En changer impose une migration, jamais un simple redémarrage — contrainte qui a directement dicté un paramètre du client distant.</p>
+
+<h3>5.4 Stratégie de migration</h3>
+<p>Treize migrations, de <code>0001_schema_initial</code> à <code>0013_gabarit_reactivation</code>. Deux règles ont été appliquées sans exception.</p>
+<p><strong>Une migration déjà appliquée ne se réécrit pas.</strong> Elle se corrige par la suivante. La migration <code>0011</code> existe uniquement pour renommer une contrainte que <code>0010</code> avait mal nommée ; réécrire <code>0010</code> aurait cassé toutes les bases où elle était déjà passée, production comprise.</p>
+<p><strong>Un gabarit fonctionnel est posé par migration, pas seulement par le jeu de démonstration.</strong> La raison est subtile et a coûté un défaut réel : la fonction de notification ignore en silence un code de gabarit absent. Une fonctionnalité livrée sans son gabarit n’aurait donc rien fait, sur une base déjà installée, sans la moindre erreur pour le signaler.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ 6 ══ -->
+<section>
+<h2><span class="num">6</span>Réalisation — back-end</h2>
+
+<div class="chiffres">
+  <div class="chiffre"><span class="v">128</span><span class="l">routes</span></div>
+  <div class="chiffre"><span class="v">17</span><span class="l">services</span></div>
+  <div class="chiffre"><span class="v">22</span><span class="l">domaines d’API</span></div>
+  <div class="chiffre"><span class="v">1 102</span><span class="l">tests</span></div>
+</div>
+
+<h3>6.1 Authentification et sessions</h3>
+<table>
+  <tr><th style="width:38mm">Mécanisme</th><th>Réglage</th><th>Justification</th></tr>
+  <tr><td><strong>Jeton d’accès</strong> (JWT)</td><td>15 minutes</td><td>Court par choix : un jeton volé a une durée de nuisance bornée.</td></tr>
+  <tr><td><strong>Jeton de rafraîchissement</strong></td><td>Cookie <code>httpOnly</code>, 30 jours, chemin <code>/api/v1/auth</code></td><td>Inaccessible au JavaScript ; le chemin restreint limite sa diffusion aux seules requêtes qui en ont besoin.</td></tr>
+  <tr><td><strong>Rotation</strong></td><td>À chaque usage</td><td>Le jeton précédent est révoqué immédiatement.</td></tr>
+  <tr><td><strong>Détection de rejeu</strong></td><td>Révocation de la famille</td><td>Rejouer un jeton déjà tourné révoque <em>toute</em> la famille : la session tombe. C’est le comportement attendu face à un vol.</td></tr>
+  <tr><td><strong>Limitation</strong></td><td>5 connexions/min, 3 réinitialisations/h</td><td>Freine le bourrage d’identifiants sans gêner l’usage normal.</td></tr>
+</table>
+
+<h4>Deux portes distinctes</h4>
+<p><code>/auth/login</code> ouvre une session de portée <em>utilisateur</em> ; <code>/auth/admin/login</code> une session d’<em>administration</em>. Un compte administrateur connecté par la porte des utilisateurs n’obtient <strong>aucun</strong> privilège.</p>
+<div class="encadre mesure">
+  <div class="titre">Vérification en production</div>
+  <p>Les vingt-trois routes d’administration en lecture ont été interrogées avec les deux types de session. Résultat : <span class="ko">403</span> sur vingt-deux d’entre elles avec une session utilisateur, <span class="ok">200</span> sur les vingt-trois avec une session d’administration. Le cloisonnement fonctionne, et il est démontrable.</p>
+</div>
+
+<h4>Connexion Google</h4>
+<p>Par jeton d’identité vérifié contre les clés publiques de Google. Le code secret du client <strong>n’est pas utilisé</strong> : le navigateur obtient un jeton, le serveur le valide. Un domaine de messagerie peut être exigé — vide, tout compte Google est accepté ; <code>ece.fr,edu.ece.fr</code> fermerait l’application à la seule école.</p>
+
+<h3>6.2 Permissions</h3>
+<p>Sept permissions nommées, attribuées individuellement :</p>
+<table>
+  <tr><th style="width:44mm">Permission</th><th>Portée</th></tr>
+  <tr><td><code>rooms.manage</code></td><td>Bâtiments, étages, plans, salles, photos, équipements</td></tr>
+  <tr><td><code>rules.configure</code></td><td>Règles de réservation, horaires, fermetures</td></tr>
+  <tr><td><code>conflicts.arbitrate</code></td><td>Arbitrage des demandes concurrentes</td></tr>
+  <tr><td><code>support.handle</code></td><td>Tickets, FAQ, gabarits de réponse, intentions de l’assistant</td></tr>
+  <tr><td><code>users.manage</code></td><td>Comptes, suspensions, retraits, invitations d’administrateurs</td></tr>
+  <tr><td><code>data.export</code></td><td>Exports CSV des statistiques et de l’audit</td></tr>
+  <tr><td><code>system.configure</code></td><td>Réglages de l’assistant, paramètres système</td></tr>
+</table>
+
+<h3>6.3 Concurrence et interblocages</h3>
+<p>La contrainte d’exclusion garantit l’intégrité. Elle ne suffit pas à produire une <em>bonne erreur</em>.</p>
+<p>Dix demandes simultanées sur le même créneau concluent toutes que la salle est libre, puis s’affrontent sur la contrainte. PostgreSQL arbitre, mais au-delà de deux ou trois concurrents il détecte un cycle d’attente et sacrifie une transaction :</p>
+<pre>psycopg.errors.DeadlockDetected
+CONTEXT: while checking exclusion constraint on tuple (0,119)
+         in relation "bookings"</pre>
+<p>Le service ne traduisait que le code <code>23P01</code> (violation d’exclusion). Le <code>40P01</code> (interblocage) remontait tel quel, et l’utilisateur recevait une erreur technique là où il devait lire que le créneau venait d’être pris.</p>
+
+<h4>La correction retenue</h4>
+<pre>SELECT pg_advisory_xact_lock(hashtext('salle:' || :room_id));
+-- puis seulement : verification de disponibilite, puis insertion</pre>
+<p>Un verrou consultatif par salle, pris <strong>avant la vérification</strong> et non juste avant l’insertion : c’est la séquence entière <em>lire-puis-écrire</em> qui doit être indivisible. Le verrou est porté par la transaction, donc relâché au <code>COMMIT</code> comme au <code>ROLLBACK</code>. Avec un verrou unique par salle, aucun cycle d’attente n’est possible.</p>
+
+<div class="encadre choix">
+  <div class="titre">Pourquoi par salle et non par créneau</div>
+  <p>La contrainte parle de <strong>chevauchement</strong>, pas d’égalité. Une clé de verrou par créneau laisserait passer de front deux réservations qui se recouvrent partiellement — 9 h–11 h et 10 h–12 h ont des clés différentes mais se chevauchent. Le verrou doit donc porter sur la seule chose qu’elles ont en commun : la salle.</p>
+</div>
+
+<h3>6.4 Ordonnanceur</h3>
+<table>
+  <tr><th style="width:56mm">Tâche</th><th style="width:20mm">Période</th><th>Rôle</th></tr>
+  <tr><td>Libération, clôture et rappels</td><td>5 min</td><td>Libère les créneaux sans présence validée, clôt les réservations passées, envoie les rappels et vide la file de courriels</td></tr>
+  <tr><td>Rafraîchissement des agrégats</td><td>15 min</td><td>Recalcule la vue matérialisée d’occupation</td></tr>
+  <tr><td>Purge des jetons expirés</td><td>quotidienne</td><td>Supprime les jetons de session et de réinitialisation périmés</td></tr>
+</table>
+
+<h3>6.5 Moteur de recommandation</h3>
+<p>Première brique Data du projet. Il ordonne les salles compatibles selon un score composite <strong>explicable</strong> : chaque composante est calculée séparément et exposée, de sorte que l’interface peut justifier le classement.</p>
+<table>
+  <tr><th style="width:44mm">Composante</th><th>Ce qu’elle capture</th></tr>
+  <tr><td><strong>Adéquation de capacité</strong></td><td>Une salle de 90 places pour 4 personnes est un gâchis ; une salle de 4 places pour 4 personnes est juste. La composante pénalise l’écart dans les deux sens.</td></tr>
+  <tr><td><strong>Équipements</strong></td><td>Présence des équipements explicitement demandés.</td></tr>
+  <tr><td><strong>Proximité</strong></td><td>Bâtiment habituel de la personne, renseigné à l’inscription — d’où l’écran d’accueil qui le demande.</td></tr>
+  <tr><td><strong>Accessibilité</strong></td><td>Conformité PMR quand elle est requise.</td></tr>
+  <tr><td><strong>Occupation</strong></td><td>Taux d’occupation de la salle, pour répartir l’usage plutôt que saturer toujours les mêmes.</td></tr>
+</table>
+<p>Le calcul vit dans <code>app/domain/recommendation.py</code>, sans aucune dépendance externe, et est couvert à 100 % de ses branches.</p>
+
+<h3>6.6 Notifications et courriels</h3>
+<p>Deux canaux, un seul déclencheur. Chaque événement métier — confirmation, rappel, annulation, code d’accès, suspension, réactivation — produit une notification applicative <strong>et</strong> un courriel, tous deux rendus depuis un gabarit stocké en base et modifiable depuis l’administration, sans redéploiement.</p>
+
+<div class="encadre attention">
+  <div class="titre">Un défaut qui n’émettait aucune erreur</div>
+  <p>L’expédition est programmée en <strong>tâche de fond de la requête</strong> (<code>BackgroundTasks</code>), et non laissée à l’ordonnanceur.</p>
+  <p>Sans cela, le message est déposé dans la file du processus et personne ne la vide : il ne part qu’au passage suivant de l’ordonnanceur — jusqu’à cinq minutes plus tard — et jamais du tout si celui-ci est arrêté. Un administrateur qui vérifiait aussitôt ne voyait rien arriver, <em>sans la moindre erreur au journal</em>, le relais n’ayant rien reçu.</p>
+</div>
+<p>Le courriel ne suit qu’un <strong>changement réel d’état</strong> : réappliquer un statut déjà porté n’apprend rien à personne, et un courriel de trop est un courriel de moins qu’on lit.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ 7 ══ -->
+<section>
+<h2><span class="num">7</span>Réalisation — front-end</h2>
+
+<div class="chiffres">
+  <div class="chiffre"><span class="v">52</span><span class="l">écrans</span></div>
+  <div class="chiffre"><span class="v">152</span><span class="l">composants</span></div>
+  <div class="chiffre"><span class="v">474</span><span class="l">tests</span></div>
+  <div class="chiffre"><span class="v">90,25 %</span><span class="l">couverture</span></div>
+</div>
+
+<h3>7.1 Organisation</h3>
+<pre>src/
+  api/          couche d'acces HTTP, un module par domaine
+  components/   composants reutilisables, par famille
+  pages/        ecrans, par espace (public, user, admin)
+  hooks/        etat partage, requetes, formulaires
+  utils/        dates, formats, calculs d'affichage
+  router.jsx    routes et gardes</pre>
+
+<h3>7.2 Couche d’accès et adaptateurs</h3>
+<p>La couche <code>api/</code> est la <strong>seule</strong> à connaître l’existence du réseau. Aucun composant n’appelle <code>fetch</code> directement.</p>
+<p>Elle porte aussi les <strong>adaptateurs</strong>, qui traduisent les charges utiles de l’API — nommées en <code>snake_case</code> — vers les objets attendus par l’interface. Cette frontière a permis, à plusieurs reprises, d’ajouter un champ côté serveur sans toucher au moindre écran : c’est ainsi que <code>floor_has_plan</code> a été introduit pour supprimer une requête vouée à l’échec.</p>
+
+<h3>7.3 Gardes de routage</h3>
+<p>Trois familles de routes : publiques, utilisateur authentifié, administration authentifiée. La racine <code>/</code> redirige selon l’état de session — tableau de bord si une session est ouverte, page de présentation sinon.</p>
+<p>L’administration a sa propre page de connexion, <code>/admin/connexion</code>, cohérente avec la séparation des portes côté serveur décrite en 6.1.</p>
+
+<h3>7.4 Un piège de fuseau horaire</h3>
+<p>La répartition des réservations par tranche horaire lisait <code>Date.getHours()</code> — c’est-à-dire l’heure <strong>du poste</strong> — alors que les tranches 08–10, 10–12, 14–16 et 16–18 sont celles du campus.</p>
+<p>La chaîne d’intégration continue tourne en UTC. Une réservation de 9 h y devenait 7 h, ne tombait dans aucune tranche, et la page annonçait qu’il n’y avait pas assez de réservations sur un jeu qui en contenait 608.</p>
+<div class="encadre attention">
+  <div class="titre">Ce n’était pas un test fragile</div>
+  <p>Un navigateur réglé sur un autre fuseau — un utilisateur en déplacement, un poste mal configuré — affichait exactement la même page vide. La correction lit l’heure dans le fuseau de l’établissement via <code>Intl.DateTimeFormat</code>, sans dépendance nouvelle.</p>
+</div>
+<pre>const FUSEAU_CAMPUS = 'Europe/Paris';
+
+export function heureCampus(date) {
+  return Number(
+    new Intl.DateTimeFormat('en-GB', {
+      timeZone: FUSEAU_CAMPUS, hour: '2-digit', hourCycle: 'h23',
+    }).format(date)
+  );
+}</pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ 8 ══ -->
+<section>
+<h2><span class="num">8</span>L’assistant conversationnel</h2>
+
+<h3>8.1 Catalogue d’outils</h3>
+<p>L’assistant répond en s’appuyant sur des <strong>outils</strong> qui interrogent la vraie base — jamais sur ce qu’un modèle croit savoir. Quatorze outils sont enregistrés :</p>
+<table>
+  <tr><th style="width:30mm">Domaine</th><th>Outils</th><th style="width:20mm">Nature</th></tr>
+  <tr><td><strong>Parc</strong></td><td><code>rechercher_salles</code>, <code>recommander_salle</code>, <code>localiser_salle</code>, <code>consulter_disponibilite</code></td><td>lecture</td></tr>
+  <tr><td><strong>Réservations</strong></td><td><code>lister_mes_reservations</code>, <code>obtenir_code_acces</code>, <code>consulter_regles</code></td><td>lecture</td></tr>
+  <tr><td><strong>Réservations</strong></td><td><code>creer_reservation</code>, <code>modifier_reservation</code>, <code>annuler_reservation</code></td><td><strong>écriture</strong></td></tr>
+  <tr><td><strong>Assistance</strong></td><td><code>rechercher_faq</code>, <code>transferer_humain</code></td><td>lecture</td></tr>
+  <tr><td><strong>Assistance</strong></td><td><code>creer_ticket</code></td><td><strong>écriture</strong></td></tr>
+</table>
+
+<h3>8.2 Architecture à trois étages</h3>
+<table>
+  <tr><th style="width:34mm">Étage</th><th>Où</th><th>Rôle</th></tr>
+  <tr><td><strong>A — Ollama</strong></td><td>Poste de développement</td><td>Gratuit, hors ligne, aucune donnée ne sort. <code>qwen2.5:7b</code> et <code>nomic-embed-text</code>.</td></tr>
+  <tr><td><strong>B — API compatible OpenAI</strong></td><td>Production</td><td>N’existe que parce qu’aucun hébergement gratuit ne fait tourner un modèle de sept milliards de paramètres.</td></tr>
+  <tr><td><strong>C — Moteur déterministe</strong></td><td>Toujours disponible</td><td><strong>Ce n’est pas une panne</strong> : un moteur de repli qui reconnaît des intentions déclarées en base, appelle les mêmes outils, et répond sans aucun modèle.</td></tr>
+</table>
+<p>Le passage d’un étage à l’autre est journalisé avec son <strong>déclencheur</strong>, ce qui permet au tableau de bord d’administration de distinguer un repli subi d’un repli choisi.</p>
+
+<h3>8.3 Un repli parfois choisi</h3>
+<p>Une mesure a modifié la conception. Sur cinq essais identiques de « donne-moi mes prochaines réservations », pour un compte qui en possède cinq :</p>
+<table>
+  <tr><th style="width:44mm">Moteur</th><th>Appelle l’outil</th><th>Réponse</th></tr>
+  <tr><td>qwen2.5:7b</td><td>3 fois sur 5</td><td><span class="att">variable</span></td></tr>
+  <tr><td>qwen2.5:14b</td><td>0 fois sur 3</td><td><span class="ko">fausse</span></td></tr>
+  <tr><td>Moteur déterministe</td><td>2 fois sur 2</td><td><span class="ok">juste</span></td></tr>
+</table>
+<p>Quand le modèle n’appelle rien, il écrit une phrase plausible — parfois « je n’ai pas trouvé » — devant un agenda plein. <strong>L’utilisateur ne peut pas distinguer cette réponse d’une vraie.</strong></p>
+
+<h4>Un correctif essayé puis abandonné</h4>
+<p>Première tentative : exécuter la lecture avant que le modèle ne parle, et lui remettre le résultat. L’outil partait bien 5 fois sur 5, mais deux essais répondaient encore « je n’ai pas trouvé cette information » <em>à côté de la carte qui listait les réservations</em>. Le modèle contredisait la donnée qu’il avait sous les yeux.</p>
+
+<div class="encadre choix">
+  <div class="titre">Conclusion retenue</div>
+  <p>Le défaut n’est pas le modèle, c’est de lui laisser ce choix. <strong>Une question fermée dont la réponse est une liste n’a rien à gagner d’un modèle de langage et tout à perdre.</strong> Elle part désormais au moteur déterministe, et le journal la distingue par son déclencheur <code>intention_certaine</code> — pour qu’elle ne soit pas comptée comme une panne dans les statistiques.</p>
+  <p>Le déclenchement reste étroit : le pluriel possessif est exigé et les verbes d’écriture excluent, pour qu’« annuler ma réservation » garde son tour de confirmation. Douze cas de bord le verrouillent, plus une contre-épreuve vérifiant qu’une question ouverte consomme bien un tour de modèle.</p>
+</div>
+
+<h3>8.4 Recherche documentaire hybride</h3>
+<p>La base de connaissances est découpée en fragments, vectorisés et stockés en base. La recherche additionne <strong>deux</strong> volets, parce qu’ils échouent différemment :</p>
+<ul>
+  <li>le <strong>vectoriel</strong> retrouve « je n’arrive pas à entrer dans la salle » sous l’article « Code d’accès », sans partager un seul mot ; il rate en revanche un identifiant, un nom propre ou un mot rare, que l’embedding dilue ;</li>
+  <li>le <strong>lexical</strong> trouve le mot exact et rien d’autre ; il ne sait pas qu’annuler et supprimer sont proches.</li>
+</ul>
+<p>La fusion se fait par <strong>rangs réciproques</strong> (RRF) plutôt que par somme de scores. Une similarité cosinus et un <code>ts_rank</code> ne vivent pas sur la même échelle : les additionner reviendrait à comparer des degrés et des kilomètres. Les rangs, eux, sont comparables par construction.</p>
+
+<div class="encadre mesure">
+  <div class="titre">Mesure de l’apport, sur le corpus réel</div>
+  <table style="margin:2mm 0 0">
+    <tr><th style="width:56mm">Question</th><th>Lexical seul</th><th>Avec vecteurs</th></tr>
+    <tr><td>« comment je préviens que je suis arrivé »</td><td><span class="ko">aucun résultat</span></td><td><span class="ok">Valider ma présence sur place</span></td></tr>
+    <tr><td>« ma réunion est annulée que faire »</td><td>À quoi sert SmartRoom</td><td><span class="ok">Modifier l’horaire ou la salle</span></td></tr>
+    <tr><td>« je n’arrive pas à entrer dans la salle »</td><td>À quoi sert SmartRoom</td><td>Valider ma présence sur place</td></tr>
+  </table>
+  <p style="margin-top:2mm">La première question ne partage <strong>aucun mot</strong> avec l’article qui y répond.</p>
+</div>
+<p>Sans modèle de vecteurs joignable, la fonction de vectorisation rend <code>None</code> et la recherche retombe sur son seul volet lexical. <strong>C’est un mode dégradé prévu, pas un échec</strong> — et c’est exactement ce qui s’est produit en production avant que l’étage B ne soit configuré.</p>
+
+<h3>8.5 Garde-fous</h3>
+<table>
+  <tr><th style="width:32mm">Garde-fou</th><th>Ce qu’il empêche</th></tr>
+  <tr><td><strong>Injection</strong></td><td>Les délimiteurs sont neutralisés, les motifs suspects comptés dans le journal du tour. Une consigne cachée dans une question ne devient pas une instruction.</td></tr>
+  <tr><td><strong>Étayage</strong></td><td>La réponse est confrontée aux données réellement obtenues. Si elle avance ce qui n’y figure pas, une réserve est ajoutée. C’est ce garde-fou qui fait dire « je n’ai pas trouvé cette information » plutôt que d’inventer un chiffre.</td></tr>
+  <tr><td><strong>Anonymisation</strong></td><td>Avant tout envoi à un fournisseur distant, adresses, noms et téléphones sont remplacés par des jetons stables le temps de la conversation. La table de correspondance ne quitte jamais le serveur.</td></tr>
+  <tr><td><strong>Adresses de fichiers</strong></td><td>Toute clé se terminant par <code>_url</code> est retirée de ce que le modèle relit, et n’existe que dans la carte que le front sait rendre.</td></tr>
+</table>
+
+<div class="encadre choix">
+  <div class="titre">Deux décisions de conception dans ces garde-fous</div>
+  <p><strong>Le fournisseur distant refuse d’émettre</strong> tant qu’aucune fonction d’anonymisation n’est branchée. Un oubli de configuration ne doit pas se traduire par l’envoi de noms à un tiers. Cette garde était juste — et son absence de câblage a rendu tout un étage inatteignable (incident n° 19).</p>
+  <p><strong>La règle sur les adresses vit dans le type de résultat</strong>, et non chez chaque outil. Un outil peut oublier de signaler qu’il rend une adresse ; ce fichier-là ne peut pas oublier de la retirer.</p>
+</div>
+
+<h3>8.6 Budget et observabilité</h3>
+<p>Chaque tour est borné : budget de contexte (9 200 jetons), nombre d’itérations (5), nombre d’outils par tour (8), durée totale (25 s), délai de premier jeton (6 s).</p>
+<p>Le journal du tour enregistre : le mode, le modèle, le nombre d’itérations et de relances, les outils appelés et leur durée, le délai de premier jeton, les injections suspectées, les délimiteurs neutralisés, et la troncature éventuelle. Un écran d’administration l’expose.</p>
+<pre>{"mode": "modele", "modele": "gemini-3.5-flash-lite", "repli": false,
+ "iterations": 2, "outils": ["localiser_salle"], "duree_ms": 1559,
+ "premier_jeton_ms": 1124, "injection_suspectee": false, "tronque": false}</pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ 9 ══ -->
+<section>
+<h2><span class="num">9</span>Sécurité et conformité</h2>
+
+<h3>9.1 Gestion des secrets</h3>
+<p>Aucun secret n’est versionné. Le fichier <code>.env</code> est ignoré par git, et le modèle <code>.env.example</code> documente chaque variable sans en porter la valeur.</p>
+<p>Un fichier <code>.env</code> avait été committé aux premiers temps du projet. Il a été <strong>retiré de tout l’historique</strong> :</p>
+<pre>git filter-branch -f --index-filter \
+  "git rm --cached --ignore-unmatch smartroom-api/.env" --prune-empty -- --all
+git reflog expire --expire=now --all
+git gc --prune=now
+git push -f origin main</pre>
+<div class="encadre attention">
+  <div class="titre">Ce que la réécriture ne fait pas</div>
+  <p>Elle retire la trace, elle <strong>n’annule pas l’exposition</strong>. Tous les identifiants concernés ont donc été régénérés : mot de passe de base de données, mot de passe d’application de messagerie, clés d’API. C’est la régénération qui protège, pas la réécriture.</p>
+</div>
+
+<h3>9.2 Cloisonnement des données personnelles</h3>
+<p>Un défaut réel a été trouvé et corrigé, et il mérite d’être détaillé car il illustre une erreur de raisonnement courante.</p>
+<p>La route <code>/stats/me</code> portait <code>Cache-Control: private, max-age=300</code>. La directive semblait suffisante : <code>private</code> interdit aux intermédiaires de conserver la réponse ; seul le navigateur du destinataire la garde.</p>
+<p><strong>Mais un cache navigateur est indexé par URL</strong>, et <code>/stats/me</code> est la même URL pour tout le monde. Deux comptes ouverts successivement sur le même poste, à moins de cinq minutes d’intervalle, et le second lisait les chiffres du premier : nombre de réservations, heures réservées, annulations, salles fréquentées.</p>
+<div class="encadre mesure">
+  <div class="titre">Constat et vérification</div>
+  <p>Observé sur deux comptes affichant les mêmes dix réservations et les mêmes huit annulations. Vérifié en base : l’un des deux n’en avait aucune, et la réservation affichée appartenait au seul autre compte, dont il n’était même pas participant.</p>
+</div>
+<p><code>Vary: Authorization</code> isolerait les réponses, mais le jeton tourne à chaque rafraîchissement : le cache serait manqué à tous les coups. Autant ne rien garder, et le dire. La route est passée à <code>private, no-store</code>, ainsi que l’export CSV personnel — qui portait les mêmes données ligne à ligne, <em>sans aucun en-tête</em>.</p>
+<p>Les chiffres publics gardent leur cache : anonymes, identiques pour tous, rien n’y désigne personne. Un test le vérifie explicitement, sans quoi on supprimerait les deux d’un même geste et la page d’accueil rechargerait ses agrégats à chaque visite, pour rien.</p>
+
+<h3>9.3 Retrait d’un compte par anonymisation</h3>
+<p>La suspension empêche de réserver et se défait. Il manquait le geste définitif.</p>
+<p>Effacer la ligne casserait le journal d’audit, les frises de réservation et les agrégats d’occupation, qui référencent tous ce compte. <strong>Ce que le règlement demande n’est pas la disparition de l’historique : c’est celle de l’identité.</strong></p>
+<table>
+  <tr><th style="width:38mm">Ce qui est effacé</th><th>Ce qui est conservé</th></tr>
+  <tr><td>Adresse, nom, prénom, téléphone, promotion, service, badge, photo de profil, mot de passe</td><td>Réservations passées (sans nom), agrégats d’occupation, entrées d’audit, séries</td></tr>
+</table>
+<p>L’adresse devient <code>compte-retire-&lt;12 caractères&gt;@anonyme.invalid</code>. Le domaine <code>.invalid</code> est réservé par la <strong>RFC 2606</strong> : aucune remise n’est possible, donc aucun envoi accidentel n’atteindra une boîte réelle.</p>
+<p>Les réservations à venir sont annulées et les créneaux libérés — les laisser occuperait des salles au nom de quelqu’un qui n’existe plus. Les sessions ouvertes sont révoquées.</p>
+<p>Trois refus précèdent toute écriture, chacun avec son test : un motif vide, un compte porteur de droits d’administration (les retirer est une décision distincte, avec son écran et sa trace), et le compte de l’auteur de la demande.</p>
+
+<h3>9.4 Journal d’audit</h3>
+<p>Toute décision d’administration — création, modification, suppression, suspension, réactivation, arbitrage, dépôt de document — est enregistrée avec son auteur, sa cible, son action, son motif et son horodatage. L’écran d’audit permet de la relire, de la filtrer et de l’exporter en CSV.</p>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════ 10 ══ -->
+<section>
+<h2><span class="num">10</span>Stratégie de tests</h2>
+
+<h3>10.1 Cinq niveaux, cinq intentions</h3>
+<table>
+  <tr><th style="width:30mm">Niveau</th><th>Ce qu’il éprouve</th><th style="width:34mm">Dépendances</th></tr>
+  <tr><td><strong>Domaine</strong></td><td>Les règles métier, en isolation totale</td><td>Aucune</td></tr>
+  <tr><td><strong>Services et API</strong></td><td>L’intégration réelle : contrainte d’exclusion, JWT, transactions</td><td>PostgreSQL</td></tr>
+  <tr><td><strong>Assistant</strong></td><td>La boucle d’agent, les outils, les garde-fous, les bascules</td><td>Base + fournisseur simulé</td></tr>
+  <tr><td><strong>Front</strong></td><td>Les écrans et leur logique</td><td>MSW intercepte le réseau</td></tr>
+  <tr><td><strong>Bout en bout</strong></td><td>Les parcours complets dans un vrai navigateur</td><td>Pile complète</td></tr>
+</table>
+
+<h3>10.2 Chiffres</h3>
+<div class="chiffres">
+  <div class="chiffre"><span class="v">1 576</span><span class="l">tests au total</span></div>
+  <div class="chiffre"><span class="v">1 102</span><span class="l">back-end</span></div>
+  <div class="chiffre"><span class="v">474</span><span class="l">front-end</span></div>
+  <div class="chiffre"><span class="v">100 %</span><span class="l">domaine</span></div>
+</div>
+<table>
+  <tr><th style="width:46mm">Suite</th><th>Tests</th><th>Couverture</th><th>Fichiers</th></tr>
+  <tr><td><strong>Back-end complet</strong></td><td><strong>1 102</strong></td><td>—</td><td>46</td></tr>
+  <tr><td>· dont Domaine</td><td>—</td><td><strong>100 % des branches</strong> (seuil imposé)</td><td>—</td></tr>
+  <tr><td>· dont Services et API</td><td>545</td><td>87,59 %</td><td>—</td></tr>
+  <tr><td>· dont Assistant</td><td>159</td><td>84,71 %</td><td>—</td></tr>
+  <tr><td><strong>Front-end</strong></td><td><strong>474</strong></td><td>90,25 % (mesurée en UTC)</td><td>46</td></tr>
+  <tr><td><strong>Bout en bout</strong></td><td>3 parcours</td><td>—</td><td>3</td></tr>
+</table>
+<p class="legende">Relevés le jour de la rédaction, sur la pile complète. Tous verts.</p>
+
+<h3>10.3 Le principe de la contre-épreuve</h3>
+<p><strong>Un test qui ne peut pas échouer ne prouve rien.</strong> Chaque correctif d’importance est accompagné d’une vérification que le test échoue bien sans lui. Plusieurs messages de commit en portent la trace explicite :</p>
+<ul>
+  <li>« Sans le correctif, la trace porte deux cartes au lieu d’une. »</li>
+  <li>« Vérifiés en retirant l’envoi, trois d’entre eux échouent. »</li>
+  <li>« Contre-épreuve sans le relevé : zéro plan. »</li>
+  <li>« Sans le correctif : <code>KeyError: 'extra_content'</code>. »</li>
+</ul>
+<div class="encadre attention">
+  <div class="titre">Une contre-épreuve a invalidé un correctif</div>
+  <p>Un test censé prouver une correction passait <em>aussi sans elle</em>. Le motif de remplacement n’avait rien changé : le formateur automatique avait replié l’expression sur trois lignes, et la chaîne recherchée n’existait plus telle quelle. Sans contre-épreuve, le correctif aurait été committé comme vérifié alors qu’il n’était pas appliqué.</p>
+</div>
+
+<h3>10.4 Ce que les tests ont réellement attrapé</h3>
+<p><strong>Un module du domaine à 0 %.</strong> <code>app/domain/organisation.py</code> n’était éprouvé que depuis les tests de services, où le travail « Domaine » ne regarde pas. Le module apparaissait à 0 % et le seuil de 100 % échouait. La leçon : <em>un module du domaine se prouve dans le domaine.</em></p>
+<p><strong>Une exclusion inopérante.</strong> Un test d’anonymisation a montré qu’une exclusion écrite en rétrospection ne servait à rien : la correspondance commençait sur le mot exclu, et ce qui la précédait était un article.</p>
+<p><strong>Une contradiction entre deux tests.</strong> Le parcours de bout en bout cherchait un bouton « Ouvrir la navigation » quand le test unitaire cherchait « Menu », et tous deux passaient sur leur propre périmètre. Le déclencheur portait le mot « Menu » écrit, et non seulement lu par les lecteurs d’écran — trois traits ne disent pas qu’ils cachent dix-huit écrans. Lui donner un <code>aria-label</code> différent aurait masqué ce texte visible, contre WCAG 2.5.3 : c’est donc le test de bout en bout qui a suivi l’implémentation.</p>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════ 11 ══ -->
+<section>
+<h2><span class="num">11</span>Intégration continue</h2>
+
+<h3>11.1 Composition de la chaîne</h3>
+<p>GitHub Actions, cinq travaux : <strong>Domaine</strong>, <strong>Services et API</strong>, <strong>Assistant</strong>, <strong>Front</strong>, <strong>Bout en bout</strong>. Chacun impose son seuil de couverture. La chaîne exécute également <code>ruff check</code>, <code>ruff format --check</code> et <code>alembic check</code> — ce dernier vérifiant que le schéma décrit par les modèles correspond aux migrations.</p>
+
+<h3>11.2 Trois causes d’échec indépendantes</h3>
+<p>La chaîne a échoué durablement, et les causes n’avaient aucun rapport entre elles.</p>
+
+<h4>L’image PostgreSQL n’avait pas pgvector</h4>
+<p>La migration <code>0007</code> crée l’extension <code>vector</code>, absente de <code>postgres:16-alpine</code>. <code>alembic upgrade head</code> s’arrêtait là, <em>avant même d’atteindre les tests</em> : le travail « Services et API » échouait depuis huit exécutions, sans rapport avec les commits qui les déclenchaient.</p>
+<p>Mesuré, et non supposé : <code>docker run --rm postgres:16-alpine</code> ne contient aucun fichier d’extension <code>vector</code>. Les cinq autres extensions du schéma vivent dans <code>contrib</code> et sont partout ; celle-ci non.</p>
+
+<h4>Une convention de nommage doublement appliquée</h4>
+<p>La migration <code>0010</code> passait le nom complet à <code>create_check_constraint</code>, que la convention de nommage préfixait une seconde fois :</p>
+<pre>base    : ck_booking_rules_ck_booking_rules_notice_non_vide
+modele  : ck_booking_rules_notice_non_vide</pre>
+<p><code>alembic check</code> s’arrêtait sur cet écart. Une migration <code>0011</code> corrective a été écrite plutôt que de réécrire <code>0010</code>.</p>
+
+<h4>Un épinglage de dépendance mensonger</h4>
+<p><code>requirements.txt</code> épinglait <code>fastapi==0.118.0</code> alors que le code était développé et testé contre <code>0.141.1</code>. Sous la version épinglée, FastAPI ne résout plus certaines annotations et prend le modèle Pydantic et la dépendance de session pour des champs de corps :</p>
+<pre>422  « payload est obligatoire, session est obligatoire »</pre>
+<div class="encadre attention">
+  <div class="titre">Le défaut le plus dangereux du projet</div>
+  <p>Tout passait en local, où l’environnement virtuel portait <code>0.141.1</code>, et nulle part ailleurs. Le <code>Dockerfile</code> installant depuis <code>requirements.txt</code>, <strong>la production aurait servi une API cassée sur ces routes</strong> — et le développement n’aurait rien montré.</p>
+  <p>Établi en reconstruisant l’environnement de la chaîne : Linux, Python 3.12, <code>TZ=UTC</code>, base en collation C. L’échec s’y reproduit et disparaît avec la bonne version.</p>
+</div>
+
+<h3>11.3 Deux pièges d’environnement</h3>
+<h4>Le bit exécutable</h4>
+<p><code>docker-entrypoint.sh</code> était stocké en <code>100644</code>. Le <code>Dockerfile</code> lui applique bien un <code>chmod +x</code>, mais le service monte le répertoire source sur <code>/app</code> : le montage recouvre le répertoire de l’image, et sous Linux le fichier reprend son mode git.</p>
+<pre>exec: "/app/docker-entrypoint.sh": permission denied</pre>
+<p>Invisible sous Windows, où Docker Desktop présente les fichiers partagés comme exécutables. Et <code>core.fileMode</code> valant <code>false</code> sur ce dépôt, git n’avait jamais enregistré le bit posé sur le disque — d’où <code>git update-index --chmod=+x</code>, qui l’inscrit explicitement.</p>
+
+<h4>Le limiteur de connexion</h4>
+<p><code>.env.example</code> porte la valeur de production, cinq par minute, et la chaîne le copie en <code>.env</code> : cela écrasait le plafond relevé de <code>docker-compose.yml</code>. La campagne de bout en bout ouvre une session par test — elle ne peut pas en partager une, car le jeton tourne à chaque chargement de page et rejouer un cookie déjà tourné déclenche la détection de rejeu — et tombait donc systématiquement sur le limiteur.</p>
+<p>L’étape pose désormais la variable dans son environnement, qui l’emporte sur le fichier sans le modifier.</p>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════ 12 ══ -->
+<section>
+<h2><span class="num">12</span>Fonctionnement en local</h2>
+
+<h3>12.1 Démarrage de la pile</h3>
+<pre># 1. Services d'infrastructure
+docker compose up -d db courriel
+
+# 2. Schema et jeu de demonstration
+cd smartroom-api
+..\.venv\Scripts\python.exe -m alembic upgrade head
+..\.venv\Scripts\python.exe -m scripts.seed
+
+# 3. API
+..\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
+
+# 4. Front (autre terminal)
+cd smartroom-front
+npm run dev            # http://localhost:5180</pre>
+<p>La boîte de développement intercepte tous les courriels : rien ne quitte la machine, quelle que soit l’adresse écrite sur le message. Elle est consultable sur <code>http://localhost:8025</code>.</p>
+
+<h3>12.2 Le préchauffage des modèles</h3>
+<p>Ollama ne garde les poids en mémoire que le temps défini par <code>keep_alive</code> — trente minutes ici — puis les recharge depuis le disque.</p>
+<div class="encadre mesure">
+  <div class="titre">Mesure sur le poste de développement</div>
+  <table style="margin:2mm 0 0">
+    <tr><th>Appel</th><th>Durée</th></tr>
+    <tr><td>Premier appel, poids sur disque</td><td><span class="ko">79 secondes</span></td></tr>
+    <tr><td>Appels suivants, poids en mémoire</td><td><span class="ok">1,1 seconde</span></td></tr>
+  </table>
+</div>
+<p>Le budget de premier jeton étant de six secondes, <strong>toute première question d’une session partait au repli déterministe</strong>, qui ne connaît qu’une poignée d’intentions : l’assistant répondait « je n’ai pas compris » à des questions que le modèle traite sans peine.</p>
+<p>La méthode de préchauffage existait et se disait « appelée au démarrage de l’application » ; <em>rien ne l’appelait</em>. Elle l’est désormais, sur deux modèles seulement — celui du raisonnement et celui des vecteurs. Précharger trois modèles saturerait la mémoire d’un poste ordinaire pour un gain que la mesure ne montre pas.</p>
+
+<h3>12.3 Le budget de premier jeton</h3>
+<p>Fixé à <strong>six secondes</strong>, et non à deux et demie comme au départ.</p>
+<div class="encadre mesure">
+  <div class="titre">Mesure avec le prompt réel et le catalogue d’outils — 3 439 jetons d’invite</div>
+  <table style="margin:2mm 0 0">
+    <tr><th>Situation</th><th>Premier jeton</th></tr>
+    <tr><td>Premier appel</td><td>3 455 ms</td></tr>
+    <tr><td>Appels suivants (invite mise en cache)</td><td>1 524 ms</td></tr>
+    <tr><td>Moteur déterministe</td><td>150 à 600 ms</td></tr>
+  </table>
+  <p style="margin-top:2mm">À 2 500 ms, chaque première question d’une session partait au repli et le modèle ne servait jamais. Attendre six secondes avant d’y renoncer reste supportable.</p>
+</div>
+
+<h3>12.4 Jeu de démonstration</h3>
+<p>Le script de peuplement crée :</p>
+<div class="chiffres">
+  <div class="chiffre"><span class="v">6</span><span class="l">bâtiments</span></div>
+  <div class="chiffre"><span class="v">15</span><span class="l">salles</span></div>
+  <div class="chiffre"><span class="v">608</span><span class="l">réservations</span></div>
+  <div class="chiffre"><span class="v">24</span><span class="l">fragments</span></div>
+</div>
+<p>Plus cinq utilisateurs, cinq comptes d’administration aux périmètres distincts, une fermeture globale, et deux conflits en attente d’arbitrage (<code>#CONF-8492</code>, <code>#CONF-8493</code>).</p>
+
+<h4>Un seed qui préserve ce qu’on lui a confié</h4>
+<p>Le script est <strong>idempotent sur les documents déposés</strong> : photos de bâtiment, repères de salle et plans d’étage sont relevés avant la purge et reposés après. <em>Un jeu de démonstration a le droit de refaire ses données, pas celui d’effacer ce qu’on lui a confié.</em></p>
+<p>Cette précaution avait été écrite pour les photos, puis oubliée lorsque les plans d’étage sont arrivés. Ils vivent dans <code>floor_plans</code>, que la purge emportait en cascade avec les bâtiments : les fichiers survivaient sur le disque, mais la ligne qui disait à quel étage ils appartenaient disparaissait, et la fiche affichait « Aucun plan déposé pour cet étage » sur un étage qui en avait un.</p>
+<div class="encadre mesure">
+  <div class="titre">Comment le défaut a été établi</div>
+  <p>Trois fichiers présents dans <code>media/plans</code> ; des placements de salles journalisés à l’audit les 29 et 31 août — <em>or on ne place une salle que sur un plan existant</em> ; et zéro ligne dans <code>floor_plans</code>. Les trois observations ensemble ne laissent qu’une explication.</p>
+</div>
+<p>La clé de relevé est le <strong>code</strong> du bâtiment et de l’étage, non leur identifiant : les codes portent une contrainte d’unicité et survivent d’un jeu à l’autre, contrairement aux identifiants, régénérés à chaque purge.</p>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════ 13 ══ -->
+<section>
+<h2><span class="num">13</span>Déploiement en production</h2>
+
+<h3>13.1 Cible retenue</h3>
+<table>
+  <tr><th style="width:34mm">Composant</th><th style="width:34mm">Service</th><th>Rôle et palier</th></tr>
+  <tr><td>Base de données</td><td><strong>Neon</strong></td><td>PostgreSQL 18 managé avec pgvector, palier gratuit</td></tr>
+  <tr><td>API</td><td><strong>Render</strong></td><td>Image Docker construite depuis le dépôt, palier gratuit</td></tr>
+  <tr><td>Front</td><td><strong>Vercel</strong></td><td>Statique + réécritures, palier gratuit</td></tr>
+  <tr><td>Supervision</td><td><strong>UptimeRobot</strong></td><td>Sonde toutes les 5 minutes, palier gratuit</td></tr>
+  <tr><td>Modèle et vecteurs</td><td><strong>API Gemini</strong></td><td>Façade compatible OpenAI, palier gratuit</td></tr>
+</table>
+
+<h3>13.2 Le front devant l’API</h3>
+<pre>{
+  "rewrites": [
+    { "source": "/api/:path*",   "destination": "https://smartroom-api-ryya.onrender.com/api/:path*" },
+    { "source": "/media/:path*", "destination": "https://smartroom-api-ryya.onrender.com/media/:path*" },
+    { "source": "/(.*)",         "destination": "/index.html" }
+  ]
+}</pre>
+<p>Les deux premières réécritures font que <strong>le navigateur appelle l’API sur l’origine qui lui a servi la page</strong>. La requête part en même origine : aucun préflight CORS n’est nécessaire, et le cookie de rafraîchissement — <code>SameSite=Lax</code> — reste attaché, ce qu’un appel direct vers <code>onrender.com</code> lui interdirait.</p>
+<p>La troisième est indispensable au routage côté client : sans elle, un rechargement sur <code>/salles</code> ou <code>/admin/comptes</code> rendrait un 404.</p>
+<div class="encadre attention">
+  <div class="titre">Une distinction opérationnelle à connaître</div>
+  <p>Vercel donne à <strong>chaque déploiement</strong> une adresse propre (<code>smartroommanager-&lt;hachage&gt;-&lt;équipe&gt;.vercel.app</code>) en plus de l’alias stable. Seul l’alias est déclaré côté Google et dans <code>CORS_ORIGINS</code> — c’est donc lui, et lui seul, qu’il faut utiliser. Une connexion Google tentée depuis l’adresse de déploiement rend <code>Erreur 400 : origin_mismatch</code>.</p>
+</div>
+
+<h3>13.3 Point d’entrée du conteneur</h3>
+<p>L’image applique les migrations au démarrage. <code>alembic upgrade head</code> est idempotent : sur une base déjà migrée, il ne fait rien et rend 0. Le lancer à chaque démarrage évite l’étape manuelle qu’on oublie.</p>
+<p>Deux réserves sont assumées et documentées dans le script : deux conteneurs démarrant ensemble migrent en même temps — Alembic pose un verrou sur sa table de version, le second attend puis ne trouve rien à faire — et une migration destructive appliquée automatiquement ne se relit pas. Pour un projet à un déploiement, le compromis penche du bon côté.</p>
+
+<h3>13.4 La sonde de démarrage</h3>
+<p>Le premier déploiement s’est arrêté sur « Base injoignable après 30 tentatives », sans rien dire de plus. Ce message laissait le choix entre <strong>un mot de passe faux, un hôte inconnu, un pare-feu et une base endormie</strong> : quatre pistes, aucune preuve. Le <code>2&gt;/dev/null</code> de la boucle jetait le message de PostgreSQL, le seul qui tranche.</p>
+<p>La sonde a été améliorée <strong>quatre fois</strong>, et chaque amélioration a permis d’avancer d’un pas.</p>
+<table>
+  <tr><th style="width:8mm">#</th><th style="width:44mm">Amélioration</th><th>Ce qu’elle a débloqué</th></tr>
+  <tr><td>1</td><td>Écrire la raison du refus (1<sup>er</sup>, 10<sup>e</sup> et dernier essai)</td><td>Le message de PostgreSQL devient lisible. Guillemets et retours à la ligne neutralisés, le journal restant du JSON.</td></tr>
+  <tr><td>2</td><td>Deux sorties d’échec : <code>1</code> réessayable, <code>2</code> fatale</td><td>La sonde avait répété trente fois « Base pas encore prête » pour une variable <code>CORS_ORIGINS</code> mal écrite — soixante secondes perdues, et un message désignant le mauvais coupable.</td></tr>
+  <tr><td>3</td><td>Troncature portée de 300 à 1 200 caractères</td><td>Le journal s’arrêtait exactement avant la liste des adresses essayées — la seule information utile, puisqu’elle dit si la bascule IPv6 → IPv4 a eu lieu.</td></tr>
+  <tr><td>4</td><td>Joindre les variables de connexion</td><td>Pydantic élide le milieu des chaînes longues, et l’anomalie se cache justement dans ce qu’il coupe.</td></tr>
+</table>
+<div class="encadre choix">
+  <div class="titre">Une règle appliquée sans exception</div>
+  <p>Le mot de passe ne figure jamais dans un journal. <strong>Seule sa longueur apparaît</strong> — <code>POSTGRES_PASSWORD=(16 caracteres)</code> — ce qui distingue un champ vide d’un champ rempli, et un champ rempli d’un champ contenant toute une chaîne de connexion, sans rien révéler.</p>
+</div>
+<p>Une correction de classement a accompagné la quatrième : <code>database_url</code> est une propriété <em>calculée</em>, et l’erreur ne surgissait qu’à sa lecture, après le contrôle de configuration. Le journal annonçait « base pas encore prête » pour une adresse mal formée qui ne guérira jamais en attendant.</p>
+
+<h3>13.5 Chaîne d’incidents de connexion</h3>
+<p>Chaque étape a été résolue par la mesure, jamais par la supposition.</p>
+<table>
+  <tr><th style="width:44mm">Symptôme</th><th>Cause réelle</th></tr>
+  <tr><td><code>error parsing value for field 'cors_origins'</code></td><td>Le champ est une liste ; pydantic-settings attend du <strong>JSON</strong>, pas une URL nue.</td></tr>
+  <tr><td><code>Network is unreachable (2a05:…)</code></td><td>Le palier gratuit de Render ne sort qu’en IPv4, et Neon publie les deux familles. La bascule avait bien lieu — c’est la troncature élargie qui l’a montré — et les trois adresses IPv4 répondaient.</td></tr>
+  <tr><td><code>password authentication failed</code></td><td><strong>Mode TLS absent.</strong> Voir ci-dessous.</td></tr>
+  <tr><td><code>invalid port number</code></td><td>Un <code>POSTGRES_HOST</code> portant déjà son port produisait <code>…neon.tech:5432:5432/neondb</code>.</td></tr>
+</table>
+
+<h4>Le mode TLS, ou comment un message désigne le mauvais coupable</h4>
+<pre>ERROR: password authentication failed for user 'neondb_owner'
+ERROR: connection is insecure (try using `sslmode=require`)</pre>
+<p><code>libpq</code> applique <code>prefer</code> par défaut : il tente le chiffrement, puis <em>se rabat en clair</em> si la négociation échoue. Neon refuse alors la connexion — et sa première ligne est un message générique qui parle de mot de passe.</p>
+<p>On cherchait donc un identifiant faux là où il manquait un mode de connexion. Le mode est désormais <strong>déduit de l’environnement</strong> — <code>require</code> partout sauf en local, où la base tourne dans un conteneur voisin sans certificat et où l’exiger empêcherait tout démarrage. Une variable permet d’imposer <code>verify-full</code> là où l’autorité est connue, ou <code>disable</code> sur un réseau privé déjà chiffré.</p>
+
+<h3>13.6 Persistance des médias</h3>
+<p>Le disque de Render est <strong>éphémère</strong>. Un fichier déposé depuis l’administration en ligne y survit quelques heures, puis disparaît au redéploiement suivant — alors que sa ligne en base, elle, persiste. L’écran affiche alors une image cassée, <em>sans rien pour le signaler</em>.</p>
+<div class="encadre mesure">
+  <div class="titre">Le journal l’a montré sans ambiguïté</div>
+  <pre style="margin:2mm 0 0">19:15:49  GET /media/batiments/eif1.svg      200   ← avant le depot
+19:20:20  GET /media/batiments/5378….webp   404   ← apres</pre>
+</div>
+<p><strong>Solution retenue</strong> : les fichiers sont <em>versionnés</em>. Ils entrent dans l’image Docker et suivent le déploiement. La procédure consiste donc à déposer <strong>en local, l’application locale étant branchée sur la base de production</strong>, puis à commiter les fichiers apparus : la ligne part dans Neon, le fichier dans le dépôt, et le commit les réunit.</p>
+<p>Le dépôt porte aujourd’hui les photos des quinze salles, les images des six bâtiments, les repères de localisation et les plans d’étage — 154 fichiers de médias au total.</p>
+<table>
+  <tr><th style="width:44mm">Alternative</th><th>Pourquoi écartée</th></tr>
+  <tr><td>Disque persistant Render</td><td>Non disponible sur le palier gratuit ; exige une instance payante.</td></tr>
+  <tr><td>Stockage objet externe</td><td>La bonne réponse pour une application réelle. Impose de réécrire la couche de stockage — décision assumée, pas un oubli.</td></tr>
+</table>
+
+<h3>13.7 L’assistant en ligne</h3>
+<p>C’est la partie qui a demandé le plus de mise au point. Elle a révélé <strong>six défauts</strong> que le développement local ne pouvait pas montrer, puisqu’Ollama y sert seul et qu’aucun d’eux ne vit sur son chemin.</p>
+
+<h4>L’étage distant était configurable et inatteignable</h4>
+<p>Le client refuse d’émettre sans anonymisation — une garde voulue — mais <em>aucun</em> des cinq points de construction du sélecteur ne lui en passait une. On pouvait donc le configurer entièrement sans qu’il serve jamais, le seul signe étant une ligne de journal : « Fournisseur distant désactivé : anonymisation absente ».</p>
+<p><strong>Le défaut sûr est de masquer, pas de se taire.</strong> L’anonymiseur est branché par défaut.</p>
+
+<h4>La cohérence des vecteurs</h4>
+<p>Poste local et hébergement partagent la même base. Les fragments portent les coordonnées que leur a données un modèle donné ; si l’un vectorise avec Ollama et l’autre avec l’étage distant, la similarité cosinus reste calculable et <em>compare deux espaces sans rapport</em>. La recherche cesse de trouver, sans erreur pour l’expliquer.</p>
+<p>Un réglage épingle désormais ce rôle des deux côtés, et un script d’administration réindexe le corpus à chaque changement de modèle.</p>
+
+<h4>La dimension des vecteurs</h4>
+<div class="encadre mesure">
+  <div class="titre">Mesure sur <code>gemini-embedding-001</code></div>
+  <table style="margin:2mm 0 0">
+    <tr><th>Requête</th><th>Dimensions rendues</th></tr>
+    <tr><td>Par défaut</td><td><span class="ko">3 072</span></td></tr>
+    <tr><td>Avec <code>dimensions: 768</code></td><td><span class="ok">768</span></td></tr>
+  </table>
+</div>
+<p>La colonne pgvector étant figée à 768, sans ce paramètre <strong>l’insertion échoue au lieu de dégrader</strong>. La troncature est ici sans conséquence : la recherche compare par cosinus, une mesure qui ignore la norme.</p>
+
+<h4>Les appels d’outils simultanés fusionnaient</h4>
+<p>L’index corrèle les morceaux d’un même appel d’un fragment à l’autre. La façade Gemini rend l’appel entier d’un coup et <strong>omet cet index</strong> : deux appels simultanés tombaient sous la même clé, noms et arguments concaténés, et <code>{"etat":"a_venir"}{}</code> ne se relit pas — l’assembleur écartait l’entrée. L’agent ne recevait <em>aucun</em> outil là où il en avait demandé deux. Ce n’est pas un cas de bord : le budget autorise huit outils par tour.</p>
+
+<h4>Les arguments repartaient en objet</h4>
+<pre>Value is not a string: {"question":"absence"}</pre>
+<p>La forme utile à la boucle d’agent est un dictionnaire, et Ollama l’accepte. Le protocole OpenAI transporte une <strong>chaîne JSON</strong>. Mesure directe : la même requête rend <span class="ok">200</span> avec une chaîne et <span class="ko">400</span> avec un objet.</p>
+<p>Le défaut ne se voyait qu’au <strong>second</strong> aller-retour, celui qui renvoie le résultat de l’outil au modèle. Le premier appel réussissait, l’outil s’exécutait, la carte s’affichait — puis le tour basculait au repli, et l’écran montrait les bons articles surmontés d’un « je n’ai pas compris la demande ».</p>
+
+<h4>La signature de raisonnement</h4>
+<pre>400 Function call is missing a thought_signature in functionCall parts.
+    This is required for tools to work correctly.</pre>
+<p>Les modèles Gemini 3 joignent à chaque appel d’outil une signature et exigent de la retrouver au tour suivant. Elle voyage dans <code>extra_content</code>, <em>hors du protocole OpenAI</em>, et se perdait à la traduction. Le client la retient désormais par identifiant d’appel et la rattache au départ.</p>
+<div class="encadre choix">
+  <div class="titre">Où vivent ces trois corrections</div>
+  <p>Toutes trois dans le client distant, dont l’en-tête promet d’absorber les différences de protocole. Ollama et OpenAI ne sont pas affectés : sans index reçu, sans signature reçue, la charge repart inchangée. <strong>On ne fabrique rien là où rien n’a été reçu.</strong></p>
+</div>
+
+<h3>13.8 Supervision</h3>
+<p>Un moniteur UptimeRobot interroge <code>/health</code> toutes les cinq minutes.</p>
+<div class="encadre choix">
+  <div class="titre">Pourquoi <code>/health</code> et non <code>/health/ready</code></div>
+  <table style="margin:2mm 0 0">
+    <tr><th>Sonde</th><th>Réveille Render</th><th>Réveille Neon</th></tr>
+    <tr><td><code>/health</code></td><td>oui</td><td><strong>non</strong></td></tr>
+    <tr><td><code>/health/ready</code></td><td>oui</td><td>oui</td></tr>
+  </table>
+  <p style="margin-top:2mm">Neon facture le temps de calcul de sa base. Maintenir Render éveillé sans réveiller Neon économise ce quota — et cette propriété découle d’un choix de conception antérieur : la sonde de vivacité ne touche pas la base, pour qu’une base momentanément indisponible ne fasse pas tuer une application saine.</p>
+</div>
+<p>Deux incidents ont été traités. Le <strong>502 initial</strong> portait <code>X-Render-Routing: no-deploy</code> à 18 h 31, soit exactement entre l’arrêt de 18 h 30 et le démarrage de 18 h 34 : la fenêtre de redéploiement. Réel mais bénin.</p>
+<p>Le <strong>405 permanent</strong> était un vrai défaut : UptimeRobot interroge en <code>HEAD</code> — la méthode économique pour vérifier qu’un service répond sans en télécharger le corps — et la route ne déclarait que <code>GET</code>. Chaque vérification était comptée comme une panne sur un service parfaitement sain, alors que les <code>GET</code> voisins répondaient 200 dans les mêmes secondes.</p>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════ 14 ══ -->
+<section>
+<h2><span class="num">14</span>Journal complet des incidents</h2>
+<p>Vingt-sept incidents rencontrés, diagnostiqués et corrigés. Ils sont présentés ici avec leur symptôme observé, leur cause réelle et la preuve de la correction — car dans plus d’un tiers des cas, <strong>le symptôme désignait le mauvais coupable</strong>.</p>
+
+<div class="incident">
+  <h4><span class="no">01</span>Intégration continue en échec depuis huit exécutions</h4>
+  <dl>
+    <dt>Symptôme</dt><dd>Le travail « Services et API » échoue sans rapport avec les commits qui le déclenchent.</dd>
+    <dt>Cause</dt><dd>L’image <code>postgres:16-alpine</code> ne contient pas l’extension <code>vector</code>, créée par la migration 0007. La migration s’arrêtait avant tout test.</dd>
+    <dt>Preuve</dt><dd><code>docker run --rm postgres:16-alpine</code> : aucun fichier d’extension <code>vector</code>. Les cinq autres extensions du schéma vivent dans <code>contrib</code>.</dd>
+    <dt>Correction</dt><dd>Image <code>pgvector/pgvector:pg16</code>, celle que <code>docker-compose.prod.yml</code> utilisait déjà.</dd>
+  </dl>
+</div>
+
+<div class="incident">
+  <h4><span class="no">02</span><code>alembic check</code> signale un écart permanent</h4>
+  <dl>
+    <dt>Cause</dt><dd>La migration 0010 passait le nom complet à <code>create_check_constraint</code>, que la convention de nommage préfixait une seconde fois.</dd>
+    <dt>Correction</dt><dd>Migration corrective 0011. <strong>0010 n’est pas réécrite</strong> : elle est appliquée partout, base hébergée comprise, et une migration déjà passée se corrige par la suivante.</dd>
+  </dl>
+</div>
+
+<div class="incident">
+  <h4><span class="no">03</span>Page de statistiques vide en intégration continue</h4>
+  <dl>
+    <dt>Symptôme</dt><dd>« Pas assez de réservations » sur un jeu qui en contient 608.</dd>
+    <dt>Cause</dt><dd><code>Date.getHours()</code> lit l’heure du poste. La chaîne tourne en UTC : une réservation de 9 h y devient 7 h et ne tombe dans aucune tranche.</dd>
+    <dt>Portée</dt><dd>Ce n’était pas un test fragile — un navigateur réglé sur un autre fuseau affichait la même page vide.</dd>
+  </dl>
+</div>
+
+<div class="incident">
+  <h4><span class="no">04</span>Couverture du domaine à 0 % sur un module utilisé</h4>
+  <dl>
+    <dt>Cause</dt><dd><code>organisation.py</code> n’était éprouvé que depuis <code>tests/services</code>, où le travail « Domaine » ne regarde pas.</dd>
+    <dt>Leçon</dt><dd>Un module du domaine se prouve dans le domaine.</dd>
+  </dl>
+</div>
+
+<div class="incident">
+  <h4><span class="no">05</span>422 en production, jamais en local</h4>
+  <dl>
+    <dt>Cause</dt><dd><code>fastapi==0.118.0</code> épinglé contre <code>0.141.1</code> utilisé. Sous la version épinglée, le modèle Pydantic et la dépendance de session sont pris pour des champs de corps.</dd>
+    <dt>Preuve</dt><dd>Environnement de la chaîne reconstruit : Linux, Python 3.12, TZ=UTC, collation C. L’échec s’y reproduit et disparaît avec la bonne version.</dd>
+    <dt>Gravité</dt><dd>La production aurait servi une API cassée sur ces routes.</dd>
+  </dl>
+</div>
+
+<div class="incident">
+  <h4><span class="no">06</span>Le conteneur refuse de démarrer</h4>
+  <dl>
+    <dt>Symptôme</dt><dd><code>exec: "/app/docker-entrypoint.sh": permission denied</code></dd>
+    <dt>Cause</dt><dd>Fichier stocké en <code>100644</code> dans git. Le montage recouvre le répertoire de l’image, et sous Linux le fichier reprend son mode git. Invisible sous Windows.</dd>
+    <dt>Correction</dt><dd><code>git update-index --chmod=+x</code>, appliqué aussi aux scripts de sauvegarde et de restauration, porteurs du même défaut.</dd>
+  </dl>
+</div>
+
+<div class="incident">
+  <h4><span class="no">07</span>Parcours de bout en bout bloqué à la connexion</h4>
+  <dl>
+    <dt>Cause</dt><dd><code>.env.example</code> porte la valeur de production (5/min) et la chaîne le copie en <code>.env</code>, écrasant le plafond relevé de la pile de test.</dd>
+    <dt>Preuve</dt><dd>Le parcours échoue à 5/minute exactement comme en CI, et passe entièrement à 100/minute.</dd>
+  </dl>
+</div>
+
+<div class="incident">
+  <h4><span class="no">08</span>Erreur technique sur un créneau déjà pris</h4>
+  <dl>
+    <dt>Cause</dt><dd>Interblocage <code>40P01</code> non traduit, seule la violation d’exclusion <code>23P01</code> l’étant.</dd>
+    <dt>Correction</dt><dd>Verrou consultatif par salle, pris avant la vérification et non avant l’insertion.</dd>
+    <dt>Effet mesuré</dt><dd>Le fichier de concurrence passe de 6 à 14 secondes — la sérialisation fait son office.</dd>
+  </dl>
+</div>
+
+<div class="incident">
+  <h4><span class="no">09</span>Courriel de suspension jamais reçu</h4>
+  <dl>
+    <dt>Symptôme</dt><dd>Rien n’arrive, y compris dans les indésirables, et aucune erreur au journal.</dd>
+    <dt>Cause</dt><dd>La route de changement de statut ne programmait pas l’expédition. Le message restait dans la file du processus jusqu’au passage suivant de l’ordonnanceur — ou indéfiniment.</dd>
+    <dt>Preuve</dt><dd>Le test porte désormais sur ce qui est <em>parti</em> et sur une file <em>vide</em>. Le regarder au travers de la file laissait passer le défaut.</dd>
+  </dl>
+</div>
+
+<div class="incident">
+  <h4><span class="no">10</span>Plan d’étage perdu après un <code>seed --reset</code></h4>
+  <dl>
+    <dt>Cause</dt><dd><code>floor_plans</code> emportée en cascade avec les bâtiments. Les fichiers survivaient, la ligne disparaissait.</dd>
+    <dt>Preuve</dt><dd>Trois fichiers dans <code>media/plans</code>, des placements journalisés à l’audit, zéro ligne dans <code>floor_plans</code>.</dd>
+  </dl>
+</div>
+
+<div class="incident">
+  <h4><span class="no">11</span>Lien mort dans la réponse de l’assistant</h4>
+  <dl>
+    <dt>Symptôme</dt><dd><code>![](http://media/reperes/bce1c0….jpg)</code> — « media » devenu nom de domaine.</dd>
+    <dt>Cause</dt><dd>L’outil rendait l’adresse au modèle, qui la recopiait en inventant un hôte.</dd>
+    <dt>Correction</dt><dd>Toute clé en <code>_url</code> part dans la carte, jamais dans ce que le modèle relit. Le retrait descend dans les structures imbriquées.</dd>
+  </dl>
+</div>
+
+<div class="incident">
+  <h4><span class="no">12</span>« Aucun plan » sur une salle qui en a un</h4>
+  <dl>
+    <dt>Cause</dt><dd>L’écran utilisateur n’affichait que le plan d’étage. Sans lui — le cas courant — il ignorait le repère de localisation, pourtant transmis par l’API et présent pour les quinze salles.</dd>
+    <dt>Second défaut</dt><dd>Chaque ouverture produisait un 404 sur <code>/floors/…/plan</code> : une réponse juste, que la console affiche en rouge et qui se lit comme une panne. <code>RoomOut</code> porte désormais <code>floor_has_plan</code>.</dd>
+  </dl>
+</div>
+
+<div class="incident">
+  <h4><span class="no">13</span>Statistiques identiques sur deux comptes distincts</h4>
+  <dl>
+    <dt>Cause</dt><dd><code>private, max-age=300</code> sur une URL identique pour tous. Le cache navigateur est indexé par URL.</dd>
+    <dt>Preuve</dt><dd>Vérifié en base : l’un des deux comptes n’avait aucune réservation, et celle affichée appartenait à l’autre, dont il n’était pas participant.</dd>
+    <dt>Correction</dt><dd><code>private, no-store</code> sur les chiffres personnels et sur l’export CSV, qui ne portait aucun en-tête.</dd>
+  </dl>
+</div>
+
+<div class="incident">
+  <h4><span class="no">14</span>Export PDF et Excel toujours en erreur</h4>
+  <dl>
+    <dt>Cause</dt><dd>Les deux formats étaient proposés à l’écran et refusés par la couche de données.</dd>
+    <dt>Décision</dt><dd>Retirés. Un bouton présent qui échoue à chaque clic est pire que pas de bouton.</dd>
+  </dl>
+</div>
+
+<div class="incident">
+  <h4><span class="no">15</span>Compteur de la page d’accueil figé cinq minutes</h4>
+  <dl>
+    <dt>Cause</dt><dd><code>public, max-age=300</code> : le navigateur gardait sa copie sans rien redemander. La base était à jour, l’écran non.</dd>
+    <dt>Correction</dt><dd><code>public, max-age=60, stale-while-revalidate=240</code> — la copie est servie immédiatement puis renouvelée en arrière-plan.</dd>
+  </dl>
+</div>
+
+<div class="incident">
+  <h4><span class="no">16</span>Déploiement bloqué, cause muette</h4>
+  <dl>
+    <dt>Cause</dt><dd>Sonde de démarrage trop discrète : quatre pistes possibles, aucune preuve.</dd>
+    <dt>Correction</dt><dd>Quatre améliorations successives (voir 13.4), sans jamais journaliser le mot de passe.</dd>
+  </dl>
+</div>
+
+<div class="incident">
+  <h4><span class="no">17</span>Connexion Neon refusée sur « mot de passe »</h4>
+  <dl>
+    <dt>Cause réelle</dt><dd>Mode TLS absent du DSN. <code>libpq</code> applique <code>prefer</code> et se rabat en clair ; Neon refuse avec un message générique parlant de mot de passe.</dd>
+    <dt>Correction</dt><dd><code>sslmode</code> déduit de l’environnement, surchargeable.</dd>
+  </dl>
+</div>
+
+<div class="incident">
+  <h4><span class="no">18</span>Images cassées après un redéploiement</h4>
+  <dl>
+    <dt>Cause</dt><dd>Disque éphémère : le fichier disparaît, la ligne en base persiste.</dd>
+    <dt>Correction</dt><dd>Fichiers versionnés, déposés en local contre la base de production.</dd>
+  </dl>
+</div>
+
+<div class="incident">
+  <h4><span class="no">19</span>Supervision en panne permanente sur un service sain</h4>
+  <dl>
+    <dt>Cause</dt><dd>UptimeRobot interroge en <code>HEAD</code> ; la route ne déclarait que <code>GET</code> et rendait 405.</dd>
+    <dt>Preuve</dt><dd>Les <code>GET</code> voisins répondaient 200 dans les mêmes secondes.</dd>
+  </dl>
+</div>
+
+<div class="incident">
+  <h4><span class="no">20</span>L’étage distant n’était jamais utilisé</h4>
+  <dl>
+    <dt>Cause</dt><dd>Le client refuse d’émettre sans anonymisation, et aucun des cinq points de construction du sélecteur ne lui en passait une.</dd>
+    <dt>Preuve</dt><dd>En rétablissant l’état antérieur, le sélecteur rend « Aucun fournisseur d’inférence disponible » alors que l’étage est entièrement configuré.</dd>
+  </dl>
+</div>
+
+<div class="incident">
+  <h4><span class="no">21</span>Vecteurs incohérents entre local et production</h4>
+  <dl>
+    <dt>Cause</dt><dd>Base partagée, modèles d’embeddings différents. La similarité reste calculable et compare deux espaces sans rapport.</dd>
+    <dt>Symptôme</dt><dd>Aucun. La recherche cesse simplement de trouver — l’échec le plus coûteux à diagnostiquer.</dd>
+    <dt>Correction</dt><dd>Rôle « vecteurs » épinglé au même fournisseur des deux côtés, plus un script de réindexation.</dd>
+  </dl>
+</div>
+
+<div class="incident">
+  <h4><span class="no">22</span>Agent privé de ses outils</h4>
+  <dl>
+    <dt>Cause</dt><dd>La façade Gemini omet l’<code>index</code> des appels. Deux appels simultanés tombaient sous la clé 0, arguments concaténés et illisibles.</dd>
+    <dt>Preuve</dt><dd>Sur un flux portant deux appels sans index, la réponse est <em>vide</em> avant le correctif et porte les deux appels après.</dd>
+  </dl>
+</div>
+
+<div class="incident">
+  <h4><span class="no">23</span>Tour interrompu au second aller-retour</h4>
+  <dl>
+    <dt>Symptôme</dt><dd>Les bons articles s’affichent, surmontés de « je n’ai pas compris la demande ».</dd>
+    <dt>Cause</dt><dd>Arguments d’outil renvoyés en objet là où le protocole OpenAI attend une chaîne JSON.</dd>
+    <dt>Preuve</dt><dd>La même requête rend 200 avec une chaîne, 400 avec un objet : <code>Value is not a string</code>.</dd>
+  </dl>
+</div>
+
+<div class="incident">
+  <h4><span class="no">24</span>« Salle PERSONNE_2 » dans la liste des salles</h4>
+  <dl>
+    <dt>Cause</dt><dd>L’exclusion des noms de lieux ne portait que sur le premier mot de la paire. Sur « Salle Conseil Alpha », le moteur écarte « Salle Conseil » puis masque « Conseil Alpha ».</dd>
+    <dt>Correction</dt><dd>Rétrospection ajoutée en complément de l’anticipation — elle avait été essayée puis retirée comme inutile, ce qu’elle était <em>seule</em>.</dd>
+  </dl>
+</div>
+
+<div class="incident">
+  <h4><span class="no">25</span>Jetons d’anonymisation visibles dans les réponses</h4>
+  <dl>
+    <dt>Cause</dt><dd>La restitution existait et n’était appelée nulle part ; l’anonymiseur était reconstruit sans mémoire à chaque appel.</dd>
+    <dt>Difficulté</dt><dd>Le modèle diffuse « PERSON » puis « NE_1 » : traduire chaque morceau ne reconnaîtrait ni l’un ni l’autre. Un tampon retient le mot en cours et se vide en fin de flux.</dd>
+  </dl>
+</div>
+
+<div class="incident">
+  <h4><span class="no">26</span>Une carte s’affiche puis disparaît</h4>
+  <dl>
+    <dt>Symptôme</dt><dd>Le plan de la salle apparaît, puis est remplacé par une liste de salles et « j’ai cherché une salle correspondant à votre besoin ».</dd>
+    <dt>Cause</dt><dd>La bascule vers le repli ne regardait pas si le tour avait déjà produit quelque chose à l’écran.</dd>
+    <dt>Décision</dt><dd>Le repli sait répondre depuis une page blanche, pas corriger une réponse en cours. <strong>Mieux vaut une réponse incomplète qu’une réponse qui se dédit.</strong></dd>
+  </dl>
+</div>
+
+<div class="incident">
+  <h4><span class="no">27</span>Assistant dégradé après une dizaine de questions</h4>
+  <dl>
+    <dt>Cause</dt><dd>Quota quotidien du palier gratuit : <code>limit: 20</code> requêtes par jour et par modèle, et un tour en consomme au moins deux.</dd>
+    <dt>Difficulté</dt><dd>Le journal ne portait que le code <code>ia_fournisseur</code>, qui couvre quatre causes distinctes. Il a fallu rejouer un tour en local, en interceptant le client, pour lire le message.</dd>
+    <dt>Correction</dt><dd>Modèle changé pour une variante plus généreuse, et le détail du refus joint au journal — sans jamais y joindre la conversation.</dd>
+  </dl>
+</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════ 15 ══ -->
+<section>
+<h2><span class="num">15</span>Écarts entre local et production</h2>
+
+<table>
+  <tr><th style="width:44mm">Aspect</th><th>En local</th><th>En production</th></tr>
+  <tr><td>Modèle de raisonnement</td><td>qwen2.5:7b via Ollama</td><td>Gemini via façade OpenAI</td></tr>
+  <tr><td>Modèle de vecteurs</td><td colspan="2" style="text-align:center">Gemini — <em>imposé des deux côtés pour la cohérence du corpus</em></td></tr>
+  <tr><td>Base de données</td><td>PostgreSQL 16 en conteneur</td><td>Neon PostgreSQL 18 managé</td></tr>
+  <tr><td>Courriel</td><td>Boîte de développement, rien ne sort</td><td>Relais SMTP réel</td></tr>
+  <tr><td>Médias</td><td>Disque de travail</td><td>Image Docker, fichiers versionnés</td></tr>
+  <tr><td>Limiteur de connexion</td><td>100 / minute</td><td>5 / minute</td></tr>
+  <tr><td>Démarrage</td><td>Immédiat</td><td>≈ 50 s après quinze minutes d’inactivité</td></tr>
+</table>
+
+<h3>Ce qui a été vérifié en production</h3>
+<table>
+  <tr><th style="width:52mm">Vérification</th><th>Résultat</th></tr>
+  <tr><td>23 routes d’administration en lecture</td><td><span class="ok">200</span> avec session d’administration, <span class="ko">403</span> avec session utilisateur</td></tr>
+  <tr><td>Routes utilisateur (profil, salles, bâtiments, équipements, réservations, notifications, statistiques, export, FAQ, tickets, horaires, fermetures, demandes d’accès, conversations)</td><td><span class="ok">200</span></td></tr>
+  <tr><td>Parcours public rejoué par Playwright <em>contre la production</em></td><td><span class="ok">4 tests verts en 13,4 s</span></td></tr>
+  <tr><td>Médias (photos, repères, plans, images de bâtiment)</td><td><span class="ok">200</span>, servis en moins de 200 ms</td></tr>
+  <tr><td>Assistant, question sans mot commun avec sa réponse</td><td><span class="ok">Réponse correcte, <code>repli: false</code></span></td></tr>
+</table>
+
+<h3>Les quatre limites structurelles</h3>
+<p>Aucun correctif ne les supprime, et elles sont documentées plutôt que masquées :</p>
+<ol>
+  <li><strong>Le réveil à froid</strong> — le palier gratuit endort le service après quinze minutes.</li>
+  <li><strong>Le disque éphémère</strong> — d’où le versionnement des médias.</li>
+  <li><strong>Le limiteur de connexion</strong> — cinq par minute, qui gêne les allers-retours entre comptes lors d’une démonstration.</li>
+  <li><strong>Le quota quotidien du modèle</strong> — compté par modèle et par jour.</li>
+</ol>
+<div class="encadre choix">
+  <div class="titre">La phrase qui résume la conception</div>
+  <p>La dégradation reste propre : quota épuisé, l’assistant retombe sur son moteur déterministe et continue de répondre aux intentions déclarées. <strong>L’étage distant est un confort, pas une dépendance.</strong></p>
+</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════ 16 ══ -->
+<section>
+<h2><span class="num">16</span>Limites connues et perspectives</h2>
+
+<h3>16.1 Ce qui n’est pas fait, et pourquoi</h3>
+<p><strong>Export PDF et Excel.</strong> Les deux formats figuraient dans l’interface et la couche de données les refusait systématiquement. Ils ont été retirés plutôt que laissés en place. Aucun des deux ne se produit sans une dépendance nouvelle, côté serveur comme côté navigateur : c’est une décision, pas un oubli. Une voie sans dépendance existe — une vue imprimable et <code>window.print()</code> — et reste à arbitrer.</p>
+<p><strong>Dénombrement par l’assistant.</strong> « Combien de salles sont enregistrées » n’a pas d’outil dédié. L’assistant le dit plutôt que d’inventer un chiffre, ce qui est le comportement voulu et non un défaut.</p>
+<p><strong>Stockage objet externe.</strong> La bonne réponse pour une application réelle, écartée faute de temps et parce qu’elle impose de réécrire la couche de stockage.</p>
+
+<h3>16.2 Perspectives</h3>
+<table>
+  <tr><th style="width:52mm">Évolution</th><th>Ce qu’elle apporterait</th></tr>
+  <tr><td>Stockage objet externe</td><td>Supprime la contrainte de versionnement des médias et le couplage au cycle de déploiement.</td></tr>
+  <tr><td>Instance payante ou disque persistant</td><td>Supprime le réveil à froid et le disque éphémère.</td></tr>
+  <tr><td>Élargissement du catalogue d’outils</td><td>Dénombrements, agrégats, comparaisons de salles.</td></tr>
+  <tr><td>Vue imprimable des rapports</td><td>Export PDF sans dépendance nouvelle.</td></tr>
+  <tr><td>Notifications temps réel</td><td>WebSocket en complément des courriels, pour les arbitrages urgents.</td></tr>
+  <tr><td>Modèle de vecteurs auto-hébergé</td><td>Supprime la dépendance à un tiers pour la recherche sémantique.</td></tr>
+  <tr><td>Historisation des scores de recommandation</td><td>Permettrait d’évaluer la qualité des recommandations sur données réelles — la brique Data la plus naturelle à prolonger.</td></tr>
+</table>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════ 17 ══ -->
+<section>
+<h2><span class="num">17</span>Bilan et enseignements</h2>
+
+<h3>17.1 Ce que le projet démontre</h3>
+<p><strong>Une garantie d’intégrité portée par la base</strong>, et non par du code applicatif : deux réservations chevauchantes ne sont pas improbables, elles sont impossibles.</p>
+<p><strong>Une architecture en couches</strong> dont la couche métier est pure, testable en isolation, et prouvée à 100 % de couverture de branches.</p>
+<p><strong>Une chaîne de tests à cinq niveaux</strong> — 1 576 tests automatisés — et une discipline de contre-épreuve qui a, au moins une fois, invalidé un correctif qui semblait bon.</p>
+<p><strong>Deux briques Data &amp; IA réelles</strong> : un moteur de recommandation explicable, et un assistant outillé adossé à une recherche hybride vectorielle et lexicale, encadré par trois garde-fous.</p>
+<p><strong>Un déploiement complet et gratuit</strong>, mené de bout en bout, avec supervision et dégradation propre.</p>
+
+<h3>17.2 Trois enseignements</h3>
+
+<h4>Mesurer avant d’affirmer</h4>
+<p>Plusieurs diagnostics initiaux se sont révélés faux : un cache de navigateur accusé à tort, un écart de nombre de salles qui n’était qu’un filtre légitime, une adresse IPv6 soupçonnée là où il manquait un mode TLS, un mot de passe déclaré faux par un serveur qui refusait en réalité une connexion non chiffrée.</p>
+<p>À chaque fois, c’est la mesure qui a tranché — et souvent une mesure qu’il a d’abord fallu <em>rendre possible</em>, en élargissant une troncature ou en interceptant un client.</p>
+
+<h4>Un journal qui dit qu’il a échoué sans dire pourquoi coûte des heures</h4>
+<p>Le même défaut est apparu <strong>trois fois à trois endroits différents</strong> : la sonde de base de données, la bascule de l’assistant, la troncature des messages d’erreur. La correction a été identique à chaque fois — joindre la cause, sans jamais joindre le secret ni la conversation.</p>
+
+<h4>Ce qui ne s’exécute que d’un côté n’est pas testé</h4>
+<p>Six défauts vivaient dans le chemin distant de l’assistant. <strong>Aucun n’était visible en local</strong>, parce qu’Ollama y sert seul et qu’aucun de ces défauts n’est sur son chemin. Le déploiement n’est pas une formalité de fin de projet : c’est un environnement d’exécution à part entière, avec ses propres défauts, qui mérite ses propres vérifications.</p>
+
+<div class="encadre choix">
+  <div class="titre">Un principe de conception qui résume le reste</div>
+  <p>Une garde qui refuse par défaut doit être <strong>branchée</strong> par défaut. L’anonymiseur en illustre les deux faces : la garde était juste — ne rien envoyer à un tiers sans masquer — et son absence de câblage a rendu tout un étage inatteignable pendant des semaines, sans autre signe qu’une ligne de journal. <em>Le défaut sûr est de masquer, pas de se taire.</em></p>
+</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════ 18 ══ -->
+<section>
+<h2><span class="num">18</span>Annexes</h2>
+
+<h3>18.1 Adresses</h3>
+<table>
+  <tr><th style="width:52mm">Ressource</th><th>Adresse</th></tr>
+  <tr><td>Page de présentation</td><td><code>https://smartroommanager.vercel.app/presentation</code></td></tr>
+  <tr><td>Connexion utilisateur</td><td><code>https://smartroommanager.vercel.app/connexion</code></td></tr>
+  <tr><td>Connexion administration</td><td><code>https://smartroommanager.vercel.app/admin/connexion</code></td></tr>
+  <tr><td>API</td><td><code>https://smartroom-api-ryya.onrender.com</code></td></tr>
+  <tr><td>Documentation OpenAPI</td><td><code>https://smartroom-api-ryya.onrender.com/docs</code></td></tr>
+  <tr><td>Dépôt</td><td><code>https://github.com/DD542/SmartRoomManager</code></td></tr>
+</table>
+
+<h3>18.2 Comptes de démonstration</h3>
+<p>Mot de passe commun : <code>smartroom2026</code>. Les comptes d’administration se connectent par <code>/admin/connexion</code>.</p>
+<table>
+  <tr><th style="width:52mm">Compte</th><th style="width:34mm">Rôle</th><th>Permissions</th></tr>
+  <tr><td><code>d.menga@ece.fr</code></td><td>Directeur IT, propriétaire</td><td>Toutes</td></tr>
+  <tr><td><code>s.boukehila@ece.fr</code></td><td>Directeur de site</td><td>salles, support, conflits</td></tr>
+  <tr><td><code>c.nkoulou@ece.fr</code></td><td>Référente support</td><td>support, conflits</td></tr>
+  <tr><td><code>jean.dupont@edu.ece.fr</code></td><td>Utilisateur</td><td>—</td></tr>
+  <tr><td><code>alice.leroy@edu.ece.fr</code></td><td>Utilisateur</td><td>—</td></tr>
+</table>
+
+<h3>18.3 Commandes utiles</h3>
+<pre># Pile locale
+docker compose up -d db courriel
+cd smartroom-api && ..\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
+cd smartroom-front && npm run dev
+
+# Base de donnees
+..\.venv\Scripts\python.exe -m alembic upgrade head
+..\.venv\Scripts\python.exe -m scripts.seed
+..\.venv\Scripts\python.exe -m scripts.reindexer_connaissances
+
+# Qualite
+..\.venv\Scripts\python.exe -m pytest
+..\.venv\Scripts\python.exe -m ruff check app tests scripts
+npm run test
+npm run test:e2e
+
+# Parcours public joue contre la production
+E2E_BASE_URL=https://smartroommanager.vercel.app npx playwright test e2e/vitrine-animations.spec.js</pre>
+
+<h3>18.4 Variables d’environnement de production</h3>
+<table>
+  <tr><th style="width:60mm">Variable</th><th>Rôle</th></tr>
+  <tr><td><code>ENVIRONMENT</code></td><td><code>production</code> — déduit notamment le mode TLS et les garde-fous de configuration</td></tr>
+  <tr><td><code>POSTGRES_HOST/PORT/USER/PASSWORD/DB</code></td><td>Connexion à Neon</td></tr>
+  <tr><td><code>POSTGRES_SSLMODE</code></td><td><code>require</code> — surcharge la déduction si nécessaire</td></tr>
+  <tr><td><code>JWT_SECRET</code></td><td>Signature des jetons d’accès</td></tr>
+  <tr><td><code>CORS_ORIGINS</code></td><td>Liste <strong>JSON</strong> des origines autorisées</td></tr>
+  <tr><td><code>REFRESH_COOKIE_SECURE</code></td><td><code>true</code></td></tr>
+  <tr><td><code>GOOGLE_CLIENT_ID</code></td><td>Identifiant public du client OAuth</td></tr>
+  <tr><td><code>MAIL_ENABLED</code>, <code>SMTP_*</code>, <code>MAIL_FROM</code></td><td>Relais de courriel ; <code>MAIL_FROM</code> doit être l’adresse authentifiée</td></tr>
+  <tr><td><code>IA_DISTANT_URL</code>, <code>IA_DISTANT_CLE</code></td><td>Étage B de l’assistant</td></tr>
+  <tr><td><code>IA_DISTANT_MODELE_RAISONNEMENT</code></td><td>Modèle de dialogue</td></tr>
+  <tr><td><code>IA_DISTANT_MODELE_VECTEURS</code></td><td>Modèle d’embeddings</td></tr>
+  <tr><td><code>IA_VECTEURS_TOUJOURS_DISTANTS</code></td><td>Cohérence du corpus vectorisé entre les environnements</td></tr>
+</table>
+
+<h3>18.5 Migrations</h3>
+<table>
+  <tr><th style="width:60mm">Révision</th><th>Objet</th></tr>
+  <tr><td><code>0001_schema_initial</code></td><td>Schéma initial</td></tr>
+  <tr><td><code>0002_min_advance</code></td><td>Délai minimal d’anticipation, configurable comme les autres règles</td></tr>
+  <tr><td><code>0003_auth_tokens</code></td><td>Jetons de session et de réinitialisation</td></tr>
+  <tr><td><code>0004_photo_order</code></td><td>Ordre des photos de salle, unicité différée jusqu’à la validation</td></tr>
+  <tr><td><code>0005_avatar</code></td><td>Photo de profil</td></tr>
+  <tr><td><code>0006_visuels_parc</code></td><td>Image de bâtiment et repère de localisation de salle</td></tr>
+  <tr><td><code>0007_rag_pgvector</code></td><td>Extension <code>vector</code> et table de fragments</td></tr>
+  <tr><td><code>0008_conversations</code></td><td>Conversations, messages et journal des tours</td></tr>
+  <tr><td><code>0009_notification_gabarit</code></td><td>Gabarit ayant produit une notification</td></tr>
+  <tr><td><code>0010_consigne_regles</code></td><td>Consigne écrite par l’administration, portée par la règle</td></tr>
+  <tr><td><code>0011_nom_contrainte_consigne</code></td><td>Correction du nom de contrainte doublement préfixé</td></tr>
+  <tr><td><code>0012_gabarit_suspension</code></td><td>Gabarit de suspension de compte</td></tr>
+  <tr><td><code>0013_gabarit_reactivation</code></td><td>Gabarit de réactivation de compte</td></tr>
+</table>
+
+<h3>18.6 Outils de l’assistant</h3>
+<table>
+  <tr><th style="width:52mm">Outil</th><th style="width:22mm">Nature</th><th>Confirmation</th></tr>
+  <tr><td><code>rechercher_salles</code></td><td>lecture</td><td>non</td></tr>
+  <tr><td><code>recommander_salle</code></td><td>lecture</td><td>non</td></tr>
+  <tr><td><code>localiser_salle</code></td><td>lecture</td><td>non</td></tr>
+  <tr><td><code>consulter_disponibilite</code></td><td>lecture</td><td>non</td></tr>
+  <tr><td><code>lister_mes_reservations</code></td><td>lecture</td><td>non</td></tr>
+  <tr><td><code>obtenir_code_acces</code></td><td>lecture</td><td>non</td></tr>
+  <tr><td><code>consulter_regles</code></td><td>lecture</td><td>non</td></tr>
+  <tr><td><code>rechercher_faq</code></td><td>lecture</td><td>non</td></tr>
+  <tr><td><code>transferer_humain</code></td><td>lecture</td><td>non</td></tr>
+  <tr><td><code>creer_reservation</code></td><td><strong>écriture</strong></td><td><strong>oui</strong></td></tr>
+  <tr><td><code>modifier_reservation</code></td><td><strong>écriture</strong></td><td><strong>oui</strong></td></tr>
+  <tr><td><code>annuler_reservation</code></td><td><strong>écriture</strong></td><td><strong>oui</strong></td></tr>
+  <tr><td><code>creer_ticket</code></td><td><strong>écriture</strong></td><td><strong>oui</strong></td></tr>
+</table>
+
+<p style="margin-top:10mm; padding-top:4mm; border-top:1px solid var(--trait); font-size:9pt; color:var(--gris-clair); font-style:italic;">
+Rapport rédigé au terme du projet. Toutes les mesures citées ont été relevées sur l’application réelle, en local ou en production, et sont reproductibles avec les commandes de l’annexe 18.3.
+</p>
+</section>
+
+</body>
+</html>

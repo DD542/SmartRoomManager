@@ -1,0 +1,31 @@
+# Normalisation des fins de ligne.
+#
+# `core.autocrlf = true` est courant sur Windows : Git convertit alors les
+# fichiers texte en CRLF a la sortie du depot. Pour un script execute dans un
+# conteneur Linux, c'est fatal — et le message ne le dit pas. Le shebang
+# devient `#!/bin/sh\r`, Linux cherche un interpreteur nomme `/bin/sh\r`, ne
+# le trouve pas, et rend :
+#
+#     exec /app/docker-entrypoint.sh: no such file or directory
+#
+# qui designe le script alors que c'est l'interpreteur qui manque. Le defaut
+# n'apparait que via docker-compose, qui monte la copie de travail sur /app ;
+# une image construite sur un hote Linux ne le montre pas.
+
+* text=auto
+
+*.sh   text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+Dockerfile      text eol=lf
+Dockerfile.*    text eol=lf
+.env.example    text eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.svg text
+*.pdf binary
+*.pptx binary
+*.ico binary
