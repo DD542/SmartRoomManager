@@ -353,6 +353,13 @@ def me(principal: CurrentPrincipal) -> SessionOut:
 @limiter.limit(settings.rate_limit_reset)
 def forgot_password(
     request: Request,
+    # `response` n'est pas décoratif : le limiteur y pose ses en-têtes
+    # `X-RateLimit-*` après l'appel. Sans ce paramètre, slowapi lève
+    # « parameter `response` must be an instance of starlette.responses.Response »
+    # et la route rendait 500 à chaque demande — la réinitialisation de mot de
+    # passe était donc impossible, sans qu'aucun courriel ne soit même tenté.
+    # Les trois autres routes limitées de ce fichier le déclarent déjà.
+    response: Response,
     payload: ForgotPasswordIn,
     session: SessionDep,
     background: BackgroundTasks,

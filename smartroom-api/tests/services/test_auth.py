@@ -385,6 +385,31 @@ class TestLimitationDeDebit:
         # ne doit pas être bloqué.
         assert codes[0] == 401
 
+    def test_la_demande_de_reinitialisation_supporte_le_limiteur(self, client, compte):
+        """Toute route limitée doit déclarer un paramètre `response`.
+
+        `slowapi` y injecte les en-têtes `X-RateLimit-*` après l'appel. Sans ce
+        paramètre, il lève « parameter `response` must be an instance of
+        starlette.responses.Response », et `/auth/forgot-password` rendait 500 à
+        chaque demande : la réinitialisation de mot de passe était impossible et
+        aucun courriel n'était même tenté.
+
+        Les tests de `TestMotDePasse` ne pouvaient pas l'attraper : la fixture
+        `client` neutralise le limiteur pour toute la suite, et un limiteur
+        éteint n'injecte rien. Ce test-ci le rallume — c'est la seule condition
+        où le défaut se manifeste.
+
+        Sans le correctif, il rend 500 et les en-têtes sont absents.
+        """
+        reponse = client.post(
+            "/api/v1/auth/forgot-password", json={"email": compte.email}
+        )
+
+        assert reponse.status_code == 202
+        entetes = {c.lower() for c in reponse.headers}
+        assert "x-ratelimit-limit" in entetes
+        assert "x-ratelimit-remaining" in entetes
+
 
 class TestPurge:
     def test_les_jetons_expires_sont_supprimes(self, session: Session, compte):
