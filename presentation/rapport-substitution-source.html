@@ -1,0 +1,1154 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Rapport de projet de substitution au stage — SmartRoom Manager</title>
+<style>
+  :root {
+    --encre: #15171c; --gris: #474c56; --gris-clair: #868c96;
+    --trait: #d8dbe0; --accent: #1f4fd8; --accent-pale: #eef2fd;
+    --fond-code: #f5f6f8; --vert: #0c7346; --rouge: #b0231c; --ambre: #855d00;
+  }
+  @page { size: A4; margin: 20mm 18mm 20mm 18mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 10.4pt; line-height: 1.6; color: var(--encre); margin: 0;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+
+  /* --- page de garde --- */
+  .garde { height: 250mm; display: flex; flex-direction: column; page-break-after: always; }
+  .garde .etab { font-size: 10pt; letter-spacing: .16em; text-transform: uppercase; color: var(--gris-clair); }
+  .garde .haut { border-bottom: 1px solid var(--trait); padding-bottom: 5mm; }
+  .garde .milieu { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+  .garde .mention {
+    display: inline-block; align-self: flex-start; background: var(--accent-pale);
+    color: var(--accent); border: 1px solid var(--accent); border-radius: 3px;
+    padding: 1.5mm 4mm; font-size: 10pt; font-weight: 600; margin-bottom: 8mm;
+  }
+  .garde h1 { font-size: 33pt; line-height: 1.08; margin: 0 0 4mm; letter-spacing: -.02em; }
+  .garde .accroche { font-size: 13.5pt; color: var(--gris); margin: 0 0 12mm; max-width: 140mm; line-height: 1.45; }
+  .garde .filet { width: 38mm; height: 3px; background: var(--accent); margin-bottom: 10mm; }
+  .garde table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+  .garde table th { background: var(--accent-pale); border-bottom: 1.5px solid var(--accent); }
+  .garde .infos { display: grid; grid-template-columns: 46mm 1fr; row-gap: 2.6mm; margin-top: 8mm; font-size: 10.5pt; }
+  .garde .infos dt { color: var(--gris-clair); }
+  .garde .infos dd { margin: 0; font-weight: 500; }
+  .garde .bas { border-top: 1px solid var(--trait); padding-top: 4mm; font-size: 9pt; color: var(--gris-clair); }
+
+  /* --- sommaire --- */
+  .sommaire { page-break-after: always; }
+  .sommaire ol { list-style: none; padding: 0; margin: 0; counter-reset: s; }
+  .sommaire > ol > li {
+    counter-increment: s; padding: 2mm 0; border-bottom: 1px dotted var(--trait); font-weight: 600;
+  }
+  .sommaire > ol > li::before {
+    content: counter(s) "."; display: inline-block; width: 10mm; color: var(--accent);
+  }
+  .sommaire ol ol { margin: 1.4mm 0 1mm 10mm; counter-reset: t; }
+  .sommaire ol ol li {
+    counter-increment: t; font-weight: 400; font-size: 9.5pt; color: var(--gris);
+    padding: .6mm 0; border: 0;
+  }
+  .sommaire ol ol li::before {
+    content: counter(s) "." counter(t); display: inline-block; width: 12mm; color: var(--gris-clair);
+  }
+
+  /* --- titraille --- */
+  h2 {
+    font-size: 18pt; margin: 0 0 6mm; padding-bottom: 3mm;
+    border-bottom: 2px solid var(--accent); letter-spacing: -.01em; page-break-after: avoid;
+  }
+  h2 .num { color: var(--accent); margin-right: 3mm; }
+  h3 { font-size: 12.5pt; margin: 8mm 0 3mm; page-break-after: avoid; }
+  h4 {
+    font-size: 10.4pt; margin: 6mm 0 2mm; color: var(--gris);
+    text-transform: uppercase; letter-spacing: .07em; page-break-after: avoid;
+  }
+  section { page-break-before: always; }
+  p { margin: 0 0 3.4mm; text-align: justify; hyphens: auto; }
+  ul, ol { margin: 0 0 3.4mm; padding-left: 6mm; }
+  li { margin-bottom: 1.4mm; }
+
+  /* --- blocs --- */
+  table.g { width: 100%; border-collapse: collapse; margin: 3mm 0 5mm; font-size: 9.3pt; page-break-inside: avoid; }
+  table.g th {
+    text-align: left; background: var(--accent-pale); font-weight: 600;
+    padding: 2.2mm 2.5mm; border-bottom: 1.5px solid var(--accent);
+  }
+  table.g td { padding: 2mm 2.5mm; border-bottom: 1px solid var(--trait); vertical-align: top; }
+  table.g tr:last-child td { border-bottom: 0; }
+
+  pre {
+    background: var(--fond-code); border-left: 3px solid var(--accent);
+    padding: 3mm 4mm; font-family: Consolas, "Courier New", monospace;
+    font-size: 8.7pt; line-height: 1.45; white-space: pre-wrap; word-break: break-word;
+    margin: 3mm 0 2mm; page-break-inside: avoid;
+  }
+  code { font-family: Consolas, "Courier New", monospace; font-size: 9pt; background: var(--fond-code); padding: .3mm 1mm; border-radius: 2px; }
+
+  .enc { border: 1px solid var(--trait); border-left: 3px solid var(--gris-clair); background: #fafbfc; padding: 3mm 4mm; margin: 4mm 0; page-break-inside: avoid; }
+  .enc .t { font-size: 8.6pt; text-transform: uppercase; letter-spacing: .08em; color: var(--gris-clair); font-weight: 600; margin-bottom: 1.5mm; }
+  .enc p:last-child, .enc table:last-child { margin-bottom: 0; }
+  .enc.choix { border-left-color: var(--accent); }
+  .enc.mesure { border-left-color: var(--vert); }
+  .enc.alerte { border-left-color: var(--ambre); }
+
+  figure { margin: 4mm 0 5mm; page-break-inside: avoid; }
+  figure img { width: 100%; border: 1px solid var(--trait); display: block; }
+  figcaption { font-size: 8.7pt; color: var(--gris-clair); margin-top: 1.8mm; text-align: left; }
+  figcaption b { color: var(--gris); font-weight: 600; }
+
+  .schema {
+    font-family: Consolas, "Courier New", monospace; font-size: 7.9pt; line-height: 1.35;
+    border: 1px solid var(--trait); padding: 4mm; white-space: pre; margin: 3mm 0 2mm;
+    page-break-inside: avoid; text-align: center; overflow: hidden;
+  }
+  .chiffres { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm; margin: 4mm 0 6mm; }
+  .ch { border: 1px solid var(--trait); border-top: 3px solid var(--accent); padding: 3mm; text-align: center; }
+  .ch .v { font-size: 16pt; font-weight: 700; display: block; line-height: 1.15; }
+  .ch .l { font-size: 7.8pt; color: var(--gris-clair); text-transform: uppercase; letter-spacing: .05em; }
+
+  .ok { color: var(--vert); font-weight: 600; }
+  .ko { color: var(--rouge); font-weight: 600; }
+  .att { color: var(--ambre); font-weight: 600; }
+
+  .fiche { border: 1px solid var(--trait); border-radius: 3px; padding: 3mm 4mm; margin: 4mm 0; page-break-inside: avoid; }
+  .fiche h4 { margin: 0 0 2.5mm; text-transform: none; letter-spacing: 0; font-size: 11pt; color: var(--encre); }
+  .fiche h4 .no { display: inline-block; background: var(--encre); color: #fff; font-size: 8pt; padding: .4mm 1.8mm; border-radius: 2px; margin-right: 2.5mm; vertical-align: 1px; }
+  .fiche dl { display: grid; grid-template-columns: 26mm 1fr; row-gap: 1.5mm; margin: 0; }
+  .fiche dt { font-size: 8.3pt; text-transform: uppercase; letter-spacing: .06em; color: var(--gris-clair); padding-top: .5mm; font-weight: 600; }
+  .fiche dd { margin: 0; }
+  .fiche dd p { margin-bottom: 1.5mm; }
+
+  .biblio { font-size: 9.3pt; }
+  .biblio ol { padding-left: 8mm; }
+  .biblio li { margin-bottom: 2mm; }
+  .biblio .url { font-family: Consolas, monospace; font-size: 8.4pt; color: var(--gris); word-break: break-all; }
+
+  .aremplir { background: #fff6d8; border-bottom: 1px solid #d9b400; padding: 0 1mm; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════ 1. PAGE DE GARDE ═══ -->
+<div class="garde">
+  <div class="haut">
+    <div class="etab">ECE Paris — École d’ingénieurs</div>
+  </div>
+
+  <div class="milieu">
+    <span class="mention">Projet de substitution au stage</span>
+    <h1>SmartRoom&nbsp;Manager</h1>
+    <p class="accroche">Plateforme de réservation intelligente de salles de campus : recherche assistée, garantie d’intégrité des créneaux et assistant conversationnel outillé.</p>
+    <div class="filet"></div>
+
+    <table class="g">
+      <tr><th style="width:52mm">Membre du groupe</th><th>Adresse électronique</th></tr>
+      <tr><td><strong>Dylan Menga Wanda</strong></td><td>dylan.mengawanda@edu.ece.fr</td></tr>
+      <tr><td><strong>Ngangne Takoudjou Angédarelle</strong></td><td>angedarelle.ngangnetakoudjou@edu.ece.fr</td></tr>
+      <tr><td><strong>Nguadjong Maeva</strong></td><td>maevador.nguadjong@edu.ece.fr</td></tr>
+    </table>
+
+    <dl class="infos">
+      <dt>Formation</dt><dd>Bachelor 3 — Data &amp; Intelligence Artificielle</dd>
+      <dt>Groupe</dt><dd><span class="aremplir">[groupe à compléter]</span></dd>
+      <dt>Campus</dt><dd>Paris</dd>
+      <dt>Année universitaire</dt><dd>2025 – 2026</dd>
+      <dt>Dépôt du code</dt><dd>https://github.com/DD542/SmartRoomManager</dd>
+      <dt>Application en ligne</dt><dd>https://smartroommanager.vercel.app</dd>
+    </dl>
+  </div>
+
+  <div class="bas">Rapport de projet de substitution au stage — remis en septembre 2026</div>
+</div>
+
+<!-- ═══════════════════════════════════════ SOMMAIRE ═══ -->
+<div class="sommaire">
+  <h2>Sommaire</h2>
+  <ol>
+    <li>Page de garde</li>
+    <li>Résumé du projet — <em>Abstract</em>
+      <ol><li>Résumé (français)</li><li>Abstract (English)</li></ol>
+    </li>
+    <li>Introduction
+      <ol><li>Contexte</li><li>Choix du sujet</li><li>Problématique</li><li>Objectifs attendus</li><li>Démarche générale adoptée</li></ol>
+    </li>
+    <li>Présentation du sujet et analyse du besoin
+      <ol><li>Le problème étudié</li><li>Utilisateurs et bénéficiaires</li><li>Besoins identifiés</li><li>Contraintes du projet</li><li>Étude de l’existant</li><li>Exigences retenues</li></ol>
+    </li>
+    <li>Méthodologie et organisation du projet
+      <ol><li>Méthode de travail</li><li>Répartition des rôles</li><li>Planning et étapes</li><li>Outils utilisés</li><li>Technologies choisies et justification</li><li>Gestion de la qualité</li></ol>
+    </li>
+    <li>Réalisation du projet
+      <ol><li>Architecture de la solution</li><li>Base de données</li><li>Le mécanisme central : l’intégrité des créneaux</li><li>Back-end : services et API</li><li>Le moteur de recommandation</li><li>Interfaces et maquettage Figma</li><li>L’assistant conversationnel</li><li>Sécurité et données personnelles</li><li>Déploiement</li></ol>
+    </li>
+    <li>Tests et résultats
+      <ol><li>Stratégie de tests</li><li>Résultats chiffrés</li><li>Résultats fonctionnels illustrés</li><li>Vérifications menées en production</li><li>Atteinte des objectifs</li></ol>
+    </li>
+    <li>Difficultés rencontrées et solutions apportées
+      <ol><li>Difficultés techniques</li><li>Difficultés méthodologiques</li><li>Tableau récapitulatif</li></ol>
+    </li>
+    <li>Bilan et compétences acquises
+      <ol><li>Compétences techniques</li><li>Compétences professionnelles</li><li>Bilans individuels</li><li>Points à approfondir</li></ol>
+    </li>
+    <li>Conclusion et perspectives
+      <ol><li>Rappel des objectifs</li><li>Résultats et degré d’atteinte</li><li>Limites assumées</li><li>Perspectives</li></ol>
+    </li>
+    <li>Bibliographie et sources
+      <ol><li>Documentations techniques</li><li>Articles et publications</li><li>Normes et textes de référence</li><li>Bibliothèques et services utilisés</li><li>Outils d’aide et déclaration d’usage</li></ol>
+    </li>
+    <li>Annexes et dépôt GitHub
+      <ol><li>Accès au dépôt et organisation</li><li>Installation et exécution</li><li>Comptes de démonstration</li><li>Inventaire des migrations</li><li>Catalogue des outils de l’assistant</li><li>Variables d’environnement</li></ol>
+    </li>
+  </ol>
+</div>
+
+<!-- ═══════════════════════════════════ 2. RÉSUMÉ ═══ -->
+<section>
+<h2><span class="num">2</span>Résumé du projet — <em>Abstract</em></h2>
+
+<h3>2.1 Résumé (français)</h3>
+<p><strong>Sujet.</strong> SmartRoom Manager est une application web de réservation de salles pour un campus universitaire. Elle couvre la recherche d’une salle disponible, sa réservation, la validation de la présence sur place, l’arbitrage des conflits et l’administration complète du parc immobilier.</p>
+<p><strong>Problématique.</strong> Les moyens couramment employés pour réserver une salle — tableur partagé, courriel au secrétariat, affichage papier — ont un défaut commun : aucun ne peut <em>garantir</em> qu’une salle n’est pas déjà prise. Le conflit ne se découvre donc pas au moment de la réservation, mais devant la porte. À cela s’ajoute une perte invisible : des salles réservées puis désertées restent bloquées pour tous les autres.</p>
+<p><strong>Objectifs.</strong> Concevoir et réaliser une plateforme qui rende le double créneau <em>structurellement impossible</em>, qui aide l’utilisateur à trouver une salle adaptée plutôt qu’à filtrer une liste, et qui libère automatiquement les créneaux non honorés.</p>
+<p><strong>Solution proposée.</strong> Une architecture en quatre couches sur FastAPI et PostgreSQL, dans laquelle la garantie de non-chevauchement est portée par une contrainte d’exclusion de la base de données et non par du code applicatif. Une interface React couvrant 52 écrans, maquettée au préalable sur Figma. Deux briques relevant de la Data et de l’intelligence artificielle : un moteur de recommandation explicable, qui ordonne les salles selon un score dont chaque composante est exposée ; et un assistant conversationnel outillé de quatorze fonctions interrogeant la base réelle, adossé à une recherche documentaire hybride combinant similarité vectorielle et recherche lexicale, et encadré par trois garde-fous.</p>
+<p><strong>Principaux résultats.</strong> L’application est fonctionnelle et déployée publiquement. Elle comporte 128 routes d’API, 46 tables, 13 migrations versionnées, et elle est couverte par 1 576 tests automatisés dont la couche métier est éprouvée à 100 % de ses branches. Vingt-sept incidents ont été diagnostiqués et corrigés au cours du projet, chacun documenté avec la mesure qui a permis de l’établir. La solution atteint les trois objectifs initiaux ; ses limites, toutes liées aux paliers d’hébergement gratuits, sont documentées plutôt que masquées.</p>
+
+<h3>2.2 Abstract (English)</h3>
+<p><strong>Topic.</strong> SmartRoom Manager is a web application for booking rooms across a university campus. It covers searching for an available room, booking it, validating on-site attendance, arbitrating conflicts, and fully administering the building portfolio.</p>
+<p><strong>Problem statement.</strong> The tools commonly used to book a room — a shared spreadsheet, an email to the front desk, a printed sheet on the door — share one flaw: none of them can <em>guarantee</em> that a room is not already taken. The conflict is therefore discovered not at booking time, but at the door. A second, less visible cost compounds it: rooms that are booked and then deserted stay blocked for everyone else.</p>
+<p><strong>Objectives.</strong> To design and build a platform that makes double-booking <em>structurally impossible</em>, that helps users find a suitable room rather than filter a list, and that automatically releases slots nobody shows up for.</p>
+<p><strong>Proposed solution.</strong> A four-layer architecture built on FastAPI and PostgreSQL, in which the non-overlap guarantee is enforced by a database exclusion constraint rather than by application code. A React front end covering 52 screens, prototyped beforehand in Figma. Two components rooted in Data and Artificial Intelligence: an explainable recommendation engine that ranks rooms by a composite score whose every component is exposed; and a tool-using conversational assistant with fourteen functions querying the live database, backed by hybrid document retrieval combining vector similarity with lexical search, and constrained by three safeguards.</p>
+<p><strong>Main results.</strong> The application is functional and publicly deployed. It exposes 128 API routes, 46 tables and 13 versioned migrations, and is covered by 1,576 automated tests, with the business-rule layer proven at 100 % branch coverage. Twenty-seven incidents were diagnosed and fixed during the project, each documented alongside the measurement that established it. The solution meets its three initial objectives; its limitations, all stemming from free hosting tiers, are documented rather than concealed.</p>
+</section>
+
+<!-- ═══════════════════════════════ 3. INTRODUCTION ═══ -->
+<section>
+<h2><span class="num">3</span>Introduction</h2>
+
+<h3>3.1 Contexte</h3>
+<p>Un campus universitaire dispose de salles de natures très diverses : amphithéâtres de quatre-vingt-dix places, laboratoires équipés, salles de réunion de quatre à douze personnes, ateliers. Elles sont réparties dans plusieurs bâtiments, parfois séparés de plusieurs rues.</p>
+<p>Leur réservation repose le plus souvent sur trois mécanismes : un tableur partagé, un courriel adressé au secrétariat, ou une feuille affichée sur la porte. Le tableur autorise deux écritures simultanées sans arbitre. Le courriel dépend de la disponibilité d’une personne. Le papier n’est visible que de celui qui passe devant.</p>
+<p>Ce contexte n’est pas une hypothèse d’école : il correspond à l’organisation que nous observons quotidiennement, et c’est cette familiarité avec le besoin qui a motivé le choix du sujet.</p>
+
+<h3>3.2 Choix du sujet</h3>
+<p>Trois raisons ont conduit notre groupe à retenir ce sujet plutôt qu’un autre.</p>
+<p><strong>Un besoin que nous connaissons de l’intérieur.</strong> Nous sommes les utilisateurs finaux du système que nous concevons. Cela nous a permis de valider les choix fonctionnels sans devoir mener une enquête préalable, et de repérer des besoins que l’analyse abstraite aurait manqués — la fenêtre de validation de présence, par exemple, est née d’un constat d’usage, non d’un cahier des charges.</p>
+<p><strong>Un problème dont la difficulté est réelle et technique.</strong> Empêcher deux réservations simultanées de se chevaucher paraît trivial ; c’est en réalité un problème classique de concurrence en base de données, dont la solution naïve — vérifier puis écrire — est fausse dès qu’il y a deux utilisateurs. Le sujet offrait donc une véritable difficulté d’ingénierie, et non un simple travail d’assemblage.</p>
+<p><strong>Une place naturelle pour la Data et l’IA.</strong> Notre formation est un Bachelor Data &amp; IA ; il nous importait que ces disciplines portent des fonctionnalités réelles du produit, et non un habillage ajouté à la fin. Le moteur de recommandation et l’assistant conversationnel répondent tous deux à un besoin exprimé dans l’analyse : aider à choisir, et aider à s’orienter.</p>
+
+<h3>3.3 Problématique</h3>
+<div class="enc choix">
+  <div class="t">Problématique retenue</div>
+  <p><strong>Comment concevoir un système de réservation de salles qui garantisse l’absence de double réservation quelles que soient les conditions de concurrence, qui assiste réellement l’utilisateur dans son choix plutôt que de lui déléguer le filtrage, et qui reste pleinement fonctionnel lorsque ses composants d’intelligence artificielle sont indisponibles ?</strong></p>
+</div>
+<p>Cette formulation contient trois exigences que nous avons voulues indissociables. La première est une exigence de <em>correction</em> : le système ne doit pas seulement rendre le double créneau improbable, il doit le rendre impossible. La deuxième est une exigence d’<em>utilité</em> : afficher une liste de quinze salles n’aide personne, il faut ordonner et expliquer. La troisième est une exigence de <em>robustesse</em>, et c’est elle qui a le plus structuré l’architecture : une fonctionnalité d’IA qui tombe ne doit pas emporter l’application avec elle.</p>
+
+<h3>3.4 Objectifs attendus</h3>
+<table class="g">
+  <tr><th style="width:12mm">Réf.</th><th style="width:52mm">Objectif</th><th>Critère de réussite retenu</th></tr>
+  <tr><td><strong>O1</strong></td><td>Rendre le double créneau impossible</td><td>Dix demandes simultanées sur le même créneau : exactement une réussit, les neuf autres reçoivent un message métier compréhensible.</td></tr>
+  <tr><td><strong>O2</strong></td><td>Assister le choix d’une salle</td><td>Les salles proposées sont libres, conformes aux règles, ordonnées, et le classement est justifié à l’écran.</td></tr>
+  <tr><td><strong>O3</strong></td><td>Libérer les créneaux non honorés</td><td>Sans validation de présence dans la fenêtre prévue, le créneau redevient réservable automatiquement.</td></tr>
+  <tr><td><strong>O4</strong></td><td>Offrir une administration complète</td><td>Parc, règles, comptes, permissions, conflits, support et audit gérables sans intervention en base.</td></tr>
+  <tr><td><strong>O5</strong></td><td>Fournir un assistant en langage naturel</td><td>L’assistant répond en s’appuyant sur la base réelle, et non sur ce qu’un modèle croit savoir.</td></tr>
+  <tr><td><strong>O6</strong></td><td>Dégrader proprement</td><td>Sans modèle de langage, sans modèle de vecteurs et sans relais de courriel, l’application reste utilisable.</td></tr>
+  <tr><td><strong>O7</strong></td><td>Déployer publiquement</td><td>L’application est accessible en ligne, supervisée, à coût nul.</td></tr>
+</table>
+
+<h3>3.5 Démarche générale adoptée</h3>
+<p>Nous avons travaillé en quatre temps : analyse et maquettage, réalisation du socle, réalisation des briques Data et IA, puis déploiement et fiabilisation. Le détail figure en section 5.</p>
+<p>Une règle a gouverné l’ensemble, et particulièrement la seconde moitié du projet : <strong>mesurer avant d’affirmer</strong>. Plusieurs de nos diagnostics initiaux se sont révélés faux, et à chaque fois c’est une mesure — souvent qu’il a d’abord fallu rendre possible — qui a tranché. Cette discipline a une conséquence visible : nos messages de commit ne décrivent pas seulement ce qui change, mais ce qui a été observé, ce qui a été essayé puis abandonné, et ce qui prouve que la correction fonctionne.</p>
+<p>Le présent rapport en rend compte de la même manière : chaque chiffre cité a été relevé sur l’application réelle, et l’annexe 12.2 donne les commandes qui permettent de le reproduire.</p>
+</section>
+
+<!-- ═════════════════ 4. SUJET ET ANALYSE DU BESOIN ═══ -->
+<section>
+<h2><span class="num">4</span>Présentation du sujet et analyse du besoin</h2>
+
+<h3>4.1 Le problème étudié</h3>
+<p>Nous avons décomposé la situation en trois problèmes distincts, parce qu’ils appellent trois réponses techniques différentes.</p>
+
+<h4>Problème A — On ne sait pas ce qui est libre</h4>
+<p>Chercher une salle oblige à ouvrir plusieurs sources et à les recouper mentalement. Le coût n’est pas le temps passé : c’est le renoncement. La personne réserve « au cas où », ce qui bloque un créneau dont elle ne se servira peut-être pas et aggrave la pénurie qu’elle subissait.</p>
+
+<h4>Problème B — Deux personnes réservent le même créneau</h4>
+<p>Sans arbitre technique, le conflit se découvre devant la porte. Le coût réel n’est pas la double écriture en base : c’est la réunion qui n’a pas lieu et les six personnes qui repartent.</p>
+
+<h4>Problème C — Les salles réservées restent vides</h4>
+<p>Personne ne vient, et le créneau reste bloqué. C’est le problème le moins visible et le plus coûteux, précisément parce qu’il est invisible : la salle apparaît occupée dans le système et vide dans la réalité. Un système qui ne mesure pas la présence effective ne peut pas libérer ce qui ne sert pas.</p>
+
+<h3>4.2 Utilisateurs et bénéficiaires</h3>
+<table class="g">
+  <tr><th style="width:30mm">Acteur</th><th>Ce qu’il attend du système</th><th style="width:44mm">Ce qui doit lui être interdit</th></tr>
+  <tr><td><strong>Étudiant ou enseignant</strong><br><span style="color:var(--gris-clair)">utilisateur principal</span></td><td>Trouver vite une salle adaptée, la réserver de façon sûre, y entrer, la modifier ou l’annuler, être prévenu</td><td>Voir les données d’autrui, modifier le parc, changer les règles</td></tr>
+  <tr><td><strong>Administrateur</strong><br><span style="color:var(--gris-clair)">gestionnaire de site</span></td><td>Gérer le parc, arbitrer les conflits, configurer les règles, traiter le support, exporter les données</td><td>Agir hors de son périmètre de permissions</td></tr>
+  <tr><td><strong>Propriétaire</strong><br><span style="color:var(--gris-clair)">responsable du service</span></td><td>Tout ce qui précède, plus la gestion des autres administrateurs et de leurs invitations</td><td>—</td></tr>
+  <tr><td><strong>Établissement</strong><br><span style="color:var(--gris-clair)">bénéficiaire indirect</span></td><td>Une meilleure occupation du parc, une traçabilité des décisions, des statistiques d’usage</td><td>—</td></tr>
+</table>
+
+<div class="enc choix">
+  <div class="t">Une décision d’analyse : distinguer administrateur et propriétaire</div>
+  <p>Une matrice de permissions où tout le monde possède tout ne prouve rien, et l’écran des rôles n’aurait rien à montrer. Nous avons donc défini <strong>sept permissions nommées, attribuables individuellement</strong>, et le jeu de démonstration porte cinq comptes d’administration aux périmètres volontairement différents. Le cloisonnement devient ainsi démontrable, et non seulement déclaré.</p>
+</div>
+
+<h3>4.3 Besoins identifiés</h3>
+<p>Nous avons formalisé dix cas d’usage, qui ont servi de référence tout au long de la réalisation.</p>
+<table class="g">
+  <tr><th style="width:11mm">Réf.</th><th style="width:44mm">Cas d’usage</th><th>Règles associées</th></tr>
+  <tr><td>U1</td><td>Réserver une salle</td><td>Ne proposer que des salles libres et conformes ; confirmation par courriel ; code d’accès émis une heure avant.</td></tr>
+  <tr><td>U2</td><td>Valider sa présence</td><td>Saisie du code à l’ouverture du créneau, dans une fenêtre de dix minutes ; au-delà, libération automatique.</td></tr>
+  <tr><td>U3</td><td>Modifier ou annuler</td><td>Jusqu’à une heure avant, délai configurable par salle ; motif obligatoire ; participants prévenus.</td></tr>
+  <tr><td>U4</td><td>Demander un accès</td><td>Certaines salles exigent un badge : demande motivée, arbitrage tracé.</td></tr>
+  <tr><td>U5</td><td>Arbitrer un conflit</td><td>Référence lisible et prononçable (<code>#CONF-8492</code>), décision journalisée.</td></tr>
+  <tr><td>U6</td><td>Configurer les règles</td><td>Durées, battement, préavis, horizon, quota hebdomadaire, délais ; portée établissement, bâtiment ou salle.</td></tr>
+  <tr><td>U7</td><td>Interroger l’assistant</td><td>En langage naturel : réservations, disponibilité, localisation, procédure, ouverture d’un ticket.</td></tr>
+  <tr><td>U8</td><td>Administrer le parc</td><td>Bâtiments, étages, plans, salles, photos, repères, équipements, statuts.</td></tr>
+  <tr><td>U9</td><td>Suivre l’occupation</td><td>Tableaux de bord, heures de pointe, taux par salle, exports.</td></tr>
+  <tr><td>U10</td><td>Gérer les comptes</td><td>Suspension et réactivation motivées et notifiées, retrait définitif par anonymisation.</td></tr>
+</table>
+
+<h3>4.4 Contraintes du projet</h3>
+<table class="g">
+  <tr><th style="width:38mm">Contrainte</th><th>Conséquence directe sur la conception</th></tr>
+  <tr><td><strong>Budget nul</strong></td><td>L’hébergement devait tenir sur des paliers gratuits. Cette contrainte n’a pas été subie mais intégrée : elle a produit l’architecture à trois étages de l’assistant, la stratégie de versionnement des médias, et la dégradation propre décrite en 6.7.</td></tr>
+  <tr><td><strong>Groupe de trois, sans encadrement technique</strong></td><td>Choix d’outils à faible coût d’exploitation, et mise en place d’une chaîne d’intégration continue exigeante qui joue le rôle du relecteur : elle a détecté trois défauts qu’une relecture humaine aurait pu laisser passer.</td></tr>
+  <tr><td><strong>Aucun GPU en production</strong></td><td>Aucun hébergement gratuit ne fait tourner un modèle de sept milliards de paramètres. L’assistant devait donc fonctionner sans modèle local, ce qui a imposé une architecture où le modèle est un <em>confort</em> et non une <em>dépendance</em>.</td></tr>
+  <tr><td><strong>Durée limitée</strong></td><td>Certaines fonctionnalités ont été écartées explicitement plutôt que livrées à moitié (exports PDF et Excel, stockage objet externe). Ces arbitrages sont documentés en 10.3.</td></tr>
+  <tr><td><strong>Données personnelles</strong></td><td>L’application manipule des identités et des historiques. Elle devait donc prévoir le retrait d’un compte, le cloisonnement des données et la traçabilité des décisions.</td></tr>
+</table>
+
+<h3>4.5 Étude de l’existant</h3>
+<p>Nous avons examiné les solutions existantes pour situer notre travail et éviter de réinventer ce qui fonctionne.</p>
+<table class="g">
+  <tr><th style="width:38mm">Solution</th><th>Ce qu’elle fait bien</th><th>Ce qui manque pour notre besoin</th></tr>
+  <tr><td><strong>Tableur partagé</strong><br>(Google Sheets, Excel en ligne)</td><td>Gratuit, immédiat, connu de tous</td><td>Aucune garantie d’intégrité, aucun contrôle d’accès fin, aucune notion de règle métier, aucune trace exploitable</td></tr>
+  <tr><td><strong>Agendas de ressources</strong><br>(Google Calendar, Outlook)</td><td>Réservation de ressources, invitations, rappels</td><td>Le double créneau reste possible selon la configuration ; aucune recommandation ; aucune validation de présence ; pas de libération automatique</td></tr>
+  <tr><td><strong>Solutions dédiées du marché</strong><br>(Skedda, Robin, Joan)</td><td>Fonctionnellement très complètes, matures</td><td>Payantes, fermées, non adaptables au règlement d’un établissement, et sans accès au code — donc sans valeur pédagogique pour ce projet</td></tr>
+  <tr><td><strong>Projets libres</strong><br>(Booked, Libcal-like)</td><td>Code disponible, socle éprouvé</td><td>Ergonomie datée, pas de couche d’assistance, architecture souvent monolithique difficile à faire évoluer</td></tr>
+</table>
+<div class="enc mesure">
+  <div class="t">Ce que l’étude de l’existant a changé dans notre conception</div>
+  <p>Deux enseignements concrets. D’abord, <strong>aucune des solutions gratuites examinées ne place la garantie d’intégrité dans la base de données</strong> : toutes la traitent au niveau applicatif, donc contournable. Nous en avons fait notre choix structurant. Ensuite, <strong>aucune ne mesure la présence effective</strong> ; le problème C reste entier partout. C’est donc là que notre apport pouvait être réel, et nous y avons consacré un cas d’usage complet plutôt qu’une fonctionnalité annexe.</p>
+</div>
+
+<h3>4.6 Exigences retenues</h3>
+<h4>Exigences fonctionnelles</h4>
+<ul>
+  <li>Recherche multicritère : date, plage, capacité, équipements, accessibilité PMR, bâtiment.</li>
+  <li>Recommandation ordonnée et <strong>explicable</strong>.</li>
+  <li>Réservation atomique, sans chevauchement possible.</li>
+  <li>Réservations récurrentes, une occurrence annulable sans toucher à la série.</li>
+  <li>Participants, invitations et réponses.</li>
+  <li>Code d’accès à usage unique, validation de présence bornée, libération automatique.</li>
+  <li>Fermetures exceptionnelles à trois portées, horaires d’ouverture par bâtiment.</li>
+  <li>Notifications applicatives <em>et</em> courriels, rendus depuis des gabarits modifiables sans redéploiement.</li>
+  <li>Journal d’audit exportable de toute décision d’administration.</li>
+  <li>Assistant conversationnel outillé, citant ses sources.</li>
+</ul>
+<h4>Exigences non fonctionnelles</h4>
+<table class="g">
+  <tr><th style="width:34mm">Exigence</th><th>Traduction technique retenue</th></tr>
+  <tr><td><strong>Intégrité</strong></td><td>Contrainte <code>EXCLUDE USING gist</code> : le chevauchement n’est pas représentable.</td></tr>
+  <tr><td><strong>Confidentialité</strong></td><td>Portées de session distinctes, permissions granulaires, en-têtes de cache stricts sur toute route personnelle.</td></tr>
+  <tr><td><strong>Traçabilité</strong></td><td>Journal d’audit métier, journal par tour d’assistant, journaux applicatifs structurés.</td></tr>
+  <tr><td><strong>Robustesse</strong></td><td>Dégradations prévues <em>et testées</em>.</td></tr>
+  <tr><td><strong>Testabilité</strong></td><td>Couche métier pure, sans dépendance, exigée à 100 % de couverture de branches.</td></tr>
+  <tr><td><strong>Accessibilité</strong></td><td>Libellés visibles <em>et</em> lisibles par lecteur d’écran ; conformité WCAG 2.5.3 sur les déclencheurs.</td></tr>
+</table>
+</section>
+
+<!-- ═══════════ 5. MÉTHODOLOGIE ET ORGANISATION ═══ -->
+<section>
+<h2><span class="num">5</span>Méthodologie et organisation du projet</h2>
+
+<h3>5.1 Méthode de travail</h3>
+<p>Nous avons adopté une méthode <strong>itérative par incréments fonctionnels</strong>, proche de l’esprit agile mais adaptée à un groupe de trois sans client externe : chaque itération devait produire une fonctionnalité utilisable de bout en bout — de l’écran jusqu’à la base — plutôt qu’une couche technique isolée.</p>
+<p>Ce choix répondait à un risque précis. En découpant par couches, on obtient très tard quelque chose qui marche, et les erreurs d’interface entre couches ne se découvrent qu’à l’assemblage. En découpant par fonctionnalités, chaque itération traverse toute l’architecture et vérifie ces interfaces immédiatement.</p>
+
+<h4>Deux règles de travail que nous nous sommes imposées</h4>
+<p><strong>Règle 1 — Mesurer avant d’affirmer.</strong> Aucun diagnostic n’est retenu sans une observation qui l’établit. Cette règle nous a coûté du temps sur le moment et nous en a fait gagner beaucoup : plusieurs de nos hypothèses initiales étaient fausses (section 8).</p>
+<p><strong>Règle 2 — Un test qui ne peut pas échouer ne prouve rien.</strong> Chaque correction d’importance est accompagnée d’une <em>contre-épreuve</em> : on vérifie que le test échoue bien lorsqu’on retire le correctif. Cette pratique a, à elle seule, invalidé un correctif que nous pensions bon (section 7.1).</p>
+
+<h3>5.2 Répartition des rôles</h3>
+<p>Le travail a été réparti par domaines de responsabilité, chaque membre restant garant de son périmètre — conception, réalisation et tests — tout en participant aux revues croisées.</p>
+<table class="g">
+  <tr><th style="width:52mm">Membre</th><th>Périmètre principal</th></tr>
+  <tr><td><strong>Dylan Menga Wanda</strong></td><td>Architecture back-end et modèle de données ; contrainte d’intégrité et gestion de la concurrence ; assistant conversationnel et recherche hybride ; déploiement et supervision</td></tr>
+  <tr><td><strong>Ngangne Takoudjou Angédarelle</strong></td><td>Maquettage Figma et système de design ; réalisation du front-end React ; tunnel de réservation et espaces d’administration ; tests d’interface</td></tr>
+  <tr><td><strong>Nguadjong Maeva</strong></td><td>Analyse du besoin et cas d’usage ; règles métier et moteur de recommandation ; stratégie de tests et recette fonctionnelle ; documentation et jeu de démonstration</td></tr>
+</table>
+<div class="enc alerte">
+  <div class="t">À vérifier avant remise</div>
+  <p>Cette répartition doit être relue et corrigée par le groupe pour correspondre exactement à la réalité du travail effectué. Les consignes exigent un rapport <strong>personnel</strong> : chaque membre doit pouvoir justifier son périmètre à l’oral.</p>
+</div>
+
+<h3>5.3 Planning et étapes</h3>
+<table class="g">
+  <tr><th style="width:14mm">Phase</th><th style="width:44mm">Contenu</th><th>Livrable de fin de phase</th></tr>
+  <tr><td><strong>1</strong></td><td>Analyse, cas d’usage, étude de l’existant</td><td>Dix cas d’usage formalisés, exigences fonctionnelles et non fonctionnelles arrêtées</td></tr>
+  <tr><td><strong>2</strong></td><td>Maquettage Figma et système de design</td><td>20 écrans maquettés, jetons de couleur et composants récurrents définis</td></tr>
+  <tr><td><strong>3</strong></td><td>Socle : schéma, migrations, authentification, parc</td><td>Base migrée, sessions séparées utilisateur / administration, parc administrable</td></tr>
+  <tr><td><strong>4</strong></td><td>Cœur métier : règles, réservation, concurrence</td><td>Contrainte d’exclusion en place, verrou consultatif, tests de concurrence verts</td></tr>
+  <tr><td><strong>5</strong></td><td>Parcours utilisateur complet</td><td>Tunnel en quatre étapes, code d’accès, validation de présence, libération automatique</td></tr>
+  <tr><td><strong>6</strong></td><td>Briques Data &amp; IA</td><td>Moteur de recommandation explicable, assistant outillé, recherche hybride, garde-fous</td></tr>
+  <tr><td><strong>7</strong></td><td>Qualité : tests, intégration continue</td><td>Cinq travaux de CI, seuils de couverture imposés, 1 576 tests</td></tr>
+  <tr><td><strong>8</strong></td><td>Déploiement et fiabilisation</td><td>Application en ligne, supervision, 27 incidents traités</td></tr>
+  <tr><td><strong>9</strong></td><td>Documentation et rapport</td><td>README, documentation OpenAPI, présent rapport</td></tr>
+</table>
+
+<h3>5.4 Outils utilisés</h3>
+<table class="g">
+  <tr><th style="width:34mm">Outil</th><th>Usage dans le projet</th></tr>
+  <tr><td><strong>Figma</strong></td><td>Maquettage des 20 écrans, définition du système de design</td></tr>
+  <tr><td><strong>Git et GitHub</strong></td><td>Versionnement, historique documenté, hébergement du dépôt</td></tr>
+  <tr><td><strong>GitHub Actions</strong></td><td>Intégration continue : cinq travaux, seuils de couverture, contrôle du schéma</td></tr>
+  <tr><td><strong>Docker et Docker Compose</strong></td><td>Pile de développement reproductible, image de production</td></tr>
+  <tr><td><strong>PyCharm et VS Code</strong></td><td>Développement back-end et front-end</td></tr>
+  <tr><td><strong>Ruff</strong></td><td>Analyse statique et formatage du code Python</td></tr>
+  <tr><td><strong>pytest, Vitest, Playwright</strong></td><td>Tests unitaires, d’intégration, d’interface et de bout en bout</td></tr>
+  <tr><td><strong>Mailpit</strong></td><td>Boîte de courriel locale : rien ne sort de la machine en développement</td></tr>
+</table>
+
+<h3>5.5 Technologies choisies et justification</h3>
+<p>Les consignes demandent de justifier nos choix ; nous indiquons donc systématiquement l’alternative écartée et la raison.</p>
+<table class="g">
+  <tr><th style="width:30mm">Choix</th><th style="width:32mm">Alternative écartée</th><th>Raison du choix</th></tr>
+  <tr><td><strong>PostgreSQL</strong></td><td>MySQL, SQLite</td><td>Seul à offrir <code>EXCLUDE USING gist</code> sur des intervalles. La garantie d’intégrité devient native au lieu d’être applicative : c’est le choix structurant du projet.</td></tr>
+  <tr><td><strong>pgvector</strong></td><td>Pinecone, Qdrant, Chroma</td><td>Une seule base à exploiter, sauvegarder, migrer et déployer. Pour un groupe de trois, la simplicité d’exploitation prime sur la performance de pointe.</td></tr>
+  <tr><td><strong>FastAPI</strong></td><td>Django, Flask</td><td>Validation par annotations de type, documentation OpenAPI générée gratuitement, et asynchrone natif — nécessaire au flux d’événements de l’assistant.</td></tr>
+  <tr><td><strong>SQLAlchemy 2 + psycopg3</strong></td><td>ORM de Django</td><td>Accès aux types PostgreSQL avancés : <code>tstzrange</code>, <code>vector</code>, contraintes d’exclusion.</td></tr>
+  <tr><td><strong>Alembic</strong></td><td><code>create_all</code> au démarrage</td><td>Une migration se relit, se rejoue, se corrige et se raconte. Un <code>create_all</code> ne laisse aucune trace de l’évolution du schéma.</td></tr>
+  <tr><td><strong>React + Vite</strong></td><td>Next.js</td><td>Aucun besoin de rendu serveur ; un binaire statique se déploie sur n’importe quel hébergeur, y compris gratuit.</td></tr>
+  <tr><td><strong>Tailwind CSS</strong></td><td>CSS modules, styled-components</td><td>Le système de design vit dans des jetons, pas dans des feuilles éparses qui divergent avec le temps.</td></tr>
+  <tr><td><strong>Server-Sent Events</strong></td><td>WebSocket</td><td>Le flux de l’assistant est unidirectionnel ; SSE traverse les proxys sans configuration, ce que nous avons vérifié au déploiement.</td></tr>
+  <tr><td><strong>Ollama en local</strong></td><td>API distante uniquement</td><td>Développement hors ligne, sans coût, et sans qu’aucune donnée ne quitte le poste.</td></tr>
+</table>
+
+<h3>5.6 Gestion de la qualité</h3>
+<p>Nous n’avions pas de relecteur extérieur ; nous avons donc confié ce rôle à l’outillage. La chaîne d’intégration continue exécute, à chaque poussée, cinq travaux de tests avec des seuils de couverture imposés, l’analyse statique <code>ruff check</code>, le contrôle de formatage <code>ruff format --check</code>, et <code>alembic check</code>, qui vérifie que le schéma décrit par les modèles correspond bien aux migrations.</p>
+<p>Ce dernier contrôle mérite d’être signalé : c’est lui qui a détecté un écart de nommage de contrainte qu’aucun test fonctionnel n’aurait révélé, et qui aurait produit une divergence silencieuse entre notre base locale et la base de production.</p>
+</section>
+
+<!-- ══════════════════════ 6. RÉALISATION ═══ -->
+<section>
+<h2><span class="num">6</span>Réalisation du projet</h2>
+<p>Conformément aux consignes, cette section privilégie l’explication de l’architecture, des choix et des mécanismes ; les extraits de code sont limités à ce qui est nécessaire à la compréhension. Le code complet est disponible dans le dépôt GitHub indiqué en annexe 12.1.</p>
+
+<div class="chiffres">
+  <div class="ch"><span class="v">128</span><span class="l">routes d’API</span></div>
+  <div class="ch"><span class="v">46</span><span class="l">tables</span></div>
+  <div class="ch"><span class="v">52</span><span class="l">écrans</span></div>
+  <div class="ch"><span class="v">152</span><span class="l">composants</span></div>
+</div>
+
+<h3>6.1 Architecture de la solution</h3>
+<div class="schema">Navigateur
+     │  HTTPS — même origine, aucun préflight CORS
+     ▼
+┌─────────────────────────────────────────────┐
+│  Front React (Vite, Tailwind) — Vercel      │
+│  réécritures : /api/* et /media/* → Render  │
+└──────────────────┬──────────────────────────┘
+                   ▼
+┌─────────────────────────────────────────────┐
+│  API FastAPI — Render (image Docker)        │
+│    app/api        routage, validation       │
+│    app/services   orchestration métier      │
+│    app/domain     règles pures, testables   │
+│    app/models     cartographie SQLAlchemy   │
+│    app/ai         agent, outils, RAG        │
+│    app/tasks      ordonnanceur              │
+└──────┬───────────────────────┬──────────────┘
+       ▼                       ▼
+┌──────────────┐      ┌────────────────────────┐
+│ PostgreSQL   │      │  Étage A : Ollama      │
+│ + pgvector   │      │  Étage B : API distante│
+│ (Neon)       │      │  Étage C : déterministe│
+└──────────────┘      └────────────────────────┘</div>
+
+<h4>Un découpage en quatre couches, avec une règle stricte</h4>
+<p>Chaque couche ne connaît que la suivante, jamais la précédente.</p>
+<table class="g">
+  <tr><th style="width:30mm">Couche</th><th>Responsabilité</th><th style="width:34mm">Interdit</th></tr>
+  <tr><td><code>app/api</code></td><td>Routage, validation d’entrée, sérialisation, dépendances d’authentification, en-têtes de cache</td><td>Toute règle métier</td></tr>
+  <tr><td><code>app/services</code></td><td>Orchestration : lire, appliquer les règles, écrire, journaliser, programmer les notifications (17 services)</td><td>Connaître HTTP</td></tr>
+  <tr><td><code>app/domain</code></td><td>Cœur métier <strong>pur</strong> : créneaux libres, application des règles, détection de conflits, pondération des recommandations</td><td>Importer SQLAlchemy ou FastAPI</td></tr>
+  <tr><td><code>app/models</code></td><td>Cartographie SQLAlchemy, et rien d’autre</td><td>Contenir de la logique</td></tr>
+</table>
+<p>C’est la pureté de <code>app/domain</code> qui nous permet d’en exiger <strong>100 % de couverture de branches</strong> sans monter la moindre base de données : ses tests s’exécutent en millisecondes et ne demandent aucun environnement. Le bénéfice s’est vérifié à l’usage — un défaut de pondération se corrige dans le domaine, avec un test instantané, sans toucher au reste.</p>
+
+<h3>6.2 Base de données</h3>
+<p>Quarante-six tables réparties en sept domaines, et treize migrations versionnées.</p>
+<table class="g">
+  <tr><th style="width:30mm">Domaine</th><th>Tables principales</th></tr>
+  <tr><td><strong>Parc</strong></td><td><code>buildings</code>, <code>floors</code>, <code>floor_plans</code>, <code>rooms</code>, <code>room_photos</code>, <code>equipments</code>, <code>room_placements</code></td></tr>
+  <tr><td><strong>Réservations</strong></td><td><code>bookings</code>, <code>booking_participants</code>, <code>booking_series</code>, <code>booking_access_codes</code>, <code>conflicts</code></td></tr>
+  <tr><td><strong>Règles</strong></td><td><code>booking_rules</code>, <code>opening_hours</code>, <code>closures</code></td></tr>
+  <tr><td><strong>Comptes</strong></td><td><code>users</code>, <code>admin_accounts</code>, <code>admin_permissions</code>, <code>permissions</code>, <code>refresh_tokens</code></td></tr>
+  <tr><td><strong>Support</strong></td><td><code>faq_articles</code>, <code>faq_fragments</code>, <code>tickets</code>, <code>chatbot_intents</code></td></tr>
+  <tr><td><strong>Assistant</strong></td><td><code>chat_conversations</code>, <code>chat_messages</code>, <code>chat_tours</code></td></tr>
+  <tr><td><strong>Traçabilité</strong></td><td><code>audit_logs</code></td></tr>
+</table>
+<p><strong>Stratégie de migration.</strong> Nous nous sommes imposé deux règles. Une migration déjà appliquée ne se réécrit jamais : elle se corrige par la suivante — la migration 0011 n’existe que pour renommer une contrainte que la 0010 avait mal nommée, et réécrire la 0010 aurait cassé toutes les bases où elle était déjà passée. Par ailleurs, tout gabarit fonctionnel est posé par migration et non seulement par le jeu de démonstration, parce que la fonction de notification ignore silencieusement un code de gabarit absent : une fonctionnalité livrée sans son gabarit n’aurait rien fait, sans la moindre erreur pour le signaler.</p>
+
+<h3>6.3 Le mécanisme central : l’intégrité des créneaux</h3>
+<p>C’est la réponse à l’objectif <strong>O1</strong>, et le cœur technique du projet.</p>
+<pre>ALTER TABLE bookings ADD CONSTRAINT ex_bookings_no_overlap
+EXCLUDE USING gist (
+    room_id WITH =,
+    tstzrange(start_at, end_at, '[)') WITH &amp;&amp;
+) WHERE (status &lt;&gt; 'annulee');</pre>
+<p>Cette contrainte rend <strong>impossible</strong> l’enregistrement de deux réservations qui se chevauchent dans la même salle. Pas improbable : impossible — quelle que soit la concurrence, quel que soit le chemin d’écriture, y compris une insertion faite à la main en SQL.</p>
+<p>Deux détails de conception méritent explication. Les bornes <code>'[)'</code> — début inclus, fin exclue — permettent à une réservation de 9 h à 10 h et à une autre de 10 h à 11 h de coexister, ce qu’attend l’intuition ; avec <code>'[]'</code>, elles se chevaucheraient à 10 h précises. La clause <code>WHERE (status &lt;&gt; 'annulee')</code> exclut les réservations annulées : une annulation doit libérer le créneau <em>sans effacer la trace</em>.</p>
+
+<h4>La contrainte ne suffit pas : elle garantit l’intégrité, pas une bonne erreur</h4>
+<p>Dix demandes simultanées sur le même créneau concluent toutes que la salle est libre, puis s’affrontent sur la contrainte. PostgreSQL arbitre, mais au-delà de deux ou trois concurrents il détecte un cycle d’attente et sacrifie une transaction :</p>
+<pre>psycopg.errors.DeadlockDetected
+CONTEXT: while checking exclusion constraint on tuple (0,119)
+         in relation "bookings"</pre>
+<p>Notre service ne traduisait que le code <code>23P01</code> (violation d’exclusion) ; le <code>40P01</code> (interblocage) remontait tel quel, et l’utilisateur recevait une erreur technique là où il devait lire que le créneau venait d’être pris. La correction :</p>
+<pre>SELECT pg_advisory_xact_lock(hashtext('salle:' || :room_id));
+-- puis seulement : verification de disponibilite, puis insertion</pre>
+<div class="enc choix">
+  <div class="t">Deux décisions à justifier ici</div>
+  <p><strong>Le verrou est pris avant la vérification</strong>, et non juste avant l’insertion : c’est la séquence entière <em>lire-puis-écrire</em> qui doit être indivisible. Il est porté par la transaction, donc relâché aussi bien au <code>COMMIT</code> qu’au <code>ROLLBACK</code>.</p>
+  <p><strong>La clé du verrou porte sur la salle, non sur le créneau.</strong> La contrainte parle de <em>chevauchement</em>, pas d’égalité : une clé par créneau laisserait passer de front 9 h–11 h et 10 h–12 h, qui ont des clés différentes mais se recouvrent. La seule chose que deux réservations conflictuelles ont en commun est la salle.</p>
+</div>
+
+<h3>6.4 Back-end : services et API</h3>
+<h4>Authentification et sessions</h4>
+<table class="g">
+  <tr><th style="width:38mm">Mécanisme</th><th style="width:44mm">Réglage</th><th>Justification</th></tr>
+  <tr><td>Jeton d’accès (JWT)</td><td>15 minutes</td><td>Court par choix : un jeton volé a une durée de nuisance bornée.</td></tr>
+  <tr><td>Jeton de rafraîchissement</td><td>Cookie <code>httpOnly</code>, 30 jours, chemin restreint</td><td>Inaccessible au JavaScript ; le chemin limite sa diffusion aux seules requêtes qui en ont besoin.</td></tr>
+  <tr><td>Rotation</td><td>À chaque usage</td><td>Le jeton précédent est révoqué immédiatement.</td></tr>
+  <tr><td>Détection de rejeu</td><td>Révocation de la famille</td><td>Rejouer un jeton déjà tourné fait tomber toute la session : comportement attendu face à un vol.</td></tr>
+  <tr><td>Limitation de débit</td><td>5 connexions/min</td><td>Freine le bourrage d’identifiants sans gêner l’usage normal.</td></tr>
+</table>
+<p><strong>Deux portes distinctes.</strong> <code>/auth/login</code> ouvre une session de portée utilisateur, <code>/auth/admin/login</code> une session d’administration. Un compte administrateur connecté par la porte des utilisateurs n’obtient <em>aucun</em> privilège — vérification menée en production et rapportée en 7.4.</p>
+
+<h4>Ordonnanceur</h4>
+<p>Trois tâches périodiques portent les automatismes du produit, dont la libération des créneaux non honorés (objectif <strong>O3</strong>).</p>
+<table class="g">
+  <tr><th style="width:56mm">Tâche</th><th style="width:22mm">Période</th><th>Rôle</th></tr>
+  <tr><td>Libération, clôture et rappels</td><td>5 minutes</td><td>Libère les créneaux sans présence validée, clôt les réservations passées, envoie les rappels</td></tr>
+  <tr><td>Rafraîchissement des agrégats</td><td>15 minutes</td><td>Recalcule la vue matérialisée d’occupation</td></tr>
+  <tr><td>Purge des jetons expirés</td><td>quotidienne</td><td>Supprime les jetons de session et de réinitialisation périmés</td></tr>
+</table>
+
+<h4>Notifications et courriels</h4>
+<p>Chaque événement métier produit une notification applicative <strong>et</strong> un courriel, tous deux rendus depuis un gabarit stocké en base et modifiable depuis l’administration, sans redéploiement. Le courriel ne suit qu’un <strong>changement réel d’état</strong> : réappliquer un statut déjà porté n’apprend rien à personne.</p>
+
+<h3>6.5 Le moteur de recommandation</h3>
+<p>Première brique Data du projet, il répond à l’objectif <strong>O2</strong>. Il ordonne les salles compatibles selon un score composite dont chaque composante est calculée séparément et exposée, de sorte que l’interface puisse <em>justifier</em> le classement.</p>
+<table class="g">
+  <tr><th style="width:44mm">Composante</th><th>Ce qu’elle capture</th></tr>
+  <tr><td><strong>Adéquation de capacité</strong></td><td>Une salle de 90 places pour 4 personnes est un gâchis ; une salle de 4 places pour 4 personnes est juste. L’écart est pénalisé dans les deux sens.</td></tr>
+  <tr><td><strong>Équipements</strong></td><td>Présence des équipements explicitement demandés.</td></tr>
+  <tr><td><strong>Proximité</strong></td><td>Bâtiment habituel de la personne, renseigné à l’inscription — d’où l’écran d’accueil qui le demande.</td></tr>
+  <tr><td><strong>Accessibilité</strong></td><td>Conformité PMR lorsqu’elle est requise.</td></tr>
+  <tr><td><strong>Occupation</strong></td><td>Taux d’occupation de la salle, pour répartir l’usage plutôt que saturer toujours les mêmes.</td></tr>
+</table>
+<p>Le calcul vit dans <code>app/domain/recommendation.py</code>, sans aucune dépendance externe, et est couvert à 100 % de ses branches. <strong>L’explicabilité n’est pas un supplément d’âme : c’est ce qui rend la recommandation acceptable</strong> par un utilisateur qui, sans justification, se contenterait de reprendre la salle qu’il connaît.</p>
+
+<h3>6.6 Interfaces et maquettage Figma</h3>
+<p>L’ensemble des écrans a été maquetté sur Figma <em>avant</em> toute ligne de code. Ce choix a servi trois usages, dont deux n’ont rien à voir avec l’apparence.</p>
+<p><strong>Figer le vocabulaire.</strong> Les maquettes ont imposé un vocabulaire unique avant l’implémentation — <em>créneau</em>, <em>battement</em>, <em>préavis</em>, <em>horizon</em>, <em>repère</em>, <em>plan d’étage</em>. Sans cette étape, un même objet aurait porté trois noms entre l’interface, l’API et la base, comme cela arrive lorsque l’écran est dessiné après le schéma.</p>
+<p><strong>Révéler les trous fonctionnels.</strong> Deux besoins ont été découverts en dessinant, et non en analysant. L’écran de validation de présence a fait apparaître qu’une validation sans borne temporelle n’a pas de sens : si l’on peut valider à tout moment, la libération automatique devient impossible — d’où la fenêtre de dix minutes, absente de l’analyse initiale. L’écran d’arbitrage a fait apparaître le besoin d’une référence prononçable : un identifiant UUID ne se lit pas à voix haute dans un couloir, <code>#CONF-8492</code> si.</p>
+<p><strong>Fixer le système de design.</strong> Vingt écrans maquettés ont produit 52 écrans React et 152 composants. Le produit est en thème sombre — choix assumé pour un outil consulté plusieurs fois par jour, souvent dans des salles peu éclairées et sur mobile.</p>
+
+<figure>
+  <img src="captures/01-vitrine.png" alt="Page de présentation publique">
+  <figcaption><b>Figure 1</b> — Page de présentation publique, en production. Le thème sombre et les jetons de couleur définis au maquettage sont appliqués de façon homogène sur l’ensemble des 52 écrans.</figcaption>
+</figure>
+
+<figure>
+  <img src="captures/03-tableau-de-bord.png" alt="Tableau de bord utilisateur">
+  <figcaption><b>Figure 2</b> — Tableau de bord d’un utilisateur connecté. On y voit la prochaine réservation avec son code d’accès masqué (<code>E-****</code>), les compteurs personnels, les créneaux à venir et les salles favorites.</figcaption>
+</figure>
+
+<h4>Le tunnel de réservation</h4>
+<p>Quatre étapes, dans un ordre discuté au maquettage : <strong>le besoin</strong> (date, plage, effectif, équipements — aucune salle n’est encore affichée), <strong>la salle</strong> (uniquement celles qui sont libres et conformes, ordonnées par score avec son explication), <strong>le créneau</strong>, puis <strong>la confirmation</strong>.</p>
+<p>Montrer les salles avant d’avoir recueilli le besoin obligerait l’utilisateur à filtrer lui-même une liste dont la plupart des entrées lui sont inutiles. L’ordre retenu fait porter ce travail au système, ce qui est exactement l’objet du produit.</p>
+
+<figure>
+  <img src="captures/07-tunnel-besoin.png" alt="Première étape du tunnel de réservation">
+  <figcaption><b>Figure 3</b> — Première étape du tunnel : le besoin est recueilli avant toute proposition de salle.</figcaption>
+</figure>
+
+<figure>
+  <img src="captures/04-catalogue.png" alt="Catalogue des salles">
+  <figcaption><b>Figure 4</b> — Catalogue des salles avec photographies, capacité, équipements et statut. Les images sont servies par l’API et versionnées dans le dépôt, pour la raison exposée en 8.1.</figcaption>
+</figure>
+
+<h4>Organisation du front et couche d’accès</h4>
+<p>Le dossier <code>src/api/</code> est le <strong>seul</strong> à connaître l’existence du réseau : aucun composant n’appelle <code>fetch</code> directement. Il porte aussi les adaptateurs qui traduisent les charges utiles de l’API — nommées en <code>snake_case</code> — vers les objets attendus par l’interface. Cette frontière nous a permis à plusieurs reprises d’ajouter un champ côté serveur sans toucher au moindre écran.</p>
+
+<h3>6.7 L’assistant conversationnel</h3>
+<p>Seconde brique Data &amp; IA, elle répond aux objectifs <strong>O5</strong> et <strong>O6</strong>.</p>
+
+<h4>Un assistant outillé, non un modèle bavard</h4>
+<p>L’assistant répond en s’appuyant sur des <strong>outils</strong> qui interrogent la vraie base — jamais sur ce qu’un modèle croit savoir. Quatorze outils sont enregistrés ; la liste complète figure en annexe 12.5. Les outils d’<strong>écriture</strong> ne s’exécutent jamais directement : ils produisent un brouillon conservé côté serveur sous un jeton à usage unique, que l’utilisateur doit confirmer. Au moment de l’exécution, <strong>la sortie du modèle n’est jamais relue</strong> : c’est le brouillon validé qui part au service métier. Un modèle qui aurait changé d’avis entre les deux tours ne peut donc rien écrire.</p>
+
+<h4>Une architecture à trois étages</h4>
+<table class="g">
+  <tr><th style="width:38mm">Étage</th><th style="width:34mm">Où</th><th>Rôle</th></tr>
+  <tr><td><strong>A — Ollama</strong></td><td>Poste de développement</td><td>Gratuit, hors ligne, aucune donnée ne sort du poste.</td></tr>
+  <tr><td><strong>B — API distante</strong></td><td>Production</td><td>N’existe que parce qu’aucun hébergement gratuit ne fait tourner un modèle de sept milliards de paramètres.</td></tr>
+  <tr><td><strong>C — Moteur déterministe</strong></td><td>Toujours disponible</td><td><strong>Ce n’est pas une panne</strong> : un moteur de repli qui reconnaît des intentions déclarées en base, appelle les mêmes outils, et répond sans aucun modèle.</td></tr>
+</table>
+
+<div class="enc mesure">
+  <div class="t">Une mesure qui a modifié notre conception</div>
+  <p>Sur cinq essais identiques de « donne-moi mes prochaines réservations », pour un compte qui en possède cinq :</p>
+  <table class="g" style="margin:2mm 0 0">
+    <tr><th style="width:46mm">Moteur</th><th>Appelle l’outil</th><th>Réponse</th></tr>
+    <tr><td>qwen2.5:7b</td><td>3 fois sur 5</td><td><span class="att">variable</span></td></tr>
+    <tr><td>qwen2.5:14b</td><td>0 fois sur 3</td><td><span class="ko">fausse</span></td></tr>
+    <tr><td>Moteur déterministe</td><td>2 fois sur 2</td><td><span class="ok">juste</span></td></tr>
+  </table>
+  <p style="margin-top:2mm">Quand le modèle n’appelle rien, il écrit une phrase plausible — parfois « je n’ai pas trouvé » — devant un agenda plein. <strong>L’utilisateur ne peut pas distinguer cette réponse d’une vraie.</strong> Nous en avons conclu qu’une question fermée dont la réponse est une liste n’a rien à gagner d’un modèle de langage et tout à perdre : elle part désormais au moteur déterministe, et le journal la distingue par un déclencheur propre pour qu’elle ne soit pas comptée comme une panne.</p>
+</div>
+
+<h4>Recherche documentaire hybride</h4>
+<p>La base de connaissances est découpée en fragments vectorisés, stockés dans une colonne <code>vector(768)</code> indexée en HNSW avec l’opérateur cosinus. La recherche additionne <strong>deux</strong> volets, parce qu’ils échouent différemment : le <em>vectoriel</em> retrouve « je n’arrive pas à entrer dans la salle » sous l’article « Code d’accès » sans partager un seul mot, mais rate un identifiant ou un nom propre ; le <em>lexical</em> trouve le mot exact et rien d’autre.</p>
+<p>La fusion se fait par <strong>rangs réciproques</strong> (RRF) plutôt que par somme de scores : une similarité cosinus et un <code>ts_rank</code> ne vivent pas sur la même échelle, et les additionner reviendrait à comparer des degrés et des kilomètres. Les rangs, eux, sont comparables par construction.</p>
+<div class="enc mesure">
+  <div class="t">Apport mesuré du volet vectoriel, sur notre corpus réel</div>
+  <table class="g" style="margin:2mm 0 0">
+    <tr><th style="width:56mm">Question posée</th><th>Lexical seul</th><th>Recherche hybride</th></tr>
+    <tr><td>« comment je préviens que je suis arrivé »</td><td><span class="ko">aucun résultat</span></td><td><span class="ok">Valider ma présence sur place</span></td></tr>
+    <tr><td>« ma réunion est annulée que faire »</td><td>À quoi sert SmartRoom</td><td><span class="ok">Modifier l’horaire ou la salle</span></td></tr>
+    <tr><td>« je n’arrive pas à entrer dans la salle »</td><td>À quoi sert SmartRoom</td><td>Valider ma présence sur place</td></tr>
+  </table>
+  <p style="margin-top:2mm">La première question ne partage <strong>aucun mot</strong> avec l’article qui y répond : c’est exactement ce que le volet lexical ne peut pas faire.</p>
+</div>
+
+<h4>Trois garde-fous</h4>
+<table class="g">
+  <tr><th style="width:34mm">Garde-fou</th><th>Ce qu’il empêche</th></tr>
+  <tr><td><strong>Injection</strong></td><td>Les délimiteurs sont neutralisés et les motifs suspects comptés : une consigne cachée dans une question ne devient pas une instruction.</td></tr>
+  <tr><td><strong>Étayage</strong></td><td>La réponse est confrontée aux données réellement obtenues ; si elle avance ce qui n’y figure pas, une réserve est ajoutée. C’est ce garde-fou qui fait dire « je n’ai pas trouvé cette information » plutôt que d’inventer un chiffre.</td></tr>
+  <tr><td><strong>Anonymisation</strong></td><td>Avant tout envoi à un fournisseur distant, adresses, noms et téléphones sont remplacés par des jetons stables le temps de la conversation ; la table de correspondance ne quitte jamais le serveur.</td></tr>
+</table>
+
+<h3>6.8 Sécurité et données personnelles</h3>
+<p><strong>Cloisonnement.</strong> Sept permissions nommées, attribuées individuellement ; sessions séparées ; en-têtes de cache stricts sur toute route personnelle. Ce dernier point a fait l’objet d’une correction importante détaillée en 8.1.</p>
+<p><strong>Retrait d’un compte par anonymisation.</strong> Effacer la ligne casserait le journal d’audit, les frises de réservation et les agrégats. Or <em>ce que le règlement demande n’est pas la disparition de l’historique, mais celle de l’identité</em>. Nous effaçons donc l’identité — adresse, nom, prénom, téléphone, promotion, badge, photo, mot de passe — et conservons les réservations passées sans nom, les agrégats et les entrées d’audit. L’adresse devient <code>compte-retire-&lt;12 caractères&gt;@anonyme.invalid</code> : le domaine <code>.invalid</code> est réservé par la RFC 2606, donc aucune remise n’est possible et aucun envoi accidentel n’atteindra une boîte réelle.</p>
+<p><strong>Gestion des secrets.</strong> Aucun secret n’est versionné. Un fichier <code>.env</code> avait été committé aux premiers temps du projet ; il a été retiré de tout l’historique, <strong>et tous les identifiants concernés ont été régénérés</strong> — car la réécriture retire la trace, elle n’annule pas l’exposition.</p>
+
+<h3>6.9 Déploiement</h3>
+<table class="g">
+  <tr><th style="width:34mm">Composant</th><th style="width:30mm">Service</th><th>Rôle</th></tr>
+  <tr><td>Base de données</td><td><strong>Neon</strong></td><td>PostgreSQL managé avec pgvector, palier gratuit</td></tr>
+  <tr><td>API</td><td><strong>Render</strong></td><td>Image Docker construite depuis le dépôt, palier gratuit</td></tr>
+  <tr><td>Front</td><td><strong>Vercel</strong></td><td>Statique et réécritures, palier gratuit</td></tr>
+  <tr><td>Supervision</td><td><strong>UptimeRobot</strong></td><td>Sonde toutes les 5 minutes</td></tr>
+</table>
+<p><strong>Le front devant l’API.</strong> Deux réécritures font que le navigateur appelle l’API sur l’origine qui lui a servi la page. La requête part en même origine : aucun préflight CORS n’est nécessaire, et le cookie de rafraîchissement reste attaché, ce qu’un appel direct vers le domaine de l’API lui interdirait. Une troisième réécriture renvoie toute autre adresse vers <code>index.html</code>, sans quoi un rechargement sur <code>/app/salles</code> rendrait un 404.</p>
+<p><strong>Migrations au démarrage.</strong> L’image applique <code>alembic upgrade head</code> à chaque démarrage. La commande est idempotente : sur une base déjà migrée, elle ne fait rien. Cela évite l’étape manuelle qu’on oublie.</p>
+</section>
+
+<!-- ═══════════════════ 7. TESTS ET RÉSULTATS ═══ -->
+<section>
+<h2><span class="num">7</span>Tests et résultats</h2>
+
+<h3>7.1 Stratégie de tests</h3>
+<table class="g">
+  <tr><th style="width:30mm">Niveau</th><th>Ce qu’il éprouve</th><th style="width:34mm">Dépendances</th></tr>
+  <tr><td><strong>Domaine</strong></td><td>Les règles métier, en isolation totale</td><td>Aucune</td></tr>
+  <tr><td><strong>Services et API</strong></td><td>L’intégration réelle : contrainte d’exclusion, JWT, transactions</td><td>PostgreSQL</td></tr>
+  <tr><td><strong>Assistant</strong></td><td>La boucle d’agent, les outils, les garde-fous, les bascules</td><td>Base + fournisseur simulé</td></tr>
+  <tr><td><strong>Front</strong></td><td>Les écrans et leur logique</td><td>MSW intercepte le réseau</td></tr>
+  <tr><td><strong>Bout en bout</strong></td><td>Les parcours complets dans un vrai navigateur</td><td>Pile complète</td></tr>
+</table>
+
+<h4>Le principe de la contre-épreuve</h4>
+<p>Chaque correctif d’importance est accompagné d’une vérification que le test échoue bien <em>sans</em> lui. Plusieurs de nos messages de commit en portent la trace : « sans le correctif, la trace porte deux cartes au lieu d’une », « contre-épreuve sans le relevé : zéro plan ».</p>
+<div class="enc alerte">
+  <div class="t">Une contre-épreuve a invalidé un de nos correctifs</div>
+  <p>Un test censé prouver une correction passait <em>aussi sans elle</em>. Le motif de remplacement n’avait rien changé : le formateur automatique avait replié l’expression sur trois lignes, et la chaîne recherchée n’existait plus telle quelle. <strong>Sans contre-épreuve, le correctif aurait été livré comme vérifié alors qu’il n’était pas appliqué.</strong></p>
+</div>
+
+<h3>7.2 Résultats chiffrés</h3>
+<div class="chiffres">
+  <div class="ch"><span class="v">1 576</span><span class="l">tests au total</span></div>
+  <div class="ch"><span class="v">1 102</span><span class="l">back-end</span></div>
+  <div class="ch"><span class="v">474</span><span class="l">front-end</span></div>
+  <div class="ch"><span class="v">100 %</span><span class="l">domaine</span></div>
+</div>
+<table class="g">
+  <tr><th style="width:46mm">Suite</th><th>Tests</th><th>Couverture</th><th>Fichiers</th></tr>
+  <tr><td><strong>Back-end complet</strong></td><td><strong>1 102</strong></td><td>—</td><td>46</td></tr>
+  <tr><td>· dont Domaine</td><td>—</td><td><strong>100 % des branches</strong> (seuil imposé)</td><td>—</td></tr>
+  <tr><td>· dont Services et API</td><td>545</td><td>87,59 %</td><td>—</td></tr>
+  <tr><td>· dont Assistant</td><td>159</td><td>84,71 %</td><td>—</td></tr>
+  <tr><td><strong>Front-end</strong></td><td><strong>474</strong></td><td>90,25 %</td><td>46</td></tr>
+  <tr><td><strong>Bout en bout</strong></td><td>3 parcours</td><td>—</td><td>3</td></tr>
+</table>
+<p>Relevés sur la pile complète le jour de la rédaction ; tous verts. Les commandes de reproduction figurent en annexe 12.2.</p>
+
+<h4>Ce que les tests ont réellement attrapé</h4>
+<p><strong>Un module du domaine à 0 %.</strong> <code>app/domain/organisation.py</code> n’était éprouvé que depuis les tests de services, où le travail « Domaine » ne regarde pas. Le seuil de 100 % a échoué et nous a appris qu’un module du domaine se prouve dans le domaine.</p>
+<p><strong>Une exclusion inopérante.</strong> Un test d’anonymisation a montré qu’une exclusion écrite en rétrospection ne servait à rien : la correspondance commençait sur le mot exclu.</p>
+<p><strong>Une contradiction entre deux tests.</strong> Le parcours de bout en bout cherchait un bouton « Ouvrir la navigation » quand le test unitaire cherchait « Menu », et tous deux passaient sur leur propre périmètre. Lui donner un <code>aria-label</code> différent du texte visible aurait violé WCAG 2.5.3 ; c’est donc le test de bout en bout qui a suivi l’implémentation.</p>
+
+<h3>7.3 Résultats fonctionnels illustrés</h3>
+
+<h4>Objectif O1 — le double créneau est impossible</h4>
+<div class="enc mesure">
+  <div class="t">Test de concurrence</div>
+  <p>La suite lance <strong>dix demandes simultanées</strong> sur le même créneau. Résultat : <strong>exactement une réussit</strong>, et les neuf autres reçoivent une erreur applicative traduite en message métier compréhensible. Le fichier s’exécute en 14 secondes contre 6 auparavant — la sérialisation introduite par le verrou consultatif fait précisément son office. <span class="ok">Critère de réussite atteint.</span></p>
+</div>
+
+<h4>Objectif O5 — l’assistant s’appuie sur la base réelle</h4>
+<figure>
+  <img src="captures/08-assistant.png" alt="L’assistant répond à une question de localisation en production">
+  <figcaption><b>Figure 5</b> — L’assistant interrogé <em>en production</em> sur « Où se trouve la salle Hopper ? ». Il appelle l’outil <code>localiser_salle</code> et rend une carte construite depuis la base : bâtiment, étage et adresse postale. Le journal du tour associé porte <code>repli: false</code>, ce qui atteste que la réponse vient bien du modèle outillé et non du moteur de secours.</figcaption>
+</figure>
+
+<h4>Objectif O2 — les statistiques et le suivi d’occupation</h4>
+<figure>
+  <img src="captures/06-statistiques.png" alt="Statistiques personnelles">
+  <figcaption><b>Figure 6</b> — Statistiques personnelles d’un utilisateur. Ces chiffres sont servis par une route dont les en-têtes de cache ont fait l’objet de la correction de sécurité décrite en 8.1.</figcaption>
+</figure>
+
+<figure>
+  <img src="captures/05-reservations.png" alt="Liste des réservations">
+  <figcaption><b>Figure 7</b> — Suivi des réservations : états, créneaux, salle et actions disponibles selon le délai d’annulation configuré.</figcaption>
+</figure>
+
+<h3>7.4 Vérifications menées en production</h3>
+<p>Nous avons voulu que les résultats ne soient pas seulement vrais en local. Les vérifications suivantes ont été menées sur l’application déployée.</p>
+<table class="g">
+  <tr><th style="width:60mm">Vérification</th><th>Résultat</th></tr>
+  <tr><td>23 routes d’administration en lecture, avec une session <strong>d’administration</strong></td><td><span class="ok">200</span> sur les 23</td></tr>
+  <tr><td>Les mêmes routes, avec une session <strong>utilisateur</strong></td><td><span class="ko">403</span> sur 22 d’entre elles</td></tr>
+  <tr><td>Routes utilisateur (profil, salles, bâtiments, réservations, notifications, statistiques, export, FAQ, tickets, horaires, fermetures, conversations)</td><td><span class="ok">200</span></td></tr>
+  <tr><td>Parcours public rejoué par Playwright contre la production</td><td><span class="ok">4 tests verts en 13,4 s</span></td></tr>
+  <tr><td>Médias (photos, repères, plans, images de bâtiment)</td><td><span class="ok">200</span>, servis en moins de 200 ms</td></tr>
+  <tr><td>Assistant, question sans mot commun avec sa réponse</td><td><span class="ok">Réponse correcte, <code>repli: false</code></span></td></tr>
+</table>
+<p>Le cloisonnement des sessions est donc démontrable et non seulement déclaré, ce qui était l’intention de conception exposée en 4.2.</p>
+
+<h3>7.5 Atteinte des objectifs</h3>
+<table class="g">
+  <tr><th style="width:11mm">Réf.</th><th style="width:44mm">Objectif</th><th style="width:22mm">État</th><th>Preuve</th></tr>
+  <tr><td>O1</td><td>Double créneau impossible</td><td><span class="ok">Atteint</span></td><td>Contrainte en base + test de concurrence : 1 sur 10 réussit</td></tr>
+  <tr><td>O2</td><td>Assister le choix</td><td><span class="ok">Atteint</span></td><td>Score composite explicable, couvert à 100 %</td></tr>
+  <tr><td>O3</td><td>Libérer les créneaux non honorés</td><td><span class="ok">Atteint</span></td><td>Fenêtre de validation + tâche périodique de libération</td></tr>
+  <tr><td>O4</td><td>Administration complète</td><td><span class="ok">Atteint</span></td><td>23 routes vérifiées en production, 7 permissions cloisonnées</td></tr>
+  <tr><td>O5</td><td>Assistant outillé</td><td><span class="ok">Atteint</span></td><td>Figure 5, journal du tour avec <code>repli: false</code></td></tr>
+  <tr><td>O6</td><td>Dégrader proprement</td><td><span class="ok">Atteint</span></td><td>Étage C testé ; recherche retombe sur son volet lexical sans modèle de vecteurs</td></tr>
+  <tr><td>O7</td><td>Déploiement public</td><td><span class="att">Atteint avec réserves</span></td><td>En ligne et supervisé ; limites du palier gratuit documentées en 10.3</td></tr>
+</table>
+</section>
+
+<!-- ═════════ 8. DIFFICULTÉS ET SOLUTIONS ═══ -->
+<section>
+<h2><span class="num">8</span>Difficultés rencontrées et solutions apportées</h2>
+<p>Vingt-sept incidents ont été diagnostiqués et corrigés au cours du projet. Nous présentons ici les plus instructifs, car dans plus d’un tiers des cas <strong>le symptôme désignait le mauvais coupable</strong> — et c’est cette expérience, plus que les corrections elles-mêmes, qui constitue notre apprentissage.</p>
+
+<h3>8.1 Difficultés techniques</h3>
+
+<div class="fiche">
+  <h4><span class="no">A</span>Des statistiques identiques sur deux comptes distincts</h4>
+  <dl>
+    <dt>Symptôme</dt><dd>Deux comptes ouverts successivement sur le même poste affichaient les mêmes dix réservations et les mêmes huit annulations.</dd>
+    <dt>Hypothèse initiale</dt><dd>Une erreur de filtrage côté serveur — hypothèse <strong>fausse</strong>.</dd>
+    <dt>Cause réelle</dt><dd>La route portait <code>Cache-Control: private, max-age=300</code>. La directive <code>private</code> interdit bien aux intermédiaires de conserver la réponse, mais <strong>un cache de navigateur est indexé par URL</strong>, et <code>/stats/me</code> est la même URL pour tout le monde.</dd>
+    <dt>Preuve</dt><dd>Vérification en base : l’un des deux comptes n’avait aucune réservation, et celle affichée appartenait à l’autre, dont il n’était même pas participant.</dd>
+    <dt>Solution</dt><dd><code>private, no-store</code> sur les chiffres personnels et sur l’export CSV, qui ne portait aucun en-tête. <code>Vary: Authorization</code> a été écarté : le jeton tourne à chaque rafraîchissement, le cache serait manqué à tous les coups — autant ne rien garder et le dire. Les chiffres publics, eux, gardent leur cache, et un test le vérifie explicitement.</dd>
+  </dl>
+</div>
+
+<div class="fiche">
+  <h4><span class="no">B</span>Une erreur technique sur un créneau déjà pris</h4>
+  <dl>
+    <dt>Symptôme</dt><dd>Sous forte concurrence, l’utilisateur recevait une erreur technique au lieu d’un message métier.</dd>
+    <dt>Cause</dt><dd>Interblocage PostgreSQL <code>40P01</code> non traduit ; seule la violation d’exclusion <code>23P01</code> l’était.</dd>
+    <dt>Solution</dt><dd>Verrou consultatif par salle, pris avant la vérification et non avant l’insertion (voir 6.3).</dd>
+    <dt>Effet mesuré</dt><dd>Le fichier de tests de concurrence passe de 6 à 14 secondes : la sérialisation fait son office.</dd>
+  </dl>
+</div>
+
+<div class="fiche">
+  <h4><span class="no">C</span>Une API cassée en production, jamais en local</h4>
+  <dl>
+    <dt>Symptôme</dt><dd>Erreurs 422 « payload est obligatoire, session est obligatoire » sur certaines routes, uniquement hors du poste de développement.</dd>
+    <dt>Cause</dt><dd><code>requirements.txt</code> épinglait <code>fastapi==0.118.0</code> alors que le code était développé et testé contre <code>0.141.1</code>. Sous la version épinglée, FastAPI ne résout plus certaines annotations et prend le modèle de validation et la dépendance de session pour des champs de corps.</dd>
+    <dt>Preuve</dt><dd>Environnement d’intégration reconstruit à l’identique (Linux, Python 3.12, <code>TZ=UTC</code>) : l’échec s’y reproduit et disparaît avec la bonne version.</dd>
+    <dt>Gravité</dt><dd>C’est le défaut le plus dangereux du projet : l’image Docker installant depuis <code>requirements.txt</code>, <strong>la production aurait servi une API cassée</strong> sans que le développement montre quoi que ce soit.</dd>
+  </dl>
+</div>
+
+<div class="fiche">
+  <h4><span class="no">D</span>Une connexion refusée sur « mot de passe » qui n’en était pas une</h4>
+  <dl>
+    <dt>Symptôme</dt><dd><code>password authentication failed for user 'neondb_owner'</code></dd>
+    <dt>Cause réelle</dt><dd>Le mode TLS était absent de la chaîne de connexion. <code>libpq</code> applique <code>prefer</code> par défaut : il tente le chiffrement puis <em>se rabat en clair</em>. L’hébergeur refuse alors la connexion, et sa première ligne est un message générique qui parle de mot de passe.</dd>
+    <dt>Ce que nous avons cherché à tort</dt><dd>Un identifiant erroné, pendant plusieurs tentatives.</dd>
+    <dt>Solution</dt><dd>Le mode est désormais <strong>déduit de l’environnement</strong> — <code>require</code> partout sauf en local, où la base tourne dans un conteneur voisin sans certificat et où l’exiger empêcherait tout démarrage.</dd>
+  </dl>
+</div>
+
+<div class="fiche">
+  <h4><span class="no">E</span>Des images cassées après chaque redéploiement</h4>
+  <dl>
+    <dt>Symptôme</dt><dd>Les photos déposées depuis l’administration disparaissaient au redéploiement suivant, alors que leur ligne en base persistait.</dd>
+    <dt>Preuve</dt><dd>Le journal l’a montré sans ambiguïté : <code>GET /media/batiments/eif1.svg → 200</code> avant le dépôt, <code>GET /media/batiments/5378….webp → 404</code> après.</dd>
+    <dt>Cause</dt><dd>Le disque de l’hébergeur est éphémère sur le palier gratuit.</dd>
+    <dt>Solution retenue</dt><dd>Les fichiers sont <em>versionnés</em> : ils entrent dans l’image Docker et suivent le déploiement. Le dépôt porte aujourd’hui 154 fichiers de médias.</dd>
+    <dt>Alternative écartée</dt><dd>Un stockage objet externe serait la bonne réponse pour une application réelle, mais impose de réécrire la couche de stockage. C’est une décision assumée, pas un oubli.</dd>
+  </dl>
+</div>
+
+<div class="fiche">
+  <h4><span class="no">F</span>Une supervision en panne permanente sur un service sain</h4>
+  <dl>
+    <dt>Symptôme</dt><dd>La sonde signalait le service indisponible en continu.</dd>
+    <dt>Cause</dt><dd>L’outil de supervision interroge en <code>HEAD</code> — la méthode économique pour vérifier qu’un service répond sans télécharger le corps — et notre route ne déclarait que <code>GET</code>, rendant 405.</dd>
+    <dt>Preuve</dt><dd>Les <code>GET</code> voisins répondaient 200 dans les mêmes secondes.</dd>
+  </dl>
+</div>
+
+<div class="fiche">
+  <h4><span class="no">G</span>Six défauts de l’assistant invisibles en local</h4>
+  <dl>
+    <dt>Contexte</dt><dd>En développement, l’étage A (Ollama) sert seul ; en production, l’étage B. Six défauts vivaient exclusivement sur le chemin distant.</dd>
+    <dt>Les plus instructifs</dt><dd>
+      <p><strong>Un étage configurable et pourtant inatteignable.</strong> Le client refuse d’émettre sans fonction d’anonymisation — une garde voulue — mais aucun des cinq points de construction ne lui en passait une. On pouvait donc le configurer entièrement sans qu’il serve jamais.</p>
+      <p><strong>Des appels d’outils simultanés qui fusionnaient.</strong> La façade distante omet l’index des appels ; deux appels simultanés tombaient sous la même clé, arguments concaténés et illisibles. L’agent ne recevait <em>aucun</em> outil là où il en avait demandé deux.</p>
+      <p><strong>Des arguments renvoyés en objet</strong> là où le protocole attend une chaîne JSON. Le défaut ne se voyait qu’au <em>second</em> aller-retour : la carte s’affichait correctement, puis le tour basculait au repli et l’écran montrait les bons articles surmontés d’un « je n’ai pas compris ».</p>
+    </dd>
+    <dt>Enseignement</dt><dd><strong>Ce qui ne s’exécute que d’un côté n’est pas testé.</strong> Le déploiement n’est pas une formalité de fin de projet : c’est un environnement d’exécution à part entière, avec ses propres défauts.</dd>
+  </dl>
+</div>
+
+<h3>8.2 Difficultés méthodologiques</h3>
+
+<h4>Des journaux qui disent qu’ils ont échoué sans dire pourquoi</h4>
+<p>Le même défaut est apparu <strong>trois fois à trois endroits différents</strong> : la sonde de base de données, la bascule de l’assistant, et la troncature des messages d’erreur. Notre premier déploiement s’est arrêté sur « Base injoignable après 30 tentatives », message qui laissait le choix entre un mot de passe faux, un hôte inconnu, un pare-feu et une base endormie — quatre pistes, aucune preuve. La redirection <code>2&gt;/dev/null</code> jetait le message de PostgreSQL, le seul qui tranchait.</p>
+<p>La correction a été identique à chaque fois : <strong>joindre la cause, sans jamais joindre le secret</strong>. Le mot de passe ne figure dans aucun journal ; seule sa longueur apparaît, ce qui distingue un champ vide d’un champ rempli sans rien révéler.</p>
+
+<h4>Un piège de fuseau horaire, pris pour un test fragile</h4>
+<p>La répartition des réservations par tranche horaire lisait l’heure <em>du poste</em>, alors que les tranches sont celles du campus. La chaîne d’intégration tourne en UTC : une réservation de 9 h y devenait 7 h, ne tombait dans aucune tranche, et la page annonçait qu’il n’y avait pas assez de réservations sur un jeu qui en contenait 608.</p>
+<p>Nous avons d’abord cru à un test fragile. C’était un vrai défaut : un navigateur réglé sur un autre fuseau — un utilisateur en déplacement — affichait exactement la même page vide. La lecture passe désormais par <code>Intl.DateTimeFormat</code> dans le fuseau de l’établissement, sans dépendance nouvelle.</p>
+
+<h4>Un jeu de démonstration qui effaçait ce qu’on lui avait confié</h4>
+<p>Notre script de peuplement préservait les photos lors d’une réinitialisation, mais cette précaution avait été oubliée lorsque les plans d’étage sont arrivés : les fichiers survivaient sur le disque, mais la ligne qui disait à quel étage ils appartenaient disparaissait. <em>Un jeu de démonstration a le droit de refaire ses données, pas celui d’effacer ce qu’on lui a confié.</em></p>
+<div class="enc mesure">
+  <div class="t">Comment nous avons établi ce défaut</div>
+  <p>Trois observations qui, ensemble, ne laissaient qu’une explication : trois fichiers présents dans <code>media/plans</code> ; des placements de salles journalisés à l’audit — <em>or on ne place une salle que sur un plan existant</em> ; et zéro ligne dans <code>floor_plans</code>.</p>
+</div>
+
+<h3>8.3 Tableau récapitulatif</h3>
+<table class="g">
+  <tr><th style="width:52mm">Difficulté</th><th style="width:44mm">Nature</th><th>Solution apportée</th></tr>
+  <tr><td>Fuite de données entre comptes par le cache</td><td>Sécurité</td><td><code>no-store</code> sur les routes personnelles</td></tr>
+  <tr><td>Interblocages sous concurrence</td><td>Base de données</td><td>Verrou consultatif par salle</td></tr>
+  <tr><td>Dépendance épinglée à une mauvaise version</td><td>Exploitation</td><td>Alignement et reproduction de l’environnement d’intégration</td></tr>
+  <tr><td>Refus de connexion à la base hébergée</td><td>Déploiement</td><td>Mode TLS déduit de l’environnement</td></tr>
+  <tr><td>Disque éphémère</td><td>Déploiement</td><td>Médias versionnés dans le dépôt</td></tr>
+  <tr><td>Supervision en fausse panne</td><td>Exploitation</td><td>Route ouverte à <code>GET</code> et <code>HEAD</code></td></tr>
+  <tr><td>Six défauts propres au chemin distant de l’IA</td><td>Intégration</td><td>Corrections localisées dans le client distant, sans affecter les autres fournisseurs</td></tr>
+  <tr><td>Journaux muets sur la cause</td><td>Méthode</td><td>Cause jointe systématiquement, secret jamais</td></tr>
+  <tr><td>Dépendance au fuseau du poste</td><td>Front-end</td><td>Lecture dans le fuseau de l’établissement</td></tr>
+  <tr><td>Perte de données confiées au seed</td><td>Outillage</td><td>Relevé et repose des documents, indexés par code stable</td></tr>
+  <tr><td>Extension pgvector absente de l’image de test</td><td>Intégration continue</td><td>Image <code>pgvector/pgvector</code></td></tr>
+  <tr><td>Écart de nommage détecté par <code>alembic check</code></td><td>Base de données</td><td>Migration corrective, sans réécrire la migration appliquée</td></tr>
+</table>
+</section>
+
+<!-- ═══════ 9. BILAN ET COMPÉTENCES ═══ -->
+<section>
+<h2><span class="num">9</span>Bilan et compétences acquises</h2>
+
+<h3>9.1 Compétences techniques</h3>
+<table class="g">
+  <tr><th style="width:44mm">Compétence</th><th>Ce qui l’a mobilisée concrètement dans le projet</th></tr>
+  <tr><td><strong>Modélisation de données avancée</strong></td><td>Contraintes d’exclusion sur intervalles, index partiels, types <code>tstzrange</code> et <code>vector</code>, conventions de nommage</td></tr>
+  <tr><td><strong>Concurrence et transactions</strong></td><td>Distinction entre violation de contrainte et interblocage, verrous consultatifs de transaction, atomicité d’une séquence lire-puis-écrire</td></tr>
+  <tr><td><strong>Conception d’API</strong></td><td>128 routes, validation par types, documentation OpenAPI, en-têtes de cache, gestion des erreurs métier</td></tr>
+  <tr><td><strong>Développement front moderne</strong></td><td>React, découpage en composants, gestion d’état, couche d’accès isolée, accessibilité</td></tr>
+  <tr><td><strong>Recherche d’information</strong></td><td>Vectorisation, index HNSW, similarité cosinus, recherche lexicale, fusion par rangs réciproques</td></tr>
+  <tr><td><strong>Intégration de modèles de langage</strong></td><td>Boucle d’agent, appels d’outils, flux d’événements, garde-fous, budgets, observabilité par tour</td></tr>
+  <tr><td><strong>Qualité logicielle</strong></td><td>Cinq niveaux de tests, seuils de couverture, contre-épreuves, analyse statique</td></tr>
+  <tr><td><strong>Déploiement et exploitation</strong></td><td>Conteneurisation, migrations automatiques, supervision, diagnostic à distance par les journaux</td></tr>
+</table>
+
+<h3>9.2 Compétences professionnelles</h3>
+<p><strong>Diagnostiquer avant de corriger.</strong> C’est l’acquis que nous jugeons le plus transférable. Plusieurs de nos diagnostics initiaux étaient faux, et croire au premier symptôme nous aurait fait corriger la mauvaise chose. Nous avons appris à rendre une mesure possible — élargir une troncature, intercepter un client — avant de conclure.</p>
+<p><strong>Assumer et documenter un arbitrage.</strong> Retirer les exports PDF et Excel plutôt que de les laisser échouer, écarter le stockage objet en le disant, accepter les limites d’un palier gratuit en les documentant : nous avons appris qu’une limite énoncée vaut mieux qu’une limite dissimulée.</p>
+<p><strong>Travailler à plusieurs sur une base commune.</strong> Le découpage en couches à dépendances strictes n’est pas qu’une élégance : c’est ce qui a permis à trois personnes de travailler en parallèle sans se gêner, chacune ayant une frontière claire.</p>
+<p><strong>Écrire pour être relu.</strong> Nos messages de commit portent l’observation, l’essai abandonné et la preuve. Cette discipline nous a servi à nous-mêmes plusieurs semaines plus tard.</p>
+
+<h3>9.3 Bilans individuels</h3>
+<div class="enc alerte">
+  <div class="t">À personnaliser impérativement avant remise</div>
+  <p>Les consignes exigent un rapport <strong>personnel</strong> et la capacité de justifier l’intégralité du contenu. Les paragraphes ci-dessous constituent une trame fondée sur la répartition annoncée en 5.2 : <strong>chaque membre doit les réécrire avec son propre vécu</strong> — ce qu’il a trouvé difficile, ce qu’il ferait autrement, ce qu’il a appris personnellement.</p>
+</div>
+
+<h4>Dylan Menga Wanda</h4>
+<p>Périmètre : architecture back-end, modèle de données, concurrence, assistant conversationnel, déploiement. Les apprentissages les plus marquants portent sur la différence entre une garantie applicative et une garantie portée par la base, et sur le fait que six défauts de l’assistant n’étaient visibles que dans l’environnement déployé.</p>
+<p><span class="aremplir">[à compléter : difficultés personnelles rencontrées, ce qui serait fait autrement, points à approfondir]</span></p>
+
+<h4>Ngangne Takoudjou Angédarelle</h4>
+<p>Périmètre : maquettage Figma, système de design, réalisation du front-end, tests d’interface. Les apprentissages les plus marquants portent sur l’apport du maquettage préalable — figer le vocabulaire et révéler les trous fonctionnels — et sur les contraintes réelles d’accessibilité, illustrées par l’arbitrage WCAG 2.5.3 décrit en 7.2.</p>
+<p><span class="aremplir">[à compléter : difficultés personnelles rencontrées, ce qui serait fait autrement, points à approfondir]</span></p>
+
+<h4>Nguadjong Maeva</h4>
+<p>Périmètre : analyse du besoin, cas d’usage, règles métier et recommandation, stratégie de tests et recette. Les apprentissages les plus marquants portent sur la nécessité de l’explicabilité dans un moteur de recommandation, et sur le principe de la contre-épreuve, qui a invalidé un correctif que le groupe croyait acquis.</p>
+<p><span class="aremplir">[à compléter : difficultés personnelles rencontrées, ce qui serait fait autrement, points à approfondir]</span></p>
+
+<h3>9.4 Points à approfondir</h3>
+<ul>
+  <li><strong>L’évaluation quantitative d’un système de recommandation</strong> — nous savons le rendre explicable, nous ne savons pas encore mesurer sa qualité sur données réelles.</li>
+  <li><strong>Le passage à l’échelle</strong> — notre verrou par salle sérialise ; son comportement sur un parc de plusieurs centaines de salles et une charge réelle reste à éprouver.</li>
+  <li><strong>L’ajustement fin des modèles</strong> — nous avons utilisé des modèles existants sans les spécialiser sur notre domaine.</li>
+  <li><strong>L’infrastructure comme code</strong> — notre déploiement reste partiellement manuel dans sa configuration.</li>
+</ul>
+</section>
+
+<!-- ═══════ 10. CONCLUSION ═══ -->
+<section>
+<h2><span class="num">10</span>Conclusion et perspectives</h2>
+
+<h3>10.1 Rappel des objectifs</h3>
+<p>Nous étions partis d’une question : comment garantir l’absence de double réservation quelles que soient les conditions de concurrence, assister réellement l’utilisateur dans son choix, et rester fonctionnel lorsque les composants d’intelligence artificielle sont indisponibles ? Sept objectifs opérationnels en découlaient, chacun assorti d’un critère de réussite énoncé <em>avant</em> la réalisation (section 3.4).</p>
+
+<h3>10.2 Résultats et degré d’atteinte</h3>
+<p><strong>Six objectifs sur sept sont pleinement atteints</strong>, et le septième — le déploiement public — l’est avec des réserves qui tiennent aux paliers gratuits et non à la conception.</p>
+<p>Le résultat le plus solide est la garantie d’intégrité : elle n’est pas défendue par du code que l’on pourrait contourner, mais par la base elle-même. Deux réservations chevauchantes ne sont pas improbables, elles sont impossibles, et le test de concurrence le démontre.</p>
+<p>Le résultat dont nous sommes le plus satisfaits est la <strong>dégradation propre</strong>. L’assistant continue de répondre lorsque le quota du modèle est épuisé ; la recherche documentaire retombe sur son volet lexical lorsque le modèle de vecteurs est injoignable ; l’application entière fonctionne sans relais de courriel. Ces comportements ne sont pas des accidents heureux : ils sont conçus et testés.</p>
+<p>Le chiffre qui résume le mieux notre travail n’est pas le nombre de fonctionnalités, mais celui des <strong>27 incidents diagnostiqués et corrigés</strong>, dont plus d’un tiers avaient un symptôme trompeur.</p>
+
+<h3>10.3 Limites assumées</h3>
+<table class="g">
+  <tr><th style="width:46mm">Limite</th><th>Origine et arbitrage</th></tr>
+  <tr><td><strong>Réveil à froid (≈ 50 s)</strong></td><td>Le palier gratuit endort le service après quinze minutes d’inactivité. Supprimable par une instance payante.</td></tr>
+  <tr><td><strong>Médias versionnés</strong></td><td>Conséquence du disque éphémère. Un stockage objet externe est la bonne réponse, écartée faute de temps.</td></tr>
+  <tr><td><strong>Quota quotidien du modèle</strong></td><td>Compté par modèle et par jour sur le palier gratuit. La dégradation prévue prend le relais.</td></tr>
+  <tr><td><strong>Exports PDF et Excel retirés</strong></td><td>Les formats étaient proposés à l’écran et refusés par la couche de données. Nous les avons retirés : <em>un bouton présent qui échoue à chaque clic est pire que pas de bouton.</em></td></tr>
+  <tr><td><strong>Dénombrement par l’assistant</strong></td><td>« Combien de salles sont enregistrées » n’a pas d’outil dédié ; l’assistant le dit plutôt que d’inventer un chiffre. Comportement voulu, non défaut.</td></tr>
+</table>
+
+<h3>10.4 Perspectives</h3>
+<table class="g">
+  <tr><th style="width:52mm">Évolution envisagée</th><th>Ce qu’elle apporterait</th></tr>
+  <tr><td>Stockage objet externe</td><td>Supprime le versionnement des médias et le couplage au cycle de déploiement</td></tr>
+  <tr><td>Historisation des scores de recommandation</td><td>Permettrait d’évaluer la qualité des recommandations sur données réelles — la brique Data la plus naturelle à prolonger</td></tr>
+  <tr><td>Élargissement du catalogue d’outils</td><td>Dénombrements, agrégats, comparaisons de salles</td></tr>
+  <tr><td>Notifications temps réel</td><td>Complément aux courriels pour les arbitrages urgents</td></tr>
+  <tr><td>Modèle de vecteurs auto-hébergé</td><td>Supprime la dépendance à un tiers pour la recherche sémantique</td></tr>
+  <tr><td>Vue imprimable des rapports</td><td>Rétablit l’export PDF sans dépendance nouvelle</td></tr>
+  <tr><td>Capteurs de présence</td><td>Rendrait la mesure d’occupation automatique, là où elle repose aujourd’hui sur une validation déclarative</td></tr>
+</table>
+
+<div class="enc choix">
+  <div class="t">Le principe de conception qui résume notre travail</div>
+  <p>Une garde qui refuse par défaut doit être <strong>branchée</strong> par défaut. Notre anonymiseur en illustre les deux faces : la garde était juste — ne rien envoyer à un tiers sans masquer — et son absence de câblage a rendu tout un étage inatteignable pendant des semaines, sans autre signe qu’une ligne de journal. <em>Le défaut sûr est de masquer, pas de se taire.</em></p>
+</div>
+</section>
+
+<!-- ═══════ 11. BIBLIOGRAPHIE ═══ -->
+<section class="biblio">
+<h2><span class="num">11</span>Bibliographie et sources</h2>
+<p>Conformément aux consignes, l’ensemble des sources consultées et des ressources employées est cité ci-dessous.</p>
+
+<h3>11.1 Documentations techniques</h3>
+<ol>
+  <li><strong>PostgreSQL Global Development Group</strong>, « Constraints — Exclusion Constraints », <em>PostgreSQL 16 Documentation</em>.<br><span class="url">https://www.postgresql.org/docs/current/ddl-constraints.html</span></li>
+  <li><strong>PostgreSQL Global Development Group</strong>, « Range Types », <em>PostgreSQL 16 Documentation</em>.<br><span class="url">https://www.postgresql.org/docs/current/rangetypes.html</span></li>
+  <li><strong>PostgreSQL Global Development Group</strong>, « Explicit Locking — Advisory Locks », <em>PostgreSQL 16 Documentation</em>.<br><span class="url">https://www.postgresql.org/docs/current/explicit-locking.html</span></li>
+  <li><strong>PostgreSQL Global Development Group</strong>, « Full Text Search » et « libpq — SSL Support ».<br><span class="url">https://www.postgresql.org/docs/current/libpq-ssl.html</span></li>
+  <li><strong>Ramírez, S.</strong>, <em>FastAPI Documentation</em>, sections « Dependencies », « Background Tasks », « Response Model ».<br><span class="url">https://fastapi.tiangolo.com</span></li>
+  <li><strong>SQLAlchemy</strong>, <em>SQLAlchemy 2.0 Documentation — ORM Querying Guide</em>.<br><span class="url">https://docs.sqlalchemy.org/en/20/</span></li>
+  <li><strong>Alembic</strong>, <em>Alembic Documentation — Auto Generating Migrations, Naming Conventions</em>.<br><span class="url">https://alembic.sqlalchemy.org</span></li>
+  <li><strong>Pydantic</strong>, <em>Pydantic v2 Documentation</em> et <em>pydantic-settings</em>.<br><span class="url">https://docs.pydantic.dev</span></li>
+  <li><strong>React</strong>, <em>React Documentation</em> ; <strong>React Router</strong>, <em>Routing Documentation</em>.<br><span class="url">https://react.dev</span></li>
+  <li><strong>Vite</strong>, <em>Vite Guide — Static Deploy, Env Variables</em>.<br><span class="url">https://vite.dev</span></li>
+  <li><strong>Tailwind CSS</strong>, <em>Tailwind CSS Documentation — Theme Configuration</em>.<br><span class="url">https://tailwindcss.com/docs</span></li>
+  <li><strong>MDN Web Docs</strong>, « Server-sent events », « HTTP caching », « Intl.DateTimeFormat ».<br><span class="url">https://developer.mozilla.org</span></li>
+  <li><strong>Vercel</strong>, <em>Project Configuration — Rewrites</em> ; <strong>Render</strong>, <em>Docker Deployment, Free Tier Limits</em> ; <strong>Neon</strong>, <em>Connect from any application</em>.</li>
+  <li><strong>Google</strong>, <em>Google Identity Services — Verify the Google ID token</em>.<br><span class="url">https://developers.google.com/identity</span></li>
+</ol>
+
+<h3>11.2 Articles et publications</h3>
+<ol start="15">
+  <li><strong>Cormack, G. V., Clarke, C. L. A., Büttcher, S.</strong> (2009). « Reciprocal Rank Fusion outperforms Condorcet and individual Rank Learning Methods », <em>Proceedings of SIGIR ’09</em>. — Fondement de la fusion des deux volets de recherche (section 6.7).</li>
+  <li><strong>Malkov, Y. A., Yashunin, D. A.</strong> (2018). « Efficient and robust approximate nearest neighbor search using Hierarchical Navigable Small World graphs », <em>IEEE TPAMI</em>. — Algorithme de l’index HNSW employé par pgvector.</li>
+  <li><strong>Lewis, P. et al.</strong> (2020). « Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks », <em>NeurIPS</em>. — Cadre général de l’assistant documentaire.</li>
+  <li><strong>Fowler, M.</strong>, « Test Pyramid » et « Continuous Integration », <em>martinfowler.com</em>. — Structure de notre stratégie de tests à cinq niveaux.</li>
+</ol>
+
+<h3>11.3 Normes et textes de référence</h3>
+<ol start="19">
+  <li><strong>IETF</strong>, <em>RFC 2606 — Reserved Top Level DNS Names</em>. — Justifie l’emploi du domaine <code>.invalid</code> pour l’anonymisation des comptes retirés.</li>
+  <li><strong>IETF</strong>, <em>RFC 7519 — JSON Web Token (JWT)</em> ; <em>RFC 9111 — HTTP Caching</em>.</li>
+  <li><strong>W3C</strong>, <em>Web Content Accessibility Guidelines (WCAG) 2.1</em>, critère 2.5.3 « Label in Name ». — Arbitrage décrit en 7.2.</li>
+  <li><strong>Parlement européen et Conseil</strong>, <em>Règlement (UE) 2016/679 (RGPD)</em>, articles 5, 15 à 17. — Droits d’accès, de rectification et d’effacement mis en œuvre en 6.8.</li>
+  <li><strong>CNIL</strong>, « Cookies et autres traceurs » et « Durées de conservation ».<br><span class="url">https://www.cnil.fr</span></li>
+</ol>
+
+<h3>11.4 Bibliothèques et services utilisés</h3>
+<ol start="24">
+  <li><strong>pgvector</strong> — extension PostgreSQL de recherche vectorielle. <span class="url">https://github.com/pgvector/pgvector</span></li>
+  <li><strong>psycopg 3</strong>, <strong>APScheduler</strong>, <strong>python-jose</strong>, <strong>passlib/bcrypt</strong>, <strong>httpx</strong>, <strong>Ruff</strong>.</li>
+  <li><strong>pytest</strong> et <strong>pytest-asyncio</strong> ; <strong>Vitest</strong> ; <strong>Testing Library</strong> ; <strong>Mock Service Worker (MSW)</strong> ; <strong>Playwright</strong>.</li>
+  <li><strong>Ollama</strong> — exécution locale de modèles de langage. <span class="url">https://ollama.com</span></li>
+  <li><strong>Mailpit</strong> — relais de courriel de développement.</li>
+  <li><strong>Figma</strong> — maquettage des interfaces.</li>
+  <li><strong>Docker</strong> et <strong>Docker Compose</strong> ; <strong>GitHub Actions</strong> ; <strong>UptimeRobot</strong>.</li>
+</ol>
+
+<h3>11.5 Outils d’aide et déclaration d’usage</h3>
+<div class="enc">
+  <div class="t">Déclaration relative à l’usage d’outils d’intelligence artificielle</div>
+  <p>Conformément aux consignes, nous déclarons avoir eu recours à des assistants de programmation fondés sur des modèles de langage pour des tâches d’<strong>appoint</strong> : recherche dans la documentation, suggestion de formulations, aide au diagnostic d’erreurs et relecture de rédaction.</p>
+  <p>La conception de l’architecture, le choix des technologies et leur justification, la modélisation des données, la définition des règles métier, la stratégie de tests, le diagnostic des incidents et l’ensemble des décisions rapportées dans ce document relèvent du travail du groupe. Chaque membre est en mesure d’expliquer et de justifier le contenu présenté et le code correspondant.</p>
+  <p>Les modèles de langage employés <em>dans le produit lui-même</em> (assistant conversationnel, vectorisation) constituent une fonctionnalité de l’application et sont décrits en section 6.7 ; ils sont cités à ce titre parmi les services utilisés.</p>
+</div>
+</section>
+
+<!-- ═══════ 12. ANNEXES ═══ -->
+<section>
+<h2><span class="num">12</span>Annexes et dépôt GitHub</h2>
+
+<h3>12.1 Accès au dépôt et organisation</h3>
+<table class="g">
+  <tr><th style="width:46mm">Ressource</th><th>Adresse</th></tr>
+  <tr><td><strong>Dépôt GitHub</strong></td><td><code>https://github.com/DD542/SmartRoomManager</code></td></tr>
+  <tr><td>Application déployée</td><td><code>https://smartroommanager.vercel.app</code></td></tr>
+  <tr><td>Connexion administration</td><td><code>https://smartroommanager.vercel.app/admin/connexion</code></td></tr>
+  <tr><td>API</td><td><code>https://smartroom-api-ryya.onrender.com</code></td></tr>
+  <tr><td>Documentation OpenAPI</td><td><code>https://smartroom-api-ryya.onrender.com/docs</code></td></tr>
+</table>
+<p>Le dépôt est accompagné d’un fichier <code>README.md</code> qui présente le projet, les technologies employées et les modalités d’exécution et de test, conformément aux consignes.</p>
+<pre>smartroom-api/       FastAPI, SQLAlchemy, Alembic
+  app/domain/        les regles, sans base de donnees ni HTTP
+  app/services/      ce que fait l'application
+  app/api/v1/        les routes et leurs schemas
+  app/ai/            agent, outils, recherche hybride, garde-fous
+  alembic/           13 migrations versionnees
+  scripts/           peuplement et maintenance
+  tests/             1102 tests
+
+smartroom-front/     React, Vite, Tailwind
+  src/pages/         un dossier par espace : public, booking, catalog, admin
+  src/components/    152 composants, decoupes par domaine
+  src/api/           le seul endroit qui connait le transport
+  e2e/               parcours complets, Playwright
+                     474 tests unitaires
+
+deploy/              configuration, sauvegarde et restauration
+presentation/        rapports et supports de soutenance
+docker-compose.yml   pile de developpement</pre>
+
+<h3>12.2 Installation et exécution</h3>
+<h4>Avec Docker</h4>
+<pre>cp .env.example .env
+docker compose up</pre>
+<p>L’application répond sur <code>http://localhost:5180</code>, l’API sur <code>http://localhost:8000</code>, sa documentation sur <code>http://localhost:8000/docs</code>, et les courriels de développement se lisent sur <code>http://localhost:8025</code> — rien ne sort de la machine.</p>
+
+<h4>Sans Docker</h4>
+<pre># API
+python -m venv .venv
+.venv/Scripts/python -m pip install -r smartroom-api/requirements.txt
+cd smartroom-api
+python -m alembic upgrade head
+python -m scripts.seed
+python -m uvicorn app.main:app --port 8000
+
+# Front, dans un autre terminal
+cd smartroom-front &amp;&amp; npm install &amp;&amp; npm run dev</pre>
+
+<h4>Reproduire les mesures citées dans ce rapport</h4>
+<pre># Tests back-end (1102) et couverture du domaine
+cd smartroom-api &amp;&amp; ../.venv/Scripts/python -m pytest
+
+# Tests front (474) et parcours de bout en bout
+cd smartroom-front &amp;&amp; npm test
+npm run test:e2e
+
+# Parcours public joue contre la production
+E2E_BASE_URL=https://smartroommanager.vercel.app npx playwright test</pre>
+
+<h3>12.3 Comptes de démonstration</h3>
+<p>Mot de passe commun : <code>smartroom2026</code>. Les comptes d’administration se connectent par <code>/admin/connexion</code>, session distincte de celle de l’espace utilisateur.</p>
+<table class="g">
+  <tr><th style="width:52mm">Compte</th><th style="width:36mm">Rôle</th><th>Permissions</th></tr>
+  <tr><td><code>d.menga@ece.fr</code></td><td>Propriétaire</td><td>Les sept</td></tr>
+  <tr><td><code>s.boukehila@ece.fr</code></td><td>Directeur de site</td><td>salles, support, conflits</td></tr>
+  <tr><td><code>c.nkoulou@ece.fr</code></td><td>Référente support</td><td>support, conflits</td></tr>
+  <tr><td><code>jean.dupont@edu.ece.fr</code></td><td>Utilisateur</td><td>—</td></tr>
+  <tr><td><code>alice.leroy@edu.ece.fr</code></td><td>Utilisateur</td><td>—</td></tr>
+</table>
+<p>Le jeu de démonstration crée 6 bâtiments, 15 salles, 608 réservations, 24 fragments de connaissance, une fermeture globale et deux conflits en attente d’arbitrage.</p>
+
+<figure>
+  <img src="captures/02-connexion.png" alt="Écran de connexion">
+  <figcaption><b>Figure 8</b> — Écran de connexion. Le bouton Google n’apparaît que si l’identifiant client est configuré : un bouton présent qui échoue à chaque clic ferait croire à une panne.</figcaption>
+</figure>
+
+<h3>12.4 Inventaire des migrations</h3>
+<table class="g">
+  <tr><th style="width:60mm">Révision</th><th>Objet</th></tr>
+  <tr><td><code>0001_schema_initial</code></td><td>Schéma initial</td></tr>
+  <tr><td><code>0002_min_advance</code></td><td>Délai minimal d’anticipation</td></tr>
+  <tr><td><code>0003_auth_tokens</code></td><td>Jetons de session et de réinitialisation</td></tr>
+  <tr><td><code>0004_photo_order</code></td><td>Ordre des photos, unicité différée</td></tr>
+  <tr><td><code>0005_avatar</code></td><td>Photo de profil</td></tr>
+  <tr><td><code>0006_visuels_parc</code></td><td>Image de bâtiment, repère de localisation</td></tr>
+  <tr><td><code>0007_rag_pgvector</code></td><td>Extension <code>vector</code> et table de fragments</td></tr>
+  <tr><td><code>0008_conversations</code></td><td>Conversations, messages, journal des tours</td></tr>
+  <tr><td><code>0009_notification_gabarit</code></td><td>Gabarit ayant produit une notification</td></tr>
+  <tr><td><code>0010_consigne_regles</code></td><td>Consigne portée par la règle</td></tr>
+  <tr><td><code>0011_nom_contrainte_consigne</code></td><td>Correction du nom de contrainte doublement préfixé</td></tr>
+  <tr><td><code>0012_gabarit_suspension</code></td><td>Gabarit de suspension de compte</td></tr>
+  <tr><td><code>0013_gabarit_reactivation</code></td><td>Gabarit de réactivation de compte</td></tr>
+</table>
+
+<h3>12.5 Catalogue des outils de l’assistant</h3>
+<table class="g">
+  <tr><th style="width:52mm">Outil</th><th style="width:24mm">Nature</th><th>Confirmation requise</th></tr>
+  <tr><td><code>rechercher_salles</code></td><td>lecture</td><td>non</td></tr>
+  <tr><td><code>recommander_salle</code></td><td>lecture</td><td>non</td></tr>
+  <tr><td><code>localiser_salle</code></td><td>lecture</td><td>non</td></tr>
+  <tr><td><code>consulter_disponibilite</code></td><td>lecture</td><td>non</td></tr>
+  <tr><td><code>lister_mes_reservations</code></td><td>lecture</td><td>non</td></tr>
+  <tr><td><code>obtenir_code_acces</code></td><td>lecture</td><td>non</td></tr>
+  <tr><td><code>consulter_regles</code></td><td>lecture</td><td>non</td></tr>
+  <tr><td><code>rechercher_faq</code></td><td>lecture</td><td>non</td></tr>
+  <tr><td><code>transferer_humain</code></td><td>lecture</td><td>non</td></tr>
+  <tr><td><code>creer_reservation</code></td><td><strong>écriture</strong></td><td><strong>oui</strong></td></tr>
+  <tr><td><code>modifier_reservation</code></td><td><strong>écriture</strong></td><td><strong>oui</strong></td></tr>
+  <tr><td><code>annuler_reservation</code></td><td><strong>écriture</strong></td><td><strong>oui</strong></td></tr>
+  <tr><td><code>creer_ticket</code></td><td><strong>écriture</strong></td><td><strong>oui</strong></td></tr>
+</table>
+
+<h3>12.6 Variables d’environnement</h3>
+<table class="g">
+  <tr><th style="width:60mm">Variable</th><th>Rôle</th></tr>
+  <tr><td><code>ENVIRONMENT</code></td><td>Déduit notamment le mode TLS et les garde-fous de configuration</td></tr>
+  <tr><td><code>POSTGRES_HOST/PORT/USER/PASSWORD/DB</code></td><td>Connexion à la base</td></tr>
+  <tr><td><code>POSTGRES_SSLMODE</code></td><td>Surcharge la déduction si nécessaire</td></tr>
+  <tr><td><code>JWT_SECRET</code></td><td>Signature des jetons d’accès</td></tr>
+  <tr><td><code>CORS_ORIGINS</code></td><td>Liste <strong>JSON</strong> des origines autorisées</td></tr>
+  <tr><td><code>GOOGLE_CLIENT_ID</code></td><td>Identifiant public du client OAuth</td></tr>
+  <tr><td><code>MAIL_ENABLED</code>, <code>SMTP_*</code>, <code>MAIL_FROM</code></td><td>Relais de courriel</td></tr>
+  <tr><td><code>IA_DISTANT_URL</code>, <code>IA_DISTANT_CLE</code></td><td>Étage B de l’assistant</td></tr>
+  <tr><td><code>IA_VECTEURS_TOUJOURS_DISTANTS</code></td><td>Cohérence du corpus vectorisé entre environnements</td></tr>
+</table>
+<p>Les variables marquées « à remplacer » dans <code>.env.example</code> font échouer le démarrage en production plutôt que de laisser tourner un secret d’usine. Le fichier <code>.env</code> n’est pas suivi par git et ne doit pas l’être.</p>
+
+<p style="margin-top:10mm; padding-top:4mm; border-top:1px solid var(--trait); font-size:9pt; color:var(--gris-clair); font-style:italic;">
+Toutes les mesures citées dans ce rapport ont été relevées sur l’application réelle, en local ou en production, et sont reproductibles au moyen des commandes de l’annexe 12.2. Les captures d’écran des figures 1 à 8 ont été prises sur l’application déployée.
+</p>
+</section>
+
+</body>
+</html>
