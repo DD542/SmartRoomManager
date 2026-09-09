@@ -203,7 +203,54 @@ def add_message(
             ticket.status = TicketStatus.EN_COURS
 
     session.flush()
+
+    # Une réponse du support appelle une lecture : sans notification, le
+    # demandeur devait rouvrir sa demande au hasard pour découvrir qu'on lui
+    # avait répondu. L'onglet « Aide » du fil existait, et restait vide faute
+    # d'un appelant qui passe un `ticket_id`.
+    #
+    # Les notes internes n'en produisent pas : elles ne sont pas destinées au
+    # demandeur, et l'avertir trahirait leur objet.
+    if from_support and not internal:
+        _notifier_demandeur(session, ticket, code="ticket_reponse", extrait=body)
+
     return message
+
+
+def _notifier_demandeur(
+    session: Session, ticket: Ticket, *, code: str, extrait: str | None = None
+) -> None:
+    """Notifie l'auteur de la demande, dans la transaction de l'action.
+
+    Importé ici plutôt qu'en tête de module : `mail_service` construit ses liens
+    depuis la configuration, et l'import croisé au chargement ferait dépendre le
+    support d'un module qui n'a rien à voir avec ses règles.
+    """
+    from app.services import mail_service
+
+    demandeur = ticket.requester
+    if demandeur is None:
+        return
+
+    variables: dict[str, Any] = {
+        "reference": ticket.reference,
+        "sujet_demande": ticket.subject,
+        "lien": mail_service.lien_ticket(ticket.id),
+    }
+    if extrait is not None:
+        # Le corps entier ferait doublon avec la demande elle-même, et un
+        # courriel n'est pas l'endroit où lire un échange. Les premières lignes
+        # suffisent à décider s'il faut y aller tout de suite.
+        propre = " ".join(extrait.split())
+        variables["extrait"] = propre[:277] + "…" if len(propre) > 280 else propre
+
+    mail_service.notify(
+        session,
+        user=demandeur,
+        code=code,
+        variables=variables,
+        ticket_id=ticket.id,
+    )
 
 
 def set_ticket_status(
@@ -226,6 +273,13 @@ def set_ticket_status(
         after={"status": status.value},
     )
     session.flush()
+
+    # Seul un passage **vers** « résolu » notifie. Réappliquer un statut déjà
+    # porté n'apprend rien, et la fermeture administrative d'une demande déjà
+    # résolue n'a pas à réveiller le demandeur une seconde fois.
+    if status is TicketStatus.RESOLU and avant is not TicketStatus.RESOLU:
+        _notifier_demandeur(session, ticket, code="ticket_resolu")
+
     return ticket
 
 

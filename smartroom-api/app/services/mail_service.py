@@ -412,6 +412,17 @@ def lien_reservation(booking_id: Any) -> str:
     return f"{_origine()}/app/reservations/{booking_id}"
 
 
+def lien_ticket(ticket_id: Any) -> str:
+    """Adresse de la demande d'aide dans le centre d'aide.
+
+    Le centre d'aide n'a pas de route par ticket : il lit `?ticket=<id>` et
+    ouvre la demande correspondante. Pointer sur `/app/aide` seul déposerait
+    le lecteur devant la liste, à lui de retrouver la demande dont on vient de
+    lui parler.
+    """
+    return f"{_origine()}/app/aide?ticket={ticket_id}"
+
+
 def queue_invitation(
     *,
     email: str,
