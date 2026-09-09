@@ -1,6 +1,6 @@
 import { durationMin, fmtTime, toDate } from '../../../utils/dates';
 
-const PALETTE = ['#5B9BFF', '#FCC63F'];
+const PALETTE = ['rgb(var(--accent))', 'rgb(var(--warning))'];
 
 /**
  * A-04 — chevauchement des deux demandes, à l'échelle du temps.

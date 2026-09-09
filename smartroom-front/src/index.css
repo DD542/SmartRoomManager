@@ -3,8 +3,119 @@
 @tailwind utilities;
 
 @layer base {
+  /* Les jetons de couleur vivent ici et non plus dans `tailwind.config.js`,
+     pour qu'un attribut sur `<html>` suffise à changer de thème sans
+     reconstruire la feuille de style.
+
+     Ils sont écrits en **triplets RVB séparés par des espaces**, et non en
+     hexadécimal : c'est la seule forme qui laisse Tailwind y injecter une
+     opacité. Le dépôt compte 98 usages du genre `border-accent/40` ; avec une
+     variable hexadécimale, tous auraient perdu leur transparence sans que rien
+     ne le signale. */
   :root {
     color-scheme: dark;
+
+    --ink: 16 22 35;
+    --ink-soft: 20 27 42;
+    --surface: 26 34 49;
+    --surface-raised: 34 44 62;
+    --line: 44 56 80;
+    --line-strong: 59 74 102;
+    --accent: 91 155 255;
+    --accent-hover: 74 138 245;
+    /* Accent lisible sur `accent-soft`. Le 91 155 255 n'y donne que 3,76:1,
+       sous le seuil AA, et aucune opacité de fond ne l'y ramène : la teinte
+       elle-même est trop sombre. Celle-ci monte à 5,28:1. */
+    --accent-bright: 143 186 255;
+    --success: 61 219 166;
+    --warning: 252 198 63;
+    --danger: 255 128 128;
+    --content: 247 250 255;
+    --content-muted: 180 192 212;
+    --content-faint: 138 151 172;
+
+    /* Fonds teintés. Ils portent leur propre alpha, ce qui permet à chaque
+       thème de la régler : la même opacité ne rend pas le même effet sur un
+       fond sombre et sur un fond clair. */
+    --accent-soft: 91 155 255 / 0.18;
+    --success-soft: 61 219 166 / 0.16;
+    --warning-soft: 252 198 63 / 0.16;
+    --danger-soft: 255 128 128 / 0.16;
+
+    /* Reflet du squelette de chargement : clair sur fond sombre. */
+    --lueur: 255 255 255 / 0.07;
+    /* Les sélecteurs de date natifs sont dessinés en sombre par le
+       navigateur ; il faut les éclaircir sur un fond sombre, pas sur un clair. */
+    --inversion-calendrier: invert(0.7);
+    /* Ombre portee des infobulles de graphique. Un noir dense convient a
+       un fond sombre ; sur du blanc il salit. */
+    --ombre-portee: 0 8px 24px rgb(0 0 0 / 0.45);
+    /* Cinquieme serie des graphiques. Les quatre autres suivent les jetons
+       d'etat ; celle-ci n'en a pas, et porte donc sa valeur par theme. */
+    --serie-violette: #C084FC;
+
+    /* Echelle de la carte de chaleur, cinq crans du plus froid au plus chaud.
+       Elle vit ici parce que sa logique s'inverse d'un theme a l'autre : sur un
+       fond sombre, plus une case est opaque et claire, plus elle est chaude ;
+       sur un fond clair, la meme progression devient invisible. */
+    --chaleur-1: rgb(91 155 255 / 0.10);
+    --chaleur-1-bord: rgb(91 155 255 / 0.20);
+    --chaleur-2: rgb(91 155 255 / 0.28);
+    --chaleur-2-bord: rgb(91 155 255 / 0.35);
+    --chaleur-3: rgb(108 192 255 / 0.48);
+    --chaleur-3-bord: rgb(108 192 255 / 0.55);
+    --chaleur-4: rgb(128 220 235 / 0.70);
+    --chaleur-4-bord: rgb(128 220 235 / 0.75);
+    --chaleur-5: rgb(160 240 205 / 0.92);
+    --chaleur-5-bord: rgb(160 240 205 / 1);
+  }
+
+  /* Thème clair. Chaque paire de texte a été vérifiée au seuil AA de 4,5:1 :
+     contenu 17,7:1 sur une carte, secondaire 7,3:1, libellés discrets 4,67:1,
+     accent 5,8:1, et 5,4:1 pour un libellé posé sur un bouton plein. Les
+     teintes d'état sont assombries — un vert à 61 219 166 ne donne que 1,6:1
+     sur du blanc, illisible. */
+  :root[data-theme='clair'] {
+    color-scheme: light;
+
+    --ink: 244 247 251;
+    --ink-soft: 234 239 247;
+    --surface: 255 255 255;
+    --surface-raised: 244 247 251;
+    --line: 216 224 236;
+    --line-strong: 185 198 216;
+    --accent: 29 95 209;
+    --accent-hover: 23 80 180;
+    --accent-bright: 18 63 143;
+    --success: 11 115 85;
+    --warning: 138 90 0;
+    --danger: 179 38 30;
+    --content: 17 24 39;
+    --content-muted: 75 87 104;
+    --content-faint: 104 117 138;
+
+    --accent-soft: 29 95 209 / 0.10;
+    --success-soft: 11 115 85 / 0.10;
+    --warning-soft: 138 90 0 / 0.10;
+    --danger-soft: 179 38 30 / 0.10;
+
+    /* Un reflet blanc sur un fond clair ne se voit pas : il devient sombre. */
+    --lueur: 17 24 39 / 0.06;
+    --inversion-calendrier: none;
+    --ombre-portee: 0 8px 24px rgb(17 24 39 / 0.12);
+    --serie-violette: #7C3AED;
+
+    /* Progression inverse : la chaleur se marque en assombrissant. */
+    --chaleur-1: rgb(29 95 209 / 0.10);
+    --chaleur-1-bord: rgb(29 95 209 / 0.20);
+    --chaleur-2: rgb(29 95 209 / 0.26);
+    --chaleur-2-bord: rgb(29 95 209 / 0.36);
+    --chaleur-3: rgb(23 118 190 / 0.44);
+    --chaleur-3-bord: rgb(23 118 190 / 0.54);
+    --chaleur-4: rgb(14 128 148 / 0.62);
+    --chaleur-4-bord: rgb(14 128 148 / 0.72);
+    --chaleur-5: rgb(11 115 85 / 0.82);
+    --chaleur-5-bord: rgb(11 115 85 / 0.95);
   }
 
   html,
@@ -20,14 +131,14 @@
 
   /* Focus visible non négociable : WCAG 2.1 AA, jamais supprimé. */
   :focus-visible {
-    outline: 2px solid theme('colors.accent.DEFAULT');
+    outline: 2px solid rgb(var(--accent));
     outline-offset: 2px;
     border-radius: 4px;
   }
 
   ::selection {
-    background: theme('colors.accent.soft');
-    color: theme('colors.content.DEFAULT');
+    background: rgb(var(--accent-soft));
+    color: rgb(var(--content));
   }
 
   ::-webkit-scrollbar {
@@ -38,22 +149,24 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: theme('colors.line.strong');
+    background: rgb(var(--line-strong));
     border-radius: 999px;
-    border: 3px solid theme('colors.ink.DEFAULT');
+    border: 3px solid rgb(var(--ink));
   }
 
   input[type='date'i]::-webkit-calendar-picker-indicator,
   input[type='time'i]::-webkit-calendar-picker-indicator {
-    filter: invert(0.7);
+    filter: var(--inversion-calendrier);
     cursor: pointer;
   }
 }
 
 @layer components {
   .sr-skip {
-    /* `text-ink` et non `text-white` : sur l'accent (#5B9BFF) le blanc ne
-       donne que 2,77:1, sous le seuil AA. L'encre y monte à 6,53:1. */
+    /* `text-ink` et non `text-white` : sur l'accent le blanc ne donne que
+       2,77:1 en thème sombre, sous le seuil AA. L'encre y monte à 6,53:1 — et
+       le raisonnement tient dans les deux thèmes, l'encre et l'accent
+       s'inversant ensemble : 5,41:1 en clair. */
     @apply absolute left-4 top-4 z-[100] -translate-y-24 rounded-xl bg-accent px-4 py-2
            text-sm font-medium text-ink transition focus:translate-y-0;
   }
@@ -66,9 +179,9 @@
     @apply absolute inset-0 -translate-x-full;
     background-image: linear-gradient(
       90deg,
-      rgba(255, 255, 255, 0) 0,
-      rgba(255, 255, 255, 0.07) 50%,
-      rgba(255, 255, 255, 0) 100%
+      rgb(var(--lueur) / 0) 0,
+      rgb(var(--lueur)) 50%,
+      rgb(var(--lueur) / 0) 100%
     );
     animation: shimmer 1.4s linear infinite;
   }
@@ -123,5 +236,3 @@ html {
     transform: none;
   }
 }
-
-/* rebuild */

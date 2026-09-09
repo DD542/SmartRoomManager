@@ -5,6 +5,7 @@ import { countQueue } from '../../api/admin/conflicts';
 import { useAdminSession } from '../../hooks/useAdminSession';
 import { usePermission } from '../../hooks/usePermission';
 import { IconButton } from '../ui/Button';
+import { BasculeTheme } from '../layout/BasculeTheme';
 import { BarreRecherche } from '../layout/BarreRecherche';
 import { AccountMenu } from './AccountMenu';
 import { plural } from '../../utils/format';
@@ -70,6 +71,7 @@ export function AdminTopbar({ onOpenMenu }) {
       />
 
       <div className="ml-auto flex items-center gap-1">
+        <BasculeTheme />
         {peut('conflicts.arbitrate') && (
           <span className="relative">
             <IconButton

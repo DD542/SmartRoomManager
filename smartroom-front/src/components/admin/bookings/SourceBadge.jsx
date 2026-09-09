@@ -8,10 +8,10 @@ import { Badge } from '../../ui/Badge';
  * événement de trente pixels ; partout ailleurs le libellé accompagne la teinte.
  */
 export const SOURCE_META = {
-  utilisateur: { label: 'Utilisateur', tone: 'default', icon: User, couleur: '#5B9BFF' },
-  admin: { label: 'Administration', tone: 'accent', icon: CalendarCog, couleur: '#C084FC' },
-  recurrente: { label: 'Récurrente', tone: 'success', icon: Repeat, couleur: '#3DDBA6' },
-  blocage: { label: 'Blocage', tone: 'warning', icon: ShieldOff, couleur: '#FCC63F' },
+  utilisateur: { label: 'Utilisateur', tone: 'default', icon: User, couleur: 'rgb(var(--accent))' },
+  admin: { label: 'Administration', tone: 'accent', icon: CalendarCog, couleur: 'var(--serie-violette)' },
+  recurrente: { label: 'Récurrente', tone: 'success', icon: Repeat, couleur: 'rgb(var(--success))' },
+  blocage: { label: 'Blocage', tone: 'warning', icon: ShieldOff, couleur: 'rgb(var(--warning))' },
 };
 
 export function SourceBadge({ source }) {

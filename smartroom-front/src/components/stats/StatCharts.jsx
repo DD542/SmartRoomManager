@@ -47,7 +47,7 @@ export function HoursBarChart({ data = [] }) {
             <Tooltip
               // Bande de survol arrondie et discrète : sans arrondi ni retrait,
               // elle se lit comme une seconde barre posée derrière la vraie.
-              cursor={{ fill: 'rgba(91,155,255,0.07)', radius: 8 }}
+              cursor={{ fill: 'rgb(var(--accent) / 0.07)', radius: 8 }}
               offset={14}
               contentStyle={tooltipStyle}
               labelStyle={tooltipLabelStyle}
@@ -63,7 +63,7 @@ export function HoursBarChart({ data = [] }) {
                 // Le mois courant est plein, les précédents restent lisibles mais en retrait.
                 <Cell
                   key={entry.label}
-                  fill="#5B9BFF"
+                  fill="rgb(var(--accent))"
                   fillOpacity={index === data.length - 1 ? 1 : 0.45}
                 />
               ))}

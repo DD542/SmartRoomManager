@@ -12,13 +12,13 @@ const ROOMS = [
 
 /** Carte de salle miniature : photo, statut, équipements, disponibilités, action. */
 function RoomCard({ x, y, libre }) {
-  const teinte = libre ? '#3DDBA6' : '#FF8080';
+  const teinte = libre ? 'rgb(var(--success))' : 'rgb(var(--danger))';
 
   return (
     <g>
-      <rect x={x} y={y} width="106" height="96" rx="6" fill="#1A2231" />
-      <rect x={x + 6} y={y + 6} width="94" height="34" rx="4" fill="#222C3E" />
-      <rect x={x + 6} y={y + 46} width="46" height="6" rx="3" fill="#3B4A66" />
+      <rect x={x} y={y} width="106" height="96" rx="6" fill="rgb(var(--surface))" />
+      <rect x={x + 6} y={y + 6} width="94" height="34" rx="4" fill="rgb(var(--surface-raised))" />
+      <rect x={x + 6} y={y + 46} width="46" height="6" rx="3" fill="rgb(var(--line-strong))" />
       <rect
         x={x + 62}
         y={y + 44}
@@ -31,7 +31,7 @@ function RoomCard({ x, y, libre }) {
         strokeOpacity="0.5"
         strokeWidth="0.6"
       />
-      <rect x={x + 6} y={y + 58} width="60" height="4" rx="2" fill="#2C3850" />
+      <rect x={x + 6} y={y + 58} width="60" height="4" rx="2" fill="rgb(var(--line))" />
 
       {/* Bande de disponibilité horaire */}
       {Array.from({ length: 9 }, (_, index) => (
@@ -42,13 +42,13 @@ function RoomCard({ x, y, libre }) {
           width="8"
           height="5"
           rx="1.5"
-          fill={index < 6 ? '#5B9BFF' : '#2C3850'}
+          fill={index < 6 ? 'rgb(var(--accent))' : 'rgb(var(--line))'}
           fillOpacity={index < 6 ? 0.8 : 1}
         />
       ))}
 
-      <rect x={x + 6} y={y + 80} width="44" height="10" rx="4" fill="#5B9BFF" />
-      <rect x={x + 74} y={y + 83} width="26" height="4" rx="2" fill="#3B4A66" />
+      <rect x={x + 6} y={y + 80} width="44" height="10" rx="4" fill="rgb(var(--accent))" />
+      <rect x={x + 74} y={y + 83} width="26" height="4" rx="2" fill="rgb(var(--line-strong))" />
     </g>
   );
 }
@@ -89,34 +89,34 @@ export function AppPreview() {
         aria-label="Aperçu de l’application : catalogue des salles disponibles, confirmation de réservation et code d’accès"
       >
         {/* Écran */}
-        <rect x="30" y="16" width="500" height="312" rx="14" fill="#1A2231" />
-        <rect x="42" y="28" width="476" height="288" rx="8" fill="#101623" />
+        <rect x="30" y="16" width="500" height="312" rx="14" fill="rgb(var(--surface))" />
+        <rect x="42" y="28" width="476" height="288" rx="8" fill="rgb(var(--ink))" />
 
         {/* Barre de navigation de l'application */}
-        <rect x="42" y="28" width="476" height="26" fill="#1A2231" />
-        <rect x="54" y="35" width="12" height="12" rx="4" fill="#5B9BFF" />
-        <rect x="72" y="37" width="40" height="4" rx="2" fill="#3B4A66" />
-        <rect x="72" y="44" width="28" height="3" rx="1.5" fill="#2C3850" />
+        <rect x="42" y="28" width="476" height="26" fill="rgb(var(--surface))" />
+        <rect x="54" y="35" width="12" height="12" rx="4" fill="rgb(var(--accent))" />
+        <rect x="72" y="37" width="40" height="4" rx="2" fill="rgb(var(--line-strong))" />
+        <rect x="72" y="44" width="28" height="3" rx="1.5" fill="rgb(var(--line))" />
         {[300, 340, 380, 420].map((cx) => (
-          <rect key={cx} x={cx} y={38} width="28" height="5" rx="2.5" fill="#2C3850" />
+          <rect key={cx} x={cx} y={38} width="28" height="5" rx="2.5" fill="rgb(var(--line))" />
         ))}
-        <circle cx="500" cy="41" r="7" fill="#222C3E" />
+        <circle cx="500" cy="41" r="7" fill="rgb(var(--surface-raised))" />
 
         {/* Titre de page */}
-        <text x="56" y="76" fill="#F7FAFF" fontSize="13" fontWeight="600">
+        <text x="56" y="76" fill="rgb(var(--content))" fontSize="13" fontWeight="600">
           Réservez votre salle idéale
         </text>
-        <rect x="56" y="84" width="190" height="4" rx="2" fill="#2C3850" />
+        <rect x="56" y="84" width="190" height="4" rx="2" fill="rgb(var(--line))" />
 
         {/* Mini calendrier */}
-        <rect x="56" y="104" width="100" height="204" rx="6" fill="#1A2231" />
-        <rect x="64" y="112" width="60" height="5" rx="2.5" fill="#3B4A66" />
+        <rect x="56" y="104" width="100" height="204" rx="6" fill="rgb(var(--surface))" />
+        <rect x="64" y="112" width="60" height="5" rx="2.5" fill="rgb(var(--line-strong))" />
         {Array.from({ length: 28 }, (_, index) => {
           const colonne = index % 7;
           const ligne = Math.floor(index / 7);
           const actif = index === 16;
           return actif ? (
-            <circle key={index} cx={68 + colonne * 13} cy={132 + ligne * 14} r="5" fill="#5B9BFF" />
+            <circle key={index} cx={68 + colonne * 13} cy={132 + ligne * 14} r="5" fill="rgb(var(--accent))" />
           ) : (
             <rect
               key={index}
@@ -125,13 +125,13 @@ export function AppPreview() {
               width="8"
               height="8"
               rx="2"
-              fill="#222C3E"
+              fill="rgb(var(--surface-raised))"
             />
           );
         })}
-        <rect x="64" y="200" width="84" height="8" rx="4" fill="#222C3E" />
-        <rect x="64" y="216" width="84" height="8" rx="4" fill="#222C3E" />
-        <rect x="64" y="288" width="52" height="12" rx="6" fill="#222C3E" />
+        <rect x="64" y="200" width="84" height="8" rx="4" fill="rgb(var(--surface-raised))" />
+        <rect x="64" y="216" width="84" height="8" rx="4" fill="rgb(var(--surface-raised))" />
+        <rect x="64" y="288" width="52" height="12" rx="6" fill="rgb(var(--surface-raised))" />
 
         {/* Grille des salles */}
         {ROOMS.map((room) => (
@@ -139,8 +139,8 @@ export function AppPreview() {
         ))}
 
         {/* Pied et socle de l'écran */}
-        <path d="M250 328 h60 l10 26 h-80 z" fill="#1A2231" />
-        <rect x="212" y="352" width="136" height="10" rx="5" fill="#222C3E" />
+        <path d="M250 328 h60 l10 26 h-80 z" fill="rgb(var(--surface))" />
+        <rect x="212" y="352" width="136" height="10" rx="5" fill="rgb(var(--surface-raised))" />
       </svg>
 
       {/* Carte flottante : confirmation de réservation.

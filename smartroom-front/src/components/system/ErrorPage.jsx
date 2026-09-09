@@ -10,18 +10,18 @@ function EmptyRoom({ code }) {
       role="img"
       aria-label={`Illustration : salle vide, erreur ${code}`}
     >
-      <rect width="260" height="170" rx="10" fill="#141B2A" stroke="#2C3850" />
-      <path d="M40 130 L70 60 L190 60 L220 130 Z" fill="none" stroke="#2C3850" strokeWidth="1.5" />
-      <rect x="95" y="80" width="70" height="26" rx="3" fill="none" stroke="#3B4A66" strokeWidth="1.5" />
+      <rect width="260" height="170" rx="10" fill="rgb(var(--ink-soft))" stroke="rgb(var(--line))" />
+      <path d="M40 130 L70 60 L190 60 L220 130 Z" fill="none" stroke="rgb(var(--line))" strokeWidth="1.5" />
+      <rect x="95" y="80" width="70" height="26" rx="3" fill="none" stroke="rgb(var(--line-strong))" strokeWidth="1.5" />
       {[80, 100, 160, 180].map((x) => (
-        <rect key={x} x={x} y="104" width="14" height="16" rx="2" fill="none" stroke="#3B4A66" />
+        <rect key={x} x={x} y="104" width="14" height="16" rx="2" fill="none" stroke="rgb(var(--line-strong))" />
       ))}
-      <rect x="196" y="66" width="18" height="44" rx="2" fill="none" stroke="#2C3850" />
+      <rect x="196" y="66" width="18" height="44" rx="2" fill="none" stroke="rgb(var(--line))" />
       <text
         x="130"
         y="152"
         textAnchor="middle"
-        fill="#5B9BFF"
+        fill="rgb(var(--accent))"
         fontFamily="ui-monospace, monospace"
         fontSize="22"
         opacity="0.7"

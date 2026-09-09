@@ -3,25 +3,57 @@ export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
+      // Les valeurs elles-mêmes vivent dans `src/index.css`, en triplets RVB,
+      // pour qu'un attribut sur `<html>` change de thème sans reconstruire la
+      // feuille de style.
+      //
+      // `<alpha-value>` est le point important : c'est lui qui laisse Tailwind
+      // injecter une opacité dans la variable. Le dépôt compte 98 usages du
+      // genre `border-accent/40` — écrites en hexadécimal, ces variables les
+      // auraient tous privés de transparence, sans erreur pour le signaler.
+      //
+      // Les jetons `soft` portent leur alpha dans la variable et n'acceptent
+      // donc pas de modificateur. Aucun `-soft/NN` n'existe dans le dépôt, et
+      // leur opacité doit rester réglable par thème : la même transparence ne
+      // rend pas le même effet sur un fond sombre et sur un fond clair.
       colors: {
-        ink: { DEFAULT: '#101623', soft: '#141B2A' },
-        surface: { DEFAULT: '#1A2231', raised: '#222C3E' },
-        line: { DEFAULT: '#2C3850', strong: '#3B4A66' },
-        accent: {
-          DEFAULT: '#5B9BFF',
-          hover: '#4A8AF5',
-          soft: 'rgba(91,155,255,0.18)',
-          // Accent lisible sur `accent-soft`. Le #5B9BFF n'y donne que 3,76:1,
-          // sous le seuil AA, et aucune opacité de fond ne l'y ramène : la
-          // teinte elle-même est trop sombre. Celle-ci monte à 5,28:1 sans
-          // changer de famille chromatique. Réservée au texte posé sur un fond
-          // accentué — ailleurs, `accent` suffit.
-          bright: '#8FBAFF',
+        ink: {
+          DEFAULT: 'rgb(var(--ink) / <alpha-value>)',
+          soft: 'rgb(var(--ink-soft) / <alpha-value>)',
         },
-        success: { DEFAULT: '#3DDBA6', soft: 'rgba(61,219,166,0.16)' },
-        warning: { DEFAULT: '#FCC63F', soft: 'rgba(252,198,63,0.16)' },
-        danger: { DEFAULT: '#FF8080', soft: 'rgba(255,128,128,0.16)' },
-        content: { DEFAULT: '#F7FAFF', muted: '#B4C0D4', faint: '#8A97AC' },
+        surface: {
+          DEFAULT: 'rgb(var(--surface) / <alpha-value>)',
+          raised: 'rgb(var(--surface-raised) / <alpha-value>)',
+        },
+        line: {
+          DEFAULT: 'rgb(var(--line) / <alpha-value>)',
+          strong: 'rgb(var(--line-strong) / <alpha-value>)',
+        },
+        accent: {
+          DEFAULT: 'rgb(var(--accent) / <alpha-value>)',
+          hover: 'rgb(var(--accent-hover) / <alpha-value>)',
+          soft: 'rgb(var(--accent-soft))',
+          // Accent lisible sur `accent-soft`, où l'accent ordinaire tombe sous
+          // le seuil AA. Réservé au texte posé sur un fond accentué.
+          bright: 'rgb(var(--accent-bright) / <alpha-value>)',
+        },
+        success: {
+          DEFAULT: 'rgb(var(--success) / <alpha-value>)',
+          soft: 'rgb(var(--success-soft))',
+        },
+        warning: {
+          DEFAULT: 'rgb(var(--warning) / <alpha-value>)',
+          soft: 'rgb(var(--warning-soft))',
+        },
+        danger: {
+          DEFAULT: 'rgb(var(--danger) / <alpha-value>)',
+          soft: 'rgb(var(--danger-soft))',
+        },
+        content: {
+          DEFAULT: 'rgb(var(--content) / <alpha-value>)',
+          muted: 'rgb(var(--content-muted) / <alpha-value>)',
+          faint: 'rgb(var(--content-faint) / <alpha-value>)',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', 'Segoe UI', 'sans-serif'],

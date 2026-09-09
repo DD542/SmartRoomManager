@@ -34,7 +34,7 @@ export function OccupancyTrend({ data = [], days = 7 }) {
                 <stop offset="100%" stopColor={ACCENT} stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid stroke="#2C3850" strokeDasharray="3 3" vertical={false} />
+            <CartesianGrid stroke="rgb(var(--line))" strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="label" tickLine={false} axisLine={false} tick={AXIS} minTickGap={12} />
             <YAxis
               tickLine={false}
@@ -45,7 +45,7 @@ export function OccupancyTrend({ data = [], days = 7 }) {
               unit="%"
             />
             <Tooltip
-              cursor={{ stroke: '#3B4A66', strokeWidth: 1 }}
+              cursor={{ stroke: 'rgb(var(--line-strong))', strokeWidth: 1 }}
               offset={14}
               contentStyle={tooltipStyle}
               labelStyle={tooltipLabelStyle}

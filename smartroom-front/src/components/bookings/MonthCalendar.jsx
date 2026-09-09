@@ -9,10 +9,10 @@ import { Button, IconButton } from '../ui/Button';
 import './calendar.css';
 
 const TONE = {
-  confirmee: { bg: 'rgba(61,219,166,0.16)', border: '#3DDBA6' },
-  en_attente: { bg: 'rgba(252,198,63,0.16)', border: '#FCC63F' },
-  annulee: { bg: 'rgba(255,128,128,0.16)', border: '#FF8080' },
-  terminee: { bg: 'rgba(44,56,80,0.9)', border: '#3B4A66' },
+  confirmee: { bg: 'rgb(var(--success) / 0.16)', border: 'rgb(var(--success))' },
+  en_attente: { bg: 'rgb(var(--warning) / 0.16)', border: 'rgb(var(--warning))' },
+  annulee: { bg: 'rgb(var(--danger) / 0.16)', border: 'rgb(var(--danger))' },
+  terminee: { bg: 'rgb(var(--line) / 0.9)', border: 'rgb(var(--line-strong))' },
 };
 
 const LEGEND = [
@@ -39,7 +39,7 @@ export function MonthCalendar({
     end: booking.end,
     backgroundColor: (TONE[booking.status] ?? TONE.terminee).bg,
     borderColor: (TONE[booking.status] ?? TONE.terminee).border,
-    textColor: '#F7FAFF',
+    textColor: 'rgb(var(--content))',
     extendedProps: { status: booking.status },
   }));
 

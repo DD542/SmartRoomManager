@@ -1,10 +1,10 @@
 import { cn } from '../../utils/cn';
 
 const TONE = {
-  disponible: { fill: 'rgba(61,219,166,0.10)', stroke: '#3DDBA6', label: 'Libre' },
-  occupee: { fill: 'rgba(44,56,80,0.9)', stroke: '#3B4A66', label: 'Occupée' },
-  maintenance: { fill: 'rgba(252,198,63,0.10)', stroke: '#FCC63F', label: 'Maintenance' },
-  mienne: { fill: 'rgba(91,155,255,0.22)', stroke: '#5B9BFF', label: 'Votre salle' },
+  disponible: { fill: 'rgb(var(--success) / 0.10)', stroke: 'rgb(var(--success))', label: 'Libre' },
+  occupee: { fill: 'rgb(var(--line) / 0.9)', stroke: 'rgb(var(--line-strong))', label: 'Occupée' },
+  maintenance: { fill: 'rgb(var(--warning) / 0.10)', stroke: 'rgb(var(--warning))', label: 'Maintenance' },
+  mienne: { fill: 'rgb(var(--accent) / 0.22)', stroke: 'rgb(var(--accent))', label: 'Votre salle' },
 };
 
 /**
@@ -44,7 +44,7 @@ export function FloorPlan({
       >
         <defs>
           <pattern id="grille" width="4" height="4" patternUnits="userSpaceOnUse">
-            <path d="M4 0 L0 0 0 4" fill="none" stroke="#1A2231" strokeWidth="0.3" />
+            <path d="M4 0 L0 0 0 4" fill="none" stroke="rgb(var(--surface))" strokeWidth="0.3" />
           </pattern>
         </defs>
 
@@ -70,8 +70,8 @@ export function FloorPlan({
               y={corridor.y}
               width={corridor.w}
               height={corridor.h}
-              fill="#141B2A"
-              stroke="#2C3850"
+              fill="rgb(var(--ink-soft))"
+              stroke="rgb(var(--line))"
               strokeWidth="0.3"
             />
           ))}
@@ -90,7 +90,7 @@ export function FloorPlan({
                 height={room.plan.h}
                 rx="1.5"
                 fill={tone.fill}
-                stroke={selected ? '#5B9BFF' : tone.stroke}
+                stroke={selected ? 'rgb(var(--accent))' : tone.stroke}
                 strokeWidth={selected ? 0.9 : 0.5}
                 className="cursor-pointer transition-[stroke-width]"
                 role="button"
@@ -110,9 +110,9 @@ export function FloorPlan({
                 y={room.plan.y + room.plan.h / 2 - 1.5}
                 textAnchor="middle"
                 fontSize="3.4"
-                fill="#F7FAFF"
+                fill="rgb(var(--content))"
                 pointerEvents="none"
-                style={{ paintOrder: 'stroke', stroke: '#101623', strokeWidth: 0.8 }}
+                style={{ paintOrder: 'stroke', stroke: 'rgb(var(--ink))', strokeWidth: 0.8 }}
               >
                 {room.name}
               </text>
@@ -123,7 +123,7 @@ export function FloorPlan({
                 fontSize="2.6"
                 fill={tone.stroke}
                 pointerEvents="none"
-                style={{ paintOrder: 'stroke', stroke: '#101623', strokeWidth: 0.8 }}
+                style={{ paintOrder: 'stroke', stroke: 'rgb(var(--ink))', strokeWidth: 0.8 }}
               >
                 {room.floor} · {tone.label}
               </text>
@@ -145,8 +145,8 @@ export function FloorPlan({
               width={plan.entrance.w}
               height={plan.entrance.h}
               rx="0.8"
-              fill="#222C3E"
-              stroke="#5B9BFF"
+              fill="rgb(var(--surface-raised))"
+              stroke="rgb(var(--accent))"
               strokeWidth="0.4"
             />
             <text
@@ -154,7 +154,7 @@ export function FloorPlan({
               y={plan.entrance.y - 1}
               textAnchor="middle"
               fontSize="2.6"
-              fill="#B4C0D4"
+              fill="rgb(var(--content-muted))"
             >
               {plan.entrance.label}
             </text>
@@ -166,7 +166,7 @@ export function FloorPlan({
 }
 
 export function FloorPlanLegend({ legend = [] }) {
-  const dot = { libre: '#3DDBA6', occupee: '#3B4A66', mienne: '#5B9BFF' };
+  const dot = { libre: 'rgb(var(--success))', occupee: 'rgb(var(--line-strong))', mienne: 'rgb(var(--accent))' };
   return (
     <ul className="flex flex-wrap gap-4">
       {legend.map((item) => (

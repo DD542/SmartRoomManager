@@ -108,7 +108,7 @@ export function PlanEditor({ layout, selectedId, onSelect, onMove, onCommit, cla
             <path
               d={`M${PAS} 0 L0 0 0 ${PAS}`}
               fill="none"
-              stroke="#2C3850"
+              stroke="rgb(var(--line))"
               strokeWidth="0.25"
             />
           </pattern>
@@ -168,8 +168,8 @@ function SallePosee({ pose, actif, enCours, onPointerDown, onKeyDown }) {
         width={w}
         height={h}
         rx="1.5"
-        fill={actif ? 'rgba(91,155,255,0.28)' : 'rgba(34,44,62,0.9)'}
-        stroke={actif ? '#5B9BFF' : '#3B4A66'}
+        fill={actif ? 'rgb(var(--accent) / 0.28)' : 'rgb(var(--surface-raised) / 0.9)'}
+        stroke={actif ? 'rgb(var(--accent))' : 'rgb(var(--line-strong))'}
         strokeWidth={actif ? 0.6 : 0.35}
         style={{ transition: enCours ? 'none' : 'fill 180ms' }}
       />
@@ -178,7 +178,7 @@ function SallePosee({ pose, actif, enCours, onPointerDown, onKeyDown }) {
         y={centre.y}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="#F7FAFF"
+        fill="rgb(var(--content))"
         fontSize="2.4"
         fontFamily="ui-monospace, monospace"
         pointerEvents="none"
@@ -193,7 +193,7 @@ function SallePosee({ pose, actif, enCours, onPointerDown, onKeyDown }) {
           y1={y + h}
           x2={centre.x + w / 4}
           y2={y + h}
-          stroke="#3DDBA6"
+          stroke="rgb(var(--success))"
           strokeWidth="1"
           strokeLinecap="round"
           pointerEvents="none"

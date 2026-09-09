@@ -69,8 +69,8 @@ function Ligne({ label, children }) {
 /** Visuel neutre tant qu'aucune photo n'a été déposée. */
 const PLACEHOLDER = `data:image/svg+xml;utf8,${encodeURIComponent(
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400">
-    <rect width="640" height="400" fill="#1A2231"/>
-    <rect x="150" y="130" width="340" height="140" rx="12" fill="none" stroke="#3B4A66" stroke-width="3" stroke-dasharray="10 8"/>
-    <text x="320" y="210" fill="#8A97AC" font-family="monospace" font-size="20" text-anchor="middle">Aucun visuel</text>
+    <rect width="640" height="400" fill="rgb(var(--surface))"/>
+    <rect x="150" y="130" width="340" height="140" rx="12" fill="none" stroke="rgb(var(--line-strong))" stroke-width="3" stroke-dasharray="10 8"/>
+    <text x="320" y="210" fill="rgb(var(--content-faint))" font-family="monospace" font-size="20" text-anchor="middle">Aucun visuel</text>
   </svg>`,
 )}`;

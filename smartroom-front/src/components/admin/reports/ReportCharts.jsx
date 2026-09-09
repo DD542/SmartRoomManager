@@ -142,7 +142,7 @@ export function TopRoomsChart({ data = [], limit = 6 }) {
                   dataKey="bookings"
                   position="right"
                   offset={8}
-                  fill="#B4C0D4"
+                  fill="rgb(var(--content-muted))"
                   fontSize={11}
                   fontFamily="ui-monospace, monospace"
                 />

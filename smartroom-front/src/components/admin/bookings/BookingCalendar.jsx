@@ -47,7 +47,7 @@ export function BookingCalendar({ bookings = [], onSelect, isLoading }) {
             editable: false,
             backgroundColor: `${meta.couleur}2E`,
             borderColor: meta.couleur,
-            textColor: '#F7FAFF',
+            textColor: 'rgb(var(--content))',
           };
         }),
     [bookings],

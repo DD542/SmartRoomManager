@@ -45,7 +45,7 @@ const MINUTES_PAR_CRENEAU = 30;
 
 const LEGEND = [
   { label: 'Libre', className: 'border-line bg-surface-raised' },
-  { label: 'Occupé', className: 'border-line-strong bg-[#222C3E]' },
+  { label: 'Occupé', className: 'border-line-strong bg-[rgb(var(--surface-raised))]' },
   { label: 'Votre sélection', className: 'border-accent bg-accent/30' },
   { label: 'Fermé', className: 'border-line bg-line/60' },
 ];

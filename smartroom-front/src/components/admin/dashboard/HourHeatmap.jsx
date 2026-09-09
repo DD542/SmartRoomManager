@@ -26,11 +26,11 @@ import { Card, CardHeader } from '../../ui/Card';
  * un fond sombre.
  */
 const NIVEAUX = [
-  { fond: 'rgba(91,155,255,0.10)', bord: 'rgba(91,155,255,0.20)' },
-  { fond: 'rgba(91,155,255,0.28)', bord: 'rgba(91,155,255,0.35)' },
-  { fond: 'rgba(108,192,255,0.48)', bord: 'rgba(108,192,255,0.55)' },
-  { fond: 'rgba(128,220,235,0.70)', bord: 'rgba(128,220,235,0.75)' },
-  { fond: 'rgba(160,240,205,0.92)', bord: 'rgba(160,240,205,1)' },
+  { fond: 'var(--chaleur-1)', bord: 'var(--chaleur-1-bord)' },
+  { fond: 'var(--chaleur-2)', bord: 'var(--chaleur-2-bord)' },
+  { fond: 'var(--chaleur-3)', bord: 'var(--chaleur-3-bord)' },
+  { fond: 'var(--chaleur-4)', bord: 'var(--chaleur-4-bord)' },
+  { fond: 'var(--chaleur-5)', bord: 'var(--chaleur-5-bord)' },
 ];
 
 /**

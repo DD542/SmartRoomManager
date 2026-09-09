@@ -32,13 +32,13 @@ function CountdownRing({ remainingSec, totalSec, legende, etiquette }) {
   return (
     <div className="relative mx-auto h-32 w-32">
       <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90" aria-hidden="true">
-        <circle cx="50" cy="50" r="46" fill="none" stroke="#2C3850" strokeWidth="5" />
+        <circle cx="50" cy="50" r="46" fill="none" stroke="rgb(var(--line))" strokeWidth="5" />
         <circle
           cx="50"
           cy="50"
           r="46"
           fill="none"
-          stroke={ratio > 0.3 ? '#5B9BFF' : '#FF8080'}
+          stroke={ratio > 0.3 ? 'rgb(var(--accent))' : 'rgb(var(--danger))'}
           strokeWidth="5"
           strokeLinecap="round"
           strokeDasharray={circumference}

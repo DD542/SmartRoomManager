@@ -5,6 +5,7 @@ import { countUnread } from '../../api/notifications';
 import { useAuth } from '../../hooks/useAuth';
 import { fullName } from '../../utils/format';
 import { Avatar } from '../ui/Avatar';
+import { BasculeTheme } from './BasculeTheme';
 import { IconButton } from '../ui/Button';
 import { BarreRecherche } from './BarreRecherche';
 
@@ -50,6 +51,7 @@ export function Topbar() {
       />
 
       <div className="ml-auto flex items-center gap-1">
+        <BasculeTheme />
         <span className="relative">
           <IconButton
             icon={Bell}

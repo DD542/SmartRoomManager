@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Outlet } from 'react-router-dom';
 import { DoorOpen } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { BasculeTheme } from '../components/layout/BasculeTheme';
 import { cn } from '../utils/cn';
 
 const LINKS = [
@@ -73,9 +74,12 @@ export default function PublicLayout() {
               </a>
             ))}
           </nav>
-          <Button to="/connexion" size="sm">
-            Se connecter
-          </Button>
+          <div className="flex items-center gap-1.5">
+            <BasculeTheme />
+            <Button to="/connexion" size="sm">
+              Se connecter
+            </Button>
+          </div>
         </div>
       </header>
 
