@@ -4,28 +4,30 @@ import { prefersReducedMotion } from '../../hooks/useInView';
 import { Reveal } from './Reveal';
 
 /**
- * Les sept séquences, dans l'ordre où elles se lisent.
+ * Le film de démonstration, en motion design, et ses chapitres.
  *
- * Enchaînées par le lecteur plutôt que fusionnées en un seul fichier : aucun
- * outil d'encodage n'est installé sur la machine, et un ré-encodage aurait de
- * toute façon coûté une génération de qualité pour un résultat identique à
- * l'œil.
+ * Un seul fichier, rendu image par image depuis `video/motion-design.html`
+ * (voir `video/rendre-video.mjs`) : il se régénère à l'identique quand
+ * l'interface change, au lieu d'être refilmé à la main.
  *
- * Chaque séquence garde donc son fichier, et seule celle qu'on regarde est
- * téléchargée. Quinze mégaoctets d'un coup pour un visiteur qui s'arrête au
- * premier plan serait un mauvais échange.
+ * Les débuts de chapitre suivent les scènes du film, en secondes. Les
+ * changer ici sans changer le film ferait sauter au milieu d'une scène.
  */
-const SEQUENCES = [
-  // L'ordre de lecture n'est pas celui des noms de fichiers : la troisième
-  // séquence ouvre la démonstration, et les deux premières la suivent.
-  '/demo3.mp4',
-  '/demo1.mp4',
-  '/demo2.mp4',
-  '/demo4.mp4',
-  '/demo5.mp4',
-  '/demo6.mp4',
-  '/demo7.mp4',
+const FILM = '/demo-smartroom.webm';
+const AFFICHE = '/demo-smartroom.webp';
+
+export const CHAPITRES = [
+  { titre: 'Ouverture', debut: 0 },
+  { titre: 'Le besoin', debut: 3.6 },
+  { titre: 'La recommandation', debut: 8.0 },
+  { titre: 'Les conflits', debut: 12.8 },
+  { titre: 'La réservation', debut: 17.2 },
+  { titre: 'Le pilotage', debut: 21.2 },
 ];
+
+/** Chapitre en cours à l'instant donné : le dernier dont le début est passé. */
+export const chapitreA = (instant) =>
+  CHAPITRES.reduce((courant, chapitre, rang) => (instant >= chapitre.debut ? rang : courant), 0);
 
 /**
  * Demande la lecture, et note si elle a été obtenue.
@@ -79,32 +81,22 @@ export function LandingDemo() {
   //: re-rendus.
   const [automatique] = useState(() => !prefersReducedMotion());
   const [enLecture, setEnLecture] = useState(false);
-  const [index, setIndex] = useState(0);
+  const [chapitre, setChapitre] = useState(0);
 
-  /**
-   * Passe à la séquence suivante, et revient à la première après la dernière.
-   *
-   * L'enchaînement se fait ici et non par l'attribut `loop`, qui reboucle sur
-   * le fichier courant : sept séquences dans l'ordre demandent un compteur,
-   * pas un drapeau.
-   */
-  const suivante = useCallback(
-    () => setIndex((courant) => (courant + 1) % SEQUENCES.length),
-    [],
-  );
-
-  // Changement de séquence : la source suit l'index et la lecture reprend
-  // aussitôt. `load()` est nécessaire — changer la source ne suffit pas à
-  // faire relire l'élément, qui garderait la séquence précédente.
-  useEffect(() => {
+  /** Suit la lecture : le repère dit où l'on en est dans le film. */
+  const suivre = useCallback(() => {
     const element = video.current;
-    if (!element || !enLecture) return;
-    element.load();
+    if (element) setChapitre(chapitreA(element.currentTime));
+  }, []);
+
+  /** Saute au début d'un chapitre, et lance la lecture si elle ne l'était pas. */
+  const allerA = (rang) => {
+    const element = video.current;
+    setChapitre(rang);
+    if (!element) return;
+    element.currentTime = CHAPITRES[rang].debut;
     demander(element, setEnLecture);
-    // `enLecture` volontairement hors des dépendances : cet effet suit le
-    // changement de séquence, pas le passage de l'affiche à la lecture.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index]);
+  };
 
   useEffect(() => {
     const element = video.current;
@@ -169,8 +161,8 @@ export function LandingDemo() {
           delay={80}
           className="mt-4 max-w-2xl text-base leading-relaxed text-content-muted md:text-lg"
         >
-          Du besoin exprimé au code d’accès reçu : le parcours complet, filmé dans
-          l’application. Sept séquences s’enchaînent, en boucle et sans son.
+          Du besoin exprimé au code d’accès reçu, puis au pilotage du parc : le
+          parcours complet en moins de trente secondes, en boucle et sans son.
         </Reveal>
 
         <Reveal delay={160} className="mt-8">
@@ -181,19 +173,21 @@ export function LandingDemo() {
               <video
                 ref={video}
                 className="h-full w-full"
-                // `metadata` et non `auto` : la séquence ne se télécharge qu'à
-                // la lecture, donc à l'entrée dans la fenêtre. Un visiteur qui
-                // ne descend jamais jusqu'ici n'en paie aucune des sept.
+                // `metadata` et non `auto` : le film ne se télécharge qu'à la
+                // lecture, donc à l'entrée dans la fenêtre. Un visiteur qui ne
+                // descend jamais jusqu'ici n'en paie rien.
                 preload="metadata"
+                poster={AFFICHE}
                 muted
                 playsInline
+                loop
                 controls
-                onEnded={suivante}
-                aria-label={`Démonstration de SmartRoom Manager, séquence ${
-                  index + 1
-                } sur ${SEQUENCES.length}, sans son`}
+                onTimeUpdate={suivre}
+                aria-label={`Démonstration de SmartRoom Manager, chapitre ${chapitre + 1} sur ${
+                  CHAPITRES.length
+                } : ${CHAPITRES[chapitre].titre}, sans son`}
               >
-                <source src={SEQUENCES[index]} type="video/mp4" />
+                <source src={FILM} type="video/webm" />
                 Votre navigateur ne sait pas lire cette vidéo.
               </video>
             </div>
@@ -202,9 +196,9 @@ export function LandingDemo() {
               <button
                 type="button"
                 onClick={lancerALaMain}
-                className="group absolute inset-2 flex flex-col items-center justify-center gap-3 rounded-[26px] bg-surface/60 backdrop-blur-xl transition hover:bg-surface/40"
+                className="group absolute inset-2 flex flex-col items-center justify-center gap-3 rounded-[26px] bg-surface/30 backdrop-blur-md transition hover:bg-surface/10"
               >
-                <span className="flex h-20 w-20 items-center justify-center rounded-full bg-accent text-ink shadow-haute transition duration-500 ease-ressort group-hover:scale-110">
+                <span className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-aurore-bleu via-aurore-violet to-aurore-rose text-white shadow-haute transition duration-500 ease-ressort group-hover:scale-110">
                   <Play size={30} aria-hidden="true" className="ml-1 fill-current" />
                 </span>
                 <span className="text-sm text-content">Lancer la démonstration</span>
@@ -212,36 +206,28 @@ export function LandingDemo() {
             )}
           </div>
 
-          {/* La position dans la suite, et de quoi y sauter. Sans repère, une
-              séquence qui change toute seule se lit comme un saut de lecture. */}
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <span className="text-xs text-content-faint">
-              Séquence {index + 1} sur {SEQUENCES.length}
-            </span>
-            <span className="flex flex-wrap gap-1.5">
-              {SEQUENCES.map((source, position) => (
-                <button
-                  key={source}
-                  type="button"
-                  onClick={() => setIndex(position)}
-                  aria-label={`Séquence ${position + 1}`}
-                  aria-current={position === index ? 'true' : undefined}
-                  // La barre garde ses six pixels ; c'est la zone sensible qui
-                  // grandit, par un remplissage vertical que le trait ignore.
-                  // Mesuré : 28 x 6 px, six pixels d'écart entre deux voisines,
-                  // sur le premier écran qu'un visiteur voit.
-                  className="flex min-h-[44px] items-center px-0.5"
-                >
-                  <span
-                    aria-hidden="true"
-                    className={`block h-1.5 w-7 rounded-full transition ${
-                      position === index ? 'bg-accent' : 'bg-line hover:bg-line-strong'
-                    }`}
-                  />
-                </button>
-              ))}
-            </span>
-          </div>
+          {/* Les chapitres, et de quoi y sauter. Sans repère, un film qui change
+              de scène tout seul ne dit pas ce qu'il reste à voir. */}
+          <nav aria-label="Chapitres de la démonstration" className="mt-4 flex flex-wrap gap-2">
+            {CHAPITRES.map(({ titre }, rang) => (
+              <button
+                key={titre}
+                type="button"
+                onClick={() => allerA(rang)}
+                aria-current={rang === chapitre ? 'true' : undefined}
+                className={`pression inline-flex min-h-[44px] items-center gap-2 rounded-full px-4 text-xs font-medium transition-colors ${
+                  rang === chapitre
+                    ? 'bg-accent text-ink shadow-bouton'
+                    : 'verre text-content-muted hover:text-content'
+                }`}
+              >
+                <span className={rang === chapitre ? 'opacity-70' : 'text-content-faint'}>
+                  {String(rang + 1).padStart(2, '0')}
+                </span>
+                {titre}
+              </button>
+            ))}
+          </nav>
         </Reveal>
       </div>
     </section>

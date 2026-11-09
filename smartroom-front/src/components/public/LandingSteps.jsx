@@ -36,7 +36,7 @@ export function LandingSteps() {
           {STEPS.map((step, index) => (
             <Reveal as="li" key={step.number} delay={index * 90}>
               <span className="group block h-full rounded-2xl border border-line/70 bg-surface/80 shadow-carte rounded-3xl p-6 transition duration-500 ease-ressort hover:-translate-y-1.5 hover:shadow-haute">
-                <span className="inline-block font-display text-4xl font-semibold tracking-tight text-content-faint transition-colors duration-300 group-hover:text-content">
+                <span className="texte-aurore inline-block font-display text-4xl font-semibold tracking-tight transition-transform duration-500 ease-ressort group-hover:scale-110">
                   {step.number}
                 </span>
                 <span className="mt-4 block text-base font-semibold tracking-tight text-content">{step.title}</span>

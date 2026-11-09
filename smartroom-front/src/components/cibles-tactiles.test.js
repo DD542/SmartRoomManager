@@ -34,8 +34,8 @@ const CONTROLES = [
   },
   {
     fichier: 'src/components/public/LandingDemo.jsx',
-    ancre: 'aria-label={`Séquence',
-    quoi: 'les pastilles de séquence de la page de présentation',
+    ancre: 'onClick={() => allerA(rang)}',
+    quoi: 'les boutons de chapitre de la démonstration',
   },
   {
     fichier: 'src/components/layout/PageHeader.jsx',

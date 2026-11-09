@@ -15,7 +15,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { LandingDemo } from './LandingDemo';
+import { CHAPITRES, LandingDemo, chapitreA } from './LandingDemo';
 
 const VRAI_MATCH_MEDIA = window.matchMedia;
 
@@ -60,67 +60,45 @@ describe('Démonstration filmée', () => {
     // Sans `playsinline`, Safari sur iPhone ouvre le lecteur plein écran au
     // lieu de jouer dans la page.
     expect(video.hasAttribute('playsinline')).toBe(true);
-    // `loop` reboucle sur le fichier courant : sept séquences dans l'ordre
-    // demandent un compteur, pas un drapeau.
-    expect(video.hasAttribute('loop')).toBe(false);
+    // Un seul film : il reboucle de lui-même.
+    expect(video.hasAttribute('loop')).toBe(true);
   });
 
-  it('ouvre sur la première séquence de la suite', () => {
-    // L'ordre de lecture n'est pas celui des noms de fichiers.
+  it('lit le film de démonstration, avec son affiche', () => {
     const { video } = monter();
 
-    expect(video.querySelector('source').getAttribute('src')).toBe('/demo3.mp4');
-    expect(screen.getByText('Séquence 1 sur 7')).toBeTruthy();
+    expect(video.querySelector('source').getAttribute('src')).toBe('/demo-smartroom.webm');
+    expect(video.querySelector('source').getAttribute('type')).toBe('video/webm');
+    // L'affiche occupe le cadre avant la lecture : jamais un rectangle noir.
+    expect(video.getAttribute('poster')).toBe('/demo-smartroom.webp');
   });
 
-  it('enchaîne sur la suivante quand une séquence se termine', () => {
-    const { video, container } = monter();
+  it('annonce le chapitre en cours au fil de la lecture', () => {
+    const { video } = monter();
+    expect(screen.getByRole('button', { name: /01\s*Ouverture/ }).getAttribute('aria-current')).toBe('true');
 
-    fireEvent.ended(video);
+    Object.defineProperty(video, 'currentTime', { value: 13.5, configurable: true });
+    fireEvent.timeUpdate(video);
 
-    expect(container.querySelector('source').getAttribute('src')).toBe('/demo1.mp4');
-    expect(screen.getByText('Séquence 2 sur 7')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /04\s*Les conflits/ }).getAttribute('aria-current')).toBe('true');
+    expect(screen.getByRole('button', { name: /01\s*Ouverture/ }).getAttribute('aria-current')).toBeNull();
   });
 
-  it('revient à la première après la dernière', () => {
-    const { container } = monter();
+  it('saute au début du chapitre choisi', () => {
+    const { video } = monter();
 
-    for (let passage = 0; passage < 7; passage += 1) {
-      fireEvent.ended(container.querySelector('video'));
-    }
+    fireEvent.click(screen.getByRole('button', { name: /05\s*La réservation/ }));
 
-    expect(container.querySelector('source').getAttribute('src')).toBe('/demo3.mp4');
-    expect(screen.getByText('Séquence 1 sur 7')).toBeTruthy();
+    expect(video.currentTime).toBe(17.2);
+    expect(lecture).toHaveBeenCalled();
   });
 
-  it('suit l’ordre demandé, et non celui des noms de fichiers', () => {
-    const { container } = monter();
-    const lues = [container.querySelector('source').getAttribute('src')];
-
-    for (let passage = 0; passage < 6; passage += 1) {
-      fireEvent.ended(container.querySelector('video'));
-      lues.push(container.querySelector('source').getAttribute('src'));
-    }
-
-    expect(lues).toEqual([
-      '/demo3.mp4',
-      '/demo1.mp4',
-      '/demo2.mp4',
-      '/demo4.mp4',
-      '/demo5.mp4',
-      '/demo6.mp4',
-      '/demo7.mp4',
-    ]);
-  });
-
-  it('laisse sauter directement à une séquence', () => {
-    // Une séquence qui change toute seule se lit comme un saut de lecture :
-    // le repère dit où l'on en est, et permet d'y revenir.
-    const { container } = monter();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Séquence 5' }));
-
-    expect(container.querySelector('source').getAttribute('src')).toBe('/demo5.mp4');
+  it('range les chapitres dans l’ordre du film', () => {
+    const debuts = CHAPITRES.map((chapitre) => chapitre.debut);
+    expect(debuts).toEqual([...debuts].sort((a, b) => a - b));
+    expect(chapitreA(0)).toBe(0);
+    expect(chapitreA(8.0)).toBe(2);
+    expect(chapitreA(99)).toBe(CHAPITRES.length - 1);
   });
 
   it('retire l’affiche une fois la lecture obtenue', async () => {
@@ -136,7 +114,7 @@ describe('Démonstration filmée', () => {
 
   it('ne télécharge la piste qu’au moment de la lire', () => {
     // `metadata` : un visiteur qui ne descend jamais jusqu’ici ne paie pas
-    // les 1,7 Mo.
+    // le film.
     const { video } = monter();
 
     expect(video.getAttribute('preload')).toBe('metadata');
@@ -185,10 +163,10 @@ describe('Démonstration filmée', () => {
   it('porte un nom pour qui ne voit pas l’image', () => {
     const { video } = monter();
 
-    // Le nom porte la position dans la suite : sans elle, un lecteur d'écran
-    // annonce sept fois la même vidéo.
+    // Le nom porte le chapitre en cours : un lecteur d'écran dit où en est
+    // le film, et non seulement qu'il y a une vidéo.
     expect(video.getAttribute('aria-label')).toBe(
-      'Démonstration de SmartRoom Manager, séquence 1 sur 7, sans son',
+      'Démonstration de SmartRoom Manager, chapitre 1 sur 6 : Ouverture, sans son',
     );
   });
 });

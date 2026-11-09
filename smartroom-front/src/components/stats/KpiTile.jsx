@@ -1,12 +1,13 @@
 import { TrendingDown, TrendingUp } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { Skeleton } from '../ui/States';
+import { TEINTES } from '../ui/teintes';
 
 /**
  * Tuile de chiffre clé. La valeur est en monospace, l'unité reste lisible,
  * et la tendance ne s'appuie jamais sur la seule couleur : une flèche l'accompagne.
  */
-export function KpiTile({ icon: Icon, value, unit, label, trend, tone = 'default', className }) {
+export function KpiTile({ icon: Icon, value, unit, label, trend, tone = 'default', teinte, className }) {
   const Arrow = trend?.direction === 'down' ? TrendingDown : TrendingUp;
   // La flèche suit toujours le sens réel de la variation ; la couleur suit son
   // interprétation. Les deux divergent quand baisser est une bonne nouvelle
@@ -26,13 +27,14 @@ export function KpiTile({ icon: Icon, value, unit, label, trend, tone = 'default
         <span
           className={cn(
             'flex h-10 w-10 shrink-0 items-center justify-center rounded-full',
-            tone === 'accent' ? 'bg-accent text-ink' : 'bg-content/[0.06]',
+            TEINTES[teinte]?.pastille ??
+              (tone === 'accent' ? 'bg-accent text-ink' : 'bg-content/[0.06] text-content'),
           )}
         >
           <Icon
             size={16}
             aria-hidden="true"
-            className={tone === 'accent' ? 'text-ink' : 'text-content'}
+            className="text-current"
           />
         </span>
       )}

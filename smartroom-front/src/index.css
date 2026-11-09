@@ -70,10 +70,22 @@
     --verre-ombre: 0 1px 0 rgb(255 255 255 / 0.10) inset, 0 -1px 0 rgb(255 255 255 / 0.03) inset, 0 18px 40px -18px rgb(0 0 0 / 0.7);
     --verre-bulle: rgb(255 255 255 / 0.12);
 
-    /* Brume d'ambiance posée derrière les pages. */
-    --brume-1: rgb(120 120 135 / 0.22);
-    --brume-2: rgb(80 80 95 / 0.18);
-    --brume-3: rgb(255 255 255 / 0.04);
+    /* Couleurs d'aurore : la lumière du produit. Le graphite porte la
+       structure, ces six teintes portent la vie — pastilles d'icône, chiffres,
+       halos du fond. Plus claires sur fond sombre, où elles doivent briller. */
+    --bleu: 96 165 250;
+    --violet: 167 139 250;
+    --rose: 244 114 182;
+    --cyan: 34 211 238;
+    --ambre: 251 191 36;
+    --emeraude: 52 211 153;
+
+    /* Aurore d'ambiance posée derrière les pages : quatre nappes de couleur
+       que le verre floute et adoucit. */
+    --brume-1: rgb(59 130 246 / 0.30);
+    --brume-2: rgb(139 92 246 / 0.26);
+    --brume-3: rgb(236 72 153 / 0.16);
+    --brume-4: rgb(6 182 212 / 0.18);
 
     /* Echelle de la carte de chaleur, cinq crans du plus froid au plus chaud.
        Elle vit ici parce que sa logique s'inverse d'un theme a l'autre. */
@@ -97,12 +109,12 @@
   :root[data-theme='clair'] {
     color-scheme: light;
 
-    --ink: 236 237 241;
-    --ink-soft: 228 230 235;
+    --ink: 232 235 245;
+    --ink-soft: 222 226 240;
     --surface: 255 255 255;
-    --surface-raised: 245 246 248;
-    --line: 226 228 233;
-    --line-strong: 200 203 210;
+    --surface-raised: 244 246 252;
+    --line: 220 224 236;
+    --line-strong: 194 199 214;
     --accent: 22 22 24;
     --accent-hover: 52 52 56;
     --accent-bright: 22 22 24;
@@ -135,9 +147,19 @@
     --verre-ombre: 0 1px 0 rgb(255 255 255 / 0.9) inset, 0 -1px 0 rgb(255 255 255 / 0.4) inset, 0 18px 40px -20px rgb(22 22 24 / 0.28);
     --verre-bulle: rgb(255 255 255 / 0.85);
 
-    --brume-1: rgb(255 255 255 / 0.85);
-    --brume-2: rgb(205 208 216 / 0.55);
-    --brume-3: rgb(255 255 255 / 0.6);
+    /* Plus saturées sur fond clair : une pastille pastel sur du blanc ne se
+       verrait pas, et le texte coloré doit tenir le contraste. */
+    --bleu: 37 99 235;
+    --violet: 124 58 237;
+    --rose: 219 39 119;
+    --cyan: 8 145 178;
+    --ambre: 217 119 6;
+    --emeraude: 5 150 105;
+
+    --brume-1: rgb(96 165 250 / 0.45);
+    --brume-2: rgb(167 139 250 / 0.40);
+    --brume-3: rgb(244 114 182 / 0.28);
+    --brume-4: rgb(34 211 238 / 0.30);
 
     /* Progression inverse : la chaleur se marque en assombrissant. */
     --chaleur-1: rgb(22 22 24 / 0.05);
@@ -163,9 +185,10 @@
     /* Brume : trois nappes floues, comme le ciel couvert de la maquette. Le
        verre n'a d'effet que s'il a quelque chose à flouter derrière lui. */
     background-image:
-      radial-gradient(70rem 40rem at 0% -10%, var(--brume-1), transparent 60%),
-      radial-gradient(60rem 36rem at 100% 10%, var(--brume-2), transparent 60%),
-      radial-gradient(50rem 30rem at 50% 110%, var(--brume-3), transparent 60%);
+      radial-gradient(60rem 38rem at -5% -10%, var(--brume-1), transparent 62%),
+      radial-gradient(52rem 34rem at 105% 5%, var(--brume-2), transparent 60%),
+      radial-gradient(46rem 30rem at 85% 105%, var(--brume-3), transparent 62%),
+      radial-gradient(44rem 28rem at 5% 100%, var(--brume-4), transparent 60%);
     background-attachment: fixed;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01', 'tnum';
     letter-spacing: -0.006em;
@@ -231,6 +254,20 @@
       rgb(var(--lueur) / 0) 100%
     );
     animation: shimmer 1.4s linear infinite;
+  }
+
+  /* Texte en dégradé lumineux : bleu, violet, rose. Réservé aux titres et
+     aux grands chiffres, où il attire l'œil sans gêner la lecture. */
+  .texte-aurore {
+    background-image: linear-gradient(
+      100deg,
+      rgb(var(--bleu)) 0%,
+      rgb(var(--violet)) 50%,
+      rgb(var(--rose)) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 
   .card-surface {
