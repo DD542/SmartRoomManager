@@ -39,9 +39,10 @@ export function Topbar() {
     // `z-topbar` : la barre reste au-dessus du contenu qui défile sous elle,
     // et sous les tiroirs, modales et notifications. La marge haute couvre
     // l'encoche quand l'application est installée en plein écran.
-    // Barre de verre flottante : décollée des bords, arrondie en pilule, le
-    // contenu passe dessous en défilant et transparaît flouté.
-    <header className="verre sticky top-[calc(env(safe-area-inset-top)+0.75rem)] z-topbar mx-3 mt-[calc(env(safe-area-inset-top)+0.75rem)] flex h-14 shrink-0 items-center gap-3 rounded-full pl-2 pr-2 md:mx-6 lg:mx-8">
+    // Barre flottante de la même surface que les cartes : décollée des bords,
+    // arrondie en pilule, le contenu passe dessous en défilant et transparaît
+    // flouté.
+    <header className="border border-line/70 bg-surface/85 shadow-carte backdrop-blur-xl sticky top-[calc(env(safe-area-inset-top)+0.75rem)] z-topbar mx-3 mt-[calc(env(safe-area-inset-top)+0.75rem)] flex h-14 shrink-0 items-center gap-3 rounded-full pl-2 pr-2 md:mx-6 lg:mx-8">
       <BarreRecherche
         id="recherche-globale"
         label="Rechercher une salle, une réservation"

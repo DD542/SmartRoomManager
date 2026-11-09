@@ -322,10 +322,11 @@
     position: absolute;
     z-index: 0;
     border-radius: 999px;
-    background: var(--verre-bulle);
-    box-shadow:
-      0 1px 0 rgb(255 255 255 / 0.6) inset,
-      0 6px 16px -6px rgb(0 0 0 / 0.25);
+    /* Pastille pleine dans la couleur d'accent, comme les sélecteurs du
+       tableau de bord (« 7 jours », « Pertinence ») : la navigation parle la
+       même langue que le contenu. */
+    background: rgb(var(--accent));
+    box-shadow: var(--ombre-bouton);
     transition:
       transform 560ms cubic-bezier(0.34, 1.36, 0.4, 1),
       width 560ms cubic-bezier(0.34, 1.36, 0.4, 1),

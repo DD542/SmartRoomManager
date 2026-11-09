@@ -25,7 +25,8 @@ const ongletClass =
   'pression relative z-[1] flex min-h-[56px] flex-1 animate-fade-in-up flex-col items-center justify-center gap-0.5 rounded-full text-[10px] font-medium transition-colors';
 
 /**
- * Barre d'onglets flottante en verre liquide, active sous 768 px.
+ * Barre d'onglets flottante, de la même surface que les cartes, active sous
+ * 768 px.
  *
  * Elle flotte au-dessus du contenu, décollée des bords, comme la barre
  * d'onglets d'iOS : le contenu défile dessous et transparaît au travers. La
@@ -39,7 +40,7 @@ export function MobileNav({ onOpenMore, moreOpen = false }) {
     <nav
       ref={barre}
       aria-label="Navigation principale"
-      className="verre-epais fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-mobilenav flex rounded-full p-1.5 shadow-haute md:hidden"
+      className="border border-line/70 bg-surface/90 backdrop-blur-xl fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-mobilenav flex rounded-full p-1.5 shadow-haute md:hidden"
     >
       <IndicateurLiquide conteneur={barre} />
       {ITEMS.map((item, index) => (
@@ -51,7 +52,7 @@ export function MobileNav({ onOpenMore, moreOpen = false }) {
           // descend de haut en bas : le même geste, adapté à l'axe de l'écran.
           style={{ animationDelay: `${index * 30}ms` }}
           className={({ isActive }) =>
-            cn(ongletClass, isActive ? 'text-content' : 'text-content-muted')
+            cn(ongletClass, isActive ? 'text-ink' : 'text-content-muted')
           }
         >
           {({ isActive }) => (

@@ -3,9 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Accessibility, KeyRound, Map, Users, Zap } from 'lucide-react';
 import { getRoom } from '../../api/rooms';
 import { getNextFreeSlot } from '../../api/availability';
-import { getPlanDocument, planIdForRoom } from '../../api/buildings';
+import { getPlanDocument } from '../../api/buildings';
 import { useAsync } from '../../hooks/useAsync';
-import { useAdminSession } from '../../hooks/useAdminSession';
 import { useAuth } from '../../hooks/useAuth';
 import { NOW, fmtTime, toDateInput } from '../../utils/dates';
 import { fmtArea, fmtCapacity, ROOM_STATUS_LABEL } from '../../utils/format';
@@ -18,7 +17,6 @@ import { PageHeader } from '../../components/layout/PageHeader';
 import { RoomGallery } from '../../components/rooms/RoomGallery';
 import { RoomBookingPanel } from '../../components/rooms/RoomBookingPanel';
 import { PlanPreview } from '../../components/rooms/PlanPreview';
-import { PlanUpload } from '../../components/rooms/PlanUpload';
 import { equipmentIcon } from '../../components/rooms/equipmentIcons';
 
 const STATUS_TONE = { disponible: 'success', occupee: 'danger', maintenance: 'warning' };
@@ -28,7 +26,6 @@ export default function RoomDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { permissions } = useAdminSession();
   const room = useAsync(() => getRoom(id), [id]);
   const nextSlot = useAsync(() => getNextFreeSlot(id, NOW), [id]);
   // Le plan n'est demandé que si l'étage en porte un. Sans cette condition,
@@ -38,21 +35,14 @@ export default function RoomDetailPage() {
   // ce cas ; quatre écrans s'en servaient, celui-ci non, faute d'avoir
   // l'information dans sa charge utile.
   //
-  // La dépendance porte sur `room.data` : `planIdForRoom` lit une table
-  // alimentée par la fiche, et l'appeler avant elle rendrait `null`.
+  // La dépendance porte sur `room.data` : c'est la fiche qui dit si l'étage
+  // porte un plan, et la demander avant elle reviendrait à demander à l'aveugle.
   const planDocument = useAsync(
     () =>
       getPlanDocument(id, { exists: Boolean(room.data?.floorHasPlan) }),
     [id, room.data?.floorHasPlan],
   );
 
-  // Le dépôt du plan est une opération d'administration, gouvernée par la
-  // permission `rooms.manage` — la même que côté back. Elle s'appuyait
-  // auparavant sur `user.role === 'gestionnaire'` : aucune source ne produit
-  // cette valeur (l'adaptateur ne rend que `etudiant` ou `personnel`), et la
-  // zone d'import était donc invisible pour tout le monde.
-  const canManage = permissions.includes('rooms.manage');
-  const planId = planIdForRoom(id);
 
   // Deux documents répondent à « où est cette salle ? », et l'écran n'en
   // montrait qu'un. Le plan d'étage, déposé par l'administration, situe la
@@ -155,28 +145,17 @@ export default function RoomDetailPage() {
               </Card>
 
               <Card>
-                <CardHeader
-                  title="Plan de localisation"
-                  icon={Map}
-                  subtitle={
-                    canManage
-                      ? 'Document déposé par l’administration : image ou PDF.'
-                      : undefined
-                  }
-                />
+                {/* Lecture seule : le dépôt d'un plan se fait dans l'administration
+                    (Bâtiments, plan de l'étage). Il apparaissait ici dès qu'une
+                    session d'administration était ouverte dans le même
+                    navigateur — l'espace utilisateur ne doit rien en montrer. */}
+                <CardHeader title="Plan de localisation" icon={Map} />
                 <div className="flex flex-col gap-3 px-4 pb-4">
                   <PlanPreview
                     document={planAffiche}
                     isLoading={planDocument.isLoading || room.isLoading}
                     actionLabel="Ouvrir le plan en grand"
                   />
-                  {canManage && planId && (
-                    <PlanUpload
-                      planId={planId}
-                      document={planDocument.data}
-                      onUploaded={(uploaded) => planDocument.setData(uploaded)}
-                    />
-                  )}
                 </div>
               </Card>
 

@@ -16,8 +16,12 @@ const VARIANTS = {
   corail:
     'group/corail bg-corail text-[#0C1547] border border-transparent font-semibold ' +
     'shadow-[0_12px_28px_-12px_rgb(255_128_83/0.85)] hover:-translate-y-px hover:brightness-105',
-  // Verre : un bouton secondaire se pose sur le décor au lieu de le masquer.
-  secondary: 'verre text-content border border-transparent hover:bg-surface/90',
+  // Contour net plutôt que verre : un bouton de verre posé sur une carte
+  // blanche disparaissait (« Voir sur le plan », « Ouvrir le plan en grand »).
+  // Le filet le détache dans les deux thèmes, le survol le teinte.
+  secondary:
+    'bg-surface text-content border border-line-strong shadow-sm ' +
+    'hover:border-accent/50 hover:bg-accent-soft',
   // Fantôme posé sur la barre marine : blanc quel que soit le thème.
   'ghost-marine': 'bg-transparent text-white/80 border border-transparent hover:bg-white/10 hover:text-white',
   ghost: 'bg-transparent text-content-muted border border-transparent hover:bg-content/[0.06] hover:text-content',

@@ -162,7 +162,7 @@ export function AdminNav({ onNavigate }) {
                           // entrées à 44 px ne tiendraient plus dans la hauteur.
                           'pression relative z-[1] flex min-h-[44px] items-center gap-3 rounded-full px-3 py-2 text-sm transition-colors lg:min-h-[36px]',
                           isActive
-                            ? 'font-semibold text-content'
+                            ? 'font-semibold text-ink'
                             : 'text-content-muted hover:text-content',
                         )
                       }
@@ -210,7 +210,7 @@ export function AdminNav({ onNavigate }) {
 /** Barre latérale fixe, à partir de 768 px. */
 export function AdminSidebar() {
   return (
-    <aside className="verre-epais sticky top-3 m-3 mr-0 hidden h-[calc(100vh-1.5rem)] w-64 shrink-0 flex-col overflow-hidden rounded-3xl md:flex">
+    <aside className="border border-line/70 bg-surface/85 shadow-carte backdrop-blur-xl sticky top-3 m-3 mr-0 hidden h-[calc(100vh-1.5rem)] w-64 shrink-0 flex-col overflow-hidden rounded-3xl md:flex">
       <div className="flex flex-col gap-2 px-5 pb-4 pt-5">
         <Logo />
         <span className="w-fit rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-medium text-ink">

@@ -1,4 +1,4 @@
-import { CalendarPlus, Clock, Map, Zap } from 'lucide-react';
+import { CalendarPlus, Clock, Zap } from 'lucide-react';
 import { fmtDateShort, fmtTime } from '../../utils/dates';
 import { openingLabel } from '../../utils/openingRules';
 import { Button } from '../ui/Button';
@@ -41,9 +41,6 @@ export function RoomBookingPanel({ room, nextSlot, onBook }) {
 
         <Button fullWidth icon={CalendarPlus} disabled={unavailable} onClick={onBook}>
           {unavailable ? 'Salle indisponible' : 'Réserver cette salle'}
-        </Button>
-        <Button variant="secondary" fullWidth icon={Map} to={`/app/plan?salle=${room.id}`}>
-          Voir sur le plan
         </Button>
       </div>
     </Card>

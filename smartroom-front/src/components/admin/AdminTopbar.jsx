@@ -38,7 +38,7 @@ export function AdminTopbar({ onOpenMenu }) {
     // compte DERRIERE le contenu de la page. Le contenu, lui, porte une
     // animation dont le `transform` final subsiste et cree un contexte
     // d'empilement ; la barre haute doit donc en creer un, plus haut.
-    <header className="verre sticky top-3 z-topbar mx-3 mt-3 flex h-14 shrink-0 items-center gap-3 rounded-full px-2 md:mx-6">
+    <header className="border border-line/70 bg-surface/85 shadow-carte backdrop-blur-xl sticky top-3 z-topbar mx-3 mt-3 flex h-14 shrink-0 items-center gap-3 rounded-full px-2 md:mx-6">
       {/* Ouvre la navigation en feuille : sous 768 px la barre latérale est
           masquée, et sans ce bouton aucun écran d'administration n'est
           atteignable.

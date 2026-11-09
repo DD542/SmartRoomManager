@@ -43,11 +43,12 @@ const itemClass = ({ isActive }) =>
   cn(
     'pression relative z-[1] flex h-11 items-center justify-center gap-3 rounded-full px-0 text-sm transition-colors',
     'w-11 lg:w-full lg:justify-start lg:px-3.5',
-    isActive ? 'font-semibold text-content' : 'text-content-muted hover:text-content',
+    isActive ? 'font-semibold text-ink' : 'text-content-muted hover:text-content',
   );
 
 /**
- * Barre latérale flottante en verre liquide : logo, action principale,
+ * Barre latérale flottante, de la même surface que les cartes du tableau de
+ * bord : logo, action principale,
  * navigation dont l'entrée active est portée par une bulle qui glisse.
  */
 export function Sidebar() {
@@ -56,7 +57,7 @@ export function Sidebar() {
   const nav = useRef(null);
 
   return (
-    <aside className="verre-epais sticky top-3 m-3 mr-0 hidden h-[calc(100vh-1.5rem)] w-[76px] shrink-0 flex-col items-center gap-2 rounded-3xl px-2.5 py-5 md:flex lg:w-60 lg:items-stretch lg:px-4">
+    <aside className="border border-line/70 bg-surface/85 shadow-carte backdrop-blur-xl sticky top-3 m-3 mr-0 hidden h-[calc(100vh-1.5rem)] w-[76px] shrink-0 flex-col items-center gap-2 rounded-3xl px-2.5 py-5 md:flex lg:w-60 lg:items-stretch lg:px-4">
       <NavLink
         to="/app"
         aria-label="SmartRoom Manager, retour à l’accueil"
@@ -98,7 +99,7 @@ export function Sidebar() {
                 <item.icon
                   size={19}
                   aria-hidden="true"
-                  className={cn('shrink-0 transition-colors', isActive && 'text-accent')}
+                  className="shrink-0"
                 />
                 <span className="hidden truncate lg:inline">{item.label}</span>
               </>
