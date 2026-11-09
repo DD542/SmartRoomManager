@@ -19,7 +19,7 @@
 
 import { expect, test } from '@playwright/test';
 
-const COMPTE = process.env.E2E_EMAIL ?? 'dylan.menga@edu.ece.fr';
+const COMPTE = process.env.E2E_EMAIL ?? 'dylan.menga@smartroom.app';
 const MOT_DE_PASSE = process.env.E2E_PASSWORD ?? 'smartroom2026';
 
 /** Ouvre une session par l'écran de connexion, comme un utilisateur. */
@@ -165,7 +165,7 @@ test.describe('refus et messages', () => {
 
   test('une adresse inconnue reçoit exactement le même message', async ({ page }) => {
     await page.goto('/connexion');
-    await page.getByRole('textbox', { name: /adresse/i }).fill('personne@edu.ece.fr');
+    await page.getByRole('textbox', { name: /adresse/i }).fill('personne@smartroom.app');
     await page.locator('input[type="password"]').fill(MOT_DE_PASSE);
     await page.getByRole('button', { name: /^se connecter$/i }).click();
 

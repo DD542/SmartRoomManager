@@ -86,7 +86,7 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
-      MAIL_FROM: ${MAIL_FROM:-no-reply@smartroom.ece.fr}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@smartroom.app}
       MAINTENANCE_INTERVAL_SECONDS: ${MAINTENANCE_INTERVAL_SECONDS:-300}
       LOG_JSON: "true"
       LOG_LEVEL: ${LOG_LEVEL:-INFO}

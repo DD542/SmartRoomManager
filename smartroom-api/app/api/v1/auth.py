@@ -29,7 +29,7 @@ COOKIE = settings.refresh_cookie_name
 class LoginIn(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
-    email: Annotated[str, Field(max_length=255, examples=["camille.durand@ece.fr"])]
+    email: Annotated[str, Field(max_length=255, examples=["camille.durand@smartroom.app"])]
     password: SecretStr
 
 

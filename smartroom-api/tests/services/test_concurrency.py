@@ -104,7 +104,7 @@ def parc_isole(engine):
         comptes = []
         for index in range(PRETENDANTS):
             compte = User(
-                email=f"pretendant{index}-{marque}@ece.fr",
+                email=f"pretendant{index}-{marque}@smartroom.app",
                 password_hash="x" * 60,
                 first_name=f"Prétendant{index}",
                 last_name="Concurrent",

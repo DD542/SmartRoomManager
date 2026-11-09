@@ -1,7 +1,7 @@
 """Filtrer les salles par plusieurs bâtiments, plusieurs étages.
 
 L'écran d'exploration propose des cases à cocher : on peut vouloir les salles
-d'Eiffel 1 **et** d'Eiffel 3. La route n'acceptait qu'un `building_id` unique,
+du Bâtiment A **et** du Bâtiment C. La route n'acceptait qu'un `building_id` unique,
 donc l'écran ne pouvait rien en faire d'exact — et de fait, il n'envoyait rien.
 
 Les listes rejoignent `equipment_ids`, qui en acceptait déjà une. Les

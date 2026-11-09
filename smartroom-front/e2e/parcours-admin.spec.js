@@ -24,7 +24,7 @@
 
 import { expect, test } from '@playwright/test';
 
-const ADMIN = process.env.E2E_ADMIN_EMAIL ?? 'd.menga@ece.fr';
+const ADMIN = process.env.E2E_ADMIN_EMAIL ?? 'd.menga@smartroom.app';
 const MOT_DE_PASSE = process.env.E2E_ADMIN_PASSWORD ?? 'smartroom2026';
 
 /** Les dix-sept écrans atteignables depuis la navigation. */

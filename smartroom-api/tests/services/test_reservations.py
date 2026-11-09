@@ -84,7 +84,7 @@ class TestParticipants:
         invitation = client.post(
             f"/api/v1/bookings/{identifiant}/participants",
             headers=entetes,
-            json={"email": "invite@ece.fr", "display_name": "Alex Invité"},
+            json={"email": "invite@smartroom.app", "display_name": "Alex Invité"},
         )
         assert invitation.status_code == 201, invitation.text
         jeton = invitation.json()["invitation_token"]
@@ -117,7 +117,7 @@ class TestParticipants:
         identifiant = reserver(client, entetes, salle, creneau(jour_ouvre, 10)).json()[
             "booking"
         ]["id"]
-        corps = {"email": "invite@ece.fr", "display_name": "Alex"}
+        corps = {"email": "invite@smartroom.app", "display_name": "Alex"}
 
         client.post(
             f"/api/v1/bookings/{identifiant}/participants", headers=entetes, json=corps

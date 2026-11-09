@@ -30,7 +30,7 @@ await capturer('02-connexion', '/connexion');
 
 try {
   await page.goto(BASE + '/connexion', { waitUntil: 'networkidle', timeout: 90000 });
-  await page.getByLabel(/adresse|e-?mail/i).first().fill('jean.dupont@edu.ece.fr');
+  await page.getByLabel(/adresse|e-?mail/i).first().fill('jean.dupont@smartroom.app');
   await page.getByLabel(/mot de passe/i).first().fill('smartroom2026');
   await page.getByRole('button', { name: /connexion|se connecter/i }).first().click();
   await page.waitForURL(/\/app/, { timeout: 60000 });

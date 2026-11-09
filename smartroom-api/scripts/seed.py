@@ -122,25 +122,25 @@ def creneau(jour: date, debut: time, minutes: int) -> Range[datetime]:
 # --------------------------------------------------------------------------- #
 
 BATIMENTS = [
-    ("EIF1", "Eiffel 1", "12 rue Pasteur, 94270 Le Kremlin-Bicêtre", 1),
-    ("EIF2", "Eiffel 2", "14 rue Pasteur, 94270 Le Kremlin-Bicêtre", 2),
-    ("EIF3", "Eiffel 3", "37 quai de Grenelle, 75015 Paris", 3),
-    ("EIF4", "Eiffel 4", "39 quai de Grenelle, 75015 Paris", 4),
-    ("EIF5", "Eiffel 5", "10 rue Sextius Michel, 75015 Paris", 5),
-    ("EIF6", "Eiffel 6", "12 rue Sextius Michel, 75015 Paris", 6),
+    ("BATA", "Bâtiment A", "12 avenue de l'Innovation, 75013 Paris", 1),
+    ("BATB", "Bâtiment B", "14 avenue de l'Innovation, 75013 Paris", 2),
+    ("BATC", "Bâtiment C", "3 rue des Ateliers, 75011 Paris", 3),
+    ("BATD", "Bâtiment D", "5 rue des Ateliers, 75011 Paris", 4),
+    ("BATE", "Bâtiment E", "20 boulevard du Numérique, 92130 Issy-les-Moulineaux", 5),
+    ("BATF", "Bâtiment F", "22 boulevard du Numérique, 92130 Issy-les-Moulineaux", 6),
 ]
 
 ETAGES = {
-    "EIF1": [
+    "BATA": [
         ("RDC", "Rez-de-chaussée", 0),
         ("1er", "1er étage", 1),
         ("2e", "2e étage", 2),
     ],
-    "EIF2": [("RDC", "Rez-de-chaussée", 0), ("1er", "1er étage", 1)],
-    "EIF3": [("1er", "1er étage", 1), ("2e", "2e étage", 2), ("3e", "3e étage", 3)],
-    "EIF4": [("RDC", "Rez-de-chaussée", 0), ("1er", "1er étage", 1)],
-    "EIF5": [("SS", "Sous-sol", -1), ("RDC", "Rez-de-chaussée", 0)],
-    "EIF6": [
+    "BATB": [("RDC", "Rez-de-chaussée", 0), ("1er", "1er étage", 1)],
+    "BATC": [("1er", "1er étage", 1), ("2e", "2e étage", 2), ("3e", "3e étage", 3)],
+    "BATD": [("RDC", "Rez-de-chaussée", 0), ("1er", "1er étage", 1)],
+    "BATE": [("SS", "Sous-sol", -1), ("RDC", "Rez-de-chaussée", 0)],
+    "BATF": [
         ("RDC", "Rez-de-chaussée", 0),
         ("1er", "1er étage", 1),
         ("2e", "2e étage", 2),
@@ -167,10 +167,10 @@ EQUIPEMENTS = [
 #:
 #: (nom, bâtiment, étage, capacité, surface, équipements, PMR, badge, statut)
 SALLES = [
-    # --- Eiffel 1 : petites salles de travail, un amphi au rez-de-chaussée ---
+    # --- Bâtiment A : petites salles de travail, un amphi au rez-de-chaussée ---
     (
         "Salle Vinci",
-        "EIF1",
+        "BATA",
         "2e",
         12,
         28,
@@ -181,7 +181,7 @@ SALLES = [
     ),
     (
         "Salle Hopper",
-        "EIF1",
+        "BATA",
         "RDC",
         6,
         16,
@@ -191,8 +191,8 @@ SALLES = [
         RoomStatus.DISPONIBLE,
     ),
     (
-        "Amphi Eiffel",
-        "EIF1",
+        "Amphi Horizon",
+        "BATA",
         "RDC",
         90,
         180,
@@ -201,10 +201,10 @@ SALLES = [
         True,
         RoomStatus.DISPONIBLE,
     ),
-    # --- Eiffel 2 : réunions d'équipe ---------------------------------------
+    # --- Bâtiment B : réunions d'équipe ---------------------------------------
     (
         "Salle Curie",
-        "EIF2",
+        "BATB",
         "1er",
         20,
         46,
@@ -215,7 +215,7 @@ SALLES = [
     ),
     (
         "Salle Pascal",
-        "EIF2",
+        "BATB",
         "1er",
         25,
         52,
@@ -226,7 +226,7 @@ SALLES = [
     ),
     (
         "Salle Fermat",
-        "EIF2",
+        "BATB",
         "RDC",
         10,
         26,
@@ -235,10 +235,10 @@ SALLES = [
         True,
         RoomStatus.DISPONIBLE,
     ),
-    # --- Eiffel 3 : direction et conseils -----------------------------------
+    # --- Bâtiment C : direction et conseils -----------------------------------
     (
         "Salle Conseil Alpha",
-        "EIF3",
+        "BATC",
         "3e",
         12,
         30,
@@ -249,7 +249,7 @@ SALLES = [
     ),
     (
         "Salle Ampère",
-        "EIF3",
+        "BATC",
         "2e",
         30,
         64,
@@ -260,7 +260,7 @@ SALLES = [
     ),
     (
         "Salle Joule",
-        "EIF3",
+        "BATC",
         "1er",
         10,
         25,
@@ -269,10 +269,10 @@ SALLES = [
         True,
         RoomStatus.DISPONIBLE,
     ),
-    # --- Eiffel 4 : travaux pratiques ---------------------------------------
+    # --- Bâtiment D : travaux pratiques ---------------------------------------
     (
         "Labo Pasteur",
-        "EIF4",
+        "BATD",
         "1er",
         24,
         60,
@@ -283,7 +283,7 @@ SALLES = [
     ),
     (
         "Labo Becquerel",
-        "EIF4",
+        "BATD",
         "RDC",
         18,
         44,
@@ -292,10 +292,10 @@ SALLES = [
         True,
         RoomStatus.MAINTENANCE,
     ),
-    # --- Eiffel 5 : espaces de projet, dont un sous-sol ----------------------
+    # --- Bâtiment E : espaces de projet, dont un sous-sol ----------------------
     (
         "Atelier Monge",
-        "EIF5",
+        "BATE",
         "SS",
         20,
         70,
@@ -306,7 +306,7 @@ SALLES = [
     ),
     (
         "Salle Galois",
-        "EIF5",
+        "BATE",
         "RDC",
         6,
         16,
@@ -315,10 +315,10 @@ SALLES = [
         False,
         RoomStatus.ARCHIVEE,
     ),
-    # --- Eiffel 6 : enseignement --------------------------------------------
+    # --- Bâtiment F : enseignement --------------------------------------------
     (
         "Salle Descartes",
-        "EIF6",
+        "BATF",
         "2e",
         35,
         78,
@@ -329,7 +329,7 @@ SALLES = [
     ),
     (
         "Salle Riemann",
-        "EIF6",
+        "BATF",
         "RDC",
         12,
         30,
@@ -357,7 +357,7 @@ SALLE_TICKET_RESOLU = "Salle Fermat"
 #: Bâtiment portant une surcharge de règles et une fermeture pour travaux.
 #: Nommé ici pour la même raison que les salles ci-dessus : un code écrit en
 #: clair dans les scénarios casse le seed dès qu'il change, loin de sa cause.
-BATIMENT_SURCHARGE = "EIF5"
+BATIMENT_SURCHARGE = "BATE"
 
 #: Cinq comptes utilisateurs. Le jeu en comptait trente-et-un : de quoi
 #: remplir une page d'annuaire, mais rien de plus qu'une liste de noms.
@@ -365,26 +365,26 @@ UTILISATEURS_NOMMES = [
     (
         "Dylan",
         "Menga Wanda",
-        "dylan.menga@edu.ece.fr",
-        "B3 Data & IA",
+        "dylan.menga@smartroom.app",
+        "Data & IA",
         "Ingénierie",
         "20841",
     ),
-    ("Jean", "Dupont", "jean.dupont@edu.ece.fr", "B3 Data & IA", "Ingénierie", "20718"),
-    ("Alice", "Leroy", "alice.leroy@edu.ece.fr", "B3 Cyber", "Ingénierie", "20903"),
-    ("Marie", "Laurent", "marie.laurent@ece.fr", None, "Pédagogie", "10422"),
-    ("Amadou", "Diallo", "a.diallo@ece.fr", None, "Pédagogie", "10318"),
+    ("Jean", "Dupont", "jean.dupont@smartroom.app", "Data & IA", "Ingénierie", "20718"),
+    ("Alice", "Leroy", "alice.leroy@smartroom.app", "Cybersécurité", "Ingénierie", "20903"),
+    ("Marie", "Laurent", "marie.laurent@smartroom.app", None, "Pédagogie", "10422"),
+    ("Amadou", "Diallo", "a.diallo@smartroom.app", None, "Pédagogie", "10318"),
 ]
 
 #: Cinq comptes d'administration, aux périmètres volontairement différents :
 #: une matrice de permissions où tout le monde a tout ne prouve rien, et
 #: l'écran des rôles n'aurait rien à montrer.
 ADMINISTRATEURS = [
-    ("Dylan", "Menga", "d.menga@ece.fr", "Directeur IT", True, None),
+    ("Dylan", "Menga", "d.menga@smartroom.app", "Directeur IT", True, None),
     (
         "Samir",
         "Boukehila",
-        "s.boukehila@ece.fr",
+        "s.boukehila@smartroom.app",
         "Directeur de site",
         False,
         ["rooms.manage", "support.handle", "conflicts.arbitrate"],
@@ -392,7 +392,7 @@ ADMINISTRATEURS = [
     (
         "Claire",
         "Nkoulou",
-        "c.nkoulou@ece.fr",
+        "c.nkoulou@smartroom.app",
         "Référente support",
         False,
         ["support.handle", "conflicts.arbitrate"],
@@ -400,7 +400,7 @@ ADMINISTRATEURS = [
     (
         "Ana",
         "Ferreira",
-        "a.ferreira@ece.fr",
+        "a.ferreira@smartroom.app",
         "Responsable du parc",
         False,
         ["rooms.manage", "rules.configure"],
@@ -408,7 +408,7 @@ ADMINISTRATEURS = [
     (
         "Tarek",
         "Haddad",
-        "t.haddad@ece.fr",
+        "t.haddad@smartroom.app",
         "Contrôle de gestion",
         False,
         ["data.export"],
@@ -552,7 +552,7 @@ def relever_visuels(session: Session) -> dict[str, str]:
     """Note les visuels **déposés par l'administration** avant de vider.
 
     Le seed compose ses propres façades et ses propres plans, en SVG, sous des
-    noms fixes : `eif1.svg`, `salle-hopper.svg`. Tout le reste — un `.webp`, un
+    noms fixes : `bata.svg`, `salle-hopper.svg`. Tout le reste — un `.webp`, un
     `.jpg`, un nom en empreinte — vient d'un téléversement, c'est-à-dire du
     travail de quelqu'un.
 
@@ -771,7 +771,7 @@ def creer_parc(
 
     session.flush()
 
-    # Le plan de localisation nomme le bâtiment et l'étage en clair : « EIF3 »
+    # Le plan de localisation nomme le bâtiment et l'étage en clair : « BATC »
     # et « 2e » ne disent rien à qui cherche son chemin.
     BATIMENTS_PAR_CODE = {code: nom for code, nom, _, _ in BATIMENTS}
     LIBELLES_ETAGE = {
@@ -959,7 +959,7 @@ def creer_regles(
             )
         )
 
-    proprietaire = administrateurs["d.menga@ece.fr"]
+    proprietaire = administrateurs["d.menga@smartroom.app"]
 
     ferie = ClosurePeriod(
         label="Jour férié — pont de l'Ascension",
@@ -1287,7 +1287,7 @@ def creer_conflits(
             access_type=AccessType.HORS_HORAIRE,
             reason="Comité exceptionnel avant l'ouverture.",
             status=RequestStatus.ACCORDE,
-            decided_by_admin_id=administrateurs["s.boukehila@ece.fr"].user_id,
+            decided_by_admin_id=administrateurs["s.boukehila@smartroom.app"].user_id,
             decision_comment="Accordé à titre exceptionnel, accès badge fourni.",
             decided_at=datetime.now(PARIS) - timedelta(days=3),
         )
@@ -1765,7 +1765,7 @@ def creer_support(
             )
         )
 
-    support = administrateurs["c.nkoulou@ece.fr"]
+    support = administrateurs["c.nkoulou@smartroom.app"]
     tickets = [
         (
             "#152",
@@ -1894,7 +1894,7 @@ def creer_support(
                 trigger_label=declencheur,
                 subject=objet,
                 body=corps,
-                updated_by_admin_id=administrateurs["d.menga@ece.fr"].user_id,
+                updated_by_admin_id=administrateurs["d.menga@smartroom.app"].user_id,
             )
         )
 
@@ -1937,7 +1937,7 @@ def creer_support(
 def creer_audit(session: Session, administrateurs: dict[str, AdminAccount]) -> None:
     from app.models import AuditLog
 
-    proprietaire = administrateurs["d.menga@ece.fr"]
+    proprietaire = administrateurs["d.menga@smartroom.app"]
     entrees = [
         (
             AuditAction.MODIFICATION,

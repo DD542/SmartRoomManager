@@ -90,7 +90,7 @@ class RechercherSalles(Outil):
                     "maxLength": 60,
                     "description": (
                         "Nom ou code du bâtiment, tel que l'utilisateur l'a dit : "
-                        "« Eiffel 3 » ou « EIF3 ». La résolution en identifiant est "
+                        "« Bâtiment C » ou « BATC ». La résolution en identifiant est "
                         "faite par le serveur."
                     ),
                 },

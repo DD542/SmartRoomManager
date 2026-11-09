@@ -68,7 +68,7 @@ def equipement_sortie(materiel: Equipment, room_count: int = 0) -> EquipmentOut:
 def salle_sortie(salle: Room, occupation: int = 0, reservations: int = 0) -> RoomOut:
     """Aplatit l'étage et le bâtiment dans la fiche.
 
-    Les écrans affichent « Salle Vinci — Campus Eiffel, 2e étage » : leur
+    Les écrans affichent « Salle Vinci — Bâtiment A, 2e étage » : leur
     imposer deux appels supplémentaires pour un libellé serait absurde.
 
     `occupation` est passée par l'appelant, qui la calcule pour toute la page en

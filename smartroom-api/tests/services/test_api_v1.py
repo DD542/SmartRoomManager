@@ -287,11 +287,11 @@ class TestInvitations:
             entetes,
             salle,
             jour_ouvre,
-            [["ana@ece.fr", "Ana"], ["ANA@ece.fr", "Ana bis"]],
+            [["ana@smartroom.app", "Ana"], ["ANA@smartroom.app", "Ana bis"]],
         )
 
         assert reponse.status_code == 422
-        assert "ana@ece.fr" in reponse.json()["error"]["message"].lower()
+        assert "ana@smartroom.app" in reponse.json()["error"]["message"].lower()
 
     def test_l_organisateur_ne_s_invite_pas(self, client, compte, salle, jour_ouvre):
         entetes = connecter(client, compte.email)
@@ -309,7 +309,7 @@ class TestInvitations:
             entetes,
             salle,
             jour_ouvre,
-            [["ana@ece.fr", "Ana"], ["bo@ece.fr", "Bo"]],
+            [["ana@smartroom.app", "Ana"], ["bo@smartroom.app", "Bo"]],
         )
 
         assert reponse.status_code == 201
@@ -488,7 +488,7 @@ class TestAuthentification:
         )
         inconnu = client.post(
             "/api/v1/auth/login",
-            json={"email": "personne@ece.fr", "password": "au-hasard"},
+            json={"email": "personne@smartroom.app", "password": "au-hasard"},
         )
         assert faux.status_code == inconnu.status_code == 401
         assert faux.json()["error"]["message"] == inconnu.json()["error"]["message"]

@@ -97,7 +97,7 @@ class TestNotification:
             code="reservation_confirmation",
             variables={
                 "salle": "Salle Curie",
-                "batiment": "Eiffel 2 — 1er étage",
+                "batiment": "Bâtiment B — 1er étage",
                 "date": "mardi 1 septembre 2026",
                 "creneau": "15:21 - 16:21",
                 "lien_reservation": "http://exemple.test/app/reservations/1",
@@ -133,7 +133,7 @@ class TestNotification:
             code="reservation_confirmation",
             variables={
                 "salle": "Salle Curie",
-                "batiment": "Eiffel 2 — 1er étage",
+                "batiment": "Bâtiment B — 1er étage",
                 "date": "mardi 1 septembre 2026",
                 "creneau": "15:21 - 16:21",
                 "lien_reservation": "http://exemple.test/app/reservations/1",
@@ -152,7 +152,7 @@ class TestNotification:
             code="reservation_annulation",
             variables={
                 "salle": "Salle Curie",
-                "batiment": "Eiffel 2 — 1er étage",
+                "batiment": "Bâtiment B — 1er étage",
                 "date": "mardi 1 septembre 2026",
                 "creneau": "15:21 - 16:21",
                 "lien_reservation": "http://exemple.test/app/reservations/1",

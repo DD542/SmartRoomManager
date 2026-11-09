@@ -77,7 +77,7 @@ def batiment_cree(client, gestionnaire, marque):
         headers=gestionnaire,
         json={
             "code": marque[:4].upper(),
-            "name": f"Eiffel {marque}",
+            "name": f"Bâtiment {marque}",
             "address": "1 rue du test",
         },
     )
@@ -87,7 +87,7 @@ def batiment_cree(client, gestionnaire, marque):
 
 class TestBatiments:
     def test_un_batiment_se_declare_depuis_l_application(self, batiment_cree):
-        assert batiment_cree["name"].startswith("Eiffel")
+        assert batiment_cree["name"].startswith("Bâtiment")
         # Un bâtiment naît vide : les niveaux s'ajoutent ensuite, et une salle
         # ne se rattache qu'à un étage.
         assert batiment_cree["floor_count"] == 0
@@ -114,11 +114,11 @@ class TestBatiments:
         reponse = client.patch(
             f"/api/v1/buildings/{batiment_cree['id']}",
             headers=gestionnaire,
-            json={"name": "Eiffel 1 — aile nord", "address": "2 rue du test"},
+            json={"name": "Bâtiment A — aile nord", "address": "2 rue du test"},
         )
 
         assert reponse.status_code == 200, reponse.text
-        assert reponse.json()["name"] == "Eiffel 1 — aile nord"
+        assert reponse.json()["name"] == "Bâtiment A — aile nord"
         # Le code n'est pas modifiable : il est cité dans les exports déjà
         # produits et dans le journal d'audit.
         assert reponse.json()["code"] == batiment_cree["code"]

@@ -1,10 +1,8 @@
 # SmartRoom Manager
 
-Réservation de salles pour un campus : trouver une salle qui convient, la
+Réservation de salles pour une organisation : trouver une salle qui convient, la
 réserver, y entrer, et arbitrer les conflits quand deux personnes veulent le
 même créneau.
-
-Projet de Bachelor 3 Data & IA, ECE Paris.
 
 ---
 

@@ -438,7 +438,7 @@ INSERT INTO email_template_variables (code, label, sample_value) VALUES
     ('date',              'Date de la réservation', 'jeudi 26 mars 2026'),
     ('creneau',           'Créneau horaire',        '14:00 - 15:30'),
     ('code_acces',        'Code d''accès temporaire', 'A-4821'),
-    ('lien_reservation',  'Lien vers la réservation', 'https://smartroom.ece.fr/app/reservations/1')
+    ('lien_reservation',  'Lien vers la réservation', 'https://smartroom.app/app/reservations/1')
 ON CONFLICT (code) DO NOTHING;
 
 

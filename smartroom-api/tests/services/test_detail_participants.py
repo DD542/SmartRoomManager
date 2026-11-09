@@ -38,8 +38,8 @@ def reservation(session, compte, salle, jour_ouvre):
         title="Comité de suivi",
         attendees=3,
         participants=[
-            ("marie@edu.ece.fr", "Marie Laurent"),
-            ("jean@edu.ece.fr", "Jean Dupont"),
+            ("marie@equipe.smartroom.app", "Marie Laurent"),
+            ("jean@equipe.smartroom.app", "Jean Dupont"),
         ],
     )
     session.flush()
@@ -61,7 +61,7 @@ class TestDetail:
             "le champ manque : l'ecran de modification plante"
         )
         adresses = {item["email"] for item in corps["participants"]}
-        assert {"marie@edu.ece.fr", "jean@edu.ece.fr"} <= adresses
+        assert {"marie@equipe.smartroom.app", "jean@equipe.smartroom.app"} <= adresses
 
     def test_l_organisateur_est_distingue(self, client, session, compte, reservation):
         """L'écran de modification sépare les deux : il ne propose de retirer

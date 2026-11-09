@@ -129,7 +129,7 @@ class FabriqueCompte(FabriqueBase):
     class Meta:
         model = User
 
-    email = factory.Sequence(lambda n: f"compte-{MARQUE}-{n}@edu.ece.fr")
+    email = factory.Sequence(lambda n: f"compte-{MARQUE}-{n}@equipe.smartroom.app")
     password_hash = EMPREINTE
     first_name = "Camille"
     last_name = "Durand"

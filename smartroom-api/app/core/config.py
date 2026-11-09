@@ -72,18 +72,18 @@ class Settings(BaseSettings):
     #: échec de vérification incompréhensible.
     google_client_id: str = ""
     #: Domaines autorisés à ouvrir un compte, séparés par des virgules. Vide,
-    #: tout compte Google est accepté. `ece.fr` fermerait l'application à la
-    #: seule école — c'est une décision d'exploitation, pas de code.
+    #: tout compte Google est accepté. un domaine unique fermerait l'application à la
+    #: seule organisation — c'est une décision d'exploitation, pas de code.
     google_allowed_domains: str = ""
 
     # --------------------------------------------------------- organisation
 
-    #: Domaines de l'établissement, séparés par des virgules. Un compte dont
+    #: Domaines de l'organisation, séparés par des virgules. Un compte dont
     #: l'adresse n'en relève pas est signalé aux administrateurs : il a le
     #: droit d'être là — c'est ce que dit `GOOGLE_ALLOWED_DOMAINS` — mais
-    #: l'administration doit pouvoir le distinguer d'un membre de l'école sans
+    #: l'administration doit pouvoir le distinguer d'un membre de l'organisation sans
     #: relire chaque adresse.
-    organisation_domains: str = "ece.fr,edu.ece.fr"
+    organisation_domains: str = "smartroom.app"
 
     # ------------------------------------------------------------ limitation
 
@@ -119,7 +119,7 @@ class Settings(BaseSettings):
     #: que de refuser la connexion. Une réservation envoyant jusqu'à trois
     #: courriels, l'attente se cumulait.
     smtp_timeout: float = 15.0
-    mail_from: str = "no-reply@smartroom.ece.fr"
+    mail_from: str = "no-reply@smartroom.app"
     #: En local, les e-mails sont écrits dans le journal plutôt qu'envoyés :
     #: aucune boîte réelle ne reçoit les données du jeu de démonstration.
     mail_enabled: bool = False

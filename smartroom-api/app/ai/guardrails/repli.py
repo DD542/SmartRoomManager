@@ -125,8 +125,13 @@ class MoteurDeterministe:
 
     @staticmethod
     def batiment(message: str) -> str | None:
-        trouve = re.search(r"\b(eiffel\s*\d|eif\s*\d)\b", message, re.I)
-        return trouve.group(1) if trouve else None
+        # « BATC », « bat c » ou « Bâtiment C ». Séparée du mot par une espace,
+        # la lettre doit être une capitale : sans cela, « le bâtiment a été
+        # fermé » désignerait le bâtiment A.
+        trouve = re.search(r"\bbat([a-f])\b", message, re.I) or re.search(
+            r"\b(?i:b[aâ]t(?:iment)?)\.?\s+([A-F])\b", message
+        )
+        return f"Bâtiment {trouve.group(1).upper()}" if trouve else None
 
     # ------------------------------------------------------- rapprochement
 

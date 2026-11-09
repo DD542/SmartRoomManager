@@ -33,7 +33,7 @@ CodeEquipement = Annotated[
 class BuildingIn(ApiModel):
     code: CodeBatiment = Field(examples=["A"])
     name: Annotated[str, Field(min_length=1, max_length=120)] = Field(
-        examples=["Campus Eiffel"]
+        examples=["Bâtiment A"]
     )
     address: Annotated[str | None, Field(max_length=255)] = None
     sort_order: Annotated[int, Field(ge=0, le=999)] = 0

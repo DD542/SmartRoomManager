@@ -50,7 +50,6 @@ _INDICES = {
     Domaine.PARC: (
         "salle",
         "batiment",
-        "eiffel",
         "etage",
         "plan",
         "ou est",

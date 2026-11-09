@@ -1,4 +1,4 @@
-"""Appartenance d'une adresse à l'établissement.
+"""Appartenance d’une adresse à l’organisation.
 
 La règle a d'abord été écrite sur un seul des deux schémas qui exposent les
 comptes. L'écran de connexion recevait donc la réponse, l'annuaire de
@@ -20,15 +20,15 @@ from app.schemas.comptes import UserRead
 
 
 class TestRegle:
-    def test_une_adresse_de_l_ecole_est_interne(self):
-        assert est_externe("alice.leroy@edu.ece.fr") is False
-        assert est_externe("marie.laurent@ece.fr") is False
+    def test_une_adresse_de_l_organisation_est_interne(self):
+        assert est_externe("alice.leroy@smartroom.app") is False
+        assert est_externe("marie.laurent@smartroom.app") is False
 
     def test_une_adresse_personnelle_est_externe(self):
         assert est_externe("dylanmenga05@gmail.com") is True
 
     def test_la_casse_du_domaine_ne_change_rien(self):
-        assert est_externe("Alice.Leroy@EDU.ECE.FR") is False
+        assert est_externe("Alice.Leroy@SMARTROOM.APP") is False
 
     def test_sans_liste_configuree_personne_n_est_externe(self, monkeypatch):
         """Mieux vaut ne rien signaler que signaler tout le monde : une
@@ -65,7 +65,7 @@ class TestLesDeuxSchemas:
     """
 
     def test_le_schema_de_l_annuaire_la_porte(self, champs):
-        interne = UserOut(email="alice.leroy@edu.ece.fr", **champs)
+        interne = UserOut(email="alice.leroy@smartroom.app", **champs)
         externe = UserOut(email="max@gmail.com", **champs)
 
         assert interne.is_external is False
@@ -75,7 +75,7 @@ class TestLesDeuxSchemas:
         from datetime import UTC, datetime
 
         horodatage = {"created_at": datetime.now(UTC), "updated_at": datetime.now(UTC)}
-        interne = UserRead(email="alice.leroy@edu.ece.fr", **champs, **horodatage)
+        interne = UserRead(email="alice.leroy@smartroom.app", **champs, **horodatage)
         externe = UserRead(email="max@gmail.com", **champs, **horodatage)
 
         assert interne.is_external is False

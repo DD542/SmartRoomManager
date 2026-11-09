@@ -52,7 +52,7 @@ Enums natifs PostgreSQL. Les cinq premiers sont imposés par le cahier, les suiv
 |---|---|---|
 | `id` | UUID PK | |
 | `code` | VARCHAR(4) UNIQUE | `A`, `B`, `C` — repris dans le préfixe des codes d'accès |
-| `name` | VARCHAR(120) NOT NULL | « Campus Eiffel » |
+| `name` | VARCHAR(120) NOT NULL | « Bâtiment A » |
 | `address` | VARCHAR(255) | |
 | `sort_order` | SMALLINT NOT NULL DEFAULT 0 | ordre d'affichage des filtres |
 | `created_at` / `updated_at` | TIMESTAMPTZ | |

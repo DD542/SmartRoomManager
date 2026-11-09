@@ -266,7 +266,7 @@ class TestMotDePasse:
     def test_adresse_inconnue_repond_pareil(self, client):
         """Un 404 transformerait cette route en énumérateur de comptes."""
         reponse = client.post(
-            "/api/v1/auth/forgot-password", json={"email": "personne@ece.fr"}
+            "/api/v1/auth/forgot-password", json={"email": "personne@smartroom.app"}
         )
         assert reponse.status_code == 202
 

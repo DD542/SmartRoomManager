@@ -131,7 +131,7 @@ class TestVerification:
 
     def test_un_domaine_hors_liste_est_refuse(self, paire, monkeypatch):
         monkeypatch.setattr(
-            google_service.get_settings(), "google_allowed_domains", "ece.fr"
+            google_service.get_settings(), "google_allowed_domains", "smartroom.app"
         )
 
         with pytest.raises(RuleViolationError):
@@ -139,7 +139,7 @@ class TestVerification:
 
     def test_le_domaine_autorise_passe(self, paire, monkeypatch):
         monkeypatch.setattr(
-            google_service.get_settings(), "google_allowed_domains", "gmail.com, ece.fr"
+            google_service.get_settings(), "google_allowed_domains", "gmail.com, smartroom.app"
         )
 
         assert google_service.verifier(forger(paire)).email.endswith("@gmail.com")

@@ -29,7 +29,7 @@ class TestProfil:
         de détourner une session."""
         entetes = connecter(client, compte.email)
         reponse = client.patch(
-            "/api/v1/users/me", headers=entetes, json={"email": "autre@ece.fr"}
+            "/api/v1/users/me", headers=entetes, json={"email": "autre@smartroom.app"}
         )
         assert reponse.status_code == 422
 
@@ -251,7 +251,7 @@ class TestInvitations:
         invitation = client.post(
             "/api/v1/admin/invitations",
             headers=entetes,
-            json={"email": "futur.admin@ece.fr", "permissions": ["support.handle"]},
+            json={"email": "futur.admin@smartroom.app", "permissions": ["support.handle"]},
         )
         assert invitation.status_code == 201, invitation.text
         corps = invitation.json()
@@ -259,7 +259,7 @@ class TestInvitations:
         assert "token" not in corps
 
         ligne = session.scalars(
-            select(AdminInvitation).where(AdminInvitation.email == "futur.admin@ece.fr")
+            select(AdminInvitation).where(AdminInvitation.email == "futur.admin@smartroom.app")
         ).one()
         assert len(ligne.token_hash) == 64
 
@@ -275,6 +275,6 @@ class TestInvitations:
         reponse = client.post(
             "/api/v1/admin/invitations",
             headers=entetes,
-            json={"email": "futur@ece.fr", "permissions": ["support.handle"]},
+            json={"email": "futur@smartroom.app", "permissions": ["support.handle"]},
         )
         assert reponse.status_code == 403

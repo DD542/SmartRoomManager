@@ -25,7 +25,7 @@ from app.ai.providers.base import Message
 
 _COURRIEL = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")
 #: Mots qui désignent un lieu du parc, jamais une personne.
-_LIEUX = ("Salle", "Labo", "Amphi", "Atelier", "Bâtiment", "Batiment", "Eiffel")
+_LIEUX = ("Salle", "Labo", "Amphi", "Atelier", "Bâtiment", "Batiment")
 
 #: Prénom Nom, deux capitales successives.
 #:

@@ -1,7 +1,7 @@
 """Résolution des noms en identifiants, côté serveur.
 
 Le modèle ne connaît pas les UUID du parc et ne doit pas les inventer. Il
-transmet ce que l'utilisateur a dit — « Eiffel 3 », « la salle Curie », « une
+transmet ce que l'utilisateur a dit — « Bâtiment C », « la salle Curie », « une
 salle avec visio » — et la traduction se fait ici, contre la base.
 
 Le rapprochement est volontairement tolérant sur la casse et les accents, et
@@ -59,7 +59,7 @@ def _normaliser(valeur: str) -> str:
 
 
 def resoudre_batiment(session: Session, texte: str | None) -> uuid.UUID | None:
-    """« Eiffel 3 », « EIF3 », ou un UUID déjà résolu. `None` si rien n'est demandé."""
+    """« Bâtiment C », « BATC », ou un UUID déjà résolu. `None` si rien n'est demandé."""
     if not texte:
         return None
 

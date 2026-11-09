@@ -22,14 +22,14 @@ class TestDomainesConfigures:
         """Espaces, casse et separateurs vides sont absorbes.
 
         La valeur vient d'une variable d'environnement ecrite a la main :
-        « ece.fr, EDU.ECE.FR ,, » est une saisie plausible, et elle ne doit pas
+        « smartroom.app, EQUIPE.SMARTROOM.APP ,, » est une saisie plausible, et elle ne doit pas
         produire un domaine vide qui rendrait tout le monde interne.
         """
         monkeypatch.setattr(
-            get_settings(), "organisation_domains", "ece.fr, EDU.ECE.FR ,,"
+            get_settings(), "organisation_domains", "smartroom.app, EQUIPE.SMARTROOM.APP ,,"
         )
 
-        assert domaines_de_l_organisation() == {"ece.fr", "edu.ece.fr"}
+        assert domaines_de_l_organisation() == {"smartroom.app", "equipe.smartroom.app"}
 
     def test_une_liste_vide_ne_donne_aucun_domaine(self, monkeypatch):
         monkeypatch.setattr(get_settings(), "organisation_domains", "")
@@ -39,20 +39,20 @@ class TestDomainesConfigures:
 
 class TestEstExterne:
     def test_une_adresse_de_l_etablissement_est_interne(self, monkeypatch):
-        monkeypatch.setattr(get_settings(), "organisation_domains", "ece.fr,edu.ece.fr")
+        monkeypatch.setattr(get_settings(), "organisation_domains", "smartroom.app,equipe.smartroom.app")
 
-        assert est_externe("alice.leroy@edu.ece.fr") is False
-        assert est_externe("marie.laurent@ece.fr") is False
+        assert est_externe("alice.leroy@equipe.smartroom.app") is False
+        assert est_externe("marie.laurent@smartroom.app") is False
 
     def test_une_adresse_personnelle_est_externe(self, monkeypatch):
-        monkeypatch.setattr(get_settings(), "organisation_domains", "ece.fr,edu.ece.fr")
+        monkeypatch.setattr(get_settings(), "organisation_domains", "smartroom.app,equipe.smartroom.app")
 
         assert est_externe("dylanmenga05@gmail.com") is True
 
     def test_la_casse_ne_change_rien(self, monkeypatch):
-        monkeypatch.setattr(get_settings(), "organisation_domains", "ece.fr,edu.ece.fr")
+        monkeypatch.setattr(get_settings(), "organisation_domains", "smartroom.app,equipe.smartroom.app")
 
-        assert est_externe("Alice.Leroy@EDU.ECE.FR") is False
+        assert est_externe("Alice.Leroy@EQUIPE.SMARTROOM.APP") is False
 
     def test_sans_liste_configuree_personne_n_est_externe(self, monkeypatch):
         """Mieux vaut ne rien signaler que signaler tout le monde.
@@ -70,7 +70,7 @@ class TestEstExterne:
         Le cas se presente : la seconde branche de la garde le couvre, et sans
         elle `"".split("@")` renverrait une chaine vide comparee aux domaines.
         """
-        monkeypatch.setattr(get_settings(), "organisation_domains", "ece.fr")
+        monkeypatch.setattr(get_settings(), "organisation_domains", "smartroom.app")
 
         assert est_externe(None) is False
         assert est_externe("") is False

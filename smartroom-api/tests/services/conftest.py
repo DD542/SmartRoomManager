@@ -190,7 +190,7 @@ def salle(creer_salle) -> Room:
 def creer_compte(session: Session):
     def _creer(prenom: str = "Camille") -> User:
         return FabriqueCompte(
-            email=f"{prenom.lower()}-{uuid.uuid4().hex[:8]}@ece.fr",
+            email=f"{prenom.lower()}-{uuid.uuid4().hex[:8]}@smartroom.app",
             first_name=prenom,
         )
 

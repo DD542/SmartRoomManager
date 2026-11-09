@@ -199,7 +199,7 @@ class TestAnonymisation:
         anonymiseur = Anonymiseur()
 
         masque = anonymiseur.masquer(
-            "Salle Conseil Alpha, Salle Hopper et Amphi Eiffel sont libres."
+            "Salle Conseil Alpha, Salle Hopper et Amphi Horizon sont libres."
         )
 
         assert "PERSONNE" not in masque
@@ -220,13 +220,13 @@ class TestAnonymisation:
             [
                 Message(
                     role=RoleMessage.UTILISATEUR,
-                    contenu="Invite Marie Laurent à marie.laurent@ece.fr",
+                    contenu="Invite Marie Laurent à marie.laurent@smartroom.app",
                 )
             ]
         )
 
         contenu = sortants[0].contenu
-        assert "marie.laurent@ece.fr" not in contenu
+        assert "marie.laurent@smartroom.app" not in contenu
         assert "Marie Laurent" not in contenu
         assert "COURRIEL_1" in contenu
 
@@ -255,11 +255,11 @@ class TestAnonymisation:
         masque = anonymiseur(
             [
                 Message(
-                    role=RoleMessage.UTILISATEUR, contenu="Écris à jean.dupont@ece.fr"
+                    role=RoleMessage.UTILISATEUR, contenu="Écris à jean.dupont@smartroom.app"
                 )
             ]
         )[0].contenu
-        assert anonymiseur.restituer(masque) == "Écris à jean.dupont@ece.fr"
+        assert anonymiseur.restituer(masque) == "Écris à jean.dupont@smartroom.app"
 
     @pytest.mark.asyncio
     async def test_le_fournisseur_distant_refuse_d_emettre_sans_anonymisation(self):

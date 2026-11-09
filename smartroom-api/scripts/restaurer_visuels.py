@@ -17,11 +17,11 @@ ce qui est pire que le visuel de remplacement qu'il remplacerait.
 Format attendu du relevé :
 
     {
-      "batiments": {"EIF1": "/media/batiments/<fichier>"},
-      "salles":    {"amphi-eiffel": {"repere": "/media/reperes/<fichier>",
+      "batiments": {"BATA": "/media/batiments/<fichier>"},
+      "salles":    {"amphi-horizon": {"repere": "/media/reperes/<fichier>",
                                      "photos": [{"url": "...", "alt": null,
                                                  "position": 1}]}},
-      "plans":     {"EIF1|0": "/media/plans/<fichier>"}
+      "plans":     {"BATA|0": "/media/plans/<fichier>"}
     }
 
 Usage :

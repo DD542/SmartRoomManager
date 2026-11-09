@@ -58,7 +58,7 @@ EXEMPLES = {
     "date": "jeudi 26 mars 2026",
     "creneau": "14:00 - 15:30",
     "code_acces": "A-4821",
-    "lien_reservation": "https://smartroom.ece.fr/app/reservations/1",
+    "lien_reservation": "https://smartroom.smartroom.app/app/reservations/1",
 }
 
 
@@ -203,13 +203,13 @@ class TestInvitations:
                 "slot": charge(creneau(jour_ouvre, 10)),
                 "attendees": 3,
                 # La route reçoit des couples `[adresse, nom]`, pas des objets.
-                "participants": [["invite@ece.fr", "Alice"]],
+                "participants": [["invite@smartroom.app", "Alice"]],
             },
         )
         assert reponse.status_code == 201, reponse.text
 
         destinataires = [message.to for message in courriels(expedies)]
-        assert "invite@ece.fr" in destinataires
+        assert "invite@smartroom.app" in destinataires
 
     def test_l_invitation_porte_le_lien_de_reponse(
         self, client, compte, salle, jour_ouvre, gabarits, expedies
@@ -230,13 +230,13 @@ class TestInvitations:
         reponse = client.post(
             f"/api/v1/bookings/{creee['booking']['id']}/participants",
             headers=entetes,
-            json={"email": "bob@ece.fr", "display_name": "Bob"},
+            json={"email": "bob@smartroom.app", "display_name": "Bob"},
         )
         assert reponse.status_code == 201, reponse.text
 
         [message] = courriels(expedies)
         jeton = reponse.json()["invitation_token"]
-        assert message.to == "bob@ece.fr"
+        assert message.to == "bob@smartroom.app"
         assert f"/invitation/{jeton}" in message.body
         assert salle.name in message.body
 
@@ -252,12 +252,12 @@ class TestInvitations:
                 "room_id": str(salle.id),
                 "slot": charge(creneau(jour_ouvre, 12)),
                 "attendees": 2,
-                "participants": [["carol@ece.fr", "Carol"]],
+                "participants": [["carol@smartroom.app", "Carol"]],
             },
         ).json()
 
         clair = creee["access_code"]["code"]
-        pour_invitee = [m for m in courriels(expedies) if m.to == "carol@ece.fr"]
+        pour_invitee = [m for m in courriels(expedies) if m.to == "carol@smartroom.app"]
         assert pour_invitee, "aucune invitation"
         assert all(clair not in message.body for message in pour_invitee)
 
@@ -391,14 +391,14 @@ class TestTransport:
         try:
             await mail_service.send(
                 mail_service.Message(
-                    to="d.menga@ece.fr", subject="Confirmée", body="Code : E-7412"
+                    to="d.menga@smartroom.app", subject="Confirmée", body="Code : E-7412"
                 )
             )
         finally:
             journal.removeHandler(carnet)
 
         trace = "\n".join(lignes)
-        assert "d.menga@ece.fr" in trace
+        assert "d.menga@smartroom.app" in trace
         assert "E-7412" not in trace
 
     @pytest.mark.asyncio
@@ -421,7 +421,7 @@ class TestTransport:
         monkeypatch.setattr(mail_service._config(), "smtp_port", 465)
 
         await mail_service.send(
-            mail_service.Message(to="a@ece.fr", subject="s", body="b")
+            mail_service.Message(to="a@smartroom.app", subject="s", body="b")
         )
 
         assert recus["use_tls"] is True
@@ -442,7 +442,7 @@ class TestTransport:
         monkeypatch.setattr(mail_service._config(), "smtp_port", 587)
 
         await mail_service.send(
-            mail_service.Message(to="a@ece.fr", subject="s", body="b")
+            mail_service.Message(to="a@smartroom.app", subject="s", body="b")
         )
 
         assert recus["start_tls"] is True
@@ -460,13 +460,13 @@ class TestTransport:
         monkeypatch.setattr(mail_service._config(), "mail_enabled", True)
 
         await mail_service.send(
-            mail_service.Message(to="a@ece.fr", subject="s", body="b")
+            mail_service.Message(to="a@smartroom.app", subject="s", body="b")
         )
 
     def test_la_file_se_vide_en_une_fois(self):
         """`flush` lisait puis vidait : un dépôt entre les deux se perdait."""
         mail_service._en_attente.append(
-            mail_service.Message(to="a@ece.fr", subject="x", body="y")
+            mail_service.Message(to="a@smartroom.app", subject="x", body="y")
         )
 
         assert len(mail_service.flush()) == 1

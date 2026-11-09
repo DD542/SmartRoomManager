@@ -39,9 +39,9 @@ _CHIFFRES = re.compile(
 #: nombres ni les noms propres ne l'auraient vu.
 _ADRESSES = re.compile(r"(?:https?://\S+|/media/\S+)")
 
-#: Noms propres du parc : « Salle Curie », « Eiffel 3 », « Labo Pasteur ».
+#: Noms propres du parc : « Salle Curie », « Bâtiment C », « Labo Pasteur ».
 _ENTITES = re.compile(
-    r"\b(?:Salle|Labo|Atelier|Amphi|Bâtiment|Eiffel)\s+[A-ZÀÂÉÈÊÎÔÙÜÇ][\wÀ-ÿ'-]*(?:\s+\d+)?",
+    r"\b(?:Salle|Labo|Atelier|Amphi|Bâtiment)\s+[A-ZÀÂÉÈÊÎÔÙÜÇ][\wÀ-ÿ'-]*(?:\s+\d+)?",
 )
 
 #: Formules par lesquelles l'assistant reconnaît qu'il ne sait pas. Une réponse

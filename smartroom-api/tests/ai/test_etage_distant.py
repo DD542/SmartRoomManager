@@ -81,10 +81,10 @@ class TestAnonymisation:
         from app.ai.providers.base import Message, RoleMessage
 
         sortants = anonymiser(
-            [Message(role=RoleMessage.UTILISATEUR, contenu="ecris a jean@ece.fr")]
+            [Message(role=RoleMessage.UTILISATEUR, contenu="ecris a jean@smartroom.app")]
         )
 
-        assert "jean@ece.fr" not in sortants[0].contenu
+        assert "jean@smartroom.app" not in sortants[0].contenu
 
 
 class TestCoherenceDesVecteurs:

@@ -421,14 +421,14 @@ class TestDistant:
                 [
                     Message(
                         role=RoleMessage.UTILISATEUR,
-                        contenu="écris à jean.dupont@ece.fr",
+                        contenu="écris à jean.dupont@smartroom.app",
                     )
                 ],
                 modele="m",
             )
         )
 
-        assert "jean.dupont@ece.fr" not in json.dumps(vus)
+        assert "jean.dupont@smartroom.app" not in json.dumps(vus)
         await client.fermer()
 
     @pytest.mark.asyncio

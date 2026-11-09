@@ -12,7 +12,7 @@ et inversement. Horloge de référence inchangée : **jeudi 26 mars 2026, 11 h 4
 | `adm-02` | A. Boukehila | Directeur de site | `rooms.manage`, `support.handle`, `conflicts.arbitrate` | `smartroom` |
 | `adm-03` | C. Nkoulou | Référent support | `support.handle`, `conflicts.arbitrate` | `smartroom` |
 
-Invitation en attente : `j.martin@ece.fr`, envoyée il y a 2 jours, aperçu
+Invitation en attente : `j.martin@smartroom.app`, envoyée il y a 2 jours, aperçu
 « Salles, Aide, Conflits ». `adm-02` correspond au gestionnaire déjà utilisé par
 l'espace utilisateur pour les accès dérogatoires et le dépôt des plans.
 
