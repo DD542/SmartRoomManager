@@ -92,6 +92,24 @@ def supprimer(file_url: str) -> None:
     chemin.unlink(missing_ok=True)
 
 
+def present(file_url: str | None) -> bool:
+    """Vrai si l'URL désigne un fichier qui existe encore.
+
+    Le disque d'un hébergeur gratuit est éphémère : un redéploiement efface les
+    fichiers déposés, mais la base garde leurs adresses. Servies telles
+    quelles, elles produisaient un 404 par écran et par visiteur. Une URL
+    externe — photo d'un compte Google — est réputée présente : elle ne nous
+    appartient pas.
+    """
+    if not file_url:
+        return False
+    prefixe = f"{get_settings().media_url}/"
+    if not file_url.startswith(prefixe):
+        return True
+    chemin = (racine() / file_url[len(prefixe) :]).resolve()
+    return chemin.is_relative_to(racine().resolve()) and chemin.is_file()
+
+
 def nom_affiche(nom: str | None) -> str:
     """Nom d'origine, assaini pour l'affichage et pour la contrainte de longueur."""
     base = unicodedata.normalize("NFKD", nom or "document")

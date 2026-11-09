@@ -165,6 +165,27 @@ class TestPhotoDeProfil:
 
         assert profil["avatar_url"] is not None
 
+    def test_une_photo_dont_le_fichier_a_disparu_n_est_plus_annoncee(
+        self, client, creer_compte
+    ):
+        # Le disque d'un hebergeur gratuit est efface a chaque redeploiement :
+        # la base garde l'adresse, le fichier n'existe plus. L'annoncer quand
+        # meme produisait un 404 a chaque affichage du profil.
+        entetes = connecter(client, creer_compte("Noor").email)
+        adresse = client.put(
+            "/api/v1/users/me/avatar", headers=entetes, json=_corps(_png())
+        ).json()["avatar_url"]
+        (storage.racine() / adresse.split("/media/", 1)[1]).unlink()
+
+        profil = client.get("/api/v1/users/me", headers=entetes).json()
+
+        assert profil["avatar_url"] is None
+
+    def test_une_photo_externe_reste_annoncee(self):
+        # Une photo Google n'est pas sur notre disque : elle ne se verifie pas.
+        assert storage.present("https://lh3.googleusercontent.com/a/photo.jpg")
+        assert not storage.present(None)
+
     def test_un_visiteur_anonyme_ne_depose_rien(self, client):
         reponse = client.put("/api/v1/users/me/avatar", json=_corps(_png()))
         assert reponse.status_code == 401

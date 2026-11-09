@@ -11,9 +11,10 @@ import uuid
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import Field, SecretStr, computed_field, model_validator
+from pydantic import Field, SecretStr, computed_field, field_validator, model_validator
 
 from app.db.enums import UserStatus
+from app.core import storage
 from app.domain.organisation import est_externe
 from app.schemas.common import (
     ApiModel,
@@ -110,6 +111,16 @@ class UserRead(TimestampedRead):
     status: UserStatus
     last_login_at: datetime | None
     preferences: UserPreferenceRead | None = None
+
+    @field_validator("avatar_url")
+    @classmethod
+    def _photo_presente(cls, valeur: str | None) -> str | None:
+        """Une photo dont le fichier a disparu n'est plus annoncée.
+
+        Le front retombe alors sur les initiales sans demander une image qui
+        répondrait 404.
+        """
+        return valeur if storage.present(valeur) else None
 
     @computed_field
     @property
