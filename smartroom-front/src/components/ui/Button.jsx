@@ -6,7 +6,11 @@ import { cn } from '../../utils/cn';
 const VARIANTS = {
   // Graphite plein, comme « Se connecter » et « Réserver cette salle » sur la
   // maquette : la seule surface opaque et sombre de l'écran, l'œil y va droit.
-  primary: 'bg-accent text-ink hover:bg-accent-hover border border-transparent shadow-bouton',
+  // Le bouton se soulève d'un pixel au survol et retombe sous le doigt : le
+  // geste de la première version, gardé avec la pression à ressort.
+  primary:
+    'bg-accent text-ink hover:bg-accent-hover border border-transparent shadow-bouton ' +
+    'hover:-translate-y-px hover:shadow-haute',
   // Verre : un bouton secondaire se pose sur le décor au lieu de le masquer.
   secondary: 'verre text-content border border-transparent hover:bg-surface/90',
   ghost: 'bg-transparent text-content-muted border border-transparent hover:bg-content/[0.06] hover:text-content',
@@ -38,7 +42,7 @@ const base =
   // Pilule et pression à ressort : le bouton s'enfonce sous le doigt puis
   // rebondit, comme les contrôles d'iOS.
   'pression inline-flex items-center justify-center rounded-full text-center font-medium ' +
-  'transition-[background-color,border-color,color,box-shadow,transform] ' +
+  'transition-[background-color,border-color,color,box-shadow,transform,scale] ' +
   'disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 ' +
   'focus-visible:outline-offset-2 focus-visible:outline-accent';
 

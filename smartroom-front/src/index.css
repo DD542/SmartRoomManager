@@ -72,9 +72,11 @@
     --verre-bulle: rgb(255 255 255 / 0.12);
 
     /* Brume d'ambiance posée derrière les pages. */
-    --brume-1: rgb(255 255 255 / 0.05);
-    --brume-2: rgb(255 255 255 / 0.03);
-    --brume-3: rgb(255 255 255 / 0.02);
+    /* Brume grise de la première version, en gris pur : le verre a de quoi
+       flouter, sans que la page prenne une teinte. */
+    --brume-1: rgb(150 150 150 / 0.20);
+    --brume-2: rgb(100 100 100 / 0.18);
+    --brume-3: rgb(255 255 255 / 0.05);
 
     /* Echelle de la carte de chaleur, cinq crans du plus froid au plus chaud.
        Elle vit ici parce que sa logique s'inverse d'un theme a l'autre. */
@@ -98,8 +100,8 @@
   :root[data-theme='clair'] {
     color-scheme: light;
 
-    --ink: 249 249 249;
-    --ink-soft: 243 243 243;
+    --ink: 240 240 240;
+    --ink-soft: 232 232 232;
     --surface: 255 255 255;
     --surface-raised: 244 244 244;
     --line: 229 229 229;
@@ -138,11 +140,11 @@
     --verre-ombre: 0 1px 0 rgb(255 255 255 / 0.9) inset, 0 -1px 0 rgb(255 255 255 / 0.4) inset, 0 18px 40px -20px rgb(22 22 24 / 0.28);
     --verre-bulle: rgb(255 255 255 / 0.85);
 
-    /* Un voile gris à peine marqué : assez pour que le verre ait quelque
-       chose à flouter, pas assez pour colorer la page. */
-    --brume-1: rgb(0 0 0 / 0.035);
-    --brume-2: rgb(0 0 0 / 0.025);
-    --brume-3: rgb(255 255 255 / 0.6);
+    /* Brume grise de la première version : nappes blanches et grises que
+       le verre floute. Gris purs, sans la nuance bleutée d'alors. */
+    --brume-1: rgb(255 255 255 / 0.9);
+    --brume-2: rgb(200 200 200 / 0.6);
+    --brume-3: rgb(255 255 255 / 0.7);
 
     /* Progression inverse : la chaleur se marque en assombrissant. */
     --chaleur-1: rgb(22 22 24 / 0.05);
@@ -319,11 +321,17 @@
   }
 
   /* Pression : tout ce qui se clique s'enfonce légèrement, comme sur iOS. */
+  /* `scale` et non `transform` : la propriété indépendante se compose avec
+     les translations des utilitaires (le bouton qui se soulève au survol)
+     au lieu de les écraser. */
   .pression {
-    transition: transform 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition:
+      scale 380ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      translate 380ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      transform 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   .pression:active {
-    transform: scale(0.96);
+    scale: 0.96;
   }
 
   /* Apparition au défilement — voir `Reveal` et `useInView`.

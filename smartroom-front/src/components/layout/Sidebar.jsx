@@ -71,7 +71,7 @@ export function Sidebar() {
         onClick={() => navigate('/app/reservation/besoin')}
         aria-label="Nouvelle réservation"
         title="Nouvelle réservation"
-        className="pression mb-3 flex h-11 w-11 items-center justify-center gap-2 rounded-full bg-accent text-sm font-medium text-ink shadow-bouton transition-colors hover:bg-accent-hover lg:w-full"
+        className="pression mb-3 flex h-11 w-11 items-center justify-center gap-2 rounded-full bg-accent text-sm font-medium text-ink shadow-bouton transition-[background-color,box-shadow,transform,scale] hover:-translate-y-px hover:bg-accent-hover hover:shadow-haute lg:w-full"
       >
         <Plus size={18} aria-hidden="true" />
         <span className="hidden lg:inline">Nouvelle réservation</span>
