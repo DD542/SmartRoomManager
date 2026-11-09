@@ -43,7 +43,7 @@ const itemClass = ({ isActive }) =>
   cn(
     'pression relative z-[1] flex h-11 items-center justify-center gap-3 rounded-full px-0 text-sm transition-colors',
     'w-11 lg:w-full lg:justify-start lg:px-3.5',
-    isActive ? 'font-semibold text-ink' : 'text-content-muted hover:text-content',
+    isActive ? 'font-semibold text-content bg-accent-soft [[data-bulle-prete=true]_&]:bg-transparent [[data-bulle-prete=true]_&]:text-ink' : 'text-content-muted hover:text-content',
   );
 
 /**

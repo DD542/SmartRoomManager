@@ -162,7 +162,7 @@ export function AdminNav({ onNavigate }) {
                           // entrées à 44 px ne tiendraient plus dans la hauteur.
                           'pression relative z-[1] flex min-h-[44px] items-center gap-3 rounded-full px-3 py-2 text-sm transition-colors lg:min-h-[36px]',
                           isActive
-                            ? 'font-semibold text-ink'
+                            ? 'font-semibold text-content bg-accent-soft [[data-bulle-prete=true]_&]:bg-transparent [[data-bulle-prete=true]_&]:text-ink'
                             : 'text-content-muted hover:text-content',
                         )
                       }

@@ -29,6 +29,7 @@ export function IndicateurLiquide({ conteneur, selecteur = '[aria-current="page"
     const mesurer = () => {
       const actif = parent.querySelector(selecteur);
       if (!actif || actif.offsetParent === null) {
+        delete parent.dataset.bullePrete;
         setCadre(null);
         return;
       }
@@ -52,6 +53,11 @@ export function IndicateurLiquide({ conteneur, selecteur = '[aria-current="page"
       }
       precedent.current = suivant;
       setCadre(suivant);
+      // Signale aux entrées que la pastille est posée : l'entrée active ne
+      // passe au texte clair qu'à ce moment. Avant, elle restait blanche sur
+      // une barre blanche tant que la bulle n'était pas mesurée — invisible
+      // au rechargement jusqu'au premier mouvement de souris.
+      parent.dataset.bullePrete = 'true';
     };
 
     mesurer();
@@ -61,8 +67,15 @@ export function IndicateurLiquide({ conteneur, selecteur = '[aria-current="page"
     const observateur =
       typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(mesurer);
     observateur?.observe(parent);
+    // Les polices web arrivent après le premier rendu et élargissent les
+    // libellés : la bulle mesurée sur la police de secours tombait à côté.
+    let vivant = true;
+    document.fonts?.ready?.then(() => vivant && mesurer());
+    window.addEventListener('load', mesurer);
     return () => {
+      vivant = false;
       parent.removeEventListener('animationend', mesurer);
+      window.removeEventListener('load', mesurer);
       observateur?.disconnect();
     };
   }, [conteneur, selecteur, pathname]);

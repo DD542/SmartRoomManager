@@ -52,7 +52,7 @@ export function MobileNav({ onOpenMore, moreOpen = false }) {
           // descend de haut en bas : le même geste, adapté à l'axe de l'écran.
           style={{ animationDelay: `${index * 30}ms` }}
           className={({ isActive }) =>
-            cn(ongletClass, isActive ? 'text-ink' : 'text-content-muted')
+            cn(ongletClass, isActive ? 'text-content bg-accent-soft [[data-bulle-prete=true]_&]:bg-transparent [[data-bulle-prete=true]_&]:text-ink' : 'text-content-muted')
           }
         >
           {({ isActive }) => (
