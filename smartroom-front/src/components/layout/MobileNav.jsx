@@ -3,7 +3,6 @@ import { NavLink } from 'react-router-dom';
 import { CalendarCheck, CircleCheck, DoorOpen, House, MoreHorizontal } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { IndicateurLiquide } from '../ui/IndicateurLiquide';
-import { TEINTES } from '../ui/teintes';
 
 /**
  * Les quatre destinations que la barre peut loger sans se tasser. Le reste —
@@ -11,13 +10,13 @@ import { TEINTES } from '../ui/teintes';
  * sont les entrées qui disparaissaient purement et simplement sous 768 px.
  */
 const ITEMS = [
-  { to: '/app', label: 'Accueil', icon: House, end: true, teinte: 'bleu' },
-  { to: '/app/salles', label: 'Salles', icon: DoorOpen, teinte: 'violet' },
-  { to: '/app/reservations', label: 'Réservations', icon: CalendarCheck, teinte: 'rose' },
+  { to: '/app', label: 'Accueil', icon: House, end: true },
+  { to: '/app/salles', label: 'Salles', icon: DoorOpen },
+  { to: '/app/reservations', label: 'Réservations', icon: CalendarCheck },
   // Sans identifiant : « bk-1001 » venait des maquettes, et chaque appui
   // menait à « booking_id doit être un identifiant valide ». L'écran
   // d'entrée cherche la réservation du moment.
-  { to: '/app/check-in', label: 'Check-in', icon: CircleCheck, teinte: 'emeraude' },
+  { to: '/app/check-in', label: 'Check-in', icon: CircleCheck },
 ];
 
 // 56 px de haut : au-dessus du minimum tactile de 44 px, avec la place du
@@ -57,12 +56,7 @@ export function MobileNav({ onOpenMore, moreOpen = false }) {
         >
           {({ isActive }) => (
             <>
-              <item.icon
-                size={20}
-                strokeWidth={isActive ? 2.3 : 1.8}
-                aria-hidden="true"
-                className={isActive ? TEINTES[item.teinte].texte : undefined}
-              />
+              <item.icon size={20} strokeWidth={isActive ? 2.3 : 1.8} aria-hidden="true" />
               {item.label}
             </>
           )}

@@ -43,7 +43,7 @@ function Compteur({ valeur }) {
   }, [vu, valeur]);
 
   return (
-    <dd ref={cible} className="texte-aurore font-display text-3xl font-semibold tracking-tight tabular-nums">
+    <dd ref={cible} className="font-display text-3xl font-semibold tracking-tight text-content tabular-nums">
       {affiche}
     </dd>
   );
@@ -139,7 +139,7 @@ export function LandingHero() {
           as="p"
           className="verre inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium text-content-muted"
         >
-          <Zap size={12} aria-hidden="true" className="text-aurore-ambre" />
+          <Zap size={12} aria-hidden="true" className="text-content" />
           Réservation intelligente de salles
         </Reveal>
 
@@ -147,12 +147,12 @@ export function LandingHero() {
           <Reveal as="span" delay={80} className="block text-content">
             Trouvez la bonne salle.
           </Reveal>
-          {/* Dégradé lumineux bleu, violet, rose : la promesse centrale
-              s'allume entre deux lignes graphite. */}
+          {/* Dégradé de graphite vers gris : la deuxième ligne recule d'un
+              plan, comme les titres en deux tons des pages d'Apple. */}
           <Reveal
             as="span"
             delay={180}
-            className="texte-aurore block pb-1"
+            className="block bg-gradient-to-r from-content via-content-muted to-content-faint bg-clip-text pb-1 text-transparent"
           >
             Au bon moment.
           </Reveal>

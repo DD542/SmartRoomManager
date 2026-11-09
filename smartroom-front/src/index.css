@@ -13,35 +13,36 @@
      avec une variable hexadécimale, tous auraient perdu leur transparence sans
      que rien ne le signale.
 
-     Charte « verre liquide » : une palette monochrome — graphite, blanc, gris
-     brumeux — où la couleur est réservée aux états (disponible, alerte,
-     danger). L'accent n'est plus un bleu mais l'encre elle-même : noir sur le
+     Charte inspirée de ChatGPT : des neutres purs — blanc, gris clairs,
+     graphite —, sans aucune teinte bleutée ni dégradé de couleur. La couleur
+     est réservée aux états : le vert de ChatGPT pour « disponible » et
+     « réussi », l'ambre et le rouge pour les alertes. L'accent n'est plus un bleu mais l'encre elle-même : noir sur le
      thème clair, blanc sur le sombre. `text-ink` sur `bg-accent` reste donc
      lisible dans les deux sens, l'encre et l'accent s'inversant ensemble. */
   :root {
     color-scheme: dark;
 
-    --ink: 9 9 11;
-    --ink-soft: 16 16 19;
-    --surface: 24 24 28;
-    --surface-raised: 34 34 39;
-    --line: 52 52 58;
-    --line-strong: 76 76 84;
-    --accent: 245 245 247;
-    --accent-hover: 222 222 226;
+    --ink: 33 33 33;
+    --ink-soft: 23 23 23;
+    --surface: 47 47 47;
+    --surface-raised: 58 58 58;
+    --line: 64 64 64;
+    --line-strong: 86 86 86;
+    --accent: 236 236 236;
+    --accent-hover: 210 210 210;
     --accent-bright: 255 255 255;
-    --success: 74 222 128;
+    --success: 25 195 125;
     --warning: 251 191 36;
     --danger: 248 113 113;
-    --content: 245 245 247;
-    --content-muted: 172 174 182;
-    --content-faint: 138 140 150;
+    --content: 236 236 236;
+    --content-muted: 180 180 180;
+    --content-faint: 150 150 150;
 
     /* Fonds teintés. Ils portent leur propre alpha, ce qui permet à chaque
        thème de la régler : la même opacité ne rend pas le même effet sur un
        fond sombre et sur un fond clair. */
     --accent-soft: 255 255 255 / 0.10;
-    --success-soft: 74 222 128 / 0.14;
+    --success-soft: 25 195 125 / 0.16;
     --warning-soft: 251 191 36 / 0.14;
     --danger-soft: 248 113 113 / 0.14;
 
@@ -63,29 +64,17 @@
     --ombre-bouton: 0 1px 0 rgb(255 255 255 / 0.5) inset, 0 8px 20px -8px rgb(0 0 0 / 0.6);
 
     /* Verre liquide : fond translucide, bord lumineux, reflet spéculaire. */
-    --verre-fond: rgb(30 30 34 / 0.55);
-    --verre-fond-epais: rgb(30 30 34 / 0.72);
+    --verre-fond: rgb(47 47 47 / 0.6);
+    --verre-fond-epais: rgb(38 38 38 / 0.82);
     --verre-reflet-haut: rgb(255 255 255 / 0.28);
     --verre-reflet-bas: rgb(255 255 255 / 0.06);
     --verre-ombre: 0 1px 0 rgb(255 255 255 / 0.10) inset, 0 -1px 0 rgb(255 255 255 / 0.03) inset, 0 18px 40px -18px rgb(0 0 0 / 0.7);
     --verre-bulle: rgb(255 255 255 / 0.12);
 
-    /* Couleurs d'aurore : la lumière du produit. Le graphite porte la
-       structure, ces six teintes portent la vie — pastilles d'icône, chiffres,
-       halos du fond. Plus claires sur fond sombre, où elles doivent briller. */
-    --bleu: 96 165 250;
-    --violet: 167 139 250;
-    --rose: 244 114 182;
-    --cyan: 34 211 238;
-    --ambre: 251 191 36;
-    --emeraude: 52 211 153;
-
-    /* Aurore d'ambiance posée derrière les pages : quatre nappes de couleur
-       que le verre floute et adoucit. */
-    --brume-1: rgb(59 130 246 / 0.30);
-    --brume-2: rgb(139 92 246 / 0.26);
-    --brume-3: rgb(236 72 153 / 0.16);
-    --brume-4: rgb(6 182 212 / 0.18);
+    /* Brume d'ambiance posée derrière les pages. */
+    --brume-1: rgb(255 255 255 / 0.05);
+    --brume-2: rgb(255 255 255 / 0.03);
+    --brume-3: rgb(255 255 255 / 0.02);
 
     /* Echelle de la carte de chaleur, cinq crans du plus froid au plus chaud.
        Elle vit ici parce que sa logique s'inverse d'un theme a l'autre. */
@@ -109,24 +98,26 @@
   :root[data-theme='clair'] {
     color-scheme: light;
 
-    --ink: 232 235 245;
-    --ink-soft: 222 226 240;
+    --ink: 249 249 249;
+    --ink-soft: 243 243 243;
     --surface: 255 255 255;
-    --surface-raised: 244 246 252;
-    --line: 220 224 236;
-    --line-strong: 194 199 214;
-    --accent: 22 22 24;
-    --accent-hover: 52 52 56;
-    --accent-bright: 22 22 24;
-    --success: 21 128 61;
+    --surface-raised: 244 244 244;
+    --line: 229 229 229;
+    --line-strong: 205 205 205;
+    --accent: 13 13 13;
+    --accent-hover: 64 64 64;
+    --accent-bright: 13 13 13;
+    /* Le vert de ChatGPT, assombri d'un cran : #10A37F ne donne que 3,2:1
+       sur du blanc. Celui-ci tient 4,9:1. */
+    --success: 11 128 99;
     --warning: 146 90 0;
     --danger: 196 38 38;
-    --content: 22 22 24;
-    --content-muted: 78 81 89;
-    --content-faint: 108 112 121;
+    --content: 13 13 13;
+    --content-muted: 93 93 93;
+    --content-faint: 112 112 112;
 
-    --accent-soft: 22 22 24 / 0.07;
-    --success-soft: 21 128 61 / 0.10;
+    --accent-soft: 13 13 13 / 0.06;
+    --success-soft: 16 163 127 / 0.12;
     --warning-soft: 146 90 0 / 0.10;
     --danger-soft: 196 38 38 / 0.09;
 
@@ -140,26 +131,18 @@
     --ombre-haute: 0 30px 80px -28px rgb(22 22 24 / 0.35);
     --ombre-bouton: 0 1px 0 rgb(255 255 255 / 0.18) inset, 0 8px 18px -8px rgb(22 22 24 / 0.55);
 
-    --verre-fond: rgb(255 255 255 / 0.55);
-    --verre-fond-epais: rgb(255 255 255 / 0.74);
+    --verre-fond: rgb(255 255 255 / 0.7);
+    --verre-fond-epais: rgb(255 255 255 / 0.86);
     --verre-reflet-haut: rgb(255 255 255 / 0.95);
     --verre-reflet-bas: rgb(255 255 255 / 0.35);
     --verre-ombre: 0 1px 0 rgb(255 255 255 / 0.9) inset, 0 -1px 0 rgb(255 255 255 / 0.4) inset, 0 18px 40px -20px rgb(22 22 24 / 0.28);
     --verre-bulle: rgb(255 255 255 / 0.85);
 
-    /* Plus saturées sur fond clair : une pastille pastel sur du blanc ne se
-       verrait pas, et le texte coloré doit tenir le contraste. */
-    --bleu: 37 99 235;
-    --violet: 124 58 237;
-    --rose: 219 39 119;
-    --cyan: 8 145 178;
-    --ambre: 217 119 6;
-    --emeraude: 5 150 105;
-
-    --brume-1: rgb(96 165 250 / 0.45);
-    --brume-2: rgb(167 139 250 / 0.40);
-    --brume-3: rgb(244 114 182 / 0.28);
-    --brume-4: rgb(34 211 238 / 0.30);
+    /* Un voile gris à peine marqué : assez pour que le verre ait quelque
+       chose à flouter, pas assez pour colorer la page. */
+    --brume-1: rgb(0 0 0 / 0.035);
+    --brume-2: rgb(0 0 0 / 0.025);
+    --brume-3: rgb(255 255 255 / 0.6);
 
     /* Progression inverse : la chaleur se marque en assombrissant. */
     --chaleur-1: rgb(22 22 24 / 0.05);
@@ -185,10 +168,9 @@
     /* Brume : trois nappes floues, comme le ciel couvert de la maquette. Le
        verre n'a d'effet que s'il a quelque chose à flouter derrière lui. */
     background-image:
-      radial-gradient(60rem 38rem at -5% -10%, var(--brume-1), transparent 62%),
-      radial-gradient(52rem 34rem at 105% 5%, var(--brume-2), transparent 60%),
-      radial-gradient(46rem 30rem at 85% 105%, var(--brume-3), transparent 62%),
-      radial-gradient(44rem 28rem at 5% 100%, var(--brume-4), transparent 60%);
+      radial-gradient(70rem 40rem at 0% -10%, var(--brume-1), transparent 60%),
+      radial-gradient(60rem 36rem at 100% 10%, var(--brume-2), transparent 60%),
+      radial-gradient(50rem 30rem at 50% 110%, var(--brume-3), transparent 60%);
     background-attachment: fixed;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01', 'tnum';
     letter-spacing: -0.006em;
@@ -254,20 +236,6 @@
       rgb(var(--lueur) / 0) 100%
     );
     animation: shimmer 1.4s linear infinite;
-  }
-
-  /* Texte en dégradé lumineux : bleu, violet, rose. Réservé aux titres et
-     aux grands chiffres, où il attire l'œil sans gêner la lecture. */
-  .texte-aurore {
-    background-image: linear-gradient(
-      100deg,
-      rgb(var(--bleu)) 0%,
-      rgb(var(--violet)) 50%,
-      rgb(var(--rose)) 100%
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
   }
 
   .card-surface {

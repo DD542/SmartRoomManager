@@ -198,7 +198,7 @@ export function LandingDemo() {
                 onClick={lancerALaMain}
                 className="group absolute inset-2 flex flex-col items-center justify-center gap-3 rounded-[26px] bg-surface/30 backdrop-blur-md transition hover:bg-surface/10"
               >
-                <span className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-aurore-bleu via-aurore-violet to-aurore-rose text-white shadow-haute transition duration-500 ease-ressort group-hover:scale-110">
+                <span className="flex h-20 w-20 items-center justify-center rounded-full bg-accent text-ink shadow-haute transition duration-500 ease-ressort group-hover:scale-110">
                   <Play size={30} aria-hidden="true" className="ml-1 fill-current" />
                 </span>
                 <span className="text-sm text-content">Lancer la démonstration</span>

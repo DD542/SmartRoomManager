@@ -49,16 +49,6 @@ export default {
           DEFAULT: 'rgb(var(--danger) / <alpha-value>)',
           soft: 'rgb(var(--danger-soft))',
         },
-        // Teintes lumineuses : pastilles, chiffres, halos. Jamais pour porter
-        // seules un sens — le texte reste en `content`.
-        aurore: {
-          bleu: 'rgb(var(--bleu) / <alpha-value>)',
-          violet: 'rgb(var(--violet) / <alpha-value>)',
-          rose: 'rgb(var(--rose) / <alpha-value>)',
-          cyan: 'rgb(var(--cyan) / <alpha-value>)',
-          ambre: 'rgb(var(--ambre) / <alpha-value>)',
-          emeraude: 'rgb(var(--emeraude) / <alpha-value>)',
-        },
         content: {
           DEFAULT: 'rgb(var(--content) / <alpha-value>)',
           muted: 'rgb(var(--content-muted) / <alpha-value>)',

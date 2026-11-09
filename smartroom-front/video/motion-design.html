@@ -19,15 +19,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=block" rel="stylesheet" />
 <style>
   :root {
-    --encre: #16161a;
-    --gris: #5b6070;
-    --pale: #8a90a2;
-    --bleu: #3b82f6;
-    --violet: #8b5cf6;
-    --rose: #ec4899;
-    --cyan: #06b6d4;
-    --ambre: #f59e0b;
-    --vert: #10b981;
+    /* Charte ChatGPT : neutres purs, le vert réservé à ce qui réussit. Les
+       anciens noms de couleur désignent désormais des crans de gris. */
+    --encre: #0d0d0d;
+    --gris: #5d5d5d;
+    --pale: #8f8f8f;
+    --bleu: #0d0d0d;
+    --violet: #5d5d5d;
+    --rose: #2f2f2f;
+    --cyan: #9b9b9b;
+    --ambre: #c4c4c4;
+    --vert: #10a37f;
     --rouge: #ef4444;
   }
   * { box-sizing: border-box; margin: 0; }
@@ -35,7 +37,7 @@
   body {
     font-family: Inter, 'Segoe UI', system-ui, sans-serif;
     color: var(--encre);
-    background: #e9ecf6;
+    background: #f9f9f9;
     letter-spacing: -0.01em;
     -webkit-font-smoothing: antialiased;
   }
@@ -45,14 +47,13 @@
   .verre {
     background: rgba(255, 255, 255, 0.62);
     backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.85);
-    box-shadow: 0 1px 0 #fff inset, 0 30px 60px -30px rgba(40, 40, 80, 0.35);
+    border: 1px solid #e5e5e5;
+    box-shadow: 0 1px 0 #fff inset, 0 30px 60px -30px rgba(0, 0, 0, 0.22);
   }
   .titre { font-size: 54px; font-weight: 700; letter-spacing: -0.035em; line-height: 1.05; }
   .sous { font-size: 20px; color: var(--gris); margin-top: 14px; }
   .aurore {
-    background: linear-gradient(100deg, var(--bleu), var(--violet) 50%, var(--rose));
-    -webkit-background-clip: text; background-clip: text; color: transparent;
+    color: #8f8f8f;
   }
   .etiquette {
     display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 999px;
@@ -73,10 +74,10 @@
 <body>
   <!-- Aurore : quatre nappes qui dérivent pendant tout le film. -->
   <div class="fond">
-    <div class="nappe" id="n1" style="width:620px;height:460px;background:rgba(96,165,250,.55);left:-120px;top:-140px"></div>
-    <div class="nappe" id="n2" style="width:560px;height:440px;background:rgba(167,139,250,.55);right:-120px;top:-60px"></div>
-    <div class="nappe" id="n3" style="width:520px;height:400px;background:rgba(244,114,182,.42);right:120px;bottom:-200px"></div>
-    <div class="nappe" id="n4" style="width:480px;height:380px;background:rgba(34,211,238,.42);left:60px;bottom:-180px"></div>
+    <div class="nappe" id="n1" style="width:620px;height:460px;background:rgba(0,0,0,.05);left:-120px;top:-140px"></div>
+    <div class="nappe" id="n2" style="width:560px;height:440px;background:rgba(255,255,255,.95);right:-120px;top:-60px"></div>
+    <div class="nappe" id="n3" style="width:520px;height:400px;background:rgba(0,0,0,.04);right:120px;bottom:-200px"></div>
+    <div class="nappe" id="n4" style="width:480px;height:380px;background:rgba(255,255,255,.9);left:60px;bottom:-180px"></div>
   </div>
 
   <!-- 1. Ouverture ------------------------------------------------------- -->
@@ -84,7 +85,7 @@
     <svg width="120" height="120" viewBox="0 0 32 32" data-in="0.2" data-dy="0">
       <defs>
         <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#3b82f6" /><stop offset=".5" stop-color="#8b5cf6" /><stop offset="1" stop-color="#ec4899" />
+          <stop offset="0" stop-color="#0d0d0d" /><stop offset="1" stop-color="#0d0d0d" />
         </linearGradient>
       </defs>
       <path id="logo" d="M22.6 9.6c-.8-2.6-3.4-4.3-6.8-4.3-4 0-6.9 2.2-6.9 5.3 0 6.9 14.3 4.4 14.3 11.6 0 3.2-3 5.5-7.4 5.5-3.8 0-6.6-1.8-7.4-4.5"
@@ -122,7 +123,7 @@
         <img class="photo" src="../public/apercu/conseil.webp" alt="" />
         <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 6px 4px">
           <div><p style="font-weight:700;font-size:18px">Salle Conseil Alpha</p><p style="color:var(--gris);font-size:13px;margin-top:3px">Bât. C · 12 places · Écran · Visio</p></div>
-          <svg width="56" height="56" viewBox="0 0 56 56"><circle cx="28" cy="28" r="23" fill="none" stroke="#e7e9f2" stroke-width="6" />
+          <svg width="56" height="56" viewBox="0 0 56 56"><circle cx="28" cy="28" r="23" fill="none" stroke="#ececec" stroke-width="6" />
             <circle class="anneau" data-score="0.96" cx="28" cy="28" r="23" fill="none" stroke="var(--vert)" stroke-width="6" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" transform="rotate(-90 28 28)" />
             <text x="28" y="33" text-anchor="middle" font-size="14" font-weight="700" fill="#16161a" class="score">0</text></svg>
         </div>
@@ -131,7 +132,7 @@
         <img class="photo" src="../public/apercu/vinci.webp" alt="" />
         <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 6px 4px">
           <div><p style="font-weight:700;font-size:18px">Salle Vinci</p><p style="color:var(--gris);font-size:13px;margin-top:3px">Bât. B · 14 places · Écran</p></div>
-          <svg width="56" height="56" viewBox="0 0 56 56"><circle cx="28" cy="28" r="23" fill="none" stroke="#e7e9f2" stroke-width="6" />
+          <svg width="56" height="56" viewBox="0 0 56 56"><circle cx="28" cy="28" r="23" fill="none" stroke="#ececec" stroke-width="6" />
             <circle class="anneau" data-score="0.88" cx="28" cy="28" r="23" fill="none" stroke="var(--bleu)" stroke-width="6" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" transform="rotate(-90 28 28)" />
             <text x="28" y="33" text-anchor="middle" font-size="14" font-weight="700" fill="#16161a" class="score">0</text></svg>
         </div>
@@ -140,7 +141,7 @@
         <img class="photo" src="../public/apercu/curie.webp" alt="" />
         <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 6px 4px">
           <div><p style="font-weight:700;font-size:18px">Salle Curie</p><p style="color:var(--gris);font-size:13px;margin-top:3px">Bât. A · 16 places · Visio</p></div>
-          <svg width="56" height="56" viewBox="0 0 56 56"><circle cx="28" cy="28" r="23" fill="none" stroke="#e7e9f2" stroke-width="6" />
+          <svg width="56" height="56" viewBox="0 0 56 56"><circle cx="28" cy="28" r="23" fill="none" stroke="#ececec" stroke-width="6" />
             <circle class="anneau" data-score="0.74" cx="28" cy="28" r="23" fill="none" stroke="var(--violet)" stroke-width="6" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" transform="rotate(-90 28 28)" />
             <text x="28" y="33" text-anchor="middle" font-size="14" font-weight="700" fill="#16161a" class="score">0</text></svg>
         </div>
@@ -162,13 +163,13 @@
       </div>
       <div style="display:grid;grid-template-columns:150px 1fr;row-gap:18px;margin-top:14px;align-items:center">
         <span style="font-weight:600">Conseil Alpha</span>
-        <div style="position:relative;height:44px;border-radius:12px;background:#eef0f7">
+        <div style="position:relative;height:44px;border-radius:12px;background:#f4f4f4">
           <div style="position:absolute;left:5%;width:22%;top:6px;bottom:6px;border-radius:9px;background:var(--cyan)"></div>
           <div id="occupe" style="position:absolute;left:62.5%;width:12.5%;top:6px;bottom:6px;border-radius:9px;background:var(--violet);color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;padding-left:10px">Comité</div>
           <div id="demande" style="position:absolute;z-index:5;left:62.5%;width:12.5%;top:6px;bottom:6px;border-radius:9px;color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;padding-left:10px">Sprint</div>
         </div>
         <span style="font-weight:600">Salle Vinci</span>
-        <div id="ligne2" style="position:relative;height:44px;border-radius:12px;background:#eef0f7">
+        <div id="ligne2" style="position:relative;height:44px;border-radius:12px;background:#f4f4f4">
           <div style="position:absolute;left:30%;width:18%;top:6px;bottom:6px;border-radius:9px;background:var(--ambre)"></div>
         </div>
       </div>
@@ -199,7 +200,7 @@
       <div class="verre" data-in="18.1" data-dy="0" data-dx="40" style="width:440px;border-radius:30px;padding:26px 28px">
         <p style="font-size:30px;font-weight:700;letter-spacing:-.03em">Réservation confirmée</p>
         <p style="color:var(--gris);margin-top:6px">Salle Vinci · Demain, 14:00 – 15:00</p>
-        <div style="margin-top:20px;border-radius:20px;padding:16px 18px;background:linear-gradient(120deg,#3b82f6,#8b5cf6 55%,#ec4899);color:#fff">
+        <div style="margin-top:20px;border-radius:20px;padding:16px 18px;background:#0d0d0d;color:#fff">
           <p style="font-size:13px;opacity:.85">Code d’accès</p>
           <p id="code" style="font-family:ui-monospace,Consolas,monospace;font-size:38px;font-weight:700;letter-spacing:.18em;margin-top:2px">A-0000</p>
         </div>
@@ -254,7 +255,7 @@
   </section>
 
   <!-- Repères permanents : chapitre et progression. -->
-  <div id="barre" style="position:absolute;left:0;bottom:0;height:4px;background:linear-gradient(90deg,var(--bleu),var(--violet),var(--rose));width:0"></div>
+  <div id="barre" style="position:absolute;left:0;bottom:0;height:4px;background:#0d0d0d;width:0"></div>
 
 <script>
   const DUREE = 28.5;
@@ -312,7 +313,7 @@
 
     // 2. Frappe, avec curseur.
     const n = Math.round(TEXTE.length * avance(t, 4.4, 5.9));
-    const curseur = t < 7 && Math.floor(t * 2.2) % 2 === 0 ? '<span style="color:#8b5cf6">|</span>' : '';
+    const curseur = t < 7 && Math.floor(t * 2.2) % 2 === 0 ? '<span style="color:#0d0d0d">|</span>' : '';
     document.getElementById('frappe').innerHTML = TEXTE.slice(0, n) + curseur;
 
     // 3. Anneaux de score et mise en avant du meilleur choix.

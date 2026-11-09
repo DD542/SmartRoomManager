@@ -16,7 +16,6 @@ import { cn } from '../../utils/cn';
 import { useAuth } from '../../hooks/useAuth';
 import { Logo } from '../brand/Logo';
 import { IndicateurLiquide } from '../ui/IndicateurLiquide';
-import { TEINTES } from '../ui/teintes';
 
 /**
  * Destinations principales de l'espace utilisateur.
@@ -26,15 +25,15 @@ import { TEINTES } from '../ui/teintes';
  * destination ne peut disparaître d'un côté sans qu'on le voie de l'autre.
  */
 export const NAV_ITEMS = [
-  { to: '/app', label: 'Accueil', icon: House, end: true, teinte: 'bleu' },
-  { to: '/app/salles', label: 'Explorer les salles', icon: DoorOpen, teinte: 'violet' },
-  { to: '/app/reservations', label: 'Mes réservations', icon: CalendarCheck, teinte: 'rose' },
+  { to: '/app', label: 'Accueil', icon: House, end: true },
+  { to: '/app/salles', label: 'Explorer les salles', icon: DoorOpen },
+  { to: '/app/reservations', label: 'Mes réservations', icon: CalendarCheck },
   // U-19 n'était atteignable que depuis la barre mobile : en desktop, l'écran
   // existait dans le routeur sans qu'aucun chemin d'interface n'y mène.
-  { to: '/app/check-in', label: 'Valider ma présence', icon: CircleCheck, teinte: 'emeraude' },
-  { to: '/app/plan', label: 'Plan du bâtiment', icon: Map, teinte: 'cyan' },
-  { to: '/app/statistiques', label: 'Mes statistiques', icon: BarChart3, teinte: 'ambre' },
-  { to: '/app/aide', label: 'Centre d’aide', icon: HelpCircle, teinte: 'violet' },
+  { to: '/app/check-in', label: 'Valider ma présence', icon: CircleCheck },
+  { to: '/app/plan', label: 'Plan du bâtiment', icon: Map },
+  { to: '/app/statistiques', label: 'Mes statistiques', icon: BarChart3 },
+  { to: '/app/aide', label: 'Centre d’aide', icon: HelpCircle },
 ];
 
 // 44 px de haut : minimum recommandé par WCAG 2.1 (2.5.5). Icône seule entre
@@ -72,7 +71,7 @@ export function Sidebar() {
         onClick={() => navigate('/app/reservation/besoin')}
         aria-label="Nouvelle réservation"
         title="Nouvelle réservation"
-        className="pression mb-3 flex h-11 w-11 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-aurore-bleu via-aurore-violet to-aurore-rose text-sm font-medium text-white shadow-[0_10px_24px_-10px_rgb(var(--violet)/0.8)] transition-[filter] hover:brightness-110 lg:w-full"
+        className="pression mb-3 flex h-11 w-11 items-center justify-center gap-2 rounded-full bg-accent text-sm font-medium text-ink shadow-bouton transition-colors hover:bg-accent-hover lg:w-full"
       >
         <Plus size={18} aria-hidden="true" />
         <span className="hidden lg:inline">Nouvelle réservation</span>
@@ -94,18 +93,8 @@ export function Sidebar() {
             aria-label={item.label}
             title={item.label}
           >
-            {/* L'icône de l'entrée active prend sa teinte : la bulle dit où
-                l'on est, la couleur dit quel espace c'est. */}
-            {({ isActive }) => (
-              <>
-                <item.icon
-                  size={19}
-                  aria-hidden="true"
-                  className={cn('shrink-0 transition-colors', isActive && TEINTES[item.teinte]?.texte)}
-                />
-                <span className="hidden truncate lg:inline">{item.label}</span>
-              </>
-            )}
+            <item.icon size={19} aria-hidden="true" className="shrink-0" />
+            <span className="hidden truncate lg:inline">{item.label}</span>
           </NavLink>
         ))}
       </nav>
