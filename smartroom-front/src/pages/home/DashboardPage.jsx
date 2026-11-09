@@ -63,13 +63,14 @@ export default function DashboardPage() {
           <>
             <KpiTile
               icon={CalendarCheck}
-              tone="accent"
+              teinte="marine"
               value={stats.data.kpis.bookings}
               label="réservations ce mois"
               className="animate-fade-in-up"
             />
             <KpiTile
               icon={Clock}
+              teinte="corail"
               value={stats.data.kpis.hours}
               unit="h"
               label="heures réservées"
@@ -77,6 +78,7 @@ export default function DashboardPage() {
             />
             <KpiTile
               icon={XCircle}
+              teinte="framboise"
               value={stats.data.kpis.cancelled}
               label={stats.data.kpis.cancelled > 1 ? 'annulations' : 'annulation'}
               className="animate-fade-in-up [animation-delay:120ms]"

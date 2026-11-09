@@ -56,8 +56,8 @@ export function HeroAccueil({ prenom, batimentPrefere, action }) {
       <div className="flex min-h-[260px] flex-col justify-between gap-8 px-6 py-7 md:min-h-[300px] md:px-9 md:py-9">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-md">
-            <h1 className="animate-fade-in-up font-display text-3xl font-semibold tracking-tight text-content md:text-[40px] md:leading-[1.1]">
-              Bonjour, {prenom}{' '}
+            <h1 className="animate-fade-in-up font-display text-3xl font-normal tracking-tight text-content md:text-[40px] md:leading-[1.1]">
+              Bonjour, <span className="font-extrabold italic">{prenom}</span>{' '}
               <span
                 aria-hidden="true"
                 className="inline-block origin-[70%_70%] animate-[salut_1.8s_ease-in-out_0.6s_both]"

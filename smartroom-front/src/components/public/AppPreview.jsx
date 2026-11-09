@@ -46,18 +46,18 @@ const NAVIGATION = [
 ];
 
 const CHIFFRES = [
-  { icone: CalendarCheck, valeur: '3', libelle: 'réservations aujourd’hui', teinte: 'bg-neutral-100 text-neutral-800' },
-  { icone: DoorOpen, valeur: '12', libelle: 'salles disponibles', teinte: 'bg-neutral-100 text-neutral-800' },
-  { icone: BarChart3, valeur: '72 %', libelle: 'taux d’occupation', teinte: 'bg-neutral-100 text-neutral-800' },
-  { icone: Clock, valeur: '14:00', libelle: 'prochaine réunion', teinte: 'bg-neutral-900 text-white' },
+  { icone: CalendarCheck, valeur: '3', libelle: 'réservations aujourd’hui', teinte: 'bg-[#E3E8FF] text-[#263171]' },
+  { icone: DoorOpen, valeur: '12', libelle: 'salles disponibles', teinte: 'bg-[#FFE6DC] text-[#E8613A]' },
+  { icone: BarChart3, valeur: '72 %', libelle: 'taux d’occupation', teinte: 'bg-[#F9E0EA] text-[#CC3366]' },
+  { icone: Clock, valeur: '14:00', libelle: 'prochaine réunion', teinte: 'bg-[#263171] text-white' },
 ];
 
 /** Planning du jour : une ligne par salle, un bloc coloré par réservation (heures 8 à 16). */
 const PLANNING = [
-  { salle: 'Horizon', blocs: [[0, 2, 'bg-neutral-800'], [3, 5, 'bg-neutral-400']] },
-  { salle: 'Monge', blocs: [[1, 3, 'bg-neutral-500'], [5, 7, 'bg-neutral-800']] },
-  { salle: 'Alpha', blocs: [[0, 1, 'bg-neutral-400'], [2, 6, 'bg-neutral-600']] },
-  { salle: 'Vinci', blocs: [[4, 7, 'bg-neutral-500']] },
+  { salle: 'Horizon', blocs: [[0, 2, 'bg-[#263171]'], [3, 5, 'bg-[#FF8053]']] },
+  { salle: 'Monge', blocs: [[1, 3, 'bg-[#CC3366]'], [5, 7, 'bg-[#263171]']] },
+  { salle: 'Alpha', blocs: [[0, 1, 'bg-[#CED5FB]'], [2, 6, 'bg-[#FF8053]']] },
+  { salle: 'Vinci', blocs: [[4, 7, 'bg-[#263171]']] },
 ];
 
 /** Réduit l'écran dessiné à la largeur disponible. */
@@ -100,7 +100,7 @@ function CarteSalle({ salle, rang }) {
         </span>
       </div>
       <div className="px-1.5 pb-1 pt-2.5">
-        <p className="text-[13px] font-semibold text-neutral-900">{salle.nom}</p>
+        <p className="text-[13px] font-semibold text-[#0C1547]">{salle.nom}</p>
         <p className="mt-0.5 text-[10px] text-neutral-500">{salle.lieu}</p>
         <div className="mt-2 flex items-center gap-1.5 text-neutral-500">
           {[Wifi, Monitor, ShieldCheck].map((Icone, index) => (
@@ -118,7 +118,7 @@ function CarteSalle({ salle, rang }) {
           />
         </div>
         <div className="mt-2.5 flex items-center justify-between">
-          <span className="rounded-full bg-neutral-900 px-3 py-1 text-[10px] font-medium text-white">
+          <span className="rounded-full bg-[#263171] px-3 py-1 text-[10px] font-medium text-white">
             Voir les créneaux
           </span>
           <ArrowRight size={12} className="text-neutral-400" />
@@ -177,12 +177,12 @@ export function AppPreview() {
           style={{ width: LARGEUR, height: HAUTEUR, transform: `scale(${echelle})` }}
         >
           {/* Fond d'écran : la même aurore que la page. */}
-          <div className="absolute inset-0 bg-[#f9f9f9]" />
-          <div className="absolute -left-24 -top-24 h-80 w-[28rem] rounded-full bg-neutral-200/70 blur-3xl" />
-          <div className="absolute -right-16 top-10 h-72 w-96 rounded-full bg-white/80 blur-3xl" />
-          <div className="absolute bottom-[-6rem] left-1/3 h-72 w-96 rounded-full bg-neutral-200/50 blur-3xl" />
+          <div className="absolute inset-0 bg-[#fdfbf9]" />
+          <div className="absolute -left-24 -top-24 h-80 w-[28rem] rounded-full bg-[#CED5FB]/60 blur-3xl" />
+          <div className="absolute -right-16 top-10 h-72 w-96 rounded-full bg-[#F1CFB5]/70 blur-3xl" />
+          <div className="absolute bottom-[-6rem] left-1/3 h-72 w-96 rounded-full bg-[#FFA382]/30 blur-3xl" />
 
-          <div className="relative flex h-full gap-4 p-4 text-left text-neutral-900">
+          <div className="relative flex h-full gap-4 p-4 text-left text-[#0C1547]">
             {/* Barre latérale */}
             <aside className="flex w-[200px] shrink-0 animate-fade-in-up flex-col rounded-[24px] border border-white/70 bg-white/70 p-4 shadow-[0_18px_40px_-24px_rgb(0_0_0/0.4)] backdrop-blur-xl">
               <div className="flex items-center gap-2 px-1">
@@ -193,7 +193,7 @@ export function AppPreview() {
                   Manager
                 </span>
               </div>
-              <span className="mt-5 flex items-center justify-center gap-1.5 rounded-full bg-neutral-900 py-2 text-[11px] font-medium text-white shadow-[0_8px_18px_-10px_rgb(0_0_0/0.6)]">
+              <span className="mt-5 flex items-center justify-center gap-1.5 rounded-full bg-[#FF8053] py-2 text-[11px] font-semibold text-[#0C1547] shadow-[0_8px_18px_-10px_rgb(255_128_83/0.8)]">
                 <Plus size={13} /> Nouvelle réservation
               </span>
               <nav className="mt-4 flex flex-col gap-1">
@@ -206,7 +206,7 @@ export function AppPreview() {
                         : 'text-neutral-500'
                     }`}
                   >
-                    <Icone size={14} className={actif ? 'text-neutral-900' : ''} />
+                    <Icone size={14} className={actif ? 'text-[#263171]' : ''} />
                     {libelle}
                   </span>
                 ))}
@@ -233,7 +233,7 @@ export function AppPreview() {
                   <Bell size={13} />
                   <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-rose-500" />
                 </span>
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-neutral-300 text-[10px] font-semibold text-neutral-800">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#263171] text-[10px] font-semibold text-white">
                   CL
                 </span>
               </div>
@@ -244,12 +244,12 @@ export function AppPreview() {
                 style={{ animationDelay: '200ms' }}
               >
                 <img src="/apercu/batiment-a.webp" alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
-                <div className="absolute inset-0 bg-gradient-to-r from-[#f9f9f9] via-[#f9f9f9]/80 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#fdfbf9] via-[#fdfbf9]/80 to-transparent" />
                 <div className="relative flex h-full flex-col justify-between p-5">
                   <div>
                     <p className="text-[24px] font-semibold tracking-tight">
                       Bonjour,{' '}
-                      Camille{' '}
+                      <span className="font-extrabold italic text-[#263171]">Camille</span>{' '}
                       👋
                     </p>
                     <p className="mt-0.5 text-[11px] text-neutral-600">
@@ -261,7 +261,7 @@ export function AppPreview() {
                     <span className="flex-1 text-[10px] text-neutral-400">
                       Salle de 12 places, demain à 14 h, avec écran…
                     </span>
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-neutral-900 text-white">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#FF8053] text-[#0C1547]">
                       <ArrowRight size={11} />
                     </span>
                   </div>
@@ -292,7 +292,7 @@ export function AppPreview() {
                 <section className="flex-1">
                   <div className="mb-2 flex items-center justify-between px-1">
                     <p className="flex items-center gap-1.5 text-[13px] font-semibold">
-                      <Sparkles size={13} className="text-neutral-700" /> Recommandées pour vous
+                      <Sparkles size={13} className="text-[#E8613A]" /> Recommandées pour vous
                     </p>
                     <span className="text-[10px] text-neutral-500">Voir tout →</span>
                   </div>
@@ -332,7 +332,7 @@ export function AppPreview() {
                       </div>
                     ))}
                   </div>
-                  <div className="mt-3 rounded-[14px] bg-neutral-900 p-2.5 text-white">
+                  <div className="mt-3 rounded-[14px] bg-[#263171] p-2.5 text-white">
                     <p className="text-[9px] opacity-80">Prochaine réunion · 14:00</p>
                     <p className="mt-0.5 text-[11px] font-semibold">Revue de sprint</p>
                     <p className="text-[9px] opacity-80">Amphi Horizon · 8 participants</p>
@@ -365,8 +365,8 @@ export function AppPreview() {
         style={{ animationDelay: '-3s' }}
       >
         <div style={carte(5, 2, 10)} className="verre-epais flex items-center gap-3 rounded-2xl px-4 py-3 shadow-haute">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-content/[0.06]">
-            <KeyRound size={16} className="text-content" />
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-corail/15">
+            <KeyRound size={16} className="text-[#E8613A]" />
           </span>
           <span>
             <span className="block text-[10px] text-content-muted">Code d’accès</span>
@@ -381,7 +381,7 @@ export function AppPreview() {
         style={{ animationDelay: '-1.5s' }}
       >
         <div style={carte(-2, 0, -6)} className="verre-epais flex items-center gap-2.5 rounded-full py-2 pl-2 pr-4 shadow-haute">
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-ink">
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-corail text-[#0C1547]">
             <Sparkles size={13} />
           </span>
           <span className="text-xs text-content">

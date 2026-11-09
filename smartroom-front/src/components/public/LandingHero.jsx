@@ -133,23 +133,45 @@ export function LandingHero() {
   const apercu = useRedressement();
 
   return (
-    <section className="overflow-hidden">
+    <section className="relative overflow-hidden">
+      {/* Halos pêche, lavande et corail qui dérivent derrière le titre : la
+          lumière chaude du bandeau de MentorGoal, animée à la manière des
+          pages produit d'Apple. Décor seulement. */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
+        <div className="halo-derive absolute left-1/2 top-[38%] h-[34rem] w-[52rem] -translate-x-1/2 rounded-full bg-peche/60 blur-3xl" />
+        <div className="halo-derive absolute -left-24 top-10 h-80 w-[30rem] rounded-full bg-lavande/60 blur-3xl [animation-delay:-5s]" />
+        <div className="halo-derive absolute -right-24 top-40 h-72 w-[26rem] rounded-full bg-corail/25 blur-3xl [animation-delay:-9s]" />
+      </div>
+
       <div className="mx-auto w-full max-w-6xl px-4 pb-16 pt-14 text-center md:pb-24 md:pt-24">
-        <h1 className="mx-auto max-w-4xl font-display text-[44px] font-semibold leading-[1.04] tracking-[-0.035em] sm:text-6xl md:text-[80px]">
-          <Reveal as="span" delay={80} className="block text-content">
-            Trouvez la bonne salle.
+        {/* Titre en graisse légère, avec un passage en gras italique : la
+            signature typographique de MentorGoal. Un trait corail se dessine
+            sous la promesse une fois la ligne posée. */}
+        <h1 className="mx-auto max-w-4xl font-display text-[44px] font-normal leading-[1.08] tracking-[-0.02em] text-content sm:text-6xl md:text-[78px]">
+          <Reveal as="span" delay={80} className="block">
+            Trouvez la bonne salle,
           </Reveal>
-          {/* Dégradé de graphite vers gris : la deuxième ligne recule d'un
-              plan, comme les titres en deux tons des pages d'Apple. */}
-          <Reveal
-            as="span"
-            delay={180}
-            className="block bg-gradient-to-r from-content via-content-muted to-content-faint bg-clip-text pb-1 text-transparent"
-          >
-            Au bon moment.
+          <Reveal as="span" delay={180} className="relative inline-block pb-2 font-extrabold italic">
+            au bon moment
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 300 20"
+              preserveAspectRatio="none"
+              className="absolute -bottom-1 left-0 h-4 w-full md:h-5"
+            >
+              <path
+                d="M4 14 C 70 4, 150 4, 296 10"
+                pathLength="1"
+                fill="none"
+                stroke="rgb(var(--corail))"
+                strokeWidth="6"
+                strokeLinecap="round"
+                className="trait-dessine [animation-delay:900ms]"
+              />
+            </svg>
           </Reveal>
-          <Reveal as="span" delay={280} className="block text-content">
-            Sans conflit.
+          <Reveal as="span" delay={280} className="block">
+            et sans conflit.
           </Reveal>
         </h1>
 
@@ -164,8 +186,8 @@ export function LandingHero() {
         </Reveal>
 
         <Reveal delay={460} className="mt-8 flex flex-wrap justify-center gap-3">
-          <Button to="/connexion" size="lg" iconRight={ArrowRight}>
-            Se connecter
+          <Button to="/connexion" size="lg" variant="corail" iconRight={ArrowRight} className="pl-6">
+            Démarrer maintenant
           </Button>
           <Button href="#fonctionnalites" variant="secondary" size="lg">
             Découvrir les fonctionnalités

@@ -71,7 +71,7 @@ export function Sidebar() {
         onClick={() => navigate('/app/reservation/besoin')}
         aria-label="Nouvelle réservation"
         title="Nouvelle réservation"
-        className="pression mb-3 flex h-11 w-11 items-center justify-center gap-2 rounded-full bg-accent text-sm font-medium text-ink shadow-bouton transition-[background-color,box-shadow,transform,scale] hover:-translate-y-px hover:bg-accent-hover hover:shadow-haute lg:w-full"
+        className="pression mb-3 flex h-11 w-11 items-center justify-center gap-2 rounded-full bg-corail text-sm font-semibold text-[#0C1547] shadow-[0_12px_26px_-12px_rgb(255_128_83/0.85)] transition-[filter,box-shadow,transform,scale] hover:-translate-y-px hover:brightness-105 lg:w-full"
       >
         <Plus size={18} aria-hidden="true" />
         <span className="hidden lg:inline">Nouvelle réservation</span>
@@ -93,8 +93,16 @@ export function Sidebar() {
             aria-label={item.label}
             title={item.label}
           >
-            <item.icon size={19} aria-hidden="true" className="shrink-0" />
-            <span className="hidden truncate lg:inline">{item.label}</span>
+            {({ isActive }) => (
+              <>
+                <item.icon
+                  size={19}
+                  aria-hidden="true"
+                  className={cn('shrink-0 transition-colors', isActive && 'text-accent')}
+                />
+                <span className="hidden truncate lg:inline">{item.label}</span>
+              </>
+            )}
           </NavLink>
         ))}
       </nav>

@@ -153,8 +153,8 @@ export function LandingDemo() {
   return (
     <section id="demo" className="scroll-mt-24">
       <div className="mx-auto w-full max-w-6xl px-4 py-20 sm:py-28">
-        <Reveal as="h2" className="font-display text-3xl font-semibold tracking-[-0.03em] text-content sm:text-5xl">
-          La démonstration en vidéo
+        <Reveal as="h2" className="font-display text-3xl font-normal tracking-[-0.02em] text-content sm:text-5xl">
+          La démonstration <span className="font-extrabold italic">en vidéo</span>
         </Reveal>
         <Reveal
           as="p"
@@ -198,7 +198,7 @@ export function LandingDemo() {
                 onClick={lancerALaMain}
                 className="group absolute inset-2 flex flex-col items-center justify-center gap-3 rounded-[26px] bg-surface/30 backdrop-blur-md transition hover:bg-surface/10"
               >
-                <span className="flex h-20 w-20 items-center justify-center rounded-full bg-accent text-ink shadow-haute transition duration-500 ease-ressort group-hover:scale-110">
+                <span className="flex h-20 w-20 items-center justify-center rounded-full bg-corail text-[#0C1547] shadow-haute transition duration-500 ease-ressort group-hover:scale-110">
                   <Play size={30} aria-hidden="true" className="ml-1 fill-current" />
                 </span>
                 <span className="text-sm text-content">Lancer la démonstration</span>
@@ -217,7 +217,7 @@ export function LandingDemo() {
                 aria-current={rang === chapitre ? 'true' : undefined}
                 className={`pression inline-flex min-h-[44px] items-center gap-2 rounded-full px-4 text-xs font-medium transition-colors ${
                   rang === chapitre
-                    ? 'bg-accent text-ink shadow-bouton'
+                    ? 'bg-corail text-[#0C1547] shadow-[0_10px_22px_-10px_rgb(255_128_83/0.8)]'
                     : 'verre text-content-muted hover:text-content'
                 }`}
               >

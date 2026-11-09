@@ -28,15 +28,15 @@ export function LandingSteps() {
   return (
     <section id="fonctionnement" className="scroll-mt-24">
       <div className="mx-auto w-full max-w-6xl px-4 py-20 sm:py-28">
-        <Reveal as="h2" className="font-display text-3xl font-semibold tracking-[-0.03em] text-content sm:text-5xl">
-          Comment ça marche
+        <Reveal as="h2" className="font-display text-3xl font-normal tracking-[-0.02em] text-content sm:text-5xl">
+          Comment ça <span className="font-extrabold italic">marche</span>
         </Reveal>
 
         <ol className="mt-8 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
           {STEPS.map((step, index) => (
             <Reveal as="li" key={step.number} delay={index * 90}>
-              <span className="group block h-full rounded-2xl border border-line/70 bg-surface/80 shadow-carte rounded-3xl p-6 transition duration-500 ease-ressort hover:-translate-y-1.5 hover:shadow-haute">
-                <span className="inline-block font-display text-4xl font-semibold tracking-tight text-content-faint transition-colors duration-300 group-hover:text-content">
+              <span className="group block h-full rounded-[28px] border border-line/70 bg-surface/80 p-6 shadow-carte transition duration-500 ease-ressort hover:-translate-y-1.5 hover:shadow-haute">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-corail/15 font-display text-lg font-extrabold italic text-[#E8613A] transition-all duration-500 ease-ressort group-hover:scale-110 group-hover:bg-corail group-hover:text-[#0C1547]">
                   {step.number}
                 </span>
                 <span className="mt-4 block text-base font-semibold tracking-tight text-content">{step.title}</span>

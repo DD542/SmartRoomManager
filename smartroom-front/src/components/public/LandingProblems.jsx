@@ -19,8 +19,8 @@ const PROBLEMS = [
   },
   {
     icon: Search,
-    tone: 'text-content',
-    ring: 'border-transparent bg-content/[0.06]',
+    tone: 'text-[#E8613A]',
+    ring: 'border-transparent bg-corail/15',
     title: '15 min perdues par recherche',
     body: 'Temps moyen passé par les collaborateurs pour trouver une salle disponible.',
   },
@@ -31,8 +31,8 @@ export function LandingProblems() {
   return (
     <section>
       <div className="mx-auto w-full max-w-6xl px-4 py-20 sm:py-28">
-        <Reveal as="h2" className="mx-auto max-w-md text-center font-display text-3xl font-semibold leading-tight tracking-[-0.03em] text-content sm:text-5xl">
-          La réalité de la gestion d’espace aujourd’hui
+        <Reveal as="h2" className="mx-auto max-w-md text-center font-display text-3xl font-normal leading-tight tracking-[-0.02em] text-content sm:text-5xl">
+          La réalité de la gestion d’espace <span className="font-extrabold italic">aujourd’hui</span>
         </Reveal>
 
         <div className="mt-10 grid gap-3 md:grid-cols-3">

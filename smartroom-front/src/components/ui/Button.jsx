@@ -4,15 +4,22 @@ import { Loader2 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
 const VARIANTS = {
-  // Graphite plein, comme « Se connecter » et « Réserver cette salle » sur la
-  // maquette : la seule surface opaque et sombre de l'écran, l'œil y va droit.
-  // Le bouton se soulève d'un pixel au survol et retombe sous le doigt : le
+  // Marine plein en thème clair, corail en sombre : la surface la plus dense
+  // de l'écran, l'œil y va droit. Le bouton se soulève d'un pixel au survol et retombe sous le doigt : le
   // geste de la première version, gardé avec la pression à ressort.
   primary:
     'bg-accent text-ink hover:bg-accent-hover border border-transparent shadow-bouton ' +
     'hover:-translate-y-px hover:shadow-haute',
+  // Corail, l'appel à l'action de MentorGoal. Le texte est marine et non
+  // blanc : le blanc ne tient que 2,6:1 sur ce corail, le marine 7:1. La
+  // flèche, elle, se pose dans une pastille blanche qui glisse au survol.
+  corail:
+    'group/corail bg-corail text-[#0C1547] border border-transparent font-semibold ' +
+    'shadow-[0_12px_28px_-12px_rgb(255_128_83/0.85)] hover:-translate-y-px hover:brightness-105',
   // Verre : un bouton secondaire se pose sur le décor au lieu de le masquer.
   secondary: 'verre text-content border border-transparent hover:bg-surface/90',
+  // Fantôme posé sur la barre marine : blanc quel que soit le thème.
+  'ghost-marine': 'bg-transparent text-white/80 border border-transparent hover:bg-white/10 hover:text-white',
   ghost: 'bg-transparent text-content-muted border border-transparent hover:bg-content/[0.06] hover:text-content',
   danger: 'bg-transparent text-danger border border-danger/40 hover:bg-danger/10',
   'danger-solid': 'bg-danger text-ink border border-transparent hover:brightness-110',
@@ -84,7 +91,14 @@ export const Button = forwardRef(function Button(
         Icon && <Icon size={16} aria-hidden="true" />
       )}
       {children}
-      {IconRight && !loading && <IconRight size={16} aria-hidden="true" />}
+      {IconRight && !loading &&
+        (variant === 'corail' ? (
+          <span className="-mr-2 ml-1 flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#E8613A] transition-transform duration-500 ease-ressort group-hover/corail:translate-x-0.5">
+            <IconRight size={16} aria-hidden="true" />
+          </span>
+        ) : (
+          <IconRight size={16} aria-hidden="true" />
+        ))}
     </>
   );
 

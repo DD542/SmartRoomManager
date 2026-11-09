@@ -49,6 +49,13 @@ export default {
           DEFAULT: 'rgb(var(--danger) / <alpha-value>)',
           soft: 'rgb(var(--danger-soft))',
         },
+        // Teintes de marque : pastilles, décors, cartes de couleur.
+        marine: 'rgb(var(--marine) / <alpha-value>)',
+        corail: 'rgb(var(--corail) / <alpha-value>)',
+        framboise: 'rgb(var(--framboise) / <alpha-value>)',
+        lavande: 'rgb(var(--lavande) / <alpha-value>)',
+        peche: 'rgb(var(--peche) / <alpha-value>)',
+        creme: 'rgb(var(--creme) / <alpha-value>)',
         content: {
           DEFAULT: 'rgb(var(--content) / <alpha-value>)',
           muted: 'rgb(var(--content-muted) / <alpha-value>)',
@@ -56,10 +63,10 @@ export default {
         },
       },
       fontFamily: {
-        // SF Pro sur les appareils Apple, Inter ailleurs : la même famille de
-        // grotesques à chasse serrée.
-        sans: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Text', 'Inter', 'ui-sans-serif', 'system-ui', 'Segoe UI', 'sans-serif'],
-        display: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        // Plus Jakarta Sans, la police de MentorGoal : géométrique, douce, avec
+        // un italique gras qui porte les mots mis en avant dans les titres.
+        sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'Inter', 'ui-sans-serif', 'system-ui', 'Segoe UI', 'sans-serif'],
+        display: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         mono: ['ui-monospace', 'JetBrains Mono', 'SFMono-Regular', 'Consolas', 'monospace'],
       },
       borderRadius: {

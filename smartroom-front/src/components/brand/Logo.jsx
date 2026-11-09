@@ -36,11 +36,12 @@ export function LogoMark({ size = 28, className }) {
 
 /**
  * Logo complet : monogramme et nom sur deux lignes, comme la barre latérale
- * de la maquette. `compact` ne garde que le monogramme.
+ * de la maquette. `compact` ne garde que le monogramme, `inverse` le passe
+ * en blanc pour les fonds marine.
  */
-export function Logo({ compact = false, size = 30, className }) {
+export function Logo({ compact = false, size = 30, inverse = false, className }) {
   return (
-    <span className={cn('inline-flex items-center gap-2.5 text-content', className)}>
+    <span className={cn('inline-flex items-center gap-2.5', inverse ? 'text-white' : 'text-content', className)}>
       <LogoMark size={size} />
       {!compact && (
         <span className="font-display text-[15px] font-semibold leading-[1.1] tracking-tight">

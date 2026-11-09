@@ -19,15 +19,15 @@ export const AXIS = {
 };
 
 // Palette de séries : des teintes franches, distinguables aussi en niveaux de
-// gris (bleu, vert, jaune, violet, corail). Les quatre premières suivent les
+// gris (bleu, vert, jaune, corail, framboise). Les quatre premières suivent les
 // jetons d'état, qui s'assombrissent en thème clair — un jaune de fond sombre
-// serait illisible sur du blanc. Le violet n'a pas de jeton et porte donc ses
+// serait illisible sur du blanc. Le corail n'a pas de jeton et porte donc ses
 // deux valeurs, choisies au même écart de luminance que ses voisines.
 export const SLICES = [
   'rgb(var(--accent))',
   'rgb(var(--success))',
   'rgb(var(--warning))',
-  'var(--serie-violette)',
+  'var(--serie-corail)',
   'rgb(var(--danger))',
 ];
 

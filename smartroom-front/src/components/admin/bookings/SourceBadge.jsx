@@ -9,7 +9,7 @@ import { Badge } from '../../ui/Badge';
  */
 export const SOURCE_META = {
   utilisateur: { label: 'Utilisateur', tone: 'default', icon: User, couleur: 'rgb(var(--accent))' },
-  admin: { label: 'Administration', tone: 'accent', icon: CalendarCog, couleur: 'var(--serie-violette)' },
+  admin: { label: 'Administration', tone: 'accent', icon: CalendarCog, couleur: 'var(--serie-corail)' },
   recurrente: { label: 'Récurrente', tone: 'success', icon: Repeat, couleur: 'rgb(var(--success))' },
   blocage: { label: 'Blocage', tone: 'warning', icon: ShieldOff, couleur: 'rgb(var(--warning))' },
 };

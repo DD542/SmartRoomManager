@@ -13,38 +13,51 @@
      avec une variable hexadécimale, tous auraient perdu leur transparence sans
      que rien ne le signale.
 
-     Charte inspirée de ChatGPT : des neutres purs — blanc, gris clairs,
-     graphite —, sans aucune teinte bleutée ni dégradé de couleur. La couleur
-     est réservée aux états : le vert de ChatGPT pour « disponible » et
-     « réussi », l'ambre et le rouge pour les alertes. L'accent n'est plus un bleu mais l'encre elle-même : noir sur le
-     thème clair, blanc sur le sombre. `text-ink` sur `bg-accent` reste donc
-     lisible dans les deux sens, l'encre et l'accent s'inversant ensemble. */
+     Charte inspirée de MentorGoal : un bleu marine profond pour la
+     structure (titres, navigation, boutons), un corail chaleureux pour les
+     appels à l'action, une framboise et une lavande en appoint, des cartes
+     crème et un halo pêche derrière les pages.
+
+     Sur le thème clair, l'accent est le marine : `text-ink` (presque blanc)
+     sur `bg-accent` tient 11:1. Sur le sombre, la page devient marine et
+     l'accent passe au corail, où l'encre marine tient 7:1. Le corail plein
+     ne porte jamais de texte blanc : 2,6:1, illisible. */
   :root {
     color-scheme: dark;
 
-    --ink: 33 33 33;
-    --ink-soft: 23 23 23;
-    --surface: 47 47 47;
-    --surface-raised: 58 58 58;
-    --line: 64 64 64;
-    --line-strong: 86 86 86;
-    --accent: 236 236 236;
-    --accent-hover: 210 210 210;
-    --accent-bright: 255 255 255;
-    --success: 25 195 125;
+    --ink: 12 21 71;
+    --ink-soft: 9 15 52;
+    --surface: 24 34 92;
+    --surface-raised: 33 45 112;
+    --line: 48 60 132;
+    --line-strong: 70 84 156;
+    --accent: 255 128 83;
+    --accent-hover: 255 150 112;
+    --accent-bright: 255 163 130;
+    --success: 74 222 128;
     --warning: 251 191 36;
-    --danger: 248 113 113;
-    --content: 236 236 236;
-    --content-muted: 180 180 180;
-    --content-faint: 150 150 150;
+    --danger: 255 128 160;
+    --content: 248 244 241;
+    --content-muted: 198 204 232;
+    --content-faint: 156 164 206;
+
+    /* Teintes de marque, utilisables en pastilles et en décors. */
+    --marine: 206 213 251;
+    --corail: 255 128 83;
+    --framboise: 255 128 160;
+    /* Halos assourdis sur le marine : à pleine clarté, ils blanchissaient
+       la page au lieu de l'éclairer. */
+    --lavande: 110 124 214;
+    --peche: 196 120 96;
+    --creme: 33 45 112;
 
     /* Fonds teintés. Ils portent leur propre alpha, ce qui permet à chaque
        thème de la régler : la même opacité ne rend pas le même effet sur un
        fond sombre et sur un fond clair. */
-    --accent-soft: 255 255 255 / 0.10;
-    --success-soft: 25 195 125 / 0.16;
+    --accent-soft: 255 128 83 / 0.16;
+    --success-soft: 74 222 128 / 0.14;
     --warning-soft: 251 191 36 / 0.14;
-    --danger-soft: 248 113 113 / 0.14;
+    --danger-soft: 255 128 160 / 0.14;
 
     /* Reflet du squelette de chargement : clair sur fond sombre. */
     --lueur: 255 255 255 / 0.07;
@@ -55,108 +68,109 @@
     --ombre-portee: 0 12px 32px rgb(0 0 0 / 0.5);
     /* Cinquieme serie des graphiques. Les quatre autres suivent les jetons
        d'etat ; celle-ci n'en a pas, et porte donc sa valeur par theme. */
-    --serie-violette: #C084FC;
+    --serie-corail: #FF8053;
 
     /* Relief. Sur fond sombre l'ombre seule ne se voit pas : un liseré
        lumineux de 1 px sur le bord haut donne l'élévation. */
-    --ombre-carte: 0 1px 0 rgb(255 255 255 / 0.05) inset, 0 1px 2px rgb(0 0 0 / 0.35), 0 12px 32px -16px rgb(0 0 0 / 0.6);
+    --ombre-carte: 0 1px 0 rgb(255 255 255 / 0.06) inset, 0 1px 2px rgb(0 0 0 / 0.35), 0 12px 32px -16px rgb(0 0 0 / 0.6);
     --ombre-haute: 0 1px 0 rgb(255 255 255 / 0.06) inset, 0 30px 80px -24px rgb(0 0 0 / 0.75);
-    --ombre-bouton: 0 1px 0 rgb(255 255 255 / 0.5) inset, 0 8px 20px -8px rgb(0 0 0 / 0.6);
+    --ombre-bouton: 0 1px 0 rgb(255 255 255 / 0.35) inset, 0 10px 24px -10px rgb(255 128 83 / 0.7);
 
     /* Verre liquide : fond translucide, bord lumineux, reflet spéculaire. */
-    --verre-fond: rgb(47 47 47 / 0.6);
-    --verre-fond-epais: rgb(38 38 38 / 0.82);
+    --verre-fond: rgb(24 34 92 / 0.6);
+    --verre-fond-epais: rgb(18 27 82 / 0.82);
     --verre-reflet-haut: rgb(255 255 255 / 0.28);
     --verre-reflet-bas: rgb(255 255 255 / 0.06);
     --verre-ombre: 0 1px 0 rgb(255 255 255 / 0.10) inset, 0 -1px 0 rgb(255 255 255 / 0.03) inset, 0 18px 40px -18px rgb(0 0 0 / 0.7);
     --verre-bulle: rgb(255 255 255 / 0.12);
 
-    /* Brume d'ambiance posée derrière les pages. */
-    /* Brume grise de la première version, en gris pur : le verre a de quoi
-       flouter, sans que la page prenne une teinte. */
-    --brume-1: rgb(150 150 150 / 0.20);
-    --brume-2: rgb(100 100 100 / 0.18);
-    --brume-3: rgb(255 255 255 / 0.05);
+    /* Halo d'ambiance : corail et lavande sur le marine. */
+    --brume-1: rgb(255 128 83 / 0.18);
+    --brume-2: rgb(206 213 251 / 0.12);
+    --brume-3: rgb(204 51 102 / 0.14);
 
     /* Echelle de la carte de chaleur, cinq crans du plus froid au plus chaud.
        Elle vit ici parce que sa logique s'inverse d'un theme a l'autre. */
-    --chaleur-1: rgb(255 255 255 / 0.06);
-    --chaleur-1-bord: rgb(255 255 255 / 0.12);
-    --chaleur-2: rgb(255 255 255 / 0.16);
-    --chaleur-2-bord: rgb(255 255 255 / 0.22);
-    --chaleur-3: rgb(255 255 255 / 0.32);
-    --chaleur-3-bord: rgb(255 255 255 / 0.40);
-    --chaleur-4: rgb(134 239 172 / 0.55);
-    --chaleur-4-bord: rgb(134 239 172 / 0.65);
-    --chaleur-5: rgb(74 222 128 / 0.90);
-    --chaleur-5-bord: rgb(74 222 128 / 1);
+    --chaleur-1: rgb(206 213 251 / 0.08);
+    --chaleur-1-bord: rgb(206 213 251 / 0.16);
+    --chaleur-2: rgb(206 213 251 / 0.22);
+    --chaleur-2-bord: rgb(206 213 251 / 0.30);
+    --chaleur-3: rgb(255 163 130 / 0.40);
+    --chaleur-3-bord: rgb(255 163 130 / 0.50);
+    --chaleur-4: rgb(255 128 83 / 0.65);
+    --chaleur-4-bord: rgb(255 128 83 / 0.75);
+    --chaleur-5: rgb(255 128 83 / 0.92);
+    --chaleur-5-bord: rgb(255 128 83 / 1);
   }
 
-  /* Thème clair, celui de la maquette : gris brumeux, cartes de verre
-     blanches, boutons graphite. Chaque paire de texte tient le seuil AA de
-     4,5:1 — contenu 18:1 sur une carte, secondaire 7,6:1, libellés discrets
-     4,8:1. Les teintes d'état sont assombries : un vert vif ne donne que
-     1,6:1 sur du blanc. */
+  /* Thème clair : page blanche réchauffée, cartes crème, titres et boutons
+     marine, corail pour les appels à l'action. Chaque paire de texte tient le
+     seuil AA de 4,5:1 — contenu 16:1 sur blanc, secondaire 7:1, libellés
+     discrets 4,8:1, framboise 4,9:1. */
   :root[data-theme='clair'] {
     color-scheme: light;
 
-    --ink: 240 240 240;
-    --ink-soft: 232 232 232;
+    --ink: 253 251 249;
+    --ink-soft: 248 244 241;
     --surface: 255 255 255;
-    --surface-raised: 244 244 244;
-    --line: 229 229 229;
-    --line-strong: 205 205 205;
-    --accent: 13 13 13;
-    --accent-hover: 64 64 64;
-    --accent-bright: 13 13 13;
-    /* Le vert de ChatGPT, assombri d'un cran : #10A37F ne donne que 3,2:1
-       sur du blanc. Celui-ci tient 4,9:1. */
-    --success: 11 128 99;
+    --surface-raised: 248 244 241;
+    --line: 236 230 225;
+    --line-strong: 214 206 200;
+    --accent: 38 49 113;
+    --accent-hover: 28 37 92;
+    --accent-bright: 38 49 113;
+    --success: 21 128 61;
     --warning: 146 90 0;
-    --danger: 196 38 38;
-    --content: 13 13 13;
-    --content-muted: 93 93 93;
-    --content-faint: 112 112 112;
+    --danger: 204 51 102;
+    --content: 12 21 71;
+    --content-muted: 72 80 116;
+    --content-faint: 105 114 125;
 
-    --accent-soft: 13 13 13 / 0.06;
-    --success-soft: 16 163 127 / 0.12;
+    --marine: 38 49 113;
+    --corail: 255 128 83;
+    --framboise: 204 51 102;
+    --lavande: 206 213 251;
+    --peche: 241 207 181;
+    --creme: 248 244 241;
+
+    --accent-soft: 38 49 113 / 0.08;
+    --success-soft: 21 128 61 / 0.10;
     --warning-soft: 146 90 0 / 0.10;
-    --danger-soft: 196 38 38 / 0.09;
+    --danger-soft: 204 51 102 / 0.10;
 
     /* Un reflet blanc sur un fond clair ne se voit pas : il devient sombre. */
-    --lueur: 22 22 24 / 0.06;
+    --lueur: 12 21 71 / 0.06;
     --inversion-calendrier: none;
-    --ombre-portee: 0 12px 32px rgb(22 22 24 / 0.12);
-    --serie-violette: #7C3AED;
+    --ombre-portee: 0 12px 32px rgb(12 21 71 / 0.14);
+    --serie-corail: #E8613A;
 
-    --ombre-carte: 0 1px 2px rgb(22 22 24 / 0.04), 0 12px 32px -18px rgb(22 22 24 / 0.18);
-    --ombre-haute: 0 30px 80px -28px rgb(22 22 24 / 0.35);
-    --ombre-bouton: 0 1px 0 rgb(255 255 255 / 0.18) inset, 0 8px 18px -8px rgb(22 22 24 / 0.55);
+    --ombre-carte: 0 1px 2px rgb(12 21 71 / 0.05), 0 14px 34px -18px rgb(12 21 71 / 0.20);
+    --ombre-haute: 0 30px 80px -28px rgb(12 21 71 / 0.38);
+    --ombre-bouton: 0 1px 0 rgb(255 255 255 / 0.18) inset, 0 10px 22px -10px rgb(38 49 113 / 0.6);
 
-    --verre-fond: rgb(255 255 255 / 0.7);
+    --verre-fond: rgb(255 255 255 / 0.72);
     --verre-fond-epais: rgb(255 255 255 / 0.86);
     --verre-reflet-haut: rgb(255 255 255 / 0.95);
     --verre-reflet-bas: rgb(255 255 255 / 0.35);
-    --verre-ombre: 0 1px 0 rgb(255 255 255 / 0.9) inset, 0 -1px 0 rgb(255 255 255 / 0.4) inset, 0 18px 40px -20px rgb(22 22 24 / 0.28);
-    --verre-bulle: rgb(255 255 255 / 0.85);
+    --verre-ombre: 0 1px 0 rgb(255 255 255 / 0.9) inset, 0 -1px 0 rgb(255 255 255 / 0.4) inset, 0 18px 40px -20px rgb(12 21 71 / 0.22);
+    --verre-bulle: rgb(255 255 255 / 0.9);
 
-    /* Brume grise de la première version : nappes blanches et grises que
-       le verre floute. Gris purs, sans la nuance bleutée d'alors. */
-    --brume-1: rgb(255 255 255 / 0.9);
-    --brume-2: rgb(200 200 200 / 0.6);
-    --brume-3: rgb(255 255 255 / 0.7);
+    /* Halo pêche et lavande, comme le bandeau d'ouverture de MentorGoal. */
+    --brume-1: rgb(241 207 181 / 0.75);
+    --brume-2: rgb(206 213 251 / 0.65);
+    --brume-3: rgb(255 163 130 / 0.30);
 
     /* Progression inverse : la chaleur se marque en assombrissant. */
-    --chaleur-1: rgb(22 22 24 / 0.05);
-    --chaleur-1-bord: rgb(22 22 24 / 0.10);
-    --chaleur-2: rgb(22 22 24 / 0.14);
-    --chaleur-2-bord: rgb(22 22 24 / 0.20);
-    --chaleur-3: rgb(22 22 24 / 0.30);
-    --chaleur-3-bord: rgb(22 22 24 / 0.38);
-    --chaleur-4: rgb(21 128 61 / 0.55);
-    --chaleur-4-bord: rgb(21 128 61 / 0.65);
-    --chaleur-5: rgb(21 128 61 / 0.85);
-    --chaleur-5-bord: rgb(21 128 61 / 0.95);
+    --chaleur-1: rgb(38 49 113 / 0.06);
+    --chaleur-1-bord: rgb(38 49 113 / 0.12);
+    --chaleur-2: rgb(38 49 113 / 0.16);
+    --chaleur-2-bord: rgb(38 49 113 / 0.24);
+    --chaleur-3: rgb(255 128 83 / 0.40);
+    --chaleur-3-bord: rgb(255 128 83 / 0.50);
+    --chaleur-4: rgb(255 128 83 / 0.70);
+    --chaleur-4-bord: rgb(255 128 83 / 0.80);
+    --chaleur-5: rgb(232 97 58 / 0.95);
+    --chaleur-5-bord: rgb(232 97 58 / 1);
   }
 
   html,
@@ -174,14 +188,17 @@
       radial-gradient(60rem 36rem at 100% 10%, var(--brume-2), transparent 60%),
       radial-gradient(50rem 30rem at 50% 110%, var(--brume-3), transparent 60%);
     background-attachment: fixed;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01', 'tnum';
-    letter-spacing: -0.006em;
+    font-feature-settings: 'tnum';
+    /* Plus Jakarta Sans a une espace étroite : resserrer les lettres collait
+       les mots entre eux (« Trouvezla »). On laisse l'approche d'origine. */
+    letter-spacing: 0;
   }
 
   h1,
   h2,
   h3 {
-    letter-spacing: -0.022em;
+    letter-spacing: -0.015em;
+    word-spacing: 0.04em;
   }
 
   /* Focus visible non négociable : WCAG 2.1 AA, jamais supprimé. */
@@ -368,6 +385,42 @@
 @keyframes apparition-photo {
   from { opacity: 0; transform: scale(1.08); filter: blur(12px); }
   to { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+/* Halo de couleur qui dérive lentement : la lumière bouge derrière le verre,
+   comme sur les pages produit d'Apple. Douze secondes, à peine perceptible. */
+@keyframes derive {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(4%, -3%) scale(1.08); }
+  66% { transform: translate(-3%, 4%) scale(0.95); }
+}
+
+.halo-derive {
+  animation: derive 14s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Trait qui se dessine : soulignement corail et rubans décoratifs. Le tracé
+   est mis à `pathLength="1"`, son décalage passe de 1 à 0. */
+@keyframes dessin {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+
+.ruban path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+/* Le ruban attend que sa carte entre dans la fenêtre pour se dessiner. */
+.reveal[data-visible='true'] .ruban path {
+  animation: dessin 2.2s cubic-bezier(0.65, 0, 0.35, 1) 0.3s forwards;
+}
+
+.trait-dessine {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: dessin 1.4s cubic-bezier(0.65, 0, 0.35, 1) forwards;
 }
 
 /* Main qui salue, une seule fois. */

@@ -25,8 +25,8 @@ export function LandingFaq() {
   return (
     <section id="faq" className="scroll-mt-24">
       <div className="mx-auto w-full max-w-3xl px-4 py-20 sm:py-28">
-        <Reveal as="h2" className="font-display text-3xl font-semibold tracking-[-0.03em] text-content sm:text-5xl">
-          Questions fréquentes
+        <Reveal as="h2" className="font-display text-3xl font-normal tracking-[-0.02em] text-content sm:text-5xl">
+          Questions <span className="font-extrabold italic">fréquentes</span>
         </Reveal>
 
         <div className="mt-6 flex flex-col gap-2">

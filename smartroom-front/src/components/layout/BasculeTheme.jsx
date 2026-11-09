@@ -14,7 +14,7 @@ import { useTheme } from '../../hooks/useTheme';
  * libellé accessible. Montrer l'état actuel laisserait le doute sur l'effet du
  * clic.
  */
-export function BasculeTheme({ className }) {
+export function BasculeTheme({ className, variant }) {
   const { clair, basculer } = useTheme();
 
   return (
@@ -22,6 +22,7 @@ export function BasculeTheme({ className }) {
       icon={clair ? Moon : Sun}
       label={clair ? 'Passer au thème sombre' : 'Passer au thème clair'}
       onClick={basculer}
+      variant={variant}
       className={className}
     />
   );

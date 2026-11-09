@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, Outlet } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { BasculeTheme } from '../components/layout/BasculeTheme';
 import { Logo } from '../components/brand/Logo';
@@ -47,35 +48,37 @@ export default function PublicLayout() {
         Aller au contenu principal
       </a>
 
-      {/* En haut de page, l'en-tête occupe toute la largeur et se fond dans le
-          bandeau d'ouverture ; dès que le contenu passe dessous, il se
-          resserre en une pilule de verre flottante — le geste des barres
-          d'outils de Safari. Sans fond, le texte défilant viendrait buter
-          dans les liens. */}
+      {/* Barre marine flottante, comme celle de MentorGoal : toujours
+          lisible sur le halo du bandeau. Elle se resserre d'un cran quand le
+          contenu passe dessous, avec la courbe des feuilles d'iOS. Le marine
+          est fixé et non tiré du thème : la barre reste la signature de la
+          marque, en clair comme en sombre. */}
       <header className="sticky top-0 z-topbar px-3 pt-3">
         <div
           className={cn(
-            'mx-auto flex h-14 w-full items-center justify-between gap-4 rounded-full px-3 transition-all duration-700 ease-feuille',
-            defilee ? 'verre max-w-4xl shadow-haute' : 'max-w-6xl',
+            'mx-auto flex h-16 w-full items-center justify-between gap-4 rounded-[22px] bg-[#263171] px-4 text-white ring-1 ring-white/10 transition-all duration-700 ease-feuille',
+            defilee
+              ? 'max-w-5xl shadow-[0_18px_40px_-18px_rgb(12_21_71/0.65)]'
+              : 'max-w-6xl shadow-[0_10px_30px_-18px_rgb(12_21_71/0.5)]',
           )}
         >
           <Link to="/" aria-label="SmartRoom Manager, accueil" className="pression flex items-center gap-2 pl-1">
-            <Logo size={26} className="[&>span]:text-[13px]" />
+            <Logo inverse size={26} className="[&>span]:text-[13px]" />
           </Link>
           <nav aria-label="Navigation du site" className="hidden items-center gap-1 md:flex">
             {LINKS.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                className="pression rounded-full px-3.5 py-1.5 text-sm text-content-muted transition-colors hover:bg-content/[0.06] hover:text-content"
+                className="pression rounded-full px-3.5 py-1.5 text-sm font-semibold text-white/85 transition-colors hover:bg-white/10 hover:text-white"
               >
                 {link.label}
               </a>
             ))}
           </nav>
           <div className="flex items-center gap-1.5">
-            <BasculeTheme />
-            <Button to="/connexion" size="sm">
+            <BasculeTheme variant="ghost-marine" />
+            <Button to="/connexion" size="sm" variant="corail" iconRight={ArrowRight} className="pl-4">
               Se connecter
             </Button>
           </div>
@@ -86,17 +89,17 @@ export default function PublicLayout() {
         <Outlet />
       </main>
 
-      <footer className="verre mx-3 mb-3 rounded-3xl">
-        <div className="mx-auto grid w-full max-w-6xl gap-8 px-6 py-10 text-xs text-content-muted sm:grid-cols-2 md:grid-cols-4">
+      <footer className="mx-3 mb-3 rounded-[28px] bg-[#263171] text-white">
+        <div className="mx-auto grid w-full max-w-6xl gap-8 px-6 py-10 text-xs text-white/75 sm:grid-cols-2 md:grid-cols-4">
           <div>
-            <Logo size={26} />
+            <Logo inverse size={26} />
             <p className="mt-2 leading-relaxed">
               Réservation intelligente des salles : disponibilités en temps réel, détection des
               conflits et recommandation automatique.
             </p>
           </div>
           <div>
-            <p className="font-medium tracking-tight text-content">Produit</p>
+            <p className="font-medium tracking-tight text-white">Produit</p>
             <ul className="mt-2 space-y-1.5">
               <li>Fonctionnalités</li>
               <li>Calendrier</li>
@@ -104,10 +107,10 @@ export default function PublicLayout() {
             </ul>
           </div>
           <div>
-            <p className="font-medium tracking-tight text-content">Support</p>
+            <p className="font-medium tracking-tight text-white">Support</p>
             <ul className="mt-2 space-y-1.5">
               <li>
-                <Link to="/app/aide" className="transition hover:text-content">
+                <Link to="/app/aide" className="transition hover:text-white">
                   Centre d’aide
                 </Link>
               </li>
@@ -115,31 +118,31 @@ export default function PublicLayout() {
             </ul>
           </div>
           <div>
-            <p className="font-medium tracking-tight text-content">Légal</p>
+            <p className="font-medium tracking-tight text-white">Légal</p>
             {/* Trois libellés, une seule page : confidentialité, mentions et
                 RGPD y sont trois sections. Les annoncer séparément pour mener
                 au même endroit vaut mieux que trois pages qui se répètent —
                 mais ils mènent quelque part, ce qui n'était pas le cas. */}
             <ul className="mt-2 space-y-1.5">
               <li>
-                <Link to="/mentions-legales" className="transition hover:text-content">
+                <Link to="/mentions-legales" className="transition hover:text-white">
                   Confidentialité
                 </Link>
               </li>
               <li>
-                <Link to="/mentions-legales" className="transition hover:text-content">
+                <Link to="/mentions-legales" className="transition hover:text-white">
                   Mentions légales
                 </Link>
               </li>
               <li>
-                <Link to="/mentions-legales" className="transition hover:text-content">
+                <Link to="/mentions-legales" className="transition hover:text-white">
                   RGPD
                 </Link>
               </li>
             </ul>
           </div>
         </div>
-        <p className="px-4 pb-6 text-center text-xs text-content-faint">
+        <p className="px-4 pb-6 text-center text-xs text-white/60">
           © 2026 SmartRoom Manager. Tous droits réservés.
         </p>
       </footer>
