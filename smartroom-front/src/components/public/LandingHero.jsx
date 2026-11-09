@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, Zap } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useAsync } from '../../hooks/useAsync';
 import { prefersReducedMotion, useInView } from '../../hooks/useInView';
 import { getPublicStats } from '../../api/stats';
@@ -135,15 +135,7 @@ export function LandingHero() {
   return (
     <section className="overflow-hidden">
       <div className="mx-auto w-full max-w-6xl px-4 pb-16 pt-14 text-center md:pb-24 md:pt-24">
-        <Reveal
-          as="p"
-          className="verre inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium text-content-muted"
-        >
-          <Zap size={12} aria-hidden="true" className="text-content" />
-          Réservation intelligente de salles
-        </Reveal>
-
-        <h1 className="mx-auto mt-6 max-w-4xl font-display text-[44px] font-semibold leading-[1.04] tracking-[-0.035em] sm:text-6xl md:text-[80px]">
+        <h1 className="mx-auto max-w-4xl font-display text-[44px] font-semibold leading-[1.04] tracking-[-0.035em] sm:text-6xl md:text-[80px]">
           <Reveal as="span" delay={80} className="block text-content">
             Trouvez la bonne salle.
           </Reveal>
