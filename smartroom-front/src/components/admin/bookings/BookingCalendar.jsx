@@ -12,6 +12,40 @@ import { SegmentedControl } from '../../ui/Tabs';
 import { SOURCE_META } from './SourceBadge';
 import '../../bookings/calendar.css';
 
+/**
+ * Une couleur par salle, stable d'un jour à l'autre : la même salle garde sa
+ * teinte, qu'on la cherche lundi ou jeudi. Huit teintes assez vives pour se
+ * distinguer côte à côte, assez sourdes pour porter du texte une fois fondues
+ * dans la surface.
+ */
+const TEINTES_SALLES = [
+  '#4F63D2', // bleu
+  '#FF8053', // corail
+  '#14A38B', // vert d'eau
+  '#E0A100', // ambre
+  '#CC3366', // framboise
+  '#2E9BD6', // cyan
+  '#5BA84F', // vert
+  '#7C8BE8', // pervenche
+];
+
+/**
+ * Attribue les teintes dans l'ordre alphabétique des salles présentes.
+ * Une empreinte du nom donnait la même couleur à des salles voisines dans la
+ * journée ; ici, deux salles qui se suivent ne partagent jamais leur teinte,
+ * et une salle garde la sienne tant que le parc affiché ne change pas.
+ */
+function teintesParSalle(bookings) {
+  const noms = [...new Set(bookings.map((b) => b.room?.name ?? ''))].sort((x, y) =>
+    x.localeCompare(y, 'fr'),
+  );
+  return new Map(noms.map((nom, rang) => [nom, TEINTES_SALLES[rang % TEINTES_SALLES.length]]));
+}
+
+/** Fond plein : la teinte fondue dans la surface, et non posée en transparence.
+ *  Deux créneaux qui se chevauchent restent ainsi lisibles l'un sur l'autre. */
+const fondTeinte = (couleur) => `color-mix(in srgb, ${couleur} 20%, rgb(var(--surface)))`;
+
 const VUES = [
   { value: 'timeGridDay', label: 'Jour' },
   { value: 'timeGridWeek', label: 'Semaine' },
@@ -23,8 +57,13 @@ const VUES = [
  * A-03 — vue calendrier de toutes les réservations.
  *
  * Contrairement au calendrier utilisateur, celui-ci couvre toutes les salles :
- * l'événement porte donc le nom de la salle, et sa couleur rappelle l'origine
- * de la réservation. Aucun créneau n'y est sélectionnable — la création passe
+ * l'événement porte le nom de la salle, et sa couleur est celle de la salle —
+ * sans quoi une matinée chargée n'était qu'un empilement de cadres identiques.
+ * L'origine de la réservation passe sur un filet épais à gauche.
+ *
+ * La couleur s'écrivait auparavant `${couleur}2E` : un suffixe d'opacité
+ * hexadécimal collé à `rgb(var(--accent))`, ce qui donnait une couleur
+ * invalide. Le navigateur l'ignorait, et tous les fonds restaient vides. Aucun créneau n'y est sélectionnable — la création passe
  * par le formulaire, seul endroit où les règles sont vérifiées.
  */
 export function BookingCalendar({ bookings = [], onSelect, isLoading }) {
@@ -33,25 +72,24 @@ export function BookingCalendar({ bookings = [], onSelect, isLoading }) {
   const [vue, setVue] = useState(compact ? 'timeGridDay' : 'timeGridWeek');
   const [titre, setTitre] = useState('');
 
-  const evenements = useMemo(
-    () =>
-      bookings
-        .filter((booking) => booking.status !== 'annulee')
-        .map((booking) => {
-          const meta = SOURCE_META[booking.source] ?? SOURCE_META.utilisateur;
-          return {
-            id: booking.id,
-            title: `${booking.room?.name ?? ''} — ${booking.title}`,
-            start: booking.start,
-            end: booking.end,
-            editable: false,
-            backgroundColor: `${meta.couleur}2E`,
-            borderColor: meta.couleur,
-            textColor: 'rgb(var(--content))',
-          };
-        }),
-    [bookings],
-  );
+  const evenements = useMemo(() => {
+    const actives = bookings.filter((booking) => booking.status !== 'annulee');
+    const teintes = teintesParSalle(actives);
+    return actives.map((booking) => {
+      const teinte = teintes.get(booking.room?.name ?? '');
+      return {
+        id: booking.id,
+        title: `${booking.room?.name ?? ''} — ${booking.title}`,
+        start: booking.start,
+        end: booking.end,
+        editable: false,
+        backgroundColor: fondTeinte(teinte),
+        borderColor: teinte,
+        textColor: 'rgb(var(--content))',
+        classNames: [`source-${booking.source ?? 'utilisateur'}`],
+      };
+    });
+  }, [bookings]);
 
   const api = () => ref.current?.getApi();
   const changerVue = (suivante) => {
@@ -115,12 +153,13 @@ export function BookingCalendar({ bookings = [], onSelect, isLoading }) {
       </div>
 
       <footer className="flex flex-wrap items-center gap-4 border-t border-line px-3 py-2.5">
+        <span className="text-xs font-medium text-content">Une couleur par salle.</span>
         {Object.entries(SOURCE_META).map(([cle, meta]) => (
           <span key={cle} className="flex items-center gap-1.5 text-xs text-content-muted">
             <span
               aria-hidden="true"
-              className="h-2.5 w-2.5 rounded border"
-              style={{ background: `${meta.couleur}2E`, borderColor: meta.couleur }}
+              className="h-3 w-3 rounded-sm border border-line-strong"
+              style={{ borderLeft: `4px solid ${meta.couleur}`, background: 'rgb(var(--surface))' }}
             />
             {meta.label}
           </span>

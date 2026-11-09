@@ -63,7 +63,9 @@ export function OverlapTimeline({ claimants = [], roomName }) {
                   style={{
                     left: `${pourcent(toDate(claimant.start).getTime())}%`,
                     width: `${pourcent(toDate(claimant.end).getTime()) - pourcent(toDate(claimant.start).getTime())}%`,
-                    background: `${PALETTE[index % PALETTE.length]}2E`,
+                    // `color-mix` et non un suffixe hexadécimal : `rgb(var(--accent))2E`
+                    // n'est pas une couleur, et le fond restait vide.
+                    background: `color-mix(in srgb, ${PALETTE[index % PALETTE.length]} 22%, rgb(var(--surface)))`,
                     borderColor: PALETTE[index % PALETTE.length],
                   }}
                 >

@@ -44,6 +44,38 @@
   padding: 2px 4px;
 }
 
+/* Calendrier de l'administration : un filet épais à gauche dit l'origine de
+   la réservation, la couleur du cadre dit la salle. */
+.smartroom-calendar .fc .fc-event[class*='source-'] {
+  border-left-width: 4px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+  transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 300ms;
+}
+.smartroom-calendar .fc .fc-event[class*='source-']:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--ombre-carte);
+  z-index: 5;
+}
+.smartroom-calendar .fc .fc-event.source-utilisateur {
+  border-left-color: rgb(var(--accent));
+}
+.smartroom-calendar .fc .fc-event.source-admin {
+  border-left-color: var(--serie-corail);
+}
+.smartroom-calendar .fc .fc-event.source-recurrente {
+  border-left-color: rgb(var(--success));
+}
+.smartroom-calendar .fc .fc-event.source-blocage {
+  border-left-color: rgb(var(--warning));
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 6px,
+    rgb(var(--warning) / 0.12) 6px,
+    rgb(var(--warning) / 0.12) 12px
+  );
+}
+
 .smartroom-calendar .fc .fc-event.slot-selection {
   background: rgb(var(--accent) / 0.28);
   border-color: rgb(var(--accent));

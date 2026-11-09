@@ -173,7 +173,7 @@ export function FloorPlanLegend({ legend = [] }) {
         <li key={item.key} className="flex items-center gap-1.5 text-xs text-content-muted">
           <span
             className="h-2.5 w-2.5 rounded-sm border"
-            style={{ borderColor: dot[item.key], background: `${dot[item.key]}22` }}
+            style={{ borderColor: dot[item.key], background: `color-mix(in srgb, ${dot[item.key]} 14%, transparent)` }}
             aria-hidden="true"
           />
           {item.label}
