@@ -183,7 +183,7 @@ describe('Champ de photo de profil', () => {
 });
 
 describe('Menu du compte', () => {
-  const rendre = (admin = { firstName: 'Dylan', lastName: 'Menga', email: 'd@ece.fr' }) =>
+  const rendre = (admin = { firstName: 'Dylan', lastName: 'Menga', email: 'd@smartroom.app' }) =>
     // Les mêmes drapeaux que le routeur de l'application : sans eux, le test
     // émet les avertissements de migration v7 que l'application a déjà réglés.
     render(
@@ -236,7 +236,7 @@ describe('Menu du compte', () => {
   });
 
   it('signale le propriétaire', () => {
-    rendre({ firstName: 'Dylan', lastName: 'Menga', email: 'd@ece.fr', isOwner: true });
+    rendre({ firstName: 'Dylan', lastName: 'Menga', email: 'd@smartroom.app', isOwner: true });
     fireEvent.click(screen.getByRole('button'));
     expect(within(screen.getByRole('menu')).getByText('Propriétaire')).toBeTruthy();
   });
@@ -287,7 +287,7 @@ describe('Écran de profil d’administration', () => {
     id: 'u-1',
     first_name: 'Dylan',
     last_name: 'Menga',
-    email: 'd.menga@ece.fr',
+    email: 'd.menga@smartroom.app',
     phone: null,
     promotion: null,
     department: 'Direction',
@@ -389,7 +389,7 @@ describe('Informations personnelles', () => {
   const PROFIL = {
     firstName: 'Dylan',
     lastName: 'Menga',
-    email: 'd.menga@ece.fr',
+    email: 'd.menga@smartroom.app',
     // L'API rend `null` pour ce qui n'est pas renseigné.
     phone: null,
     promotion: null,

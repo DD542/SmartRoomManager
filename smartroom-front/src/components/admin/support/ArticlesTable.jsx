@@ -85,7 +85,7 @@ export function ArticlesTable({ table, busy = false, onEdit, onToggleStatus, onD
          demandaient 783 px dans un conteneur de 321. La carte porte les mêmes
          informations et les mêmes trois actions. */
       carte={(row) => (
-          <div className="rounded-xl border border-line bg-surface-raised p-3">
+          <div className="rounded-2xl border border-line/70 bg-surface/70 p-3">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-sm text-content">{row.title}</p>

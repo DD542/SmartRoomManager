@@ -217,7 +217,7 @@ export default function EquipmentPage() {
             carte={(row) => {
               const Icone = equipmentIcon(row.icon);
               return (
-                <div className="rounded-xl border border-line bg-surface-raised p-3">
+                <div className="rounded-2xl border border-line/70 bg-surface/70 p-3">
                   <div className="flex items-start gap-2.5">
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line bg-surface">
                       <Icone size={15} aria-hidden="true" className="text-content-muted" />

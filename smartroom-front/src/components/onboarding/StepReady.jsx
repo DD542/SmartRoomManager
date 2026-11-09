@@ -32,14 +32,14 @@ export function StepReady({ value, buildings }) {
         <Card className="flex items-center gap-3 p-4">
           <Building2 size={16} aria-hidden="true" className="text-accent" />
           <div>
-            <dt className="text-xs uppercase tracking-wide text-content-muted">Bâtiment principal</dt>
+            <dt className="text-xs tracking-tight text-content-muted">Bâtiment principal</dt>
             <dd className="text-sm text-content">{building?.name ?? 'Non renseigné'}</dd>
           </div>
         </Card>
         <Card className="flex items-center gap-3 p-4">
           <Users size={16} aria-hidden="true" className="text-accent" />
           <div>
-            <dt className="text-xs uppercase tracking-wide text-content-muted">Capacité habituelle</dt>
+            <dt className="text-xs tracking-tight text-content-muted">Capacité habituelle</dt>
             <dd className="text-sm text-content">{value.usualCapacity} personnes</dd>
           </div>
         </Card>
@@ -51,7 +51,7 @@ export function StepReady({ value, buildings }) {
         {!isLoading && suggestion && (
           <Card tone="accent" className="p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-accent">
+              <p className="flex items-center gap-2 text-xs font-medium tracking-tight text-accent">
                 <Sparkles size={13} aria-hidden="true" />
                 Votre première recommandation
               </p>

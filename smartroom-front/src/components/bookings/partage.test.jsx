@@ -29,7 +29,7 @@ const RESERVATION = {
     id: 'r-1',
     name: 'Salle Joule',
     floor: '2e étage',
-    building: { name: 'Eiffel 2' },
+    building: { name: 'Bâtiment B' },
     locationPlanUrl: '/media/reperes/joule.png',
   },
 };
@@ -51,7 +51,7 @@ describe('Ce qui sort de l’application', () => {
 
     expect(texte).toContain('Comité de suivi');
     expect(texte).toContain('Salle Joule');
-    expect(texte).toContain('Eiffel 2');
+    expect(texte).toContain('Bâtiment B');
     expect(texte).toContain('2e étage');
   });
 
@@ -79,7 +79,7 @@ describe('Ce qui sort de l’application', () => {
     expect(ics).toContain('SUMMARY:Comité de suivi');
     // Les virgules sont échappées : c'est ce qu'exige RFC 5545, faute de quoi
     // l'agenda du destinataire lit trois champs au lieu d'un lieu.
-    expect(ics).toContain('LOCATION:Salle Joule\\, Eiffel 2\\, 2e étage');
+    expect(ics).toContain('LOCATION:Salle Joule\\, Bâtiment B\\, 2e étage');
     expect(ics.trimEnd().endsWith('END:VCALENDAR')).toBe(true);
   });
 });

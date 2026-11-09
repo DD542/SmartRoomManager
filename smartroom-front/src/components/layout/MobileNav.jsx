@@ -1,6 +1,8 @@
+import { useRef } from 'react';
 import { NavLink } from 'react-router-dom';
-import { CalendarCheck, CircleCheck, DoorOpen, LayoutDashboard, MoreHorizontal } from 'lucide-react';
+import { CalendarCheck, CircleCheck, DoorOpen, House, MoreHorizontal } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import { IndicateurLiquide } from '../ui/IndicateurLiquide';
 
 /**
  * Les quatre destinations que la barre peut loger sans se tasser. Le reste —
@@ -8,7 +10,7 @@ import { cn } from '../../utils/cn';
  * sont les entrées qui disparaissaient purement et simplement sous 768 px.
  */
 const ITEMS = [
-  { to: '/app', label: 'Accueil', icon: LayoutDashboard, end: true },
+  { to: '/app', label: 'Accueil', icon: House, end: true },
   { to: '/app/salles', label: 'Salles', icon: DoorOpen },
   { to: '/app/reservations', label: 'Réservations', icon: CalendarCheck },
   // Sans identifiant : « bk-1001 » venait des maquettes, et chaque appui
@@ -17,20 +19,29 @@ const ITEMS = [
   { to: '/app/check-in', label: 'Check-in', icon: CircleCheck },
 ];
 
-// 56 px de haut, plus la marge du système : sur un téléphone à barre gestuelle,
-// la dernière rangée passait sous l'indicateur d'accueil.
-const ongletClass = 'flex min-h-[56px] flex-1 animate-fade-in-up flex-col items-center justify-center gap-1 py-2 text-[10px] transition';
+// 56 px de haut : au-dessus du minimum tactile de 44 px, avec la place du
+// libellé sous l'icône.
+const ongletClass =
+  'pression relative z-[1] flex min-h-[56px] flex-1 animate-fade-in-up flex-col items-center justify-center gap-0.5 rounded-full text-[10px] font-medium transition-colors';
 
 /**
- * Barre d'onglets basse, active sous 768 px : la barre latérale disparaît
- * alors, et rien ne la remplaçait pour trois destinations sur sept.
+ * Barre d'onglets flottante en verre liquide, active sous 768 px.
+ *
+ * Elle flotte au-dessus du contenu, décollée des bords, comme la barre
+ * d'onglets d'iOS : le contenu défile dessous et transparaît au travers. La
+ * bulle de l'onglet actif glisse d'un onglet à l'autre. La marge basse tient
+ * compte de l'indicateur d'accueil des téléphones à barre gestuelle.
  */
 export function MobileNav({ onOpenMore, moreOpen = false }) {
+  const barre = useRef(null);
+
   return (
     <nav
+      ref={barre}
       aria-label="Navigation principale"
-      className="z-mobilenav flex shrink-0 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="verre-epais fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-mobilenav flex rounded-full p-1.5 shadow-haute md:hidden"
     >
+      <IndicateurLiquide conteneur={barre} />
       {ITEMS.map((item, index) => (
         <NavLink
           key={item.to}
@@ -40,11 +51,15 @@ export function MobileNav({ onOpenMore, moreOpen = false }) {
           // descend de haut en bas : le même geste, adapté à l'axe de l'écran.
           style={{ animationDelay: `${index * 30}ms` }}
           className={({ isActive }) =>
-            cn(ongletClass, isActive ? 'text-accent' : 'text-content-muted')
+            cn(ongletClass, isActive ? 'text-content' : 'text-content-muted')
           }
         >
-          <item.icon size={18} aria-hidden="true" />
-          {item.label}
+          {({ isActive }) => (
+            <>
+              <item.icon size={20} strokeWidth={isActive ? 2.3 : 1.8} aria-hidden="true" />
+              {item.label}
+            </>
+          )}
         </NavLink>
       ))}
 
@@ -54,9 +69,9 @@ export function MobileNav({ onOpenMore, moreOpen = false }) {
         aria-haspopup="dialog"
         aria-expanded={moreOpen}
         style={{ animationDelay: `${ITEMS.length * 30}ms` }}
-        className={cn(ongletClass, moreOpen ? 'text-accent' : 'text-content-muted')}
+        className={cn(ongletClass, moreOpen ? 'text-content' : 'text-content-muted')}
       >
-        <MoreHorizontal size={18} aria-hidden="true" />
+        <MoreHorizontal size={20} aria-hidden="true" />
         Plus
       </button>
     </nav>

@@ -16,7 +16,7 @@ import { UserDetail } from './UserDetail';
 
 const COMPTE = {
   id: 'u-1',
-  email: 'alice.leroy@edu.ece.fr',
+  email: 'alice.leroy@campus.smartroom.app',
   firstName: 'Alice',
   lastName: 'Leroy',
   status: 'actif',

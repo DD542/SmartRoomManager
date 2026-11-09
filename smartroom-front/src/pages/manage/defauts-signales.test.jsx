@@ -21,7 +21,7 @@ import { listAllBookings } from '../../api/admin/bookings';
 import CancelBookingModal from './CancelBookingModal';
 
 vi.mock('../../hooks/useAuth', () => ({
-  useAuth: () => ({ user: { id: 'u-1', email: 'd.menga@ece.fr' } }),
+  useAuth: () => ({ user: { id: 'u-1', email: 'd.menga@smartroom.app' } }),
 }));
 
 const BASE = 'http://localhost:5180/api/v1';
@@ -143,7 +143,7 @@ describe('U-18 — itinéraire vers une salle', () => {
     name: 'Salle Fermat',
     slug: 'fermat',
     building_id: 'b-1',
-    building_name: 'Eiffel 2',
+    building_name: 'Bâtiment B',
     floor_id: 'f-rdc',
     floor_label: 'Rez-de-chaussée',
     floor_level: 0,
@@ -169,7 +169,7 @@ describe('U-18 — itinéraire vers une salle', () => {
 
     serveur.use(
       // Ces deux routes rendent un tableau nu, pas l'enveloppe paginée.
-      http.get(`${BASE}/buildings`, () => HttpResponse.json([{ id: 'b-1', name: 'Eiffel 2' }])),
+      http.get(`${BASE}/buildings`, () => HttpResponse.json([{ id: 'b-1', name: 'Bâtiment B' }])),
       http.get(`${BASE}/buildings/:id/floors`, () =>
         HttpResponse.json([
           { id: 'f-2', building_id: 'b-1', label: '2e étage', level: 2, has_plan: false, room_count: 1 },
@@ -202,6 +202,6 @@ describe('U-18 — itinéraire vers une salle', () => {
     // L’étage retenu est celui de la salle, et non le premier de la liste.
     const choix = await screen.findByLabelText(/Étage affiché/);
     await waitFor(() => expect(choix.value).toBe('f-rdc'));
-    expect(await screen.findByText(/Entrée — Eiffel 2/)).toBeTruthy();
+    expect(await screen.findByText(/Entrée — Bâtiment B/)).toBeTruthy();
   });
 });

@@ -53,7 +53,7 @@ export function MonthCalendar({
   };
 
   return (
-    <div className="rounded-xl border border-line bg-surface">
+    <div className="rounded-2xl border border-line/70 bg-surface/80 shadow-carte">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-3 py-2.5">
         <div className="flex items-center gap-1">
           <IconButton icon={ChevronLeft} label="Mois précédent" onClick={() => go('prev')} />

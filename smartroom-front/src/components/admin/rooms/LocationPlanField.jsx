@@ -39,7 +39,7 @@ export function LocationPlanField({ src, onUpload, onRemove, busy = false, enAtt
   };
 
   return (
-    <div className="rounded-xl border border-line bg-surface-raised p-3">
+    <div className="rounded-2xl border border-line/70 bg-surface/70 p-3">
       <div className="mb-2.5 flex flex-wrap items-center gap-2">
         <MapPin size={15} aria-hidden="true" className="text-content-muted" />
         <div className="min-w-0">

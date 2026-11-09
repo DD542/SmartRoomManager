@@ -19,7 +19,7 @@ import { serveur } from '../../test/serveur';
 
 const MOI = {
   id: 'u-1',
-  email: 'd.menga@ece.fr',
+  email: 'd.menga@smartroom.app',
   firstName: 'Dylan',
   lastName: 'Menga',
   preferences: { reminderDelayMin: 30 },
@@ -27,7 +27,7 @@ const MOI = {
 
 const BROUILLON = {
   roomId: 'r-1',
-  room: { id: 'r-1', name: 'Salle Fermat', building: { name: 'Eiffel 2' }, floor: '2e étage', equipment: [] },
+  room: { id: 'r-1', name: 'Salle Fermat', building: { name: 'Bâtiment B' }, floor: '2e étage', equipment: [] },
   date: '2026-09-04',
   startTime: '17:30',
   endTime: '18:00',

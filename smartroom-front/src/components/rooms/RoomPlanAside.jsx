@@ -51,7 +51,7 @@ export function RoomPlanAside({ room, directions = [], onClose }) {
         </div>
 
         <div>
-          <p className="text-xs uppercase tracking-wide text-content-muted">Équipements</p>
+          <p className="text-xs tracking-tight text-content-muted">Équipements</p>
           {/* Colonnes qui se comptent d'après la place disponible, et non
               d'après un point de rupture : ce panneau vit tantôt dans une
               colonne de 320 px, tantôt dans une feuille de 360, tantôt dans

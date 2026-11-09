@@ -58,7 +58,7 @@ export default function GlobalSearchPage() {
               value={input}
               onChange={(event) => setInput(event.target.value)}
               placeholder="Salle, réservation, article d’aide…"
-              className="h-10 w-full rounded-xl border border-line bg-surface-raised pl-10 pr-3 text-sm text-content placeholder:text-content-faint focus:border-accent focus:outline-none"
+              className="h-10 w-full rounded-2xl border border-line/70 bg-surface/70 pl-10 pr-3 text-sm text-content placeholder:text-content-faint focus:border-accent focus:outline-none"
             />
           </div>
         </form>
@@ -126,7 +126,7 @@ export default function GlobalSearchPage() {
                     <Link
                       key={item.id}
                       to={item.to}
-                      className="flex items-center gap-3 rounded-xl border border-line bg-surface-raised px-3 py-2.5 transition hover:border-accent/50"
+                      className="flex items-center gap-3 rounded-2xl border border-line/70 bg-surface/70 px-3 py-2.5 transition hover:border-accent/50"
                     >
                       <span className="min-w-0 flex-1">
                         <span

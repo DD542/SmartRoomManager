@@ -42,7 +42,7 @@ export function RoomPreview({ draft, buildings = [], catalog = [] }) {
           <RoomCard room={salle} tight={false} to="#" />
         </div>
 
-        <dl className="flex flex-col gap-1.5 rounded-xl border border-line bg-surface-raised p-3 text-xs">
+        <dl className="flex flex-col gap-1.5 rounded-2xl border border-line/70 bg-surface/70 p-3 text-xs">
           <Ligne label="Ouverture">
             {jours || 'aucun jour'} · {regles.openTime ?? '—'} – {regles.closeTime ?? '—'}
           </Ligne>

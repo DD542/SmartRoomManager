@@ -48,7 +48,7 @@ function EtatFournisseurs({ etat }) {
     <Card>
       <CardHeader title="État de la couche" icon={Cpu} />
       <div className="grid gap-3 px-4 pb-4 sm:grid-cols-3 [&>*]:min-w-0">
-        <div className="rounded-xl border border-line bg-surface-raised p-3">
+        <div className="rounded-2xl border border-line/70 bg-surface/70 p-3">
           <p className="flex items-center gap-2 text-sm text-content">
             <Badge tone={ollama.joignable ? 'success' : 'neutral'}>
               {ollama.joignable ? 'joignable' : 'absent'}
@@ -65,7 +65,7 @@ function EtatFournisseurs({ etat }) {
           )}
         </div>
 
-        <div className="rounded-xl border border-line bg-surface-raised p-3">
+        <div className="rounded-2xl border border-line/70 bg-surface/70 p-3">
           <p className="flex items-center gap-2 text-sm text-content">
             <Badge tone={distant.utilisable ? 'success' : 'neutral'}>
               {distant.configure ? (distant.utilisable ? 'prêt' : 'incomplet') : 'désactivé'}
@@ -77,7 +77,7 @@ function EtatFournisseurs({ etat }) {
           </p>
         </div>
 
-        <div className="rounded-xl border border-line bg-surface-raised p-3">
+        <div className="rounded-2xl border border-line/70 bg-surface/70 p-3">
           <p className="flex items-center gap-2 text-sm text-content">
             <Database size={15} className="text-accent" aria-hidden="true" />
             Index documentaire

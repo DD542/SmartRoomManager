@@ -250,7 +250,7 @@ describe('reprise de session', () => {
         HttpResponse.json({
           access_token: 'jeton-repris',
           scope: 'user',
-          user: { email: 'camille@ece.fr' },
+          user: { email: 'camille@smartroom.app' },
         }),
       ),
     );

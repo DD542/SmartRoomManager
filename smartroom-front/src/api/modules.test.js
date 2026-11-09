@@ -35,7 +35,7 @@ const SALLE = {
   name: 'Salle Vinci',
   slug: 'salle-vinci',
   building_id: 'b-1',
-  building_name: 'Campus Eiffel',
+  building_name: 'Bâtiment A',
   floor_id: 'f-1',
   floor_label: '2e étage',
   floor_level: 2,
@@ -71,7 +71,7 @@ const RESERVATION = {
   cancelled_at: null,
   cancel_reason: null,
   room_name: 'Salle Vinci',
-  building_name: 'Campus Eiffel',
+  building_name: 'Bâtiment A',
   floor_label: '2e étage',
   owner_name: 'Camille Durand',
   access_code_hint: 'A-****',
@@ -118,16 +118,16 @@ describe('authentification', () => {
         HttpResponse.json({
           access_token: 'jeton',
           scope: 'user',
-          user: { id: 'u-1', email: 'camille@edu.ece.fr', first_name: 'Camille', last_name: 'Durand' },
+          user: { id: 'u-1', email: 'camille@campus.smartroom.app', first_name: 'Camille', last_name: 'Durand' },
         }),
       ),
     );
 
     const { user, firstLogin } = await auth.login({
-      email: 'camille@edu.ece.fr',
+      email: 'camille@campus.smartroom.app',
       password: 'smartroom2026',
     });
-    expect(user.email).toBe('camille@edu.ece.fr');
+    expect(user.email).toBe('camille@campus.smartroom.app');
     // Sans bâtiment de préférence, le compte n'a jamais rempli l'accueil :
     // c'est ce qui déclenche l'onboarding, plutôt qu'un drapeau inventé.
     expect(firstLogin).toBe(true);
@@ -139,12 +139,12 @@ describe('authentification', () => {
         HttpResponse.json({
           access_token: 'jeton',
           scope: 'user',
-          user: { id: 'u-1', email: 'x@ece.fr', preferences: { preferred_building_id: 'b-1' } },
+          user: { id: 'u-1', email: 'x@smartroom.app', preferences: { preferred_building_id: 'b-1' } },
         }),
       ),
     );
 
-    const { firstLogin } = await auth.login({ email: 'x@ece.fr', password: 'x' });
+    const { firstLogin } = await auth.login({ email: 'x@smartroom.app', password: 'x' });
     expect(firstLogin).toBe(false);
   });
 
@@ -194,7 +194,7 @@ describe('authentification', () => {
     serveur.use(
       http.get(`${BASE}/auth/me`, () =>
         HttpResponse.json({
-          user: { id: 'u-1', email: 'lea@ece.fr', first_name: 'Léa', last_name: 'Martin' },
+          user: { id: 'u-1', email: 'lea@smartroom.app', first_name: 'Léa', last_name: 'Martin' },
           admin: { user_id: 'u-1', job_title: 'Responsable', is_owner: false },
           scope: 'admin',
           permissions: ['rooms.manage'],
@@ -226,7 +226,7 @@ describe('authentification', () => {
       ),
     );
 
-    await expect(auth.forgotPassword('inconnu@ece.fr')).resolves.toMatchObject({ sent: true });
+    await expect(auth.forgotPassword('inconnu@smartroom.app')).resolves.toMatchObject({ sent: true });
   });
 
   it('consomme un lien de réinitialisation', async () => {
@@ -257,7 +257,7 @@ describe('authentification', () => {
     serveur.use(
       http.patch(`${BASE}/users/me`, async ({ request }) => {
         recu = await request.json();
-        return HttpResponse.json({ id: 'u-1', email: 'x@ece.fr', first_name: 'Camille' });
+        return HttpResponse.json({ id: 'u-1', email: 'x@smartroom.app', first_name: 'Camille' });
       }),
     );
 
@@ -270,7 +270,7 @@ describe('authentification', () => {
       http.put(`${BASE}/users/me/preferences`, () =>
         HttpResponse.json({
           id: 'u-1',
-          email: 'x@ece.fr',
+          email: 'x@smartroom.app',
           preferences: { reminder_delay_min: 60 },
         }),
       ),
@@ -348,13 +348,13 @@ describe('parc', () => {
     serveur.use(
       http.get(`${BASE}/rooms/r-1`, () => HttpResponse.json(SALLE)),
       http.get(`${BASE}/buildings/b-1`, () =>
-        HttpResponse.json({ id: 'b-1', code: 'A', name: 'Campus Eiffel', address: 'Paris' }),
+        HttpResponse.json({ id: 'b-1', code: 'A', name: 'Bâtiment A', address: 'Paris' }),
       ),
       ...servirRegles(),
     );
 
     const salle = await rooms.getRoom('r-1');
-    expect(salle.building.name).toBe('Campus Eiffel');
+    expect(salle.building.name).toBe('Bâtiment A');
     expect(salle.rules.openTime).toBe('08:00');
     expect(salle.rules.visitDays).toEqual([1, 2, 3, 4, 5]);
   });
@@ -483,7 +483,7 @@ describe('plan d’étage', () => {
       name: `Salle ${id}`,
       floor_id: 'f-1',
       building_id: 'b-1',
-      building_name: 'Eiffel 1',
+      building_name: 'Bâtiment A',
       floor_label: '2e étage',
       capacity: 10,
       area_m2: '30',
@@ -738,10 +738,10 @@ describe('réservations', () => {
       end: new Date('2026-08-25T11:00:00Z'),
       title: 'Revue',
       attendees: 4,
-      participants: [{ email: 'invite@ece.fr', name: 'Invité' }],
+      participants: [{ email: 'invite@smartroom.app', name: 'Invité' }],
     });
 
-    expect(recu.participants).toEqual([['invite@ece.fr', 'Invité']]);
+    expect(recu.participants).toEqual([['invite@smartroom.app', 'Invité']]);
     expect(creee.accessCode).toBe('A-4821');
   });
 
@@ -854,23 +854,23 @@ describe('réservations', () => {
     serveur.use(
       http.get(`${BASE}/bookings/bk-1/participants`, () =>
         HttpResponse.json([
-          { id: 'p-1', booking_id: 'bk-1', email: 'a@ece.fr', display_name: 'A', response: 'en_attente', is_organizer: false },
+          { id: 'p-1', booking_id: 'bk-1', email: 'a@smartroom.app', display_name: 'A', response: 'en_attente', is_organizer: false },
         ]),
       ),
       http.post(`${BASE}/bookings/bk-1/participants`, () =>
         HttpResponse.json({
-          participant: { id: 'p-2', booking_id: 'bk-1', email: 'b@ece.fr', display_name: 'B', response: 'en_attente', is_organizer: false },
+          participant: { id: 'p-2', booking_id: 'bk-1', email: 'b@smartroom.app', display_name: 'B', response: 'en_attente', is_organizer: false },
           invitation_token: 'jeton-invitation',
         }),
       ),
       http.delete(`${BASE}/bookings/bk-1/participants/p-1`, () => new HttpResponse(null, { status: 204 })),
       http.post(`${BASE}/bookings/participants/respond`, () =>
-        HttpResponse.json({ id: 'p-2', booking_id: 'bk-1', email: 'b@ece.fr', display_name: 'B', response: 'accepte', is_organizer: false }),
+        HttpResponse.json({ id: 'p-2', booking_id: 'bk-1', email: 'b@smartroom.app', display_name: 'B', response: 'accepte', is_organizer: false }),
       ),
     );
 
     expect(await bookings.listParticipants('bk-1')).toHaveLength(1);
-    expect((await bookings.inviteParticipant('bk-1', { email: 'b@ece.fr', name: 'B' })).invitationToken).toBe('jeton-invitation');
+    expect((await bookings.inviteParticipant('bk-1', { email: 'b@smartroom.app', name: 'B' })).invitationToken).toBe('jeton-invitation');
     expect(await bookings.removeParticipant('bk-1', 'p-1')).toMatchObject({ removed: true });
     expect((await bookings.respondToInvitation('bk-1', { token: 'x', response: 'accepte' })).response).toBe('accepte');
   });

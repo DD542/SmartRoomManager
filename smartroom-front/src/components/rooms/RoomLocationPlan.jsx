@@ -37,7 +37,7 @@ export function RoomLocationPlan({ room, onBack, children }) {
         <img
           src={room.locationPlanUrl}
           alt={`Plan de localisation de ${room.name}`}
-          className="w-full rounded-xl border border-line bg-surface-raised object-contain"
+          className="w-full rounded-2xl border border-line/70 bg-surface/70 object-contain"
         />
       </div>
     </Card>

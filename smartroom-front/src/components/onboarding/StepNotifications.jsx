@@ -17,7 +17,7 @@ export function StepNotifications({ value, onChange }) {
         Ces réglages restent modifiables à tout moment depuis votre profil.
       </p>
 
-      <div className="mt-6 flex flex-col gap-4 rounded-xl border border-line bg-surface p-4">
+      <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-line/70 bg-surface/80 shadow-carte p-4">
         <Switch
           icon={Mail}
           label="Confirmation par e-mail"

@@ -91,7 +91,7 @@ export function PlanEditor({ layout, selectedId, onSelect, onMove, onCommit, cla
   };
 
   return (
-    <div className={cn('rounded-xl border border-line bg-ink p-3', className)}>
+    <div className={cn('rounded-2xl border border-line/70 bg-ink p-3', className)}>
       <svg
         ref={svgRef}
         viewBox="0 0 100 100"

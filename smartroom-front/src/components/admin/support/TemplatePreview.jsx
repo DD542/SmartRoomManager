@@ -23,7 +23,7 @@ export function TemplatePreview({ subject, body, onTest, busy = false }) {
       />
 
       <div className="px-4 pb-4">
-        <div className="rounded-xl border border-line bg-ink p-3">
+        <div className="rounded-2xl border border-line/70 bg-ink p-3">
           <p className="border-b border-line pb-2 text-xs text-content-muted">
             Objet : <span className="text-content">{subject || '—'}</span>
           </p>
@@ -36,7 +36,7 @@ export function TemplatePreview({ subject, body, onTest, busy = false }) {
           <Input
             type="email"
             label="Envoyer un test à"
-            placeholder="prenom.nom@ece.fr"
+            placeholder="prenom.nom@organisation.com"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             className="min-w-[12rem]"

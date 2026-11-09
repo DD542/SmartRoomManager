@@ -139,7 +139,7 @@ export function RulesForm({ draft, onChange, scopeLabel }) {
       <div className="flex flex-col gap-5 p-4">
         {GROUPES.map((groupe) => (
           <fieldset key={groupe.id}>
-            <legend className="pb-2 text-[11px] uppercase tracking-wide text-content-faint">
+            <legend className="pb-2 text-[11px] tracking-tight text-content-faint">
               {groupe.label}
             </legend>
 
@@ -182,7 +182,7 @@ export function RulesForm({ draft, onChange, scopeLabel }) {
             l'administration doit pouvoir écrire, et elle n'avait jusqu'ici que
             le nom de la salle pour la faire passer. */}
         <fieldset>
-          <legend className="pb-2 text-[11px] uppercase tracking-wide text-content-faint">
+          <legend className="pb-2 text-[11px] tracking-tight text-content-faint">
             Consigne aux utilisateurs
           </legend>
           <Textarea

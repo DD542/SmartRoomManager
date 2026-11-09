@@ -30,7 +30,7 @@ const SALLE = (extra = {}) => ({
   name: 'Salle Vinci',
   slug: 'salle-vinci',
   building_id: 'b-1',
-  building_name: 'Campus Eiffel',
+  building_name: 'Bâtiment A',
   floor_id: 'f-1',
   floor_label: '2e étage',
   floor_level: 2,
@@ -166,7 +166,7 @@ describe('Référentiels de filtres', () => {
       http.get(`${BASE}/rooms/filters`, () =>
         HttpResponse.json({
           buildings: [
-            { id: 'b-1', name: 'Campus Eiffel', address: '', floors: 3, rooms: 8 },
+            { id: 'b-1', name: 'Bâtiment A', address: '', floors: 3, rooms: 8 },
             { id: 'b-2', name: 'Annexe', address: '', floors: 2, rooms: 4 },
           ],
           floors: [
@@ -200,7 +200,7 @@ describe('Référentiels de filtres', () => {
     const etiquettes = referentiels.floors.map((item) => item.label);
 
     expect(new Set(etiquettes).size).toBe(etiquettes.length);
-    expect(etiquettes).toContain('Campus Eiffel — 1er étage');
+    expect(etiquettes).toContain('Bâtiment A — 1er étage');
     expect(etiquettes).toContain('Annexe — 1er étage');
   });
 });

@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -22,6 +23,8 @@ import {
 import { cn } from '../../utils/cn';
 import { useAdminSession } from '../../hooks/useAdminSession';
 import { usePermission } from '../../hooks/usePermission';
+import { Logo } from '../brand/Logo';
+import { IndicateurLiquide } from '../ui/IndicateurLiquide';
 
 /** Navigation de l'administration, groupée comme les écrans du manifeste. */
 export const ADMIN_NAV = [
@@ -114,10 +117,16 @@ export function AdminNav({ onNavigate }) {
   const navigate = useNavigate();
   const { admin, logout } = useAdminSession();
   const { peut } = usePermission();
+  const nav = useRef(null);
 
   return (
     <>
-      <nav aria-label="Navigation de l’administration" className="flex-1 overflow-y-auto px-2 pb-4">
+      <nav
+        ref={nav}
+        aria-label="Navigation de l’administration"
+        className="relative flex-1 overflow-y-auto px-2 pb-4"
+      >
+        <IndicateurLiquide conteneur={nav} />
         {ADMIN_NAV.map((groupe) => {
           const visibles = groupe.items.filter((item) => peut(item.permission));
           if (visibles.length === 0) return null;
@@ -133,7 +142,7 @@ export function AdminNav({ onNavigate }) {
               className="mt-4 animate-fade-in-up first:mt-0"
               style={{ animationDelay: `${rang * 60}ms` }}
             >
-              <p className="px-2 pb-1.5 text-[10px] uppercase tracking-wide text-content-faint">
+              <p className="px-3 pb-1.5 text-[11px] font-medium text-content-faint">
                 {groupe.label}
               </p>
               <ul className="flex flex-col gap-0.5">
@@ -151,14 +160,14 @@ export function AdminNav({ onNavigate }) {
                           // toucher. À partir de `lg`, la barre latérale reprend
                           // sa densité — elle se vise à la souris, et dix-sept
                           // entrées à 44 px ne tiendraient plus dans la hauteur.
-                          'flex min-h-[44px] items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition lg:min-h-0',
+                          'pression relative z-[1] flex min-h-[44px] items-center gap-3 rounded-full px-3 py-2 text-sm transition-colors lg:min-h-[36px]',
                           isActive
-                            ? 'bg-accent-soft text-content'
-                            : 'text-content-muted hover:bg-surface-raised hover:text-content',
+                            ? 'font-semibold text-content'
+                            : 'text-content-muted hover:text-content',
                         )
                       }
                     >
-                      <item.icon size={15} aria-hidden="true" />
+                      <item.icon size={16} aria-hidden="true" />
                       {item.label}
                     </NavLink>
                   </li>
@@ -169,7 +178,7 @@ export function AdminNav({ onNavigate }) {
         })}
       </nav>
 
-      <div className="border-t border-line px-2 py-3">
+      <div className="border-t border-line/60 px-2 py-3">
         <p className="px-2.5 pb-2 text-xs text-content-muted">
           {admin ? `${admin.firstName} ${admin.lastName}` : ''}
           <span className="block text-[11px] text-content-faint">{admin?.role}</span>
@@ -177,7 +186,7 @@ export function AdminNav({ onNavigate }) {
         <NavLink
           to="/app"
           onClick={onNavigate}
-          className="flex min-h-[44px] items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs text-content-muted transition hover:bg-surface-raised hover:text-content lg:min-h-0"
+          className="pression flex min-h-[44px] items-center gap-2.5 rounded-full px-3 py-2 text-xs text-content-muted transition-colors hover:bg-content/[0.06] hover:text-content lg:min-h-0"
         >
           <ArrowLeft size={14} aria-hidden="true" />
           Retour à l’espace utilisateur
@@ -188,7 +197,7 @@ export function AdminNav({ onNavigate }) {
             logout();
             navigate('/admin/connexion');
           }}
-          className="flex min-h-[44px] w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs text-content-muted transition hover:bg-surface-raised hover:text-danger lg:min-h-0"
+          className="pression flex min-h-[44px] w-full items-center gap-2.5 rounded-full px-3 py-2 text-xs text-content-muted transition-colors hover:bg-content/[0.06] hover:text-danger lg:min-h-0"
         >
           <LogOut size={14} aria-hidden="true" />
           Déconnexion
@@ -201,14 +210,11 @@ export function AdminNav({ onNavigate }) {
 /** Barre latérale fixe, à partir de 768 px. */
 export function AdminSidebar() {
   return (
-    <aside className="hidden w-60 shrink-0 flex-col border-r border-line bg-surface md:flex">
-      <div className="flex items-center gap-2.5 px-4 py-4">
-        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent text-sm font-semibold text-ink">
-          SR
-        </span>
-        <span className="min-w-0">
-          <span className="block truncate text-sm font-semibold text-content">SmartRoom Manager</span>
-          <span className="block text-[11px] uppercase tracking-wide text-accent">Administration</span>
+    <aside className="verre-epais sticky top-3 m-3 mr-0 hidden h-[calc(100vh-1.5rem)] w-64 shrink-0 flex-col overflow-hidden rounded-3xl md:flex">
+      <div className="flex flex-col gap-2 px-5 pb-4 pt-5">
+        <Logo />
+        <span className="w-fit rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-medium text-ink">
+          Administration
         </span>
       </div>
       <AdminNav />

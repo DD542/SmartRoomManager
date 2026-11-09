@@ -12,7 +12,7 @@ import { fmtCapacity } from '../../../utils/format';
 export function AlternativeList({ alternatives = [], selectedId, onSelect }) {
   if (alternatives.length === 0) {
     return (
-      <p className="rounded-xl border border-line bg-surface-raised px-3 py-2.5 text-xs text-content-muted">
+      <p className="rounded-2xl border border-line/70 bg-surface/70 px-3 py-2.5 text-xs text-content-muted">
         Aucune salle de repli disponible sur ce créneau.
       </p>
     );

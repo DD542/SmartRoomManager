@@ -17,7 +17,7 @@ import { ToastProvider } from '../../hooks/useToast';
 import { erreur, serveur } from '../../test/serveur';
 
 vi.mock('../../hooks/useAuth', () => ({
-  useAuth: () => ({ user: { id: 'u-1', email: 'd.menga@ece.fr' } }),
+  useAuth: () => ({ user: { id: 'u-1', email: 'd.menga@smartroom.app' } }),
 }));
 
 const { default: ConfirmedPage } = await import('./ConfirmedPage');
@@ -28,7 +28,7 @@ const RESERVATION = {
   id: 'bk-4',
   room_id: 'r-1',
   room_name: 'Salle Descartes',
-  building_name: 'Eiffel 5',
+  building_name: 'Bâtiment E',
   floor_label: '1er étage',
   floor_id: 'f-9',
   floor_has_plan: false,
@@ -94,7 +94,7 @@ describe('Écran de confirmation', () => {
 
     monter({ code: 'E-7412' });
 
-    expect(await screen.findByText(/Aucune réservation de ce numéro pour d.menga@ece.fr/)).toBeTruthy();
+    expect(await screen.findByText(/Aucune réservation de ce numéro pour d.menga@smartroom.app/)).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Mes réservations' })).toBeTruthy();
   });
 

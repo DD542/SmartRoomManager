@@ -78,7 +78,7 @@ export function ReportFilters({ value, onChange, buildings = [], presets = [], c
 
         <fieldset className="flex flex-wrap items-center gap-2">
           <legend className="sr-only">Bâtiments inclus dans le rapport</legend>
-          <span className="text-xs uppercase tracking-wide text-content-muted">Bâtiments</span>
+          <span className="text-xs tracking-tight text-content-muted">Bâtiments</span>
           <ToggleChip
             label="Tous"
             active={value.buildingIds.length === 0}

@@ -4,9 +4,12 @@ import { Loader2 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
 const VARIANTS = {
-  primary: 'bg-accent text-ink hover:bg-accent-hover border border-transparent',
-  secondary: 'bg-surface-raised text-content border border-line hover:border-line-strong',
-  ghost: 'bg-transparent text-content-muted border border-transparent hover:bg-surface-raised hover:text-content',
+  // Graphite plein, comme « Se connecter » et « Réserver cette salle » sur la
+  // maquette : la seule surface opaque et sombre de l'écran, l'œil y va droit.
+  primary: 'bg-accent text-ink hover:bg-accent-hover border border-transparent shadow-bouton',
+  // Verre : un bouton secondaire se pose sur le décor au lieu de le masquer.
+  secondary: 'verre text-content border border-transparent hover:bg-surface/90',
+  ghost: 'bg-transparent text-content-muted border border-transparent hover:bg-content/[0.06] hover:text-content',
   danger: 'bg-transparent text-danger border border-danger/40 hover:bg-danger/10',
   'danger-solid': 'bg-danger text-ink border border-transparent hover:brightness-110',
   success: 'bg-success text-ink border border-transparent hover:brightness-110',
@@ -19,9 +22,9 @@ const VARIANTS = {
 //: La hauteur minimale garde les barres denses de l'administration alignées et
 //: laisse le bouton s'étirer quand il le faut.
 const SIZES = {
-  sm: 'min-h-8 px-3 py-1 text-xs gap-1.5',
-  md: 'min-h-10 px-4 py-1.5 text-sm gap-2',
-  lg: 'min-h-12 px-5 py-2 text-sm gap-2',
+  sm: 'min-h-8 px-3.5 py-1 text-xs gap-1.5',
+  md: 'min-h-10 px-5 py-1.5 text-sm gap-2',
+  lg: 'min-h-12 px-6 py-2 text-[15px] gap-2',
   // 36 px à l'œil, 44 px au doigt : la zone tactile est étendue par un
   // pseudo-élément plutôt qu'en grossissant le bouton, qui déformerait les
   // barres d'outils denses de l'administration. 44 px est le minimum
@@ -32,7 +35,10 @@ const SIZES = {
 const base =
   // `text-center` : un libellé qui passe à la ligne se lit centré comme le
   // reste du bouton, et non aligné à gauche sous son icône.
-  'inline-flex items-center justify-center rounded-xl text-center font-medium transition ' +
+  // Pilule et pression à ressort : le bouton s'enfonce sous le doigt puis
+  // rebondit, comme les contrôles d'iOS.
+  'pression inline-flex items-center justify-center rounded-full text-center font-medium ' +
+  'transition-[background-color,border-color,color,box-shadow,transform] ' +
   'disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 ' +
   'focus-visible:outline-offset-2 focus-visible:outline-accent';
 

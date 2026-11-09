@@ -159,25 +159,25 @@ export function LandingDemo() {
   };
 
   return (
-    <section id="demo" className="scroll-mt-16">
-      <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:py-20">
-        <Reveal as="h2" className="text-2xl font-semibold tracking-tight text-content sm:text-3xl">
+    <section id="demo" className="scroll-mt-24">
+      <div className="mx-auto w-full max-w-6xl px-4 py-20 sm:py-28">
+        <Reveal as="h2" className="font-display text-3xl font-semibold tracking-[-0.03em] text-content sm:text-5xl">
           La démonstration en vidéo
         </Reveal>
         <Reveal
           as="p"
           delay={80}
-          className="mt-3 max-w-2xl text-sm leading-relaxed text-content-muted"
+          className="mt-4 max-w-2xl text-base leading-relaxed text-content-muted md:text-lg"
         >
           Du besoin exprimé au code d’accès reçu : le parcours complet, filmé dans
           l’application. Sept séquences s’enchaînent, en boucle et sans son.
         </Reveal>
 
         <Reveal delay={160} className="mt-8">
-          <div className="relative overflow-hidden rounded-2xl border border-line bg-surface">
+          <div className="verre relative overflow-hidden rounded-[32px] p-2 shadow-haute">
             {/* `aspect-video` : la boîte garde sa forme avant même que la vidéo
                 soit chargée, et la page ne saute pas au démarrage. */}
-            <div className="aspect-video w-full">
+            <div className="aspect-video w-full overflow-hidden rounded-[26px]">
               <video
                 ref={video}
                 className="h-full w-full"
@@ -202,10 +202,10 @@ export function LandingDemo() {
               <button
                 type="button"
                 onClick={lancerALaMain}
-                className="group absolute inset-0 flex flex-col items-center justify-center gap-3 bg-surface transition hover:bg-surface-raised"
+                className="group absolute inset-2 flex flex-col items-center justify-center gap-3 rounded-[26px] bg-surface/60 backdrop-blur-xl transition hover:bg-surface/40"
               >
-                <span className="flex h-16 w-16 items-center justify-center rounded-full border border-accent bg-accent-soft transition duration-300 group-hover:scale-110">
-                  <Play size={26} aria-hidden="true" className="ml-1 text-accent" />
+                <span className="flex h-20 w-20 items-center justify-center rounded-full bg-accent text-ink shadow-haute transition duration-500 ease-ressort group-hover:scale-110">
+                  <Play size={30} aria-hidden="true" className="ml-1 fill-current" />
                 </span>
                 <span className="text-sm text-content">Lancer la démonstration</span>
               </button>

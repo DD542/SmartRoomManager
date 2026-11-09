@@ -30,7 +30,7 @@ export function TicketTable({ tickets = [], onOpen }) {
             key={ticket.id}
             type="button"
             onClick={() => onOpen(ticket)}
-            className="flex w-full items-center gap-3 rounded-xl border border-line bg-surface-raised p-3 text-left transition hover:border-line-strong"
+            className="flex w-full items-center gap-3 rounded-2xl border border-line/70 bg-surface/70 p-3 text-left transition hover:border-line-strong"
           >
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm text-content">{ticket.subject}</span>

@@ -23,7 +23,7 @@ function Row({ icon: Icon, label, children }) {
     <div className="flex gap-3 border-b border-line px-4 py-3 last:border-0">
       <Icon size={15} aria-hidden="true" className="mt-0.5 shrink-0 text-content-muted" />
       <div className="min-w-0">
-        <p className="text-xs uppercase tracking-wide text-content-muted">{label}</p>
+        <p className="text-xs tracking-tight text-content-muted">{label}</p>
         <div className="mt-0.5 text-sm text-content">{children}</div>
       </div>
     </div>
@@ -154,7 +154,7 @@ export default function SummaryPage() {
                 onChange={(participants) => update({ participants })}
               />
               <fieldset className="flex flex-col gap-2 border-t border-line pt-4">
-                <legend className="text-xs font-medium uppercase tracking-wide text-content-muted">
+                <legend className="text-xs font-medium tracking-tight text-content-muted">
                   Notifications
                 </legend>
                 <Checkbox

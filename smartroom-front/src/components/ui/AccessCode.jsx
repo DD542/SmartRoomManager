@@ -17,7 +17,7 @@ import { Button } from './Button';
 export function AccessCode({ code, size = 'lg', className }) {
   return (
     <div className={cn('flex items-center gap-3', className)}>
-      <div className="flex items-center gap-2 rounded-xl border border-line bg-ink px-3 py-2">
+      <div className="flex items-center gap-2 rounded-2xl border border-line/70 bg-ink px-3 py-2">
         <KeyRound size={14} aria-hidden="true" className="text-content-muted" />
         <span
           className={cn(
@@ -97,7 +97,7 @@ export function AccessCodePanel({
       )}
 
       {badgeRequired && (
-        <p className="w-full rounded-lg border border-warning/40 bg-warning-soft px-3 py-2 text-xs font-medium uppercase tracking-wide text-warning">
+        <p className="w-full rounded-lg border border-warning/40 bg-warning-soft px-3 py-2 text-xs font-medium tracking-tight text-warning">
           Badge requis
         </p>
       )}

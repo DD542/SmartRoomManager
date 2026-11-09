@@ -21,8 +21,8 @@ import { render, screen } from '@testing-library/react';
 import { Input, Select, Textarea } from './Form';
 
 const OPTIONS = [
-  { value: 'b-1', label: 'Eiffel 1' },
-  { value: 'b-2', label: 'Eiffel 2' },
+  { value: 'b-1', label: 'Bâtiment A' },
+  { value: 'b-2', label: 'Bâtiment B' },
 ];
 
 /** Guette les avertissements de React, qui ne lèvent rien par eux-mêmes. */
@@ -55,7 +55,7 @@ describe('Valeur nulle', () => {
 
   it('laisse le champ vide plutôt que de choisir à la place de l’utilisateur', () => {
     // Sans normalisation, un `select` non contrôlé affiche sa première option :
-    // l'écran annoncerait « Eiffel 1 » alors que rien n'est choisi.
+    // l'écran annoncerait « Bâtiment A » alors que rien n'est choisi.
     render(
       <Select
         label="Bâtiment principal"

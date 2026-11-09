@@ -39,15 +39,15 @@ const { default: RoomDetailPage } = await import('./RoomDetailPage');
 
 const salle = (extra = {}) => ({
   id: SALLE_ID,
-  name: 'Amphi Eiffel',
-  slug: 'amphi-eiffel',
+  name: 'Amphi Horizon',
+  slug: 'amphi-horizon',
   status: 'disponible',
   capacity: 90,
   area_m2: 180,
   is_accessible: true,
   badge_required: true,
   building_id: 'b-1',
-  building_name: 'Eiffel 1',
+  building_name: 'Bâtiment A',
   floor_id: ETAGE_ID,
   floor_label: 'Rez-de-chaussée',
   floor_level: 0,
@@ -74,7 +74,7 @@ const annexes = () => [
     HttpResponse.json({ items: [], total: 0 }),
   ),
   http.get(`${BASE}/buildings/b-1`, () =>
-    HttpResponse.json({ id: 'b-1', code: 'EIF1', name: 'Eiffel 1', floors: [] }),
+    HttpResponse.json({ id: 'b-1', code: 'BATA', name: 'Bâtiment A', floors: [] }),
   ),
   http.get(`${BASE}/rooms/${SALLE_ID}/booking-rules`, () => HttpResponse.json({})),
   http.get(`${BASE}/rooms/${SALLE_ID}/opening-hours`, () => HttpResponse.json([])),
@@ -103,7 +103,7 @@ describe('plan de localisation d’une salle', () => {
     monter();
 
     const image = await screen.findByAltText(
-      /Plan de localisation : Repère de Amphi Eiffel/i,
+      /Plan de localisation : Repère de Amphi Horizon/i,
     );
     expect(image.getAttribute('src')).toBe(REPERE);
   });
@@ -116,7 +116,7 @@ describe('plan de localisation d’une salle', () => {
 
     monter();
 
-    await screen.findByText('Amphi Eiffel');
+    await screen.findByText('Amphi Horizon');
     await waitFor(() => expect(screen.queryByText(/Aucun plan déposé/i)).toBeNull());
   });
 

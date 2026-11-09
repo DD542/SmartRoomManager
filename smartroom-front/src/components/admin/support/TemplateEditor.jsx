@@ -53,7 +53,7 @@ export function TemplateEditor({ template, draft, onChange, variables = [], unkn
         />
 
         <div>
-          <p className="mb-1.5 flex items-center gap-1.5 text-xs uppercase tracking-wide text-content-muted">
+          <p className="mb-1.5 flex items-center gap-1.5 text-xs tracking-tight text-content-muted">
             <Variable size={12} aria-hidden="true" />
             Variables disponibles
           </p>

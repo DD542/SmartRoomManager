@@ -12,7 +12,7 @@ function Block({ label, values, muted = false }) {
         muted ? 'border-line bg-surface-raised' : 'border-accent/40 bg-accent-soft',
       )}
     >
-      <p className="text-[10px] uppercase tracking-wide text-content-muted">{label}</p>
+      <p className="text-[10px] tracking-tight text-content-muted">{label}</p>
       <ul className="mt-1.5 flex flex-col gap-0.5">
         {values.map((value) => (
           <li

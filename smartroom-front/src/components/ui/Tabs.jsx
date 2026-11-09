@@ -39,7 +39,7 @@ export function Tabs({ tabs = [], value, onChange, className, label = 'Onglets' 
             {typeof tab.count === 'number' && (
               <span className="ml-1.5 text-xs text-content-faint">{tab.count}</span>
             )}
-            {active && <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-accent" />}
+            {active && <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-content" />}
           </button>
         );
       })}
@@ -53,7 +53,7 @@ export function SegmentedControl({ options = [], value, onChange, className, lab
     <div
       role="radiogroup"
       aria-label={label}
-      className={cn('inline-flex rounded-xl border border-line bg-surface p-0.5', className)}
+      className={cn('verre inline-flex rounded-full p-1', className)}
     >
       {options.map((option) => {
         const active = option.value === value;
@@ -65,8 +65,8 @@ export function SegmentedControl({ options = [], value, onChange, className, lab
             aria-checked={active}
             onClick={() => onChange?.(option.value)}
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-[10px] px-3 py-1.5 text-xs font-medium transition',
-              active ? 'bg-surface-raised text-content' : 'text-content-muted hover:text-content',
+              'pression inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition',
+              active ? 'bg-accent text-ink shadow-bouton' : 'text-content-muted hover:text-content',
             )}
           >
             {option.icon && <option.icon size={13} aria-hidden="true" />}

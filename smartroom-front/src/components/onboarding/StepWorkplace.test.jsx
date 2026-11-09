@@ -19,9 +19,9 @@ describe('Choix du bâtiment principal', () => {
         buildings={[
           {
             id: 'b-1',
-            name: 'Eiffel 1',
+            name: 'Bâtiment A',
             campus: '12 rue Pasteur',
-            imageUrl: '/media/buildings/eiffel-1.jpg',
+            imageUrl: '/media/buildings/batiment-a.jpg',
           },
         ]}
         isLoading={false}
@@ -31,14 +31,14 @@ describe('Choix du bâtiment principal', () => {
     );
 
     const photo = screen.getByRole('presentation', { hidden: true });
-    expect(photo.getAttribute('src')).toBe('/media/buildings/eiffel-1.jpg');
+    expect(photo.getAttribute('src')).toBe('/media/buildings/batiment-a.jpg');
   });
 
   it('retombe sur un symbole quand le bâtiment n’a pas de photo', () => {
     // Un cadre vide dirait moins qu'un symbole, et une image cassée dirait pire.
     const { container } = render(
       <StepWorkplace
-        buildings={[{ id: 'b-2', name: 'Eiffel 2', campus: '14 rue Pasteur', imageUrl: null }]}
+        buildings={[{ id: 'b-2', name: 'Bâtiment B', campus: '14 rue Pasteur', imageUrl: null }]}
         isLoading={false}
         value={REGLAGES}
         onChange={vi.fn()}
@@ -46,6 +46,6 @@ describe('Choix du bâtiment principal', () => {
     );
 
     expect(container.querySelector('img')).toBeNull();
-    expect(screen.getByText('Eiffel 2')).toBeTruthy();
+    expect(screen.getByText('Bâtiment B')).toBeTruthy();
   });
 });

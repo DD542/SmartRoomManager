@@ -47,7 +47,7 @@ export function PlanRoomPanel({ pose, unplaced = [], onRotate, onEntrance, onUnp
         </DetailRow>
 
         <div>
-          <p className="mb-1.5 flex items-center gap-1.5 text-xs uppercase tracking-wide text-content-muted">
+          <p className="mb-1.5 flex items-center gap-1.5 text-xs tracking-tight text-content-muted">
             <RotateCw size={12} aria-hidden="true" />
             Rotation
           </p>
@@ -82,7 +82,7 @@ function ListeAPlacer({ rooms, onPlace, busy }) {
 
   return (
     <div className="border-t border-line px-4 py-3">
-      <p className="mb-2 text-xs uppercase tracking-wide text-content-muted">
+      <p className="mb-2 text-xs tracking-tight text-content-muted">
         Salles à placer ({rooms.length})
       </p>
       <ul className="flex flex-wrap gap-1.5">

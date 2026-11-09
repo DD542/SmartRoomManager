@@ -9,7 +9,7 @@ function Row({ icon: Icon, label, children }) {
     <div className="flex gap-3 border-b border-line px-4 py-2.5 last:border-0">
       <Icon size={15} aria-hidden="true" className="mt-0.5 shrink-0 text-content-muted" />
       <div className="min-w-0">
-        <p className="text-xs uppercase tracking-wide text-content-muted">{label}</p>
+        <p className="text-xs tracking-tight text-content-muted">{label}</p>
         <div className="mt-0.5 text-sm text-content">{children}</div>
       </div>
     </div>
@@ -25,7 +25,7 @@ export function NeedSummary({ draft, building, equipment = [], matches, isCounti
 
   return (
     <Card className="lg:sticky lg:top-4">
-      <p className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-content-muted">
+      <p className="px-4 py-3 text-xs font-medium tracking-tight text-content-muted">
         Résumé de la recherche
       </p>
 

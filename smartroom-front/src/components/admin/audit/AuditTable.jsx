@@ -76,7 +76,7 @@ export function AuditTable({ table, onSelect }) {
             <button
               type="button"
               onClick={() => onSelect?.(row)}
-              className="w-full rounded-xl border border-line bg-surface-raised p-3 text-left"
+              className="w-full rounded-2xl border border-line/70 bg-surface/70 p-3 text-left"
             >
               <span className="flex items-baseline justify-between gap-2">
                 <span className="truncate text-sm text-content">{row.target}</span>

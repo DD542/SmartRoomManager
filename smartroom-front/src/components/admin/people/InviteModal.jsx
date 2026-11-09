@@ -57,7 +57,7 @@ export function InviteModal({ open, onClose, onSubmit, groups = [], loading = fa
           type="email"
           label="Adresse email"
           required
-          placeholder="prenom.nom@ece.fr"
+          placeholder="prenom.nom@organisation.com"
           value={email}
           error={email && !emailValide ? 'Adresse e-mail invalide.' : undefined}
           onChange={(event) => setEmail(event.target.value)}
@@ -65,7 +65,7 @@ export function InviteModal({ open, onClose, onSubmit, groups = [], loading = fa
 
         {groups.map((groupe) => (
           <fieldset key={groupe.id}>
-            <legend className="mb-2 text-xs uppercase tracking-wide text-content-muted">
+            <legend className="mb-2 text-xs tracking-tight text-content-muted">
               {groupe.label}
             </legend>
             <div className="flex flex-col gap-2">

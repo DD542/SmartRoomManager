@@ -97,7 +97,7 @@ function Historique({ entries }) {
   if (entries.length === 0) return null;
   return (
     <div>
-      <p className="mb-2 text-xs uppercase tracking-wide text-content-muted">Historique</p>
+      <p className="mb-2 text-xs tracking-tight text-content-muted">Historique</p>
       <ol className="flex flex-col gap-2 border-l border-line pl-3">
         {entries.map((entry, index) => (
           <li key={`${entry.type}-${index}`} className="relative text-xs text-content-muted">

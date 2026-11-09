@@ -98,7 +98,7 @@ export default function NotificationsPage() {
           <div className="flex flex-col gap-5 p-4">
             {Object.entries(groups).map(([day, items]) => (
               <section key={day}>
-                <h2 className="text-xs font-medium uppercase tracking-wide text-content-muted">{day}</h2>
+                <h2 className="text-xs font-medium tracking-tight text-content-muted">{day}</h2>
                 <StaggerList className="mt-2 flex flex-col gap-2">
                   {items.map((notification) => {
                     const { icon: Icon, tone } = ICONS[notification.category] ?? ICONS.reservation;

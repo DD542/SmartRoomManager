@@ -60,7 +60,7 @@ export function SlotPanel({
 
       <div className="flex flex-col gap-4 px-4 py-4">
         <div>
-          <p className="text-xs uppercase tracking-wide text-content-muted">Créneau sélectionné</p>
+          <p className="text-xs tracking-tight text-content-muted">Créneau sélectionné</p>
           <p className="mt-1 text-sm capitalize text-content">{fmtDateLong(slot.start)}</p>
           <p className="mt-1.5 inline-flex rounded-lg border border-line bg-surface-raised px-2.5 py-1 font-mono text-sm text-content">
             {fmtTime(slot.start)} - {fmtTime(slot.end)}
@@ -95,7 +95,7 @@ export function SlotPanel({
 
         {!checking && alternatives.length > 0 && (
           <div>
-            <p className="text-xs uppercase tracking-wide text-content-muted">Créneaux alternatifs</p>
+            <p className="text-xs tracking-tight text-content-muted">Créneaux alternatifs</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {alternatives.map((alternative) => (
                 <button
@@ -122,7 +122,7 @@ export function SlotPanel({
 
         {rules && (
           <div className="border-t border-line pt-4">
-            <p className="text-xs uppercase tracking-wide text-content-muted">Règles d’accès</p>
+            <p className="text-xs tracking-tight text-content-muted">Règles d’accès</p>
             <p className="mt-2 flex items-center gap-2 text-xs text-content-muted">
               <Badge tone="default">{openingLabel(rules)}</Badge>
             </p>

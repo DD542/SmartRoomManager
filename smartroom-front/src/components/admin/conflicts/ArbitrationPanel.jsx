@@ -69,7 +69,7 @@ export function ArbitrationPanel({ alternatives = [], variant = 'conflit', onSub
   return (
     <div className="flex flex-col gap-4">
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1 text-xs uppercase tracking-wide text-content-muted">Décision</legend>
+        <legend className="mb-1 text-xs tracking-tight text-content-muted">Décision</legend>
         {(DECISIONS[variant] ?? DECISIONS.conflit).map((option) => {
           const actif = decision === option.value;
           const Icone = option.icon;
@@ -103,7 +103,7 @@ export function ArbitrationPanel({ alternatives = [], variant = 'conflit', onSub
 
       {decision === 'alternative' && (
         <div>
-          <p className="mb-2 text-xs uppercase tracking-wide text-content-muted">
+          <p className="mb-2 text-xs tracking-tight text-content-muted">
             {variant === 'conflit' ? 'Salle proposée au demandeur débouté' : 'Salle proposée au demandeur'}
           </p>
           <AlternativeList alternatives={alternatives} selectedId={salle} onSelect={setSalle} />

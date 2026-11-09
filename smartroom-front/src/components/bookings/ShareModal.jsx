@@ -223,7 +223,7 @@ export function ShareModal({ booking, open, onClose }) {
     >
       <div className="flex flex-col gap-4">
         {/* Ce que verra la personne : le sujet de la fenêtre, donc en tête. */}
-        <pre className="whitespace-pre-wrap rounded-xl border border-line bg-surface-raised px-3.5 py-3 font-sans text-sm leading-relaxed text-content">
+        <pre className="whitespace-pre-wrap rounded-2xl border border-line/70 bg-surface/70 px-3.5 py-3 font-sans text-sm leading-relaxed text-content">
           {resume}
         </pre>
 
@@ -246,7 +246,7 @@ export function ShareModal({ booking, open, onClose }) {
             </Button>
           )}
 
-          <p className="pt-1 text-xs uppercase tracking-wide text-content-muted">
+          <p className="pt-1 text-xs tracking-tight text-content-muted">
             Ouvrir dans
           </p>
           {/* Une grille de deux, pas une rangée : à quatre applications, des
@@ -278,7 +278,7 @@ export function ShareModal({ booking, open, onClose }) {
                   onClick={() => {
                     if (lien.copieLeResume) navigator.clipboard?.writeText(resume).catch(() => {});
                   }}
-                  className={`group inline-flex min-h-[46px] items-center gap-2.5 rounded-xl border border-line bg-surface-raised px-3.5 text-sm font-medium text-content transition hover:border-[var(--marque)] hover:bg-surface focus-visible:border-[var(--marque)] focus-visible:outline-none ${
+                  className={`group inline-flex min-h-[46px] items-center gap-2.5 rounded-2xl border border-line/70 bg-surface/70 px-3.5 text-sm font-medium text-content transition hover:border-[var(--marque)] hover:bg-surface focus-visible:border-[var(--marque)] focus-visible:outline-none ${
                     seulSurSaLigne ? 'col-span-2' : ''
                   }`}
                 >
@@ -332,7 +332,7 @@ export function ShareModal({ booking, open, onClose }) {
         </div>
 
         {booking.room?.locationPlanUrl && (
-          <div className="flex items-center gap-3 rounded-xl border border-line bg-surface-raised p-2">
+          <div className="flex items-center gap-3 rounded-2xl border border-line/70 bg-surface/70 p-2">
             <img
               src={booking.room.locationPlanUrl}
               alt={`Plan de localisation — ${booking.room.name}`}

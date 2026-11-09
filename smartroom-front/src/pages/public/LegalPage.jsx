@@ -45,13 +45,13 @@ export default function LegalPage() {
       <Card className="mt-8">
         <Section titre="Éditeur">
           <p>
-            SmartRoom Manager est un <strong className="text-content">projet académique</strong>{' '}
-            réalisé dans le cadre du Bachelor 3 Data &amp; IA de l’ECE Paris. Il
-            n’est pas exploité commercialement et ne constitue pas un service ouvert au public.
+            SmartRoom Manager est une <strong className="text-content">plateforme de réservation
+            de salles</strong> destinée aux organisations qui l’installent sur leur propre
+            infrastructure. Elle ne constitue pas un service ouvert au public.
           </p>
           <p>
-            Responsable du traitement : l’étudiant auteur du projet, joignable par l’adresse de
-            contact communiquée à l’établissement.
+            Responsable du traitement : l’organisation qui exploite l’instance, joignable par l’adresse de
+            contact communiquée à l’organisation.
           </p>
         </Section>
 

@@ -97,7 +97,7 @@ export default function InvitationPage() {
               </div>
 
               <div className="border-t border-line pt-4">
-                <p className="text-xs uppercase tracking-wide text-content-muted">
+                <p className="text-xs tracking-tight text-content-muted">
                   Participants ({data.participants.length})
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-3">

@@ -49,7 +49,7 @@ export function LocationPlanBrowser({ floors = [], buildingName = '' }) {
         <div className="flex flex-col gap-3 px-3 pb-3">
           {floors.map((etage) => (
             <div key={etage.id}>
-              <p className="px-1 pb-1 text-[10px] uppercase tracking-wide text-content-faint">
+              <p className="px-1 pb-1 text-[10px] tracking-tight text-content-faint">
                 {etage.label}
               </p>
               <ul className="flex flex-col gap-1">
@@ -99,7 +99,7 @@ export function LocationPlanBrowser({ floors = [], buildingName = '' }) {
             <img
               src={choisie.locationPlanUrl}
               alt={`Plan de localisation de ${choisie.name}`}
-              className="w-full rounded-xl border border-line bg-surface-raised object-contain"
+              className="w-full rounded-2xl border border-line/70 bg-surface/70 object-contain"
             />
           ) : (
             <EmptyState

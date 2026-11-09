@@ -91,7 +91,7 @@ export default function LoginPage() {
           autoComplete="email"
           icon={Mail}
           required
-          placeholder="prenom.nom@edu.ece.fr"
+          placeholder="prenom.nom@organisation.com"
           value={form.email}
           onChange={set('email')}
         />
@@ -112,7 +112,7 @@ export default function LoginPage() {
               placeholder="••••••••"
               value={form.password}
               onChange={set('password')}
-              className="h-10 w-full rounded-xl border border-line bg-surface-raised pl-9 pr-10 text-sm text-content
+              className="h-10 w-full rounded-2xl border border-line/70 bg-surface/70 pl-9 pr-10 text-sm text-content
                          placeholder:text-content-faint focus:border-accent focus:outline-none"
             />
             <button

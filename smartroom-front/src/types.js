@@ -7,7 +7,7 @@
  * @property {string} id                 'b-a'
  * @property {'A'|'B'|'C'} code
  * @property {string} name               'Bâtiment A'
- * @property {string} campus             'Campus Eiffel'
+ * @property {string} campus             'Bâtiment A'
  * @property {string[]} floors           ['RDC','1er','2e']
  * @property {string} entranceLabel
  * @property {string[]} directions       Itinéraire depuis l'entrée

@@ -81,7 +81,7 @@ export function StepWorkplace({ buildings, isLoading, value, onChange }) {
       )}
 
       <fieldset className="mt-7">
-        <legend className="text-xs font-medium uppercase tracking-wide text-content-muted">
+        <legend className="text-xs font-medium tracking-tight text-content-muted">
           Capacité habituellement recherchée
         </legend>
         <div className="mt-3 flex flex-wrap gap-2">

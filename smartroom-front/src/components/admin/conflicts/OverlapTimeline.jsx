@@ -29,9 +29,9 @@ export function OverlapTimeline({ claimants = [], roomName }) {
     : 0;
 
   return (
-    <div className="rounded-xl border border-line bg-surface-raised p-3">
+    <div className="rounded-2xl border border-line/70 bg-surface/70 p-3">
       <p className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-        <span className="text-xs uppercase tracking-wide text-content-muted">
+        <span className="text-xs tracking-tight text-content-muted">
           Chevauchement — {roomName}
         </span>
         <span className="font-mono text-xs text-danger">

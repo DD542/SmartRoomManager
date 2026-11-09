@@ -19,14 +19,14 @@ export default function AdminLayout() {
   const { pathname } = useLocation();
 
   return (
-    <div className="flex h-full min-h-screen bg-ink">
+    <div className="flex min-h-screen">
       <a href="#contenu-admin" className="sr-skip">
         Aller au contenu principal
       </a>
       <AdminSidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <AdminTopbar onOpenMenu={() => setMenuOuvert(true)} />
-        <main id="contenu-admin" tabIndex={-1} className="flex-1 overflow-y-auto px-4 py-5 md:px-6">
+        <main id="contenu-admin" tabIndex={-1} className="flex-1 px-4 pb-10 pt-4 md:px-6">
           <PageTransition className="mx-auto w-full max-w-7xl">
             <Outlet />
           </PageTransition>

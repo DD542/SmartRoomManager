@@ -16,7 +16,7 @@ const TONE = {
  */
 export function PdfPlanView({ document: planDocument, rooms = [], mineIds = [], selectedId, onSelect, className }) {
   return (
-    <div className={cn('rounded-xl border border-line bg-ink p-3', className)}>
+    <div className={cn('rounded-2xl border border-line/70 bg-ink p-3', className)}>
       <iframe
         src={planDocument.url}
         title={`Plan officiel : ${planDocument.name}`}

@@ -67,7 +67,7 @@ export default function CancelBookingModal({ booking, open, onClose, onCancelled
       }
     >
       <div className="flex flex-col gap-4">
-        <div className="rounded-xl border border-line bg-surface-raised p-3">
+        <div className="rounded-2xl border border-line/70 bg-surface/70 p-3">
           <p className="flex items-center gap-2 text-sm text-content">
             <DoorOpen size={14} aria-hidden="true" className="text-content-muted" />
             {booking.room?.name}

@@ -48,7 +48,7 @@ export function FloorAccordion({
       {floors.map((etage) => {
         const deplie = ouvert.has(etage.id);
         return (
-          <div key={etage.id} className="rounded-xl border border-line bg-surface-raised">
+          <div key={etage.id} className="rounded-2xl border border-line/70 bg-surface/70">
             <div className="flex items-center gap-2 p-2.5">
               <button
                 type="button"

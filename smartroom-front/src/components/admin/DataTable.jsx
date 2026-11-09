@@ -81,7 +81,7 @@ export function DataTable({
                       trie ? (table.sort.direction === 'asc' ? 'ascending' : 'descending') : undefined
                     }
                     className={cn(
-                      'px-3 py-2.5 text-xs font-medium uppercase tracking-wide text-content-muted',
+                      'px-3 py-2.5 text-xs font-medium tracking-tight text-content-muted',
                       column.align === 'right' && 'text-right',
                     )}
                   >

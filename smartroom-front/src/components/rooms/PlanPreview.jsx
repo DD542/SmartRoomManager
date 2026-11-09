@@ -38,7 +38,7 @@ export function PlanPreview({ document, isLoading, className, actionLabel = 'Ouv
         type="button"
         onClick={() => setOpen(true)}
         aria-label={`Agrandir le plan : ${document.name}`}
-        className="group relative block w-full overflow-hidden rounded-xl border border-line bg-ink"
+        className="group relative block w-full overflow-hidden rounded-2xl border border-line/70 bg-ink"
       >
         {isPdf ? (
           <span className="flex h-28 flex-col items-center justify-center gap-1.5">

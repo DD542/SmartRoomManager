@@ -90,7 +90,7 @@ export function PlanUpload({ planId, document, onUploaded, className }) {
       {error && <Callout tone="danger">{error}</Callout>}
 
       {document && (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line bg-surface-raised px-3 py-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-line/70 bg-surface/70 px-3 py-2">
           <span className="min-w-0">
             <span className="block truncate text-xs text-content">{document.name}</span>
             <span className="block text-[11px] text-content-muted">

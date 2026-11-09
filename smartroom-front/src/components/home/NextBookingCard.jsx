@@ -76,11 +76,11 @@ export function NextBookingCard({ booking, isLoading }) {
 
           <dl className="mt-4 flex gap-6 border-t border-line pt-3">
             <div>
-              <dt className="text-xs uppercase tracking-wide text-content-muted">Date</dt>
+              <dt className="text-xs tracking-tight text-content-muted">Date</dt>
               <dd className="mt-0.5 text-sm text-content">{dayLabel}</dd>
             </div>
             <div>
-              <dt className="text-xs uppercase tracking-wide text-content-muted">Horaire</dt>
+              <dt className="text-xs tracking-tight text-content-muted">Horaire</dt>
               <dd className="mt-0.5 font-mono text-sm text-content">
                 {fmtTime(booking.start)} - {fmtTime(booking.end)}
               </dd>

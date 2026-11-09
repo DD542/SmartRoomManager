@@ -76,7 +76,7 @@ export function PileInspecteur({
             onClick={onFermer}
             // 44 px et pleine largeur : c'est la seule sortie de la fiche au
             // doigt, elle doit rester atteignable sans viser.
-            className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-line bg-surface-raised px-4 text-sm text-content transition hover:border-line-strong"
+            className="inline-flex min-h-[44px] w-full items-center justify-center rounded-2xl border border-line/70 bg-surface/70 px-4 text-sm text-content transition hover:border-line-strong"
           >
             {libelleFermer}
           </button>

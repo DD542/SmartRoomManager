@@ -247,7 +247,7 @@ export function ChatbotPanel() {
         // (56 px) et de la marge du système, et non par-dessus. Elle reste en
         // outre sous elle dans l'échelle des plans — un bouton flottant ne
         // masque pas une destination.
-        className="fixed bottom-[calc(env(safe-area-inset-bottom)+4.5rem)] right-4 z-chatbubble flex h-12 w-12 items-center justify-center rounded-full border border-accent/40 bg-accent text-ink shadow-lg transition hover:brightness-110 md:bottom-5 md:right-5"
+        className="pression fixed bottom-[calc(env(safe-area-inset-bottom)+6.25rem)] right-4 z-chatbubble flex h-14 w-14 items-center justify-center rounded-full bg-accent text-ink shadow-haute ring-4 ring-surface/60 transition-colors hover:bg-accent-hover md:bottom-6 md:right-6"
       >
         <Bot size={20} aria-hidden="true" />
       </button>
@@ -262,10 +262,10 @@ export function ChatbotPanel() {
       // n'affichait que quatre lignes de conversation au-dessus du clavier
       // virtuel. À partir de 768 px, il redevient une fenêtre posée dans le
       // coin, qui laisse voir l'écran de travail derrière.
-      className="fixed inset-0 z-chatpanel flex flex-col border-line bg-surface pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] md:inset-auto md:bottom-5 md:right-5 md:h-[32rem] md:w-[min(24rem,calc(100vw-2.5rem))] md:overflow-hidden md:rounded-2xl md:border md:pb-0 md:pt-0 md:shadow-2xl"
+      className="verre-epais fixed inset-0 z-chatpanel flex animate-scale-in flex-col pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] md:inset-auto md:bottom-6 md:right-6 md:h-[34rem] md:w-[min(25rem,calc(100vw-3rem))] md:origin-bottom-right md:overflow-hidden md:rounded-3xl md:pb-0 md:pt-0 md:shadow-haute"
     >
       <header className="flex items-center gap-3 border-b border-line px-4 py-3">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-accent/40 bg-accent-soft">
+        <span className="flex h-9 w-9 items-center justify-center rounded-2xl border border-transparent bg-accent-soft">
           <Bot size={18} className="text-accent" aria-hidden="true" />
         </span>
         <span className="min-w-0 flex-1">

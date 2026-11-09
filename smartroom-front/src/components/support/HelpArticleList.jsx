@@ -65,7 +65,7 @@ export function HelpArticleList({ articles = [], openId, onToggle, related = [],
 
                 {relations.length > 0 && (
                   <div className="mt-3 border-t border-line pt-3">
-                    <p className="text-[11px] uppercase tracking-wide text-content-faint">
+                    <p className="text-[11px] tracking-tight text-content-faint">
                       À lire aussi
                     </p>
                     <ul className="mt-1.5 flex flex-wrap gap-1.5">

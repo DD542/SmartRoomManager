@@ -30,7 +30,7 @@ export function EquipmentIcons({ equipment = [], className }) {
         return (
           <li key={item.id}>
             <Tooltip label={item.label}>
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-line bg-surface-raised">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-content/[0.06]">
                 <Icon size={13} aria-hidden="true" className="text-content-muted" />
                 <span className="sr-only">{item.label}</span>
               </span>
@@ -47,29 +47,33 @@ export function RoomCard({ room, tight = false, action, to, badge }) {
   const unavailable = room.status === 'maintenance';
 
   return (
-    <Card className="flex h-full flex-col overflow-hidden">
-      <div className="relative">
-        <RoomThumb room={room} className="h-32 w-full" iconSize={22} />
-        <span className="absolute left-2 top-2">
+    <Card className="group flex h-full flex-col overflow-hidden rounded-3xl p-2 transition duration-500 ease-ressort hover:-translate-y-1 hover:shadow-haute">
+      <div className="relative overflow-hidden rounded-[18px]">
+        <RoomThumb
+          room={room}
+          className="h-36 w-full rounded-[18px] transition-transform duration-700 ease-feuille group-hover:scale-[1.03]"
+          iconSize={22}
+        />
+        <span className="absolute left-2.5 top-2.5 rounded-full bg-surface/85 shadow-carte backdrop-blur-md">
           <Badge tone={STATUS_TONE[room.status] ?? 'default'} dot>
             {badge ?? ROOM_STATUS_LABEL[room.status]}
           </Badge>
         </span>
-        <span className="absolute right-2 top-2">
+        <span className="absolute right-2.5 top-2.5 rounded-full bg-surface/85 shadow-carte backdrop-blur-md">
           <Badge tone="default" icon={Users}>
             {room.capacity}
           </Badge>
         </span>
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 p-3.5">
+      <div className="flex flex-1 flex-col gap-3 px-2.5 pb-2.5 pt-3">
         <div>
           <Link
             to={to ?? `/app/salles/${room.id}`}
             // Le titre de la carte est aussi son lien : 84 x 17 px au
             // téléphone, là où c'est le geste le plus naturel pour ouvrir une
             // salle. La zone sensible s'étend sans que le texte bouge.
-            className="-my-2 inline-flex min-h-[44px] items-center py-2 text-sm font-semibold text-content transition hover:text-accent lg:my-0 lg:min-h-0 lg:py-0"
+            className="-my-2 inline-flex min-h-[44px] items-center py-2 text-sm font-semibold text-content transition hover:opacity-70 lg:my-0 lg:min-h-0 lg:py-0"
           >
             {room.name}
           </Link>
@@ -111,10 +115,10 @@ export function RecommendationCard({ entry, to, action }) {
   return (
     <Card tone="accent" className="overflow-hidden">
       <div className="flex flex-col gap-4 p-4 sm:flex-row">
-        <RoomThumb room={room} className="h-28 w-full rounded-lg sm:w-44" iconSize={24} />
+        <RoomThumb room={room} className="h-28 w-full rounded-2xl sm:w-44" iconSize={24} />
 
         <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-accent">
+          <p className="flex items-center gap-1.5 text-xs font-medium tracking-tight text-content">
             <Sparkles size={13} aria-hidden="true" />
             Recommandé pour vous
           </p>

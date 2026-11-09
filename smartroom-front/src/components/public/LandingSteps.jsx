@@ -26,21 +26,21 @@ const STEPS = [
 /** P-01 — ancre #fonctionnement : le tunnel de réservation en quatre étapes. */
 export function LandingSteps() {
   return (
-    <section id="fonctionnement" className="scroll-mt-16">
-      <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:py-20">
-        <Reveal as="h2" className="text-2xl font-semibold tracking-tight text-content sm:text-3xl">
+    <section id="fonctionnement" className="scroll-mt-24">
+      <div className="mx-auto w-full max-w-6xl px-4 py-20 sm:py-28">
+        <Reveal as="h2" className="font-display text-3xl font-semibold tracking-[-0.03em] text-content sm:text-5xl">
           Comment ça marche
         </Reveal>
 
         <ol className="mt-8 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
           {STEPS.map((step, index) => (
             <Reveal as="li" key={step.number} delay={index * 90}>
-              <span className="group block h-full rounded-xl border border-line bg-surface p-5 transition duration-300 hover:-translate-y-1 hover:border-line-strong">
-                <span className="inline-block font-mono text-xs text-accent transition-transform duration-300 group-hover:scale-125">
+              <span className="group block h-full rounded-2xl border border-line/70 bg-surface/80 shadow-carte rounded-3xl p-6 transition duration-500 ease-ressort hover:-translate-y-1.5 hover:shadow-haute">
+                <span className="inline-block font-display text-4xl font-semibold tracking-tight text-content-faint transition-colors duration-300 group-hover:text-content">
                   {step.number}
                 </span>
-                <span className="mt-3 block text-sm font-semibold text-content">{step.title}</span>
-                <span className="mt-2 block text-xs leading-relaxed text-content-muted">{step.body}</span>
+                <span className="mt-4 block text-base font-semibold tracking-tight text-content">{step.title}</span>
+                <span className="mt-2 block text-sm leading-relaxed text-content-muted">{step.body}</span>
               </span>
             </Reveal>
           ))}

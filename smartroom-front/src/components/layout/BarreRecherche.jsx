@@ -56,7 +56,7 @@ export function BarreRecherche({
         <button
           type="button"
           onClick={() => setOuverte(true)}
-          className="inline-flex min-h-[40px] w-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-line bg-surface-raised text-sm text-content-faint transition hover:border-line-strong sm:w-auto sm:justify-start sm:px-3"
+          className="pression inline-flex min-h-[40px] w-10 shrink-0 items-center justify-center gap-1.5 rounded-full bg-content/[0.05] text-sm text-content-faint transition-colors hover:bg-content/[0.08] sm:w-auto sm:justify-start sm:px-3.5"
         >
           <Search size={16} aria-hidden="true" />
           <span className="sr-only">{label}</span>
@@ -83,7 +83,7 @@ export function BarreRecherche({
               value={value}
               onChange={(event) => onChange(event.target.value)}
               placeholder={placeholder}
-              className="h-11 w-full rounded-xl border border-line bg-surface-raised px-3 text-base text-content placeholder:text-content-faint focus:border-accent focus:outline-none"
+              className="h-12 w-full rounded-full border border-line/70 bg-surface/70 px-4 text-base text-content placeholder:text-content-faint focus:border-content/40 focus:outline-none focus:ring-4 focus:ring-content/[0.08]"
             />
             {/* `type="submit"` : la touche Entrée du clavier virtuel doit
                 lancer la recherche comme le bouton. */}
@@ -105,7 +105,7 @@ export function BarreRecherche({
       <Search
         size={15}
         aria-hidden="true"
-        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-content-faint"
+        className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-content-faint"
       />
       <input
         id={id}
@@ -113,7 +113,7 @@ export function BarreRecherche({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="h-9 w-full rounded-xl border border-line bg-surface-raised pl-9 pr-3 text-sm text-content placeholder:text-content-faint focus:border-accent focus:outline-none"
+        className="h-10 w-full rounded-full border border-transparent bg-content/[0.05] pl-10 pr-4 text-sm text-content placeholder:text-content-faint transition focus:border-content/20 focus:bg-surface/80 focus:outline-none focus:ring-4 focus:ring-content/[0.06]"
       />
     </form>
   );

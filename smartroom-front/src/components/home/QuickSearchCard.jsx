@@ -43,7 +43,7 @@ export function QuickSearchCard({ defaultBuildingId }) {
               aria-label="Heure de début"
               value={form.startTime}
               onChange={set('startTime')}
-              className="h-10 w-full rounded-xl border border-line bg-surface-raised px-3 font-mono text-sm text-content focus:border-accent focus:outline-none"
+              className="h-10 w-full rounded-2xl border border-line/70 bg-surface/70 px-3 font-mono text-sm text-content focus:border-accent focus:outline-none"
             />
             <span className="text-content-muted" aria-hidden="true">
               –
@@ -53,7 +53,7 @@ export function QuickSearchCard({ defaultBuildingId }) {
               aria-label="Heure de fin"
               value={form.endTime}
               onChange={set('endTime')}
-              className="h-10 w-full rounded-xl border border-line bg-surface-raised px-3 font-mono text-sm text-content focus:border-accent focus:outline-none"
+              className="h-10 w-full rounded-2xl border border-line/70 bg-surface/70 px-3 font-mono text-sm text-content focus:border-accent focus:outline-none"
             />
           </div>
         </Field>
@@ -75,7 +75,7 @@ export function QuickSearchCard({ defaultBuildingId }) {
               max={50}
               value={form.attendees}
               onChange={set('attendees')}
-              className="h-10 w-full rounded-xl border border-line bg-surface-raised px-3 text-center font-mono text-sm text-content focus:border-accent focus:outline-none"
+              className="h-10 w-full rounded-2xl border border-line/70 bg-surface/70 px-3 text-center font-mono text-sm text-content focus:border-accent focus:outline-none"
             />
             <Button
               variant="secondary"

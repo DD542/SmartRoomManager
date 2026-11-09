@@ -30,7 +30,7 @@ export function RoomFilters({ value, onChange, buildings = [], equipment = [], f
 
       <div className="flex flex-col gap-5 px-4 pb-4">
         <fieldset>
-          <legend className="text-xs font-medium uppercase tracking-wide text-content-muted">
+          <legend className="text-xs font-medium tracking-tight text-content-muted">
             Capacité minimale
           </legend>
           <div className="mt-3 flex items-center gap-3">
@@ -51,7 +51,7 @@ export function RoomFilters({ value, onChange, buildings = [], equipment = [], f
         </fieldset>
 
         <fieldset>
-          <legend className="text-xs font-medium uppercase tracking-wide text-content-muted">
+          <legend className="text-xs font-medium tracking-tight text-content-muted">
             Bâtiment
           </legend>
           <div className="mt-3 flex flex-col gap-2">
@@ -68,7 +68,7 @@ export function RoomFilters({ value, onChange, buildings = [], equipment = [], f
 
         {floors.length > 0 && (
           <fieldset>
-            <legend className="text-xs font-medium uppercase tracking-wide text-content-muted">
+            <legend className="text-xs font-medium tracking-tight text-content-muted">
               Étage
             </legend>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -98,7 +98,7 @@ export function RoomFilters({ value, onChange, buildings = [], equipment = [], f
         )}
 
         <fieldset>
-          <legend className="text-xs font-medium uppercase tracking-wide text-content-muted">
+          <legend className="text-xs font-medium tracking-tight text-content-muted">
             Équipements
           </legend>
           <div className="mt-3 flex flex-col gap-2">

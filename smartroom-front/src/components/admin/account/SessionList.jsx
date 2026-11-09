@@ -24,7 +24,7 @@ export function SessionList({ sessions = [], onRevokeOthers, busy = false }) {
           return (
             <li
               key={item.id}
-              className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface-raised p-3"
+              className="flex flex-wrap items-center gap-3 rounded-2xl border border-line/70 bg-surface/70 p-3"
             >
               <Icone size={16} aria-hidden="true" className="text-content-muted" />
               <span className="min-w-0 flex-1">

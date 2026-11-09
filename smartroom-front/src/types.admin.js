@@ -21,7 +21,7 @@
  * @property {string} id                  'adm-01'
  * @property {string} firstName
  * @property {string} lastName
- * @property {string} email               adresse @ece.fr
+ * @property {string} email               adresse @smartroom.app
  * @property {string} role                intitulé affiché, ex. 'Directeur de site'
  * @property {Permission[]} permissions
  * @property {string|null} lastLoginAt    ISO

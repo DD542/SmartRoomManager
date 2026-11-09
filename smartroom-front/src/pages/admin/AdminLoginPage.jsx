@@ -47,7 +47,7 @@ export default function AdminLoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-ink px-4 py-10">
       <div className="w-full max-w-md">
         <header className="mb-8 flex flex-col items-center gap-3 text-center">
-          <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-accent/40 bg-accent-soft">
+          <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-transparent bg-accent-soft">
             <ShieldCheck size={22} aria-hidden="true" className="text-accent" />
           </span>
           <div>
@@ -66,7 +66,7 @@ export default function AdminLoginPage() {
               autoComplete="email"
               icon={Mail}
               required
-              placeholder="prenom.nom@ece.fr"
+              placeholder="prenom.nom@organisation.com"
               value={form.email}
               onChange={(event) => {
                 setForm((current) => ({ ...current, email: event.target.value }));
@@ -92,7 +92,7 @@ export default function AdminLoginPage() {
                     setForm((current) => ({ ...current, password: event.target.value }));
                     setError(null);
                   }}
-                  className="h-10 w-full rounded-xl border border-line bg-surface-raised pl-9 pr-10 text-sm text-content placeholder:text-content-faint focus:border-accent focus:outline-none"
+                  className="h-10 w-full rounded-2xl border border-line/70 bg-surface/70 pl-9 pr-10 text-sm text-content placeholder:text-content-faint focus:border-accent focus:outline-none"
                 />
                 <button
                   type="button"

@@ -18,7 +18,7 @@ import { NavDrawer } from './NavDrawer';
 import { NAV_ITEMS, Sidebar } from './Sidebar';
 
 vi.mock('../../hooks/useAuth', () => ({
-  useAuth: () => ({ user: { id: 'u-1', email: 'd@ece.fr' }, logout: vi.fn() }),
+  useAuth: () => ({ user: { id: 'u-1', email: 'd@smartroom.app' }, logout: vi.fn() }),
 }));
 
 const rendre = (element) => render(<MemoryRouter>{element}</MemoryRouter>);

@@ -43,7 +43,7 @@ export function YearOverview({ year, days = {}, closures = [] }) {
         {Array.from({ length: 12 }, (_, mois) => {
           const reference = new Date(Number(year), mois, 1);
           return (
-            <div key={mois} className="rounded-xl border border-line bg-surface-raised p-2.5">
+            <div key={mois} className="rounded-2xl border border-line/70 bg-surface/70 p-2.5">
               <p className="mb-1.5 text-[11px] capitalize text-content-muted">
                 {format(reference, 'MMMM', { locale: fr })}
               </p>

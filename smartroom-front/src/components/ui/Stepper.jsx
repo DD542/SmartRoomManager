@@ -41,7 +41,7 @@ export function Stepper({ steps = [], current = 1, onGoTo, className, compact = 
                   className={cn(
                     'flex h-7 w-7 items-center justify-center rounded-full border text-xs font-medium transition',
                     done && 'border-success bg-success-soft text-success',
-                    active && 'border-accent bg-accent text-ink',
+                    active && 'border-accent bg-accent text-ink shadow-bouton',
                     !done && !active && 'border-line bg-surface text-content-faint',
                   )}
                 >
@@ -50,7 +50,7 @@ export function Stepper({ steps = [], current = 1, onGoTo, className, compact = 
                 {!compact && (
                   <span
                     className={cn(
-                      'hidden text-[11px] uppercase tracking-wide sm:inline',
+                      'hidden text-[11px] tracking-tight sm:inline',
                       active ? 'text-content' : 'text-content-muted',
                     )}
                   >
@@ -83,7 +83,7 @@ export function Stepper({ steps = [], current = 1, onGoTo, className, compact = 
       {!compact && steps[current - 1] && (
         <p
           aria-hidden="true"
-          className="mt-2 text-center text-[11px] uppercase tracking-wide text-content sm:hidden"
+          className="mt-2 text-center text-[11px] tracking-tight text-content sm:hidden"
         >
           Étape {current} sur {steps.length} — {steps[current - 1].label}
         </p>

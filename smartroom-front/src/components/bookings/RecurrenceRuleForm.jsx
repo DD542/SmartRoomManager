@@ -25,7 +25,7 @@ export function RecurrenceRuleForm({ rule, onChange, anchorDate }) {
       <CardHeader title="Règle de récurrence" icon={Repeat} />
       <div className="flex flex-col gap-5 px-4 pb-4">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-content-muted">Fréquence</p>
+          <p className="text-xs font-medium tracking-tight text-content-muted">Fréquence</p>
           <SegmentedControl
             label="Fréquence"
             className="mt-2 w-full"
@@ -37,7 +37,7 @@ export function RecurrenceRuleForm({ rule, onChange, anchorDate }) {
 
         {rule.frequency === 'hebdomadaire' && (
           <fieldset>
-            <legend className="text-xs font-medium uppercase tracking-wide text-content-muted">
+            <legend className="text-xs font-medium tracking-tight text-content-muted">
               Répéter le
             </legend>
             <div className="mt-2 flex gap-1.5">
@@ -66,7 +66,7 @@ export function RecurrenceRuleForm({ rule, onChange, anchorDate }) {
         )}
 
         <fieldset className="flex flex-col gap-3">
-          <legend className="text-xs font-medium uppercase tracking-wide text-content-muted">
+          <legend className="text-xs font-medium tracking-tight text-content-muted">
             Se termine
           </legend>
 

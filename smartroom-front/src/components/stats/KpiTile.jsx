@@ -21,24 +21,24 @@ export function KpiTile({ icon: Icon, value, unit, label, trend, tone = 'default
         : 'text-success');
 
   return (
-    <div className={cn('flex items-center gap-3 rounded-xl border border-line bg-surface p-4', className)}>
+    <div className={cn('flex items-center gap-3.5 rounded-3xl border border-line/70 bg-surface/75 p-4 shadow-carte backdrop-blur-xl transition-transform duration-500 ease-ressort hover:-translate-y-0.5', className)}>
       {Icon && (
         <span
           className={cn(
-            'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border',
-            tone === 'accent' ? 'border-accent/40 bg-accent-soft' : 'border-line bg-surface-raised',
+            'flex h-10 w-10 shrink-0 items-center justify-center rounded-full',
+            tone === 'accent' ? 'bg-accent text-ink' : 'bg-content/[0.06]',
           )}
         >
           <Icon
             size={16}
             aria-hidden="true"
-            className={tone === 'accent' ? 'text-accent' : 'text-content-muted'}
+            className={tone === 'accent' ? 'text-ink' : 'text-content'}
           />
         </span>
       )}
       <div className="min-w-0">
         <p className="flex items-baseline gap-1">
-          <span className="font-mono text-xl text-content">{value}</span>
+          <span className="font-display text-2xl font-semibold tracking-tight text-content tabular-nums">{value}</span>
           {unit && <span className="text-xs text-content-muted">{unit}</span>}
           {trend && (
             <span className={cn('ml-1 inline-flex items-center gap-0.5 text-xs', trendTone)}>
@@ -59,7 +59,7 @@ export function KpiTile({ icon: Icon, value, unit, label, trend, tone = 'default
 
 export function KpiTileSkeleton() {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-line bg-surface p-4">
+    <div className="flex items-center gap-3 rounded-2xl border border-line/70 bg-surface/80 shadow-carte p-4">
       <Skeleton className="h-9 w-9" />
       <div className="flex-1">
         <Skeleton rounded="rounded" className="h-5 w-16" />

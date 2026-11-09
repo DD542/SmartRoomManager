@@ -56,13 +56,22 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'Segoe UI', 'sans-serif'],
+        // SF Pro sur les appareils Apple, Inter ailleurs : la même famille de
+        // grotesques à chasse serrée.
+        sans: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Text', 'Inter', 'ui-sans-serif', 'system-ui', 'Segoe UI', 'sans-serif'],
+        display: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         mono: ['ui-monospace', 'JetBrains Mono', 'SFMono-Regular', 'Consolas', 'monospace'],
       },
       borderRadius: {
-        lg: '8px',
-        xl: '12px',
-        '2xl': '16px',
+        lg: '12px',
+        xl: '16px',
+        '2xl': '22px',
+        '3xl': '28px',
+      },
+      boxShadow: {
+        carte: 'var(--ombre-carte)',
+        haute: 'var(--ombre-haute)',
+        bouton: 'var(--ombre-bouton)',
       },
       // Échelle unique et documentée des plans d'affichage. Toute superposition
       // se résout en plaçant l'élément ici, jamais en inventant une valeur dans
@@ -90,15 +99,21 @@ export default {
       },
       transitionTimingFunction: {
         DEFAULT: 'cubic-bezier(0.16, 1, 0.3, 1)',
+        // Ressort à léger dépassement, celui des contrôles d'iOS.
+        ressort: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+        // Feuilles et panneaux : départ vif, arrivée très douce.
+        feuille: 'cubic-bezier(0.32, 0.72, 0, 1)',
       },
       keyframes: {
+        // Le flou qui se dissipe est la signature des transitions d'Apple :
+        // le contenu « fait le point » en arrivant.
         'fade-in-up': {
-          from: { opacity: '0', transform: 'translateY(8px)' },
-          to: { opacity: '1', transform: 'translateY(0)' },
+          from: { opacity: '0', transform: 'translateY(10px) scale(0.99)', filter: 'blur(6px)' },
+          to: { opacity: '1', transform: 'translateY(0) scale(1)', filter: 'blur(0)' },
         },
         'scale-in': {
-          from: { opacity: '0', transform: 'scale(0.97)' },
-          to: { opacity: '1', transform: 'scale(1)' },
+          from: { opacity: '0', transform: 'scale(0.92)', filter: 'blur(4px)' },
+          to: { opacity: '1', transform: 'scale(1)', filter: 'blur(0)' },
         },
         'slide-up': {
           from: { transform: 'translateY(100%)' },
@@ -113,9 +128,9 @@ export default {
         },
       },
       animation: {
-        'fade-in-up': 'fade-in-up 200ms cubic-bezier(0.16,1,0.3,1) both',
-        'scale-in': 'scale-in 150ms cubic-bezier(0.16,1,0.3,1) both',
-        'slide-up': 'slide-up 220ms cubic-bezier(0.16,1,0.3,1) both',
+        'fade-in-up': 'fade-in-up 520ms cubic-bezier(0.16,1,0.3,1) both',
+        'scale-in': 'scale-in 420ms cubic-bezier(0.34,1.36,0.4,1) both',
+        'slide-up': 'slide-up 480ms cubic-bezier(0.32,0.72,0,1) both',
         flottement: 'flottement 6s ease-in-out infinite',
       },
     },

@@ -60,7 +60,7 @@ export function AccessTab({ draft, onChange }) {
           rendre modifiables ici laisserait croire qu'un texte peut contredire
           le moteur qui, lui, applique les nombres. */}
       <div>
-        <p className="mb-2 text-xs uppercase tracking-wide text-content-muted">
+        <p className="mb-2 text-xs tracking-tight text-content-muted">
           Règles appliquées à cette salle
         </p>
         {(regles.constraints ?? []).length === 0 ? (
@@ -72,7 +72,7 @@ export function AccessTab({ draft, onChange }) {
             {(regles.constraints ?? []).map((ligne) => (
               <li
                 key={ligne}
-                className="rounded-xl border border-line bg-surface-raised px-3 py-2 text-sm text-content-muted"
+                className="rounded-2xl border border-line/70 bg-surface/70 px-3 py-2 text-sm text-content-muted"
               >
                 {ligne}
               </li>

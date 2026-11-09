@@ -116,7 +116,7 @@ export function SecuritySection({ email, sessions = [], onRevokeOthers, busy = f
       <CardHeader title="Sécurité du compte" icon={Shield} />
       <div className="flex flex-col gap-4 px-4 pb-4">
         {/* Cet encart annonçait que « le mot de passe se change depuis
-            l'intranet ECE ». C'était faux : `POST /auth/change-password`
+            l'intranet de l'école ». C'était faux : `POST /auth/change-password`
             existe et fonctionne, et la phrase masquait une fonction
             disponible. Le bouton juste en dessous, lui, n'avait aucun
             gestionnaire. */}

@@ -23,9 +23,9 @@ const QUESTIONS = [
 /** P-01 — ancre #faq. Accordéon natif <details>, accessible sans JavaScript. */
 export function LandingFaq() {
   return (
-    <section id="faq" className="scroll-mt-16">
-      <div className="mx-auto w-full max-w-3xl px-4 py-16 sm:py-20">
-        <Reveal as="h2" className="text-2xl font-semibold tracking-tight text-content sm:text-3xl">
+    <section id="faq" className="scroll-mt-24">
+      <div className="mx-auto w-full max-w-3xl px-4 py-20 sm:py-28">
+        <Reveal as="h2" className="font-display text-3xl font-semibold tracking-[-0.03em] text-content sm:text-5xl">
           Questions fréquentes
         </Reveal>
 
@@ -33,17 +33,17 @@ export function LandingFaq() {
           {QUESTIONS.map((item, index) => (
             <Reveal key={item.q} delay={index * 70}>
             <details
-              className="group rounded-xl border border-line bg-surface px-4 py-3 transition open:border-line-strong"
+              className="group rounded-3xl border border-line/70 bg-surface/75 px-6 py-4 shadow-carte backdrop-blur-xl transition open:shadow-haute"
             >
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium text-content">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[15px] font-medium text-content">
                 {item.q}
                 <ChevronDown
                   size={16}
                   aria-hidden="true"
-                  className="shrink-0 text-content-muted transition group-open:rotate-180"
+                  className="shrink-0 text-content-muted transition duration-500 ease-ressort group-open:rotate-180"
                 />
               </summary>
-              <p className="mt-3 text-xs leading-relaxed text-content-muted">{item.a}</p>
+              <p className="mt-3 animate-fade-in-up text-sm leading-relaxed text-content-muted">{item.a}</p>
             </details>
             </Reveal>
           ))}

@@ -35,7 +35,7 @@ export function PermissionMatrix({ groups = [], admins = [], onToggle, busy = fa
         </caption>
         <thead>
           <tr className="border-b border-line">
-            <th scope="col" className="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-content-muted">
+            <th scope="col" className="px-3 py-2.5 text-left text-xs font-medium tracking-tight text-content-muted">
               Permission
             </th>
             {admins.map((admin) => (
@@ -73,7 +73,7 @@ function Groupe({ groupe, admins, onToggle, busy }) {
         <th
           scope="colgroup"
           colSpan={admins.length + 1}
-          className="bg-surface-raised px-3 py-1.5 text-left text-[11px] font-medium uppercase tracking-wide text-content-muted"
+          className="bg-surface-raised px-3 py-1.5 text-left text-[11px] font-medium tracking-tight text-content-muted"
         >
           {groupe.label}
         </th>

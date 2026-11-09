@@ -63,7 +63,7 @@ export default function BuildingsPage() {
   // Le premier bâtiment est retenu d'office **au bureau seulement** : le
   // panneau de détail y occupe une colonne qui resterait vide, et il faudrait
   // un clic pour voir ce que l'écran a déjà chargé. Au téléphone, ce même
-  // choix ouvrait la fiche d'Eiffel 1 avant qu'on ait rien demandé — on
+  // choix ouvrait la fiche du Bâtiment A avant qu'on ait rien demandé — on
   // arrivait sur un bâtiment au lieu du parc.
   useEffect(() => {
     if (!enDialogue && !choisiId && batiments.length > 0) setChoisiId(batiments[0].id);
@@ -285,7 +285,7 @@ export default function BuildingsPage() {
   );
 }
 
-/** Photographie du bâtiment : c'est elle qu'on reconnaît, pas « Eiffel 3 ». */
+/** Photographie du bâtiment : c'est elle qu'on reconnaît, pas « Bâtiment C ». */
 function ImageDuBatiment({ building, busy, onUpload, onRemove }) {
   const [erreur, setErreur] = useState(null);
 
@@ -334,7 +334,7 @@ function ImageDuBatiment({ building, busy, onUpload, onRemove }) {
             className="sr-only"
             aria-label="Choisir la photographie du bâtiment"
           />
-          <span className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface-raised px-3 py-1.5 text-xs text-content transition hover:border-line-strong">
+          <span className="inline-flex items-center gap-1.5 rounded-2xl border border-line/70 bg-surface/70 px-3 py-1.5 text-xs text-content transition hover:border-line-strong">
             <Upload size={14} aria-hidden="true" />
             {building.imageUrl ? 'Remplacer' : 'Déposer'}
           </span>
@@ -380,7 +380,7 @@ function ModaleBatiment({ open, busy, onClose, onSubmit }) {
         <Input
           label="Code"
           required
-          placeholder="EIF1"
+          placeholder="BATA"
           hint="Quatre caractères au plus. Il identifie le bâtiment dans les exports, et ne pourra plus changer."
           value={valeurs.code}
           onChange={(event) => setValeurs({ ...valeurs, code: event.target.value.toUpperCase() })}
@@ -388,7 +388,7 @@ function ModaleBatiment({ open, busy, onClose, onSubmit }) {
         <Input
           label="Nom"
           required
-          placeholder="Eiffel 1"
+          placeholder="Bâtiment A"
           value={valeurs.name}
           onChange={(event) => setValeurs({ ...valeurs, name: event.target.value })}
         />

@@ -6,7 +6,7 @@ import { plural } from '../../../utils/format';
  * Un bâtiment dans la liste du parc.
  *
  * L'image tient la moitié de la carte parce que c'est elle qu'on reconnaît :
- * « Eiffel 3 » ne dit rien à qui traverse le campus, la façade si. À défaut,
+ * « Bâtiment C » ne dit rien à qui traverse le campus, la façade si. À défaut,
  * une icône tient sa place plutôt que de laisser un cadre vide.
  */
 export function BuildingCard({ building, active = false, onSelect }) {

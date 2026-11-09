@@ -129,7 +129,7 @@ export function FloorPlanModal({ floor, open, onClose, onChanged }) {
                 onCommit={(roomId, position) => enregistrer(roomId, position ?? {})}
               />
 
-              <div className="rounded-xl border border-line bg-surface-raised p-3">
+              <div className="rounded-2xl border border-line/70 bg-surface/70 p-3">
                 <CardHeader
                   title="Image du plan"
                   subtitle="Déposée par l’administration, visible par les utilisateurs"

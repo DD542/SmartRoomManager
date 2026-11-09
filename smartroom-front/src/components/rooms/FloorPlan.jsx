@@ -28,7 +28,7 @@ export function FloorPlan({
   const hasImage = planImage?.type === 'image';
 
   return (
-    <div className={cn('rounded-xl border border-line bg-ink p-3', className)}>
+    <div className={cn('rounded-2xl border border-line/70 bg-ink p-3', className)}>
       <svg
         viewBox="0 0 100 100"
         preserveAspectRatio="xMidYMid meet"

@@ -26,7 +26,7 @@ const reservation = (debutDansMinutes, extra = {}) => {
     status: 'confirmee',
     checkedIn: false,
     accessCode: 'E-****',
-    room: { id: 'r-1', name: 'Salle Curie', building: { name: 'Eiffel 6' }, floor: '2e étage' },
+    room: { id: 'r-1', name: 'Salle Curie', building: { name: 'Bâtiment F' }, floor: '2e étage' },
     ...extra,
   };
 };

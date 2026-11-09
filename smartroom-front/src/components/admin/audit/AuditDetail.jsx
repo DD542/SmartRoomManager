@@ -42,7 +42,7 @@ export function AuditDetail({ entry, onFlag, busy = false }) {
 
       {champs.length > 0 && (
         <div>
-          <p className="mb-2 text-xs uppercase tracking-wide text-content-muted">
+          <p className="mb-2 text-xs tracking-tight text-content-muted">
             Avant / après
           </p>
           <ul className="flex flex-col gap-1.5">
@@ -74,10 +74,10 @@ export function AuditDetail({ entry, onFlag, busy = false }) {
       )}
 
       <div>
-        <p className="mb-2 text-xs uppercase tracking-wide text-content-muted">
+        <p className="mb-2 text-xs tracking-tight text-content-muted">
           Métadonnées techniques
         </p>
-        <dl className="flex flex-col gap-1.5 rounded-xl border border-line bg-surface-raised p-3 text-xs">
+        <dl className="flex flex-col gap-1.5 rounded-2xl border border-line/70 bg-surface/70 p-3 text-xs">
           <Meta icon={Globe} label="Adresse IP">
             {entry.ip}
           </Meta>

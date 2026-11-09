@@ -41,7 +41,7 @@ export function UpcomingSlots({ bookings = [], isLoading }) {
             <Link
               key={booking.id}
               to={`/app/reservations/${booking.id}`}
-              className="flex items-center gap-3 rounded-xl border border-line bg-surface-raised px-3 py-2.5 transition hover:border-line-strong"
+              className="flex items-center gap-3 rounded-2xl border border-line/70 bg-surface/70 px-3 py-2.5 transition hover:border-line-strong"
             >
               <span className="flex w-11 shrink-0 flex-col items-center rounded-lg border border-line bg-surface py-1">
                 <span className="text-[10px] uppercase text-content-muted">

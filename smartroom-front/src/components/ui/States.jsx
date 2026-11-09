@@ -45,7 +45,7 @@ export function EmptyState({ icon: Icon, title, description, action, className }
   return (
     <div className={cn('flex flex-col items-center justify-center gap-3 px-6 py-12 text-center', className)}>
       {Icon && (
-        <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-line bg-surface-raised">
+        <span className="verre flex h-14 w-14 items-center justify-center rounded-full">
           <Icon size={20} aria-hidden="true" className="text-content-muted" />
         </span>
       )}
@@ -67,7 +67,7 @@ export function ErrorState({ error, onRetry, title = 'Impossible de charger ces 
       role="alert"
       className={cn('flex flex-col items-center justify-center gap-3 px-6 py-12 text-center', className)}
     >
-      <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-danger/40 bg-danger-soft">
+      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-danger-soft">
         <AlertTriangle size={20} aria-hidden="true" className="text-danger" />
       </span>
       <div>

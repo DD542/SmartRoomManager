@@ -97,7 +97,7 @@ export default function ConfirmedPage() {
               <span className="font-mono text-content">{user.email}</span>
             </p>
 
-            <dl className="mt-5 divide-y divide-line rounded-xl border border-line bg-surface-raised text-left">
+            <dl className="mt-5 divide-y divide-line rounded-2xl border border-line/70 bg-surface/70 text-left">
               <div className="flex items-center justify-between gap-4 px-3 py-2.5">
                 <dt className="text-xs text-content-muted">Salle</dt>
                 <dd className="text-sm text-content">{booking.data.room?.name}</dd>
@@ -120,7 +120,7 @@ export default function ConfirmedPage() {
             <ConsigneSalle notice={regles.data?.notice} className="mt-4 text-left" />
 
             {(codeEnClair || booking.data.accessCode) && (
-              <div className="mt-4 rounded-xl border border-line bg-surface-raised px-4 py-3">
+              <div className="mt-4 rounded-2xl border border-line/70 bg-surface/70 px-4 py-3">
                 <p className="text-xs text-content-muted">Code d’accès</p>
                 <AccessCode
                   code={codeEnClair ?? booking.data.accessCode}
@@ -136,7 +136,7 @@ export default function ConfirmedPage() {
             )}
 
             <div className="mt-3 text-left">
-              <p className="mb-2 text-xs uppercase tracking-wide text-content-muted">
+              <p className="mb-2 text-xs tracking-tight text-content-muted">
                 Plan de localisation
               </p>
               <PlanPreview

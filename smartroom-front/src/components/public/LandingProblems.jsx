@@ -6,21 +6,21 @@ const PROBLEMS = [
   {
     icon: Clock,
     tone: 'text-danger',
-    ring: 'border-danger/40 bg-danger-soft',
+    ring: 'border-transparent bg-danger-soft',
     title: '30 % des créneaux perdus',
     body: 'Salles réservées mais jamais occupées, à cause de l’absence de confirmation de présence.',
   },
   {
     icon: Users,
     tone: 'text-warning',
-    ring: 'border-warning/40 bg-warning-soft',
+    ring: 'border-transparent bg-warning-soft',
     title: '1 réunion sur 5 sans salle adaptée',
     body: 'Problèmes d’équipement manquant ou de capacité insuffisante pour le groupe.',
   },
   {
     icon: Search,
-    tone: 'text-accent',
-    ring: 'border-accent/40 bg-accent-soft',
+    tone: 'text-content',
+    ring: 'border-transparent bg-content/[0.06]',
     title: '15 min perdues par recherche',
     body: 'Temps moyen passé par les collaborateurs pour trouver une salle disponible.',
   },
@@ -30,22 +30,22 @@ const PROBLEMS = [
 export function LandingProblems() {
   return (
     <section>
-      <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:py-20">
-        <Reveal as="h2" className="mx-auto max-w-md text-center text-2xl font-semibold leading-snug tracking-tight text-content sm:text-3xl">
+      <div className="mx-auto w-full max-w-6xl px-4 py-20 sm:py-28">
+        <Reveal as="h2" className="mx-auto max-w-md text-center font-display text-3xl font-semibold leading-tight tracking-[-0.03em] text-content sm:text-5xl">
           La réalité de la gestion d’espace aujourd’hui
         </Reveal>
 
         <div className="mt-10 grid gap-3 md:grid-cols-3">
           {PROBLEMS.map((problem, index) => (
             <Reveal key={problem.title} delay={index * 90} className="h-full">
-              <Card className="group h-full p-6 text-center transition duration-300 hover:-translate-y-1 hover:border-line-strong">
+              <Card className="group h-full p-6 text-center transition duration-500 ease-ressort hover:-translate-y-1.5 hover:shadow-haute">
                 <span
-                  className={`mx-auto flex h-10 w-10 items-center justify-center rounded-full border transition-transform duration-300 group-hover:scale-110 ${problem.ring}`}
+                  className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border transition-transform duration-300 group-hover:scale-110 ${problem.ring}`}
                 >
                   <problem.icon size={18} aria-hidden="true" className={problem.tone} />
                 </span>
-                <h3 className="mt-4 text-sm font-semibold text-content">{problem.title}</h3>
-                <p className="mt-2 text-xs leading-relaxed text-content-muted">{problem.body}</p>
+                <h3 className="mt-4 text-base font-semibold tracking-tight text-content">{problem.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-content-muted">{problem.body}</p>
               </Card>
             </Reveal>
           ))}

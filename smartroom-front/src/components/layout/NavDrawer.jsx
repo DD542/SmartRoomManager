@@ -19,10 +19,10 @@ const lienClass = ({ isActive }) =>
   cn(
     // 48 px : la cible tactile d'une liste se prend au pouce, souvent en
     // marchant. Le minimum de 44 px est un plancher, pas un objectif.
-    'flex min-h-[48px] items-center gap-3 rounded-xl border px-3 text-sm transition',
+    'pression flex min-h-[48px] items-center gap-3 rounded-2xl border px-4 text-sm transition-colors',
     isActive
-      ? 'border-accent/50 bg-accent-soft text-content'
-      : 'border-line bg-surface-raised text-content-muted hover:text-content',
+      ? 'border-transparent bg-accent text-ink shadow-bouton'
+      : 'border-line/60 bg-surface/60 text-content-muted hover:text-content',
   );
 
 /**

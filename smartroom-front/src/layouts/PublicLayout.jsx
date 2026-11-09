@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, Outlet } from 'react-router-dom';
-import { DoorOpen } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { BasculeTheme } from '../components/layout/BasculeTheme';
+import { Logo } from '../components/brand/Logo';
 import { cn } from '../utils/cn';
 
 const LINKS = [
@@ -42,33 +42,32 @@ export default function PublicLayout() {
   const defilee = useDefilee();
 
   return (
-    <div className="flex min-h-screen flex-col bg-ink">
+    <div className="flex min-h-screen flex-col">
       <a href="#contenu" className="sr-skip">
         Aller au contenu principal
       </a>
 
-      {/* En haut de page, l'en-tête se fond dans le bandeau d'ouverture ; dès
-          que le contenu passe dessous, il se détache par un fond plus dense et
-          un filet. Sans cela, le texte défilant vient buter dans les liens. */}
-      <header
-        className={cn(
-          'sticky top-0 z-topbar border-b transition-colors duration-300',
-          defilee
-            ? 'border-line bg-ink/95 backdrop-blur'
-            : 'border-transparent bg-ink/80 backdrop-blur',
-        )}
-      >
-        <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-4 px-4">
-          <Link to="/" className="flex items-center gap-2 text-sm font-semibold text-content">
-            <DoorOpen size={18} aria-hidden="true" className="text-accent" />
-            SmartRoom Manager
+      {/* En haut de page, l'en-tête occupe toute la largeur et se fond dans le
+          bandeau d'ouverture ; dès que le contenu passe dessous, il se
+          resserre en une pilule de verre flottante — le geste des barres
+          d'outils de Safari. Sans fond, le texte défilant viendrait buter
+          dans les liens. */}
+      <header className="sticky top-0 z-topbar px-3 pt-3">
+        <div
+          className={cn(
+            'mx-auto flex h-14 w-full items-center justify-between gap-4 rounded-full px-3 transition-all duration-700 ease-feuille',
+            defilee ? 'verre max-w-4xl shadow-haute' : 'max-w-6xl',
+          )}
+        >
+          <Link to="/" aria-label="SmartRoom Manager, accueil" className="pression flex items-center gap-2 pl-1">
+            <Logo size={26} className="[&>span]:text-[13px]" />
           </Link>
-          <nav aria-label="Navigation du site" className="hidden items-center gap-5 md:flex">
+          <nav aria-label="Navigation du site" className="hidden items-center gap-1 md:flex">
             {LINKS.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                className="text-sm text-content-muted transition hover:text-content"
+                className="pression rounded-full px-3.5 py-1.5 text-sm text-content-muted transition-colors hover:bg-content/[0.06] hover:text-content"
               >
                 {link.label}
               </a>
@@ -87,17 +86,17 @@ export default function PublicLayout() {
         <Outlet />
       </main>
 
-      <footer className="bg-surface">
-        <div className="mx-auto grid w-full max-w-6xl gap-6 px-4 py-8 text-xs text-content-muted sm:grid-cols-2 md:grid-cols-4">
+      <footer className="verre mx-3 mb-3 rounded-3xl">
+        <div className="mx-auto grid w-full max-w-6xl gap-8 px-6 py-10 text-xs text-content-muted sm:grid-cols-2 md:grid-cols-4">
           <div>
-            <p className="text-sm font-semibold text-content">SmartRoom Manager</p>
+            <Logo size={26} />
             <p className="mt-2 leading-relaxed">
               Réservation intelligente des salles : disponibilités en temps réel, détection des
               conflits et recommandation automatique.
             </p>
           </div>
           <div>
-            <p className="font-medium uppercase tracking-wide text-content">Produit</p>
+            <p className="font-medium tracking-tight text-content">Produit</p>
             <ul className="mt-2 space-y-1.5">
               <li>Fonctionnalités</li>
               <li>Calendrier</li>
@@ -105,7 +104,7 @@ export default function PublicLayout() {
             </ul>
           </div>
           <div>
-            <p className="font-medium uppercase tracking-wide text-content">Support</p>
+            <p className="font-medium tracking-tight text-content">Support</p>
             <ul className="mt-2 space-y-1.5">
               <li>
                 <Link to="/app/aide" className="transition hover:text-content">
@@ -116,7 +115,7 @@ export default function PublicLayout() {
             </ul>
           </div>
           <div>
-            <p className="font-medium uppercase tracking-wide text-content">Légal</p>
+            <p className="font-medium tracking-tight text-content">Légal</p>
             {/* Trois libellés, une seule page : confidentialité, mentions et
                 RGPD y sont trois sections. Les annoncer séparément pour mener
                 au même endroit vaut mieux que trois pages qui se répètent —
@@ -141,7 +140,7 @@ export default function PublicLayout() {
           </div>
         </div>
         <p className="px-4 pb-6 text-center text-xs text-content-faint">
-          © 2026 SmartRoom Manager — Projet académique ECE Paris.
+          © 2026 SmartRoom Manager. Tous droits réservés.
         </p>
       </footer>
     </div>

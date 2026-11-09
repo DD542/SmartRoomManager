@@ -2,11 +2,11 @@ import { X } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
 const TONES = {
-  default: 'border-line bg-surface-raised text-content-muted',
-  accent: 'border-accent/40 bg-accent-soft text-accent-bright',
-  success: 'border-success/40 bg-success-soft text-success',
-  warning: 'border-warning/40 bg-warning-soft text-warning',
-  danger: 'border-danger/40 bg-danger-soft text-danger',
+  default: 'border-line/70 bg-content/[0.05] text-content-muted',
+  accent: 'border-transparent bg-accent-soft text-accent-bright',
+  success: 'border-transparent bg-success-soft text-success',
+  warning: 'border-transparent bg-warning-soft text-warning',
+  danger: 'border-transparent bg-danger-soft text-danger',
   muted: 'border-line bg-surface text-content-faint',
 };
 
@@ -18,7 +18,7 @@ export function Badge({ tone = 'default', dot = false, icon: Icon, className, ch
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-lg border px-2 py-0.5 text-xs font-medium',
+        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium',
         TONES[tone] ?? TONES.default,
         className,
       )}
@@ -38,10 +38,10 @@ export function Pill({ active = false, className, children, count, ...props }) {
       type="button"
       aria-pressed={active}
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition',
+        'pression inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition',
         active
-          ? 'border-accent bg-accent-soft text-content'
-          : 'border-line bg-surface text-content-muted hover:border-line-strong hover:text-content',
+          ? 'border-transparent bg-accent text-ink shadow-bouton'
+          : 'border-line/70 bg-surface/70 text-content-muted backdrop-blur hover:text-content',
         className,
       )}
       {...props}
@@ -52,7 +52,7 @@ export function Pill({ active = false, className, children, count, ...props }) {
           4:1 — sous le seuil AA. Sur les pastilles inactives, le fond reste
           sombre et la teinte faible passe. */}
       {typeof count === 'number' && (
-        <span className={active ? 'text-content-muted' : 'text-content-faint'}>({count})</span>
+        <span className={active ? 'opacity-70' : 'text-content-faint'}>({count})</span>
       )}
     </button>
   );
@@ -63,7 +63,7 @@ export function Chip({ label, onRemove, icon: Icon, tone = 'default', className 
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 text-xs',
+        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs',
         TONES[tone] ?? TONES.default,
         className,
       )}
@@ -92,10 +92,10 @@ export function ToggleChip({ active, label, icon: Icon, onClick, className }) {
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition',
+        'pression inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition',
         active
-          ? 'border-accent bg-accent-soft text-content'
-          : 'border-line bg-surface text-content-muted hover:border-line-strong hover:text-content',
+          ? 'border-transparent bg-accent text-ink'
+          : 'border-line/70 bg-surface/70 text-content-muted hover:text-content',
         className,
       )}
     >
@@ -116,7 +116,7 @@ export function OccupancyBar({ rate = 0, className, label = 'Occupation' }) {
         <span className="font-mono text-content">{percent} %</span>
       </div>
       <div
-        className="h-1.5 w-full overflow-hidden rounded-full bg-surface-raised"
+        className="h-1.5 w-full overflow-hidden rounded-full bg-content/[0.08]"
         role="progressbar"
         aria-valuenow={percent}
         aria-valuemin={0}

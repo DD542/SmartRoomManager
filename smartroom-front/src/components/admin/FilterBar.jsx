@@ -10,7 +10,7 @@ import { Chip } from '../ui/Badge';
 export function FilterBar({ filters = [], active = [], onReset, className, children }) {
   return (
     <Card className={cn('flex flex-wrap items-center gap-2 p-3', className)}>
-      <span className="flex items-center gap-1.5 pr-1 text-xs uppercase tracking-wide text-content-muted">
+      <span className="flex items-center gap-1.5 pr-1 text-xs tracking-tight text-content-muted">
         <SlidersHorizontal size={13} aria-hidden="true" />
         Filtres
       </span>

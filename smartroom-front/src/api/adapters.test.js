@@ -79,7 +79,7 @@ describe('comptes', () => {
     id: 'u-1',
     first_name: 'Camille',
     last_name: 'Durand',
-    email: 'camille@edu.ece.fr',
+    email: 'camille@campus.smartroom.app',
     phone: '06 12 34 56 78',
     promotion: 'B3 Data & IA',
     department: 'Ingénierie',
@@ -148,7 +148,7 @@ describe('comptes', () => {
 
   it('transcrit un compte d’administration avec sa matrice', () => {
     const compte = adapt.admin({
-      user: { first_name: 'Léa', last_name: 'Martin', email: 'lea@ece.fr' },
+      user: { first_name: 'Léa', last_name: 'Martin', email: 'lea@smartroom.app' },
       admin: { user_id: 'a-1', job_title: 'Responsable', is_owner: true },
       permissions: ['rooms.manage'],
     });
@@ -170,7 +170,7 @@ describe('parc', () => {
     name: 'Salle Vinci',
     slug: 'salle-vinci',
     building_id: 'b-1',
-    building_name: 'Campus Eiffel',
+    building_name: 'Bâtiment A',
     floor_id: 'f-1',
     floor_label: '2e étage',
     floor_level: 2,
@@ -187,7 +187,7 @@ describe('parc', () => {
     const batiment = adapt.building({
       id: 'b-1',
       code: 'A',
-      name: 'Campus Eiffel',
+      name: 'Bâtiment A',
       address: 'Paris 15e',
       floor_count: 3,
       room_count: 8,
@@ -199,7 +199,7 @@ describe('parc', () => {
   it('transcrit une salle et niche sa localisation', () => {
     const salle = adapt.room(salleBrute);
     expect(salle.floor).toBe('2e étage');
-    expect(salle.building.name).toBe('Campus Eiffel');
+    expect(salle.building.name).toBe('Bâtiment A');
     expect(salle.area).toBe(28);
     expect(salle.occupancyRate).toBeCloseTo(0.72);
   });
@@ -427,7 +427,7 @@ describe('réservations', () => {
     cancelled_at: null,
     cancel_reason: null,
     room_name: 'Salle Vinci',
-    building_name: 'Campus Eiffel',
+    building_name: 'Bâtiment A',
     floor_label: '2e étage',
     owner_name: 'Camille Durand',
     access_code_hint: 'A-****',
@@ -437,7 +437,7 @@ describe('réservations', () => {
     const reservation = adapt.booking(brute);
     expect(reservation.title).toBe('Revue de sprint');
     expect(reservation.room.name).toBe('Salle Vinci');
-    expect(reservation.room.building.name).toBe('Campus Eiffel');
+    expect(reservation.room.building.name).toBe('Bâtiment A');
     expect(reservation.room.floor).toBe('2e étage');
     expect(reservation.accessCode).toBe('A-****');
   });
@@ -487,7 +487,7 @@ describe('réservations', () => {
       id: 'p-1',
       booking_id: 'bk-1',
       user_id: 'u-2',
-      email: 'invite@ece.fr',
+      email: 'invite@smartroom.app',
       display_name: 'Invité',
       response: 'accepte',
       is_organizer: false,
@@ -767,18 +767,18 @@ describe('Participants d’une réservation', () => {
       id: 'bk-2',
       slot: SLOT,
       participants: [
-        { id: 'p-1', booking_id: 'bk-2', user_id: null, email: 'marie@edu.ece.fr',
+        { id: 'p-1', booking_id: 'bk-2', user_id: null, email: 'marie@campus.smartroom.app',
           display_name: 'Marie Laurent', response: 'en_attente', is_organizer: false,
           responded_at: null },
-        { id: 'p-2', booking_id: 'bk-2', user_id: 'u-1', email: 'd.menga@ece.fr',
+        { id: 'p-2', booking_id: 'bk-2', user_id: 'u-1', email: 'd.menga@smartroom.app',
           display_name: 'Dylan Menga', response: 'accepte', is_organizer: true,
           responded_at: ISO },
       ],
     });
 
     expect(avec.participants.map((p) => p.email)).toEqual([
-      'marie@edu.ece.fr',
-      'd.menga@ece.fr',
+      'marie@campus.smartroom.app',
+      'd.menga@smartroom.app',
     ]);
     // `organizer` et non `is_organizer` : c'est ce nom que lit l'écran de
     // modification pour ne proposer de retirer que les invités.

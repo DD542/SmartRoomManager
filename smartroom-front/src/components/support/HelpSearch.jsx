@@ -21,7 +21,7 @@ export function HelpSearch({ value, onChange }) {
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder="Conflit, code d’accès, annulation, badge…"
-          className="h-11 w-full rounded-xl border border-line bg-surface-raised pl-10 pr-10 text-sm text-content placeholder:text-content-faint focus:border-accent focus:outline-none"
+          className="h-11 w-full rounded-2xl border border-line/70 bg-surface/70 pl-10 pr-10 text-sm text-content placeholder:text-content-faint focus:border-accent focus:outline-none"
         />
         {value && (
           <button

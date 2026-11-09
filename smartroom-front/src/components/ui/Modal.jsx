@@ -40,7 +40,7 @@ export function Modal({
   return createPortal(
     <div className="fixed inset-0 z-modal flex items-end justify-center p-0 sm:items-center sm:p-4">
       <div
-        className="absolute inset-0 bg-ink/80"
+        className="absolute inset-0 bg-ink/40 backdrop-blur-md"
         aria-hidden="true"
         onClick={onClose}
       />
@@ -51,22 +51,22 @@ export function Modal({
         aria-label={title}
         tabIndex={-1}
         className={cn(
-          'relative w-full animate-scale-in rounded-t-2xl border border-line bg-surface sm:rounded-xl',
+          'verre-epais w-full animate-slide-up rounded-t-3xl shadow-haute sm:animate-scale-in sm:rounded-3xl',
           SIZES[size] ?? SIZES.md,
         )}
       >
-        <header className="flex items-start justify-between gap-4 border-b border-line px-4 py-3">
+        <header className="flex items-start justify-between gap-4 border-b border-line/60 px-5 py-4">
           <div className="flex items-start gap-2.5">
             {Icon && <Icon size={18} aria-hidden="true" className={cn('mt-0.5', iconTone)} />}
             <div>
-              <h2 className="text-sm font-semibold text-content">{title}</h2>
+              <h2 className="text-base font-semibold tracking-tight text-content">{title}</h2>
               {description && <p className="mt-0.5 text-xs text-content-muted">{description}</p>}
             </div>
           </div>
           <IconButton icon={X} label="Fermer" onClick={onClose} />
         </header>
 
-        <div className="max-h-[70vh] overflow-y-auto px-4 py-4">{children}</div>
+        <div className="max-h-[70vh] overflow-y-auto px-5 py-5">{children}</div>
 
         {footer && (
           <footer className="flex flex-wrap items-center justify-end gap-2 border-t border-line px-4 py-3">
@@ -89,21 +89,21 @@ export function BottomSheet({ open, onClose, title, children, footer }) {
 
   return createPortal(
     <div className="fixed inset-0 z-drawer flex items-end">
-      <div className="absolute inset-0 bg-ink/80" aria-hidden="true" onClick={onClose} />
+      <div className="absolute inset-0 bg-ink/40 backdrop-blur-md" aria-hidden="true" onClick={onClose} />
       <div
         ref={ref}
         role="dialog"
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
-        className="relative max-h-[85vh] w-full animate-slide-up overflow-y-auto rounded-t-2xl border-t border-line bg-surface"
+        className="verre-epais max-h-[85vh] w-full animate-slide-up overflow-y-auto rounded-t-3xl shadow-haute"
       >
-        <header className="sticky top-0 flex items-center justify-between border-b border-line bg-surface px-4 py-3">
-          <h2 className="text-sm font-semibold text-content">{title}</h2>
+        <header className="sticky top-0 z-[1] flex items-center justify-between border-b border-line/60 bg-surface/70 px-5 py-4 backdrop-blur-xl">
+          <h2 className="text-base font-semibold tracking-tight text-content">{title}</h2>
           <IconButton icon={X} label="Fermer" onClick={onClose} />
         </header>
         <div className="px-4 py-4">{children}</div>
-        {footer && <footer className="sticky bottom-0 border-t border-line bg-surface px-4 py-3">{footer}</footer>}
+        {footer && <footer className="sticky bottom-0 border-t border-line/60 bg-surface/70 px-5 py-3 backdrop-blur-xl">{footer}</footer>}
       </div>
     </div>,
     document.body,

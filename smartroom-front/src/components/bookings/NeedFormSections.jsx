@@ -6,7 +6,7 @@ import { Field, Input, Select, Switch } from '../ui/Form';
 import { ToggleChip } from '../ui/Badge';
 
 const timeInput =
-  'h-10 w-full rounded-xl border border-line bg-surface-raised px-3 font-mono text-sm text-content focus:border-accent focus:outline-none';
+  'h-10 w-full rounded-2xl border border-line/70 bg-surface/70 px-3 font-mono text-sm text-content focus:border-accent focus:outline-none';
 
 /** U-02, bloc 1 — bâtiment, date, créneau. */
 export function WhereWhenSection({ draft, update, buildings, minutes }) {
@@ -78,7 +78,7 @@ export function ConfigurationSection({ draft, update }) {
               required
               value={draft.attendees}
               onChange={(event) => update({ attendees: event.target.value })}
-              className="h-10 w-full rounded-xl border border-line bg-surface-raised px-3 text-center font-mono text-sm text-content focus:border-accent focus:outline-none"
+              className="h-10 w-full rounded-2xl border border-line/70 bg-surface/70 px-3 text-center font-mono text-sm text-content focus:border-accent focus:outline-none"
             />
             <Button variant="secondary" size="icon" aria-label="Ajouter une personne" onClick={() => bump(1)}>
               <Plus size={15} aria-hidden="true" />
@@ -110,7 +110,7 @@ export function EquipmentSection({ draft, update, equipment }) {
       <CardHeader title="Équipements & options" icon={Monitor} />
       <div className="flex flex-col gap-4 px-4 pb-4">
         <fieldset>
-          <legend className="text-xs font-medium uppercase tracking-wide text-content-muted">
+          <legend className="text-xs font-medium tracking-tight text-content-muted">
             Équipements requis
           </legend>
           <div className="mt-3 flex flex-wrap gap-2">

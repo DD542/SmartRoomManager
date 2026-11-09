@@ -64,7 +64,7 @@ export function TicketThread({ ticket, templates = [], onReply, busy = false }) 
                 )}
               >
                 {message.internal && (
-                  <p className="mb-1 flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-warning">
+                  <p className="mb-1 flex items-center gap-1.5 text-[11px] tracking-tight text-warning">
                     <EyeOff size={11} aria-hidden="true" />
                     Note interne — non visible du demandeur
                   </p>
@@ -82,7 +82,7 @@ export function TicketThread({ ticket, templates = [], onReply, busy = false }) 
       <div className="border-t border-line p-4">
         {templates.length > 0 && (
           <div className="mb-3">
-            <p className="mb-1.5 text-xs uppercase tracking-wide text-content-muted">
+            <p className="mb-1.5 text-xs tracking-tight text-content-muted">
               Réponses types
             </p>
             <div className="flex flex-wrap gap-1.5">

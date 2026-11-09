@@ -117,7 +117,7 @@ export function ClosureModal({ open, onClose, onSubmit, buildings = [], rooms = 
 
         {form.scopeType !== 'global' && (
           <fieldset>
-            <legend className="mb-2 text-xs uppercase tracking-wide text-content-muted">
+            <legend className="mb-2 text-xs tracking-tight text-content-muted">
               {form.scopeType === 'batiment' ? 'Bâtiments concernés' : 'Salles concernées'}
             </legend>
             <div className="flex flex-wrap gap-1.5">

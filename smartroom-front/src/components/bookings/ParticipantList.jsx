@@ -20,7 +20,7 @@ export function ParticipantList({ participants = [], previewCount = 3 }) {
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-content-muted">
+        <p className="flex items-center gap-1.5 text-xs tracking-tight text-content-muted">
           <Users size={13} aria-hidden="true" />
           Participants ({participants.length})
         </p>

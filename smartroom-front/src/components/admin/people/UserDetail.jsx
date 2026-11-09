@@ -70,7 +70,7 @@ export function UserDetail({ user, onStatus, onCredits, onRemove, busy = false }
       <DetailRow label="Annulations">{user.metrics.cancellations}</DetailRow>
 
       <div>
-        <p className="mb-2 text-xs uppercase tracking-wide text-content-muted">
+        <p className="mb-2 text-xs tracking-tight text-content-muted">
           Quota hebdomadaire
         </p>
         <div className="flex items-end gap-2">
@@ -99,7 +99,7 @@ export function UserDetail({ user, onStatus, onCredits, onRemove, busy = false }
       <Historique bookings={user.recentBookings ?? []} />
 
       <div className="rounded-xl border border-danger/40 bg-danger-soft p-3">
-        <p className="mb-1 text-xs uppercase tracking-wide text-danger">Zone de danger</p>
+        <p className="mb-1 text-xs tracking-tight text-danger">Zone de danger</p>
         <p className="mb-2.5 text-xs text-content-muted">
           {suspendu
             ? 'Le compte est suspendu : l’utilisateur ne peut plus réserver, ses réservations à venir sont conservées.'
@@ -239,7 +239,7 @@ function Historique({ bookings }) {
 
   return (
     <div>
-      <p className="mb-2 text-xs uppercase tracking-wide text-content-muted">
+      <p className="mb-2 text-xs tracking-tight text-content-muted">
         Dernières réservations
       </p>
       <ul className="flex flex-col gap-1.5">

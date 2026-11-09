@@ -3,9 +3,12 @@ import { AlertCircle, Check, ChevronDown } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
 const fieldBase =
-  'w-full rounded-xl border bg-surface-raised px-3 text-sm text-content placeholder:text-content-faint ' +
-  'transition focus:border-accent focus:outline-none focus-visible:outline focus-visible:outline-2 ' +
-  'focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50';
+  // Champ de verre : il laisse transparaître le décor, et l'anneau de focus
+  // s'élargit en douceur au lieu d'apparaître d'un coup.
+  'w-full rounded-2xl border bg-surface/70 px-4 text-sm text-content placeholder:text-content-faint ' +
+  'shadow-[inset_0_1px_2px_rgb(0_0_0/0.04)] backdrop-blur transition ' +
+  'focus:border-content/40 focus:bg-surface focus:outline-none focus:ring-4 focus:ring-content/[0.08] ' +
+  'focus-visible:outline-none disabled:opacity-50';
 
 /** Enveloppe commune : label en petites capitales, aide, message d'erreur. */
 export function Field({ label, htmlFor, hint, error, required, className, children }) {
@@ -14,7 +17,7 @@ export function Field({ label, htmlFor, hint, error, required, className, childr
       {label && (
         <label
           htmlFor={htmlFor}
-          className="text-xs font-medium uppercase tracking-wide text-content-muted"
+          className="text-[13px] font-medium text-content-muted"
         >
           {label}
           {required && <span className="ml-1 text-danger">*</span>}
@@ -69,7 +72,7 @@ export const Input = forwardRef(function Input(
           id={inputId}
           required={required}
           aria-invalid={Boolean(error) || undefined}
-          className={cn(fieldBase, 'h-10', Icon && 'pl-9', error ? 'border-danger' : 'border-line', className)}
+          className={cn(fieldBase, 'h-11', Icon && 'pl-10', error ? 'border-danger' : 'border-line/80', className)}
           value={valeurControlee(value)}
           {...props}
         />

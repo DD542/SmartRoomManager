@@ -37,7 +37,7 @@ import BookingDetailPage from '../../pages/manage/BookingDetailPage';
 // Le détail de réservation nomme le compte connecté quand il reçoit un 404 :
 // sans fournisseur d'authentification, le hook lève avant tout rendu.
 vi.mock('../../hooks/useAuth', () => ({
-  useAuth: () => ({ user: { id: 'u-1', email: 'd.menga@ece.fr' } }),
+  useAuth: () => ({ user: { id: 'u-1', email: 'd.menga@smartroom.app' } }),
 }));
 
 describe('Liste des salles de repli', () => {
@@ -119,7 +119,7 @@ describe('Fiche utilisateur', () => {
     id: 'u-1',
     firstName: 'Adam',
     lastName: 'David',
-    email: 'adam.david@edu.ece.fr',
+    email: 'adam.david@campus.smartroom.app',
     promotion: 'B2 Généraliste',
     department: 'Ingénierie',
     badgeNumber: 'B-0042',
@@ -174,9 +174,11 @@ describe('Fiche utilisateur', () => {
 
 describe('Pastille de filtre', () => {
   it('renforce son compteur à l’état actif', () => {
-    // `content-faint` sur le fond `accent-soft`, plus clair que la surface, ne
-    // donnait que 4:1 — sous le seuil AA. Inactive, le fond reste sombre et la
-    // teinte faible passe.
+    // `content-faint` sur le fond de la pastille active ne passait pas le
+    // seuil AA. Active, la pastille est désormais pleine (graphite en clair,
+    // blanche en sombre) : le compteur reprend la couleur de son libellé,
+    // simplement adoucie. Inactive, le fond reste clair et la teinte faible
+    // passe.
     const { rerender, container } = render(<Pill count={3}>Conflits</Pill>);
     expect(container.querySelector('.text-content-faint')).toBeTruthy();
 
@@ -185,7 +187,7 @@ describe('Pastille de filtre', () => {
         Conflits
       </Pill>,
     );
-    expect(container.querySelector('.text-content-muted')).toBeTruthy();
+    expect(container.querySelector('.opacity-70')).toBeTruthy();
     expect(container.querySelector('.text-content-faint')).toBeNull();
   });
 });
@@ -397,7 +399,7 @@ describe('Carte de salle du tunnel de réservation', () => {
     is_accessible: true,
     is_available: true,
     occupancy_percent: 23,
-    building_name: 'Eiffel 1',
+    building_name: 'Bâtiment A',
     floor_label: '2e',
     area_m2: '34.50',
     photo_url: '/media/photos/fermat.jpg',
@@ -412,7 +414,7 @@ describe('Carte de salle du tunnel de réservation', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText(/Eiffel 1 • 2e • 34.5 m²/)).toBeTruthy();
+    expect(screen.getByText(/Bâtiment A • 2e • 34.5 m²/)).toBeTruthy();
     expect(screen.queryByText(/undefined/)).toBeNull();
   });
 
@@ -461,7 +463,7 @@ describe('Plan d’étage', () => {
 
   const PLAN = {
     id: 'f-1',
-    label: 'Eiffel 1 — 2e étage',
+    label: 'Bâtiment A — 2e étage',
     corridors: [],
     entrance: null,
     legend: [],
@@ -620,7 +622,7 @@ describe('Prochaine réservation du tableau de bord', () => {
     end: new Date('2026-09-01T08:30:00Z'),
     status: 'confirmee',
     accessCode: 'E-****',
-    room: { id: 'r-1', name: 'Salle Descartes', building: { name: 'Eiffel 6' }, floor: '2e étage', badgeRequired: true },
+    room: { id: 'r-1', name: 'Salle Descartes', building: { name: 'Bâtiment F' }, floor: '2e étage', badgeRequired: true },
   };
 
   const rendreCarte = (booking) =>

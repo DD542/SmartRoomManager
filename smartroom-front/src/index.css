@@ -9,113 +9,147 @@
 
      Ils sont écrits en **triplets RVB séparés par des espaces**, et non en
      hexadécimal : c'est la seule forme qui laisse Tailwind y injecter une
-     opacité. Le dépôt compte 98 usages du genre `border-accent/40` ; avec une
-     variable hexadécimale, tous auraient perdu leur transparence sans que rien
-     ne le signale. */
+     opacité. Le dépôt compte une centaine d'usages du genre `border-accent/40` ;
+     avec une variable hexadécimale, tous auraient perdu leur transparence sans
+     que rien ne le signale.
+
+     Charte « verre liquide » : une palette monochrome — graphite, blanc, gris
+     brumeux — où la couleur est réservée aux états (disponible, alerte,
+     danger). L'accent n'est plus un bleu mais l'encre elle-même : noir sur le
+     thème clair, blanc sur le sombre. `text-ink` sur `bg-accent` reste donc
+     lisible dans les deux sens, l'encre et l'accent s'inversant ensemble. */
   :root {
     color-scheme: dark;
 
-    --ink: 16 22 35;
-    --ink-soft: 20 27 42;
-    --surface: 26 34 49;
-    --surface-raised: 34 44 62;
-    --line: 44 56 80;
-    --line-strong: 59 74 102;
-    --accent: 91 155 255;
-    --accent-hover: 74 138 245;
-    /* Accent lisible sur `accent-soft`. Le 91 155 255 n'y donne que 3,76:1,
-       sous le seuil AA, et aucune opacité de fond ne l'y ramène : la teinte
-       elle-même est trop sombre. Celle-ci monte à 5,28:1. */
-    --accent-bright: 143 186 255;
-    --success: 61 219 166;
-    --warning: 252 198 63;
-    --danger: 255 128 128;
-    --content: 247 250 255;
-    --content-muted: 180 192 212;
-    --content-faint: 138 151 172;
+    --ink: 9 9 11;
+    --ink-soft: 16 16 19;
+    --surface: 24 24 28;
+    --surface-raised: 34 34 39;
+    --line: 52 52 58;
+    --line-strong: 76 76 84;
+    --accent: 245 245 247;
+    --accent-hover: 222 222 226;
+    --accent-bright: 255 255 255;
+    --success: 74 222 128;
+    --warning: 251 191 36;
+    --danger: 248 113 113;
+    --content: 245 245 247;
+    --content-muted: 172 174 182;
+    --content-faint: 138 140 150;
 
     /* Fonds teintés. Ils portent leur propre alpha, ce qui permet à chaque
        thème de la régler : la même opacité ne rend pas le même effet sur un
        fond sombre et sur un fond clair. */
-    --accent-soft: 91 155 255 / 0.18;
-    --success-soft: 61 219 166 / 0.16;
-    --warning-soft: 252 198 63 / 0.16;
-    --danger-soft: 255 128 128 / 0.16;
+    --accent-soft: 255 255 255 / 0.10;
+    --success-soft: 74 222 128 / 0.14;
+    --warning-soft: 251 191 36 / 0.14;
+    --danger-soft: 248 113 113 / 0.14;
 
     /* Reflet du squelette de chargement : clair sur fond sombre. */
     --lueur: 255 255 255 / 0.07;
     /* Les sélecteurs de date natifs sont dessinés en sombre par le
        navigateur ; il faut les éclaircir sur un fond sombre, pas sur un clair. */
     --inversion-calendrier: invert(0.7);
-    /* Ombre portee des infobulles de graphique. Un noir dense convient a
-       un fond sombre ; sur du blanc il salit. */
-    --ombre-portee: 0 8px 24px rgb(0 0 0 / 0.45);
+    /* Ombre portee des infobulles de graphique. */
+    --ombre-portee: 0 12px 32px rgb(0 0 0 / 0.5);
     /* Cinquieme serie des graphiques. Les quatre autres suivent les jetons
        d'etat ; celle-ci n'en a pas, et porte donc sa valeur par theme. */
     --serie-violette: #C084FC;
 
+    /* Relief. Sur fond sombre l'ombre seule ne se voit pas : un liseré
+       lumineux de 1 px sur le bord haut donne l'élévation. */
+    --ombre-carte: 0 1px 0 rgb(255 255 255 / 0.05) inset, 0 1px 2px rgb(0 0 0 / 0.35), 0 12px 32px -16px rgb(0 0 0 / 0.6);
+    --ombre-haute: 0 1px 0 rgb(255 255 255 / 0.06) inset, 0 30px 80px -24px rgb(0 0 0 / 0.75);
+    --ombre-bouton: 0 1px 0 rgb(255 255 255 / 0.5) inset, 0 8px 20px -8px rgb(0 0 0 / 0.6);
+
+    /* Verre liquide : fond translucide, bord lumineux, reflet spéculaire. */
+    --verre-fond: rgb(30 30 34 / 0.55);
+    --verre-fond-epais: rgb(30 30 34 / 0.72);
+    --verre-reflet-haut: rgb(255 255 255 / 0.28);
+    --verre-reflet-bas: rgb(255 255 255 / 0.06);
+    --verre-ombre: 0 1px 0 rgb(255 255 255 / 0.10) inset, 0 -1px 0 rgb(255 255 255 / 0.03) inset, 0 18px 40px -18px rgb(0 0 0 / 0.7);
+    --verre-bulle: rgb(255 255 255 / 0.12);
+
+    /* Brume d'ambiance posée derrière les pages. */
+    --brume-1: rgb(120 120 135 / 0.22);
+    --brume-2: rgb(80 80 95 / 0.18);
+    --brume-3: rgb(255 255 255 / 0.04);
+
     /* Echelle de la carte de chaleur, cinq crans du plus froid au plus chaud.
-       Elle vit ici parce que sa logique s'inverse d'un theme a l'autre : sur un
-       fond sombre, plus une case est opaque et claire, plus elle est chaude ;
-       sur un fond clair, la meme progression devient invisible. */
-    --chaleur-1: rgb(91 155 255 / 0.10);
-    --chaleur-1-bord: rgb(91 155 255 / 0.20);
-    --chaleur-2: rgb(91 155 255 / 0.28);
-    --chaleur-2-bord: rgb(91 155 255 / 0.35);
-    --chaleur-3: rgb(108 192 255 / 0.48);
-    --chaleur-3-bord: rgb(108 192 255 / 0.55);
-    --chaleur-4: rgb(128 220 235 / 0.70);
-    --chaleur-4-bord: rgb(128 220 235 / 0.75);
-    --chaleur-5: rgb(160 240 205 / 0.92);
-    --chaleur-5-bord: rgb(160 240 205 / 1);
+       Elle vit ici parce que sa logique s'inverse d'un theme a l'autre. */
+    --chaleur-1: rgb(255 255 255 / 0.06);
+    --chaleur-1-bord: rgb(255 255 255 / 0.12);
+    --chaleur-2: rgb(255 255 255 / 0.16);
+    --chaleur-2-bord: rgb(255 255 255 / 0.22);
+    --chaleur-3: rgb(255 255 255 / 0.32);
+    --chaleur-3-bord: rgb(255 255 255 / 0.40);
+    --chaleur-4: rgb(134 239 172 / 0.55);
+    --chaleur-4-bord: rgb(134 239 172 / 0.65);
+    --chaleur-5: rgb(74 222 128 / 0.90);
+    --chaleur-5-bord: rgb(74 222 128 / 1);
   }
 
-  /* Thème clair. Chaque paire de texte a été vérifiée au seuil AA de 4,5:1 :
-     contenu 17,7:1 sur une carte, secondaire 7,3:1, libellés discrets 4,67:1,
-     accent 5,8:1, et 5,4:1 pour un libellé posé sur un bouton plein. Les
-     teintes d'état sont assombries — un vert à 61 219 166 ne donne que 1,6:1
-     sur du blanc, illisible. */
+  /* Thème clair, celui de la maquette : gris brumeux, cartes de verre
+     blanches, boutons graphite. Chaque paire de texte tient le seuil AA de
+     4,5:1 — contenu 18:1 sur une carte, secondaire 7,6:1, libellés discrets
+     4,8:1. Les teintes d'état sont assombries : un vert vif ne donne que
+     1,6:1 sur du blanc. */
   :root[data-theme='clair'] {
     color-scheme: light;
 
-    --ink: 244 247 251;
-    --ink-soft: 234 239 247;
+    --ink: 236 237 241;
+    --ink-soft: 228 230 235;
     --surface: 255 255 255;
-    --surface-raised: 244 247 251;
-    --line: 216 224 236;
-    --line-strong: 185 198 216;
-    --accent: 29 95 209;
-    --accent-hover: 23 80 180;
-    --accent-bright: 18 63 143;
-    --success: 11 115 85;
-    --warning: 138 90 0;
-    --danger: 179 38 30;
-    --content: 17 24 39;
-    --content-muted: 75 87 104;
-    --content-faint: 104 117 138;
+    --surface-raised: 245 246 248;
+    --line: 226 228 233;
+    --line-strong: 200 203 210;
+    --accent: 22 22 24;
+    --accent-hover: 52 52 56;
+    --accent-bright: 22 22 24;
+    --success: 21 128 61;
+    --warning: 146 90 0;
+    --danger: 196 38 38;
+    --content: 22 22 24;
+    --content-muted: 78 81 89;
+    --content-faint: 108 112 121;
 
-    --accent-soft: 29 95 209 / 0.10;
-    --success-soft: 11 115 85 / 0.10;
-    --warning-soft: 138 90 0 / 0.10;
-    --danger-soft: 179 38 30 / 0.10;
+    --accent-soft: 22 22 24 / 0.07;
+    --success-soft: 21 128 61 / 0.10;
+    --warning-soft: 146 90 0 / 0.10;
+    --danger-soft: 196 38 38 / 0.09;
 
     /* Un reflet blanc sur un fond clair ne se voit pas : il devient sombre. */
-    --lueur: 17 24 39 / 0.06;
+    --lueur: 22 22 24 / 0.06;
     --inversion-calendrier: none;
-    --ombre-portee: 0 8px 24px rgb(17 24 39 / 0.12);
+    --ombre-portee: 0 12px 32px rgb(22 22 24 / 0.12);
     --serie-violette: #7C3AED;
 
+    --ombre-carte: 0 1px 2px rgb(22 22 24 / 0.04), 0 12px 32px -18px rgb(22 22 24 / 0.18);
+    --ombre-haute: 0 30px 80px -28px rgb(22 22 24 / 0.35);
+    --ombre-bouton: 0 1px 0 rgb(255 255 255 / 0.18) inset, 0 8px 18px -8px rgb(22 22 24 / 0.55);
+
+    --verre-fond: rgb(255 255 255 / 0.55);
+    --verre-fond-epais: rgb(255 255 255 / 0.74);
+    --verre-reflet-haut: rgb(255 255 255 / 0.95);
+    --verre-reflet-bas: rgb(255 255 255 / 0.35);
+    --verre-ombre: 0 1px 0 rgb(255 255 255 / 0.9) inset, 0 -1px 0 rgb(255 255 255 / 0.4) inset, 0 18px 40px -20px rgb(22 22 24 / 0.28);
+    --verre-bulle: rgb(255 255 255 / 0.85);
+
+    --brume-1: rgb(255 255 255 / 0.85);
+    --brume-2: rgb(205 208 216 / 0.55);
+    --brume-3: rgb(255 255 255 / 0.6);
+
     /* Progression inverse : la chaleur se marque en assombrissant. */
-    --chaleur-1: rgb(29 95 209 / 0.10);
-    --chaleur-1-bord: rgb(29 95 209 / 0.20);
-    --chaleur-2: rgb(29 95 209 / 0.26);
-    --chaleur-2-bord: rgb(29 95 209 / 0.36);
-    --chaleur-3: rgb(23 118 190 / 0.44);
-    --chaleur-3-bord: rgb(23 118 190 / 0.54);
-    --chaleur-4: rgb(14 128 148 / 0.62);
-    --chaleur-4-bord: rgb(14 128 148 / 0.72);
-    --chaleur-5: rgb(11 115 85 / 0.82);
-    --chaleur-5-bord: rgb(11 115 85 / 0.95);
+    --chaleur-1: rgb(22 22 24 / 0.05);
+    --chaleur-1-bord: rgb(22 22 24 / 0.10);
+    --chaleur-2: rgb(22 22 24 / 0.14);
+    --chaleur-2-bord: rgb(22 22 24 / 0.20);
+    --chaleur-3: rgb(22 22 24 / 0.30);
+    --chaleur-3-bord: rgb(22 22 24 / 0.38);
+    --chaleur-4: rgb(21 128 61 / 0.55);
+    --chaleur-4-bord: rgb(21 128 61 / 0.65);
+    --chaleur-5: rgb(21 128 61 / 0.85);
+    --chaleur-5-bord: rgb(21 128 61 / 0.95);
   }
 
   html,
@@ -126,18 +160,32 @@
 
   body {
     @apply bg-ink text-content font-sans antialiased;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'tnum';
+    /* Brume : trois nappes floues, comme le ciel couvert de la maquette. Le
+       verre n'a d'effet que s'il a quelque chose à flouter derrière lui. */
+    background-image:
+      radial-gradient(70rem 40rem at 0% -10%, var(--brume-1), transparent 60%),
+      radial-gradient(60rem 36rem at 100% 10%, var(--brume-2), transparent 60%),
+      radial-gradient(50rem 30rem at 50% 110%, var(--brume-3), transparent 60%);
+    background-attachment: fixed;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01', 'tnum';
+    letter-spacing: -0.006em;
+  }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.022em;
   }
 
   /* Focus visible non négociable : WCAG 2.1 AA, jamais supprimé. */
   :focus-visible {
     outline: 2px solid rgb(var(--accent));
     outline-offset: 2px;
-    border-radius: 4px;
+    border-radius: 6px;
   }
 
   ::selection {
-    background: rgb(var(--accent-soft));
+    background: rgb(var(--content) / 0.15);
     color: rgb(var(--content));
   }
 
@@ -149,9 +197,10 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgb(var(--line-strong));
+    background: rgb(var(--content) / 0.18);
     border-radius: 999px;
-    border: 3px solid rgb(var(--ink));
+    border: 3px solid transparent;
+    background-clip: padding-box;
   }
 
   input[type='date'i]::-webkit-calendar-picker-indicator,
@@ -163,11 +212,9 @@
 
 @layer components {
   .sr-skip {
-    /* `text-ink` et non `text-white` : sur l'accent le blanc ne donne que
-       2,77:1 en thème sombre, sous le seuil AA. L'encre y monte à 6,53:1 — et
-       le raisonnement tient dans les deux thèmes, l'encre et l'accent
-       s'inversant ensemble : 5,41:1 en clair. */
-    @apply absolute left-4 top-4 z-[100] -translate-y-24 rounded-xl bg-accent px-4 py-2
+    /* `text-ink` et non `text-white` : l'encre et l'accent s'inversent
+       ensemble, le contraste tient dans les deux thèmes. */
+    @apply absolute left-4 top-4 z-[100] -translate-y-24 rounded-full bg-accent px-4 py-2
            text-sm font-medium text-ink transition focus:translate-y-0;
   }
 
@@ -187,31 +234,158 @@
   }
 
   .card-surface {
-    @apply rounded-xl border border-line bg-surface;
+    @apply rounded-2xl border border-line/70 bg-surface/80 shadow-carte backdrop-blur-xl;
+  }
+
+  /* ------------------------------------------------------------------
+     Verre liquide.
+
+     Trois couches, comme sur les surfaces d'Apple : un fond translucide qui
+     floute et sature ce qui passe dessous, une ombre intérieure qui dessine
+     l'épaisseur, et un liseré spéculaire en dégradé — clair en haut à
+     gauche, presque nul au milieu, de nouveau clair en bas à droite — qui
+     donne l'impression d'une lentille plutôt que d'une plaque.
+
+     Le liseré est un pseudo-élément masqué en anneau : une bordure CSS ne
+     sait pas porter de dégradé avec des coins arrondis.
+
+     `position: relative` est posé ici pour ancrer le pseudo-élément ; les
+     utilitaires `fixed`, `sticky` ou `absolute`, générés dans une couche
+     plus tardive, l'emportent quand un composant en a besoin.
+     ------------------------------------------------------------------ */
+  .verre,
+  .verre-epais {
+    position: relative;
+    isolation: isolate;
+    background: var(--verre-fond);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+    box-shadow: var(--verre-ombre);
+  }
+  .verre-epais {
+    background: var(--verre-fond-epais);
+    -webkit-backdrop-filter: blur(40px) saturate(200%);
+    backdrop-filter: blur(40px) saturate(200%);
+  }
+  .verre::before,
+  .verre-epais::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      140deg,
+      var(--verre-reflet-haut) 0%,
+      var(--verre-reflet-bas) 35%,
+      transparent 55%,
+      var(--verre-reflet-bas) 75%,
+      var(--verre-reflet-haut) 100%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Bulle de l'élément actif d'une navigation : elle glisse d'un onglet à
+     l'autre avec un ressort, et s'étire pendant le trajet comme une goutte.
+     Position et largeur sont posées par `IndicateurLiquide`. */
+  .bulle-liquide {
+    position: absolute;
+    z-index: 0;
+    border-radius: 999px;
+    background: var(--verre-bulle);
+    box-shadow:
+      0 1px 0 rgb(255 255 255 / 0.6) inset,
+      0 6px 16px -6px rgb(0 0 0 / 0.25);
+    transition:
+      transform 560ms cubic-bezier(0.34, 1.36, 0.4, 1),
+      width 560ms cubic-bezier(0.34, 1.36, 0.4, 1),
+      height 560ms cubic-bezier(0.34, 1.36, 0.4, 1),
+      opacity 200ms ease;
+    pointer-events: none;
+  }
+  .bulle-liquide[data-mouvement='true'] {
+    animation: goutte 560ms cubic-bezier(0.34, 1.36, 0.4, 1);
+  }
+
+  /* Pression : tout ce qui se clique s'enfonce légèrement, comme sur iOS. */
+  .pression {
+    transition: transform 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .pression:active {
+    transform: scale(0.96);
   }
 
   /* Apparition au défilement — voir `Reveal` et `useInView`.
      L'état masqué vit ici plutôt que dans une classe utilitaire : le composant
      bascule un attribut, le navigateur interpole, et rien ne passe par React
-     pendant l'animation. */
+     pendant l'animation. Le flou qui se dissipe imite les transitions des
+     pages produit d'Apple. */
   .reveal {
     opacity: 0;
-    transform: translateY(22px);
+    transform: translateY(28px) scale(0.985);
+    filter: blur(8px);
     transition:
-      opacity 620ms cubic-bezier(0.16, 1, 0.3, 1),
-      transform 620ms cubic-bezier(0.16, 1, 0.3, 1);
+      opacity 900ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 900ms cubic-bezier(0.16, 1, 0.3, 1),
+      filter 900ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .reveal[data-visible='true'] {
     opacity: 1;
     transform: none;
+    filter: none;
   }
+}
 
+/* Étirement d'une goutte qui glisse : plus large que haute à mi-course. */
+@keyframes goutte {
+  0% { scale: 1 1; }
+  40% { scale: 1.14 0.9; }
+  100% { scale: 1 1; }
+}
+
+/* Photo d'un bandeau : elle arrive légèrement agrandie et floue, puis fait
+   le point — le geste d'ouverture des pages produit d'Apple. */
+@keyframes apparition-photo {
+  from { opacity: 0; transform: scale(1.08); filter: blur(12px); }
+  to { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+/* Main qui salue, une seule fois. */
+@keyframes salut {
+  0%, 100% { transform: rotate(0deg); }
+  15%, 45% { transform: rotate(14deg); }
+  30%, 60% { transform: rotate(-8deg); }
+  75% { transform: rotate(0deg); }
 }
 
 /* Le défilement des ancres de la page publique glisse au lieu de sauter. */
 html {
   scroll-behavior: smooth;
+}
+
+/* Sans flou d'arrière-plan, le verre deviendrait illisible : il reprend un
+   fond presque opaque. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .verre,
+  .verre-epais {
+    background: rgb(var(--surface) / 0.96);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .verre,
+  .verre-epais {
+    background: rgb(var(--surface));
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -234,5 +408,6 @@ html {
   .reveal {
     opacity: 1;
     transform: none;
+    filter: none;
   }
 }

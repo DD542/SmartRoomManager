@@ -81,7 +81,7 @@ export default function MyBookingsCalendarPage() {
         <Card className="lg:sticky lg:top-4">
           <header className="flex items-start justify-between gap-3 border-b border-line px-4 py-3">
             <div>
-              <p className="text-xs uppercase tracking-wide text-content-muted">
+              <p className="text-xs tracking-tight text-content-muted">
                 {selectedDay && isSameDay(toDate(selectedDay), NOW) ? "Aujourd'hui" : 'Journée'}
               </p>
               <h2 className="mt-0.5 text-sm font-semibold capitalize text-content">
@@ -106,7 +106,7 @@ export default function MyBookingsCalendarPage() {
                 <Link
                   key={booking.id}
                   to={`/app/reservations/${booking.id}`}
-                  className="rounded-xl border border-line bg-surface-raised p-3 transition hover:border-accent/50"
+                  className="rounded-2xl border border-line/70 bg-surface/70 p-3 transition hover:border-accent/50"
                 >
                   <span className="flex flex-wrap items-center justify-between gap-2">
                     <span className="rounded-lg border border-line bg-surface px-2 py-0.5 font-mono text-xs text-content">

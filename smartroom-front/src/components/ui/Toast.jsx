@@ -6,7 +6,7 @@ const TONES = {
   success: { icon: CheckCircle2, ring: 'border-success/40', color: 'text-success' },
   danger: { icon: XCircle, ring: 'border-danger/40', color: 'text-danger' },
   warning: { icon: AlertTriangle, ring: 'border-warning/40', color: 'text-warning' },
-  info: { icon: Info, ring: 'border-line', color: 'text-accent' },
+  info: { icon: Info, ring: 'border-transparent', color: 'text-content' },
 };
 
 /**
@@ -30,7 +30,7 @@ export function ToastViewport({ toasts = [], onDismiss }) {
             key={toast.id}
             role="status"
             className={cn(
-              'pointer-events-auto flex animate-fade-in-up items-start gap-3 rounded-xl border bg-surface px-3.5 py-3',
+              'verre-epais pointer-events-auto flex animate-scale-in items-start gap-3 rounded-2xl border px-4 py-3 shadow-haute',
               tone.ring,
             )}
           >

@@ -27,7 +27,7 @@ export function Table({ columns = [], rows = [], caption, rowKey = (row) => row.
                 key={column.key}
                 scope="col"
                 className={cn(
-                  'px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-content-muted',
+                  'px-4 py-2.5 text-xs font-medium tracking-tight text-content-muted',
                   column.align === 'right' && 'text-right',
                   column.className,
                 )}
@@ -44,7 +44,7 @@ export function Table({ columns = [], rows = [], caption, rowKey = (row) => row.
               onClick={onRowClick ? () => onRowClick(row) : undefined}
               className={cn(
                 'border-b border-line/60 transition last:border-0',
-                onRowClick && 'cursor-pointer hover:bg-surface-raised',
+                onRowClick && 'cursor-pointer hover:bg-content/[0.04]',
                 'animate-fade-in-up',
               )}
               style={{ animationDelay: `${Math.min(index, 12) * 40}ms` }}
@@ -127,10 +127,10 @@ export function Pagination({ page = 1, pageCount = 1, total = 0, pageSize = 10, 
               aria-current={valeur === page ? 'page' : undefined}
               aria-label={`Page ${valeur}`}
               className={cn(
-                'h-8 min-w-8 rounded-lg border px-2 text-xs transition',
+                'pression h-8 min-w-8 rounded-full border px-2.5 text-xs transition',
                 valeur === page
                   ? 'border-accent bg-accent text-ink'
-                  : 'border-line bg-surface text-content-muted hover:text-content',
+                  : 'border-line/70 bg-surface/70 text-content-muted hover:text-content',
               )}
             >
               {valeur}

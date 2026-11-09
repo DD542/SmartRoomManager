@@ -90,14 +90,14 @@ export default function ExceptionalAccessPage() {
             <Card className="flex items-center gap-3 p-3.5">
               <DoorOpen size={15} aria-hidden="true" className="text-accent" />
               <div>
-                <p className="text-xs uppercase tracking-wide text-content-muted">Salle concernée</p>
+                <p className="text-xs tracking-tight text-content-muted">Salle concernée</p>
                 <p className="text-sm text-content">{draft.room?.name ?? 'Non sélectionnée'}</p>
               </div>
             </Card>
             <Card className="flex items-center gap-3 p-3.5">
               <CalendarDays size={15} aria-hidden="true" className="text-accent" />
               <div>
-                <p className="text-xs uppercase tracking-wide text-content-muted">Date demandée</p>
+                <p className="text-xs tracking-tight text-content-muted">Date demandée</p>
                 <p className="text-sm capitalize text-content">{fmtDateLong(draft.date)}</p>
               </div>
             </Card>
@@ -142,7 +142,7 @@ export default function ExceptionalAccessPage() {
                     min={1}
                     value={draft.attendees}
                     onChange={(event) => update({ attendees: event.target.value })}
-                    className="h-10 w-24 rounded-xl border border-line bg-surface-raised px-3 text-center font-mono text-sm text-content focus:border-accent focus:outline-none"
+                    className="h-10 w-24 rounded-2xl border border-line/70 bg-surface/70 px-3 text-center font-mono text-sm text-content focus:border-accent focus:outline-none"
                   />
                   <Button
                     variant="secondary"

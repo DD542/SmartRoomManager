@@ -30,7 +30,7 @@ export function EquipmentTab({ draft, onChange, catalog = [], categories = [] })
         if (items.length === 0) return null;
         return (
           <fieldset key={categorie.id}>
-            <legend className="mb-2 text-xs uppercase tracking-wide text-content-muted">
+            <legend className="mb-2 text-xs tracking-tight text-content-muted">
               {categorie.label}
             </legend>
             <ul className="grid gap-2 sm:grid-cols-2 [&>*]:min-w-0">

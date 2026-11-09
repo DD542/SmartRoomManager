@@ -101,7 +101,7 @@ export function BookingTable({ bookings = [], isMobile = false }) {
           <Link
             key={booking.id}
             to={`/app/reservations/${booking.id}`}
-            className="flex items-center gap-3 rounded-xl border border-line bg-surface-raised p-3"
+            className="flex items-center gap-3 rounded-2xl border border-line/70 bg-surface/70 p-3"
           >
             <Vignette salle={booking.room} taille="lg" />
             <span className="min-w-0 flex-1">

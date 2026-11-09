@@ -39,7 +39,9 @@ export function Topbar() {
     // `z-topbar` : la barre reste au-dessus du contenu qui défile sous elle,
     // et sous les tiroirs, modales et notifications. La marge haute couvre
     // l'encoche quand l'application est installée en plein écran.
-    <header className="z-topbar flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 pt-[env(safe-area-inset-top)] md:px-4">
+    // Barre de verre flottante : décollée des bords, arrondie en pilule, le
+    // contenu passe dessous en défilant et transparaît flouté.
+    <header className="verre sticky top-[calc(env(safe-area-inset-top)+0.75rem)] z-topbar mx-3 mt-[calc(env(safe-area-inset-top)+0.75rem)] flex h-14 shrink-0 items-center gap-3 rounded-full pl-2 pr-2 md:mx-6 lg:mx-8">
       <BarreRecherche
         id="recherche-globale"
         label="Rechercher une salle, une réservation"
@@ -61,7 +63,7 @@ export function Topbar() {
           {unread > 0 && (
             <span
               aria-hidden="true"
-              className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full border-2 border-surface bg-accent"
+              className="absolute right-1.5 top-1.5 h-2.5 w-2.5 animate-scale-in rounded-full border-2 border-surface bg-danger"
             />
           )}
         </span>
@@ -73,7 +75,7 @@ export function Topbar() {
         <button
           type="button"
           onClick={() => navigate('/app/profil')}
-          className="ml-1 rounded-full ring-2 ring-line transition hover:ring-accent/60"
+          className="pression ml-1 rounded-full ring-2 ring-surface shadow-carte transition hover:ring-content/30"
           aria-label={`Profil et paramètres de ${fullName(user)}`}
         >
           {/* La photo du profil, quand il y en a une. L'`Avatar` sait retomber

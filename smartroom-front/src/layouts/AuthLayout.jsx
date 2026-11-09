@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { DoorOpen } from 'lucide-react';
+import { LogoMark } from '../components/brand/Logo';
 import { cn } from '../utils/cn';
 
 /**
@@ -11,22 +11,25 @@ export default function AuthLayout() {
   const wide = pathname.startsWith('/bienvenue');
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-ink px-4 py-10">
-      <header className="mb-8 flex flex-col items-center gap-3">
-        <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-accent/40 bg-accent-soft">
-          <DoorOpen size={22} aria-hidden="true" className="text-accent" />
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 py-10">
+      {/* Monogramme et nom centrés, comme l'écran d'accueil de l'application
+          mobile de la maquette. Il descend en faisant le point. */}
+      <header className="mb-8 flex animate-fade-in-up flex-col items-center gap-3 text-center">
+        <span className="text-content">
+          <LogoMark size={52} />
         </span>
-        <p className="text-2xl font-semibold tracking-tight">
-          <span className="text-accent">SmartRoom</span> <span className="text-content">Manager</span>
+        <p className="font-display text-3xl font-semibold leading-tight tracking-tight text-content">
+          SmartRoom Manager
         </p>
+        <p className="text-sm text-content-muted">Réservez. Gérez. Collaborez.</p>
       </header>
 
-      <main className={cn('w-full', wide ? 'max-w-2xl' : 'max-w-md')}>
+      <main className={cn('w-full animate-fade-in-up [animation-delay:80ms]', wide ? 'max-w-2xl' : 'max-w-md')}>
         <Outlet />
       </main>
 
       <footer className="mt-8 flex items-center gap-3 text-xs text-content-muted">
-        <Link to="/app/aide" className="transition hover:text-content">
+        <Link to="/app/aide" className="rounded-full px-2 py-1 transition hover:text-content">
           Besoin d’aide ?
         </Link>
         <span aria-hidden="true">•</span>

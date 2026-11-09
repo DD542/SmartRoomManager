@@ -65,7 +65,7 @@ describe('Étiquette hors organisation', () => {
             ...LIGNE,
             id: 'u-2',
             name: 'Alice Leroy',
-            email: 'alice@edu.ece.fr',
+            email: 'alice@campus.smartroom.app',
             promotion: 'B3 Cyber',
             isExternal: false,
           },

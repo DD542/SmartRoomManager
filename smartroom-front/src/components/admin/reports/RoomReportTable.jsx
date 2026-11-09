@@ -68,7 +68,7 @@ export function RoomReportTable({ rows = [], className }) {
              défilaient donc sans pagination, et le pied de page annonçait
              « 1 à 10 sur 14 » depuis la moitié masquée de l'écran. */
           carte={(salle) => (
-              <div className="rounded-xl border border-line bg-surface-raised p-3">
+              <div className="rounded-2xl border border-line/70 bg-surface/70 p-3">
                 <div className="flex items-baseline justify-between gap-2">
                   <p className="truncate text-sm text-content">{salle.room}</p>
                   <p className="shrink-0 font-mono text-xs text-content-muted">{salle.hours} h</p>

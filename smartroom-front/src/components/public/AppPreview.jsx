@@ -150,8 +150,7 @@ export function AppPreview() {
       <div aria-hidden="true" className="absolute -right-2 top-10 hidden sm:block animate-flottement">
       <div
         style={carte(-5, -2, -10)}
-        className="flex items-center gap-3 rounded-xl border border-line
-                   bg-surface-raised px-4 py-3"
+        className="verre-epais flex items-center gap-3 rounded-2xl px-4 py-3 shadow-haute"
       >
         <span className="flex h-9 w-9 items-center justify-center rounded-full border border-success/40 bg-success-soft">
           <CheckCircle2 size={18} className="text-success" />
@@ -172,12 +171,11 @@ export function AppPreview() {
       >
       <div
         style={carte(6, 3, 10)}
-        className="flex items-center gap-3 rounded-xl border border-line
-                   bg-surface-raised px-4 py-3"
+        className="verre-epais flex items-center gap-3 rounded-2xl px-4 py-3 shadow-haute"
       >
-        <KeyRound size={16} className="text-accent" />
+        <KeyRound size={16} className="text-content" />
         <span>
-          <span className="block text-[10px] uppercase tracking-wide text-content-muted">
+          <span className="block text-[10px] tracking-tight text-content-muted">
             Code d’accès
           </span>
           <span className="block font-mono text-base tracking-[0.15em] text-content">A-4821</span>

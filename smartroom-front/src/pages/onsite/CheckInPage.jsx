@@ -220,7 +220,7 @@ export default function CheckInPage() {
                       : 'Fenêtre de validation dépassée.'}
                 </p>
 
-                <dl className="mt-5 divide-y divide-line rounded-xl border border-line bg-surface-raised">
+                <dl className="mt-5 divide-y divide-line rounded-2xl border border-line/70 bg-surface/70">
                   <div className="flex items-center justify-between gap-3 px-3 py-2.5">
                     <dt className="text-xs text-content-muted">Salle</dt>
                     <dd className="text-sm text-content">{booking.data.room?.name}</dd>
@@ -264,7 +264,7 @@ export default function CheckInPage() {
                             inputs.current[index - 1]?.focus();
                           }
                         }}
-                        className="h-14 w-12 rounded-xl border border-line bg-surface-raised text-center font-mono text-xl text-content focus:border-accent focus:outline-none"
+                        className="h-14 w-12 rounded-2xl border border-line/70 bg-surface/70 text-center font-mono text-xl text-content focus:border-accent focus:outline-none"
                       />
                     ))}
                   </div>
@@ -300,7 +300,7 @@ export default function CheckInPage() {
                     créneau n'a pas encore commencé », et il a raison. */}
                 {!avantOuverture &&
                   (retardOuvert ? (
-                    <div className="mt-4 rounded-xl border border-line bg-surface-raised p-3">
+                    <div className="mt-4 rounded-2xl border border-line/70 bg-surface/70 p-3">
                       <label
                         htmlFor="retard-min"
                         className="block text-xs text-content-muted"

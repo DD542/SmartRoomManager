@@ -27,7 +27,7 @@ import { Button } from '../ui/Button';
 
 function Enveloppe({ children }) {
   return (
-    <div className="mt-2 space-y-2 rounded-xl border border-line bg-surface p-3">{children}</div>
+    <div className="mt-2 space-y-2 rounded-2xl border border-line/70 bg-surface/80 shadow-carte p-3">{children}</div>
   );
 }
 

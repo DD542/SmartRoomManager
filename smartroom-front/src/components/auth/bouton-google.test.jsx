@@ -7,7 +7,7 @@
  * connexion est configurée. Un bouton présent qui échoue à chaque clic est
  * pire que pas de bouton — il fait croire à une panne là où il n'y a qu'une
  * option non activée, et c'est exactement ce que faisait le bouton « compte
- * ECE » qu'il remplace.
+ * de l’ancien fournisseur » qu’il remplace.
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';

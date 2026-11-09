@@ -63,7 +63,7 @@ export function ExportPanel({ open, onClose, onExport, columns = [], filters, ro
     >
       <div className="flex flex-col gap-4">
         <div>
-          <p className="mb-2 text-xs uppercase tracking-wide text-content-muted">Format</p>
+          <p className="mb-2 text-xs tracking-tight text-content-muted">Format</p>
           <SegmentedControl
             label="Format d’export"
             options={FORMATS}
@@ -73,7 +73,7 @@ export function ExportPanel({ open, onClose, onExport, columns = [], filters, ro
         </div>
 
         <fieldset>
-          <legend className="mb-2 text-xs uppercase tracking-wide text-content-muted">
+          <legend className="mb-2 text-xs tracking-tight text-content-muted">
             Colonnes incluses
           </legend>
           <div className="flex flex-col gap-2">

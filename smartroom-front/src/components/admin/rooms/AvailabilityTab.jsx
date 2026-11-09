@@ -26,7 +26,7 @@ export function AvailabilityTab({ draft, onChange }) {
   return (
     <div className="flex flex-col gap-5">
       <fieldset>
-        <legend className="mb-2 text-xs uppercase tracking-wide text-content-muted">
+        <legend className="mb-2 text-xs tracking-tight text-content-muted">
           Jours d’ouverture
         </legend>
         <div className="flex flex-wrap gap-1.5">

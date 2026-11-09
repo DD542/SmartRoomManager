@@ -113,7 +113,7 @@ export default function FloorPlanPage() {
         subtitle="Repérez les salles libres et l’itinéraire depuis l’entrée."
         actions={
           // Une liste déroulante et non un contrôle segmenté : le parc compte
-          // treize étages, et treize onglets « Eiffel 3 — 1er étage » alignés
+          // treize étages, et treize onglets « Bâtiment C — 1er étage » alignés
           // débordaient de l'écran à toutes les largeurs sous 1280 px. Un
           // contrôle segmenté vaut pour deux à cinq choix ; au-delà, c'est une
           // liste.

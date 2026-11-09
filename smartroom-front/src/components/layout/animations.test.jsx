@@ -18,7 +18,7 @@ import { NAV_ITEMS, Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
 
 vi.mock('../../hooks/useAuth', () => ({
-  useAuth: () => ({ user: { id: 'u-1', email: 'd@ece.fr' }, logout: vi.fn() }),
+  useAuth: () => ({ user: { id: 'u-1', email: 'd@smartroom.app' }, logout: vi.fn() }),
 }));
 
 describe('Transition d’écran', () => {

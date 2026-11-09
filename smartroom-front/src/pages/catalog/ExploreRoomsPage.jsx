@@ -131,7 +131,7 @@ export default function ExploreRoomsPage() {
               setPage(1);
             }}
             placeholder="Nom de la salle, description…"
-            className="h-9 w-full rounded-xl border border-line bg-surface-raised pl-9 pr-3 text-sm text-content placeholder:text-content-faint focus:border-accent focus:outline-none"
+            className="h-9 w-full rounded-2xl border border-line/70 bg-surface/70 pl-9 pr-3 text-sm text-content placeholder:text-content-faint focus:border-accent focus:outline-none"
           />
         </div>
       </Card>

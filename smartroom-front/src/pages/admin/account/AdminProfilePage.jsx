@@ -33,7 +33,7 @@ import { fullName } from '../../../utils/format';
  * l'outil, puis à y revenir.
  *
  * Il ne réutilise pas non plus les sections de `U-21`, qui annoncent des
- * choses fausses — que le mot de passe se change « depuis l'intranet ECE »,
+ * choses fausses — que le mot de passe se change « depuis l'intranet de l'école »,
  * alors que `POST /auth/change-password` existe et fonctionne — et portent
  * deux boutons sans gestionnaire. Ce qui est proposé ici correspond à ce que
  * l'API sait faire, et rien d'autre.
@@ -306,7 +306,7 @@ function Droits({ groupes, accordees, proprietaire }) {
         if (siennes.length === 0) return null;
         return (
           <div key={groupe.id}>
-            <p className="mb-1.5 text-[10px] uppercase tracking-wide text-content-faint">
+            <p className="mb-1.5 text-[10px] tracking-tight text-content-faint">
               {groupe.label}
             </p>
             <ul className="flex flex-wrap gap-1.5">

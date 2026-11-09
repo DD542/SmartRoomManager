@@ -129,7 +129,7 @@ export default function BookingDetailPage() {
                   </div>
 
                   <div className="border-t border-line px-4 py-3">
-                    <p className="text-xs uppercase tracking-wide text-content-muted">Objet de la réunion</p>
+                    <p className="text-xs tracking-tight text-content-muted">Objet de la réunion</p>
                     <p className="mt-1.5 rounded-lg border border-line bg-surface-raised px-3 py-2 text-sm text-content">
                       « {data.title} »
                     </p>
@@ -172,7 +172,7 @@ export default function BookingDetailPage() {
                     </div>
                   )}
                   <div className="border-t border-line px-4 py-3">
-                    <p className="mb-2 text-xs uppercase tracking-wide text-content-muted">
+                    <p className="mb-2 text-xs tracking-tight text-content-muted">
                       Localisation
                     </p>
                     <PlanPreview document={planAffiche} isLoading={planDocument.isLoading && !planAffiche} />
@@ -208,7 +208,7 @@ export default function BookingDetailPage() {
                     )}
 
                     <Card tone="danger" className="p-3">
-                      <p className="text-xs font-medium uppercase tracking-wide text-danger">
+                      <p className="text-xs font-medium tracking-tight text-danger">
                         Zone dangereuse
                       </p>
                       <Button

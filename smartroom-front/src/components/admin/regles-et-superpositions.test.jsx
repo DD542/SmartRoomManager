@@ -104,7 +104,7 @@ describe('A-06 — fiche de bâtiment au téléphone', () => {
 
   it('montre les deux côte à côte au bureau', () => {
     largeur(1440);
-    render(<PileInspecteur liste={LISTE} detail={DETAIL} actif titre="Eiffel 1" />);
+    render(<PileInspecteur liste={LISTE} detail={DETAIL} actif titre="Bâtiment A" />);
 
     expect(screen.getByText('le parc')).toBeTruthy();
     expect(screen.getByText('la fiche')).toBeTruthy();
@@ -121,7 +121,7 @@ describe('A-06 — fiche de bâtiment au téléphone', () => {
         liste={LISTE}
         detail={DETAIL}
         actif
-        titre="Eiffel 1"
+        titre="Bâtiment A"
         libelleFermer="Retour au parc"
         onFermer={fermer}
       />,
@@ -142,14 +142,14 @@ describe('A-06 — fiche de bâtiment au téléphone', () => {
   it('se ferme aussi sur Échap', () => {
     largeur(390);
     const fermer = vi.fn();
-    render(<PileInspecteur liste={LISTE} detail={DETAIL} actif titre="Eiffel 1" onFermer={fermer} />);
+    render(<PileInspecteur liste={LISTE} detail={DETAIL} actif titre="Bâtiment A" onFermer={fermer} />);
 
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(fermer).toHaveBeenCalled();
   });
 
   it('n’ouvre rien tant qu’aucun bâtiment n’est choisi', () => {
-    // Le parc s'affiche d'abord : arriver sur la fiche d'Eiffel 1 sans l'avoir
+    // Le parc s'affiche d'abord : arriver sur la fiche du Bâtiment A sans l'avoir
     // demandée était le défaut constaté.
     largeur(390);
     render(<PileInspecteur liste={LISTE} detail={DETAIL} actif={false} />);

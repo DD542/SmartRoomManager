@@ -8,7 +8,7 @@ import { getMyStats } from '../../api/stats';
 import { NOW } from '../../utils/dates';
 import { Button } from '../../components/ui/Button';
 import { ErrorState } from '../../components/ui/States';
-import { PageHeader } from '../../components/layout/PageHeader';
+import { HeroAccueil } from '../../components/home/HeroAccueil';
 import { KpiTile, KpiTileSkeleton } from '../../components/stats/KpiTile';
 import { NextBookingCard } from '../../components/home/NextBookingCard';
 import { QuickSearchCard } from '../../components/home/QuickSearchCard';
@@ -38,29 +38,19 @@ export default function DashboardPage() {
   const otherSlots = (upcoming.data ?? []).filter((booking) => booking.id !== nextId).slice(0, 3);
 
   return (
-    <div className="flex flex-col gap-5">
-      <PageHeader
-        title={`Bonjour, ${user.firstName}`}
-        subtitle="Voici le résumé de vos activités d’aujourd’hui."
-        actions={
+    <div className="flex flex-col gap-6">
+      <HeroAccueil
+        prenom={user.firstName}
+        batimentPrefere={user.preferences?.preferredBuildingId}
+        action={
           <Button to="/app/reservation/besoin" icon={Plus}>
             Nouvelle réservation
           </Button>
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr] [&>*]:min-w-0">
-        {next.isError ? (
-          <div className="card-surface">
-            <ErrorState error={next.error} onRetry={next.reload} />
-          </div>
-        ) : (
-          <NextBookingCard booking={next.data} isLoading={next.isLoading} />
-        )}
-
-        <QuickSearchCard defaultBuildingId={user.preferences?.preferredBuildingId} />
-      </div>
-
+      {/* Les chiffres d'abord, juste sous le bandeau, comme les quatre tuiles
+          de la maquette : on sait où on en est avant de lire le détail. */}
       <div className="grid gap-3 sm:grid-cols-3 [&>*]:min-w-0">
         {stats.isLoading && (
           <>
@@ -76,12 +66,20 @@ export default function DashboardPage() {
               tone="accent"
               value={stats.data.kpis.bookings}
               label="réservations ce mois"
+              className="animate-fade-in-up"
             />
-            <KpiTile icon={Clock} value={stats.data.kpis.hours} unit="h" label="heures réservées" />
+            <KpiTile
+              icon={Clock}
+              value={stats.data.kpis.hours}
+              unit="h"
+              label="heures réservées"
+              className="animate-fade-in-up [animation-delay:60ms]"
+            />
             <KpiTile
               icon={XCircle}
               value={stats.data.kpis.cancelled}
               label={stats.data.kpis.cancelled > 1 ? 'annulations' : 'annulation'}
+              className="animate-fade-in-up [animation-delay:120ms]"
             />
           </>
         )}
@@ -90,6 +88,18 @@ export default function DashboardPage() {
             <ErrorState error={stats.error} onRetry={stats.reload} title="Statistiques indisponibles" />
           </div>
         )}
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr] [&>*]:min-w-0">
+        {next.isError ? (
+          <div className="card-surface">
+            <ErrorState error={next.error} onRetry={next.reload} />
+          </div>
+        ) : (
+          <NextBookingCard booking={next.data} isLoading={next.isLoading} />
+        )}
+
+        <QuickSearchCard defaultBuildingId={user.preferences?.preferredBuildingId} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">

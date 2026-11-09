@@ -81,7 +81,7 @@ export default function ForgotPasswordPage() {
           autoComplete="email"
           icon={Mail}
           required
-          placeholder="prenom.nom@edu.ece.fr"
+          placeholder="prenom.nom@organisation.com"
           value={email}
           onChange={(event) => {
             setEmail(event.target.value);

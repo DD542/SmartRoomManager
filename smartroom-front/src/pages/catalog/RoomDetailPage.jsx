@@ -144,7 +144,7 @@ export default function RoomDetailPage() {
                     return (
                       <li
                         key={item.id}
-                        className="flex flex-col items-center gap-1.5 rounded-xl border border-line bg-surface-raised px-3 py-3 text-center"
+                        className="flex flex-col items-center gap-1.5 rounded-2xl border border-line/70 bg-surface/70 px-3 py-3 text-center"
                       >
                         <Icon size={16} aria-hidden="true" className="text-content-muted" />
                         <span className="text-xs text-content">{item.label}</span>
@@ -183,18 +183,18 @@ export default function RoomDetailPage() {
               <Card>
                 <CardHeader title="Conditions d’accès" icon={KeyRound} />
                 <div className="grid gap-2 px-4 pb-4 sm:grid-cols-3 [&>*]:min-w-0">
-                  <div className="rounded-xl border border-line bg-surface-raised p-3">
-                    <p className="text-xs uppercase tracking-wide text-content-muted">Accès</p>
+                  <div className="rounded-2xl border border-line/70 bg-surface/70 p-3">
+                    <p className="text-xs tracking-tight text-content-muted">Accès</p>
                     <p className="mt-1 text-xs text-content">
                       {data.badgeRequired ? 'Badge d’accès requis' : 'Code d’accès seul'}
                     </p>
                   </div>
-                  <div className="rounded-xl border border-line bg-surface-raised p-3">
-                    <p className="text-xs uppercase tracking-wide text-content-muted">Jours</p>
+                  <div className="rounded-2xl border border-line/70 bg-surface/70 p-3">
+                    <p className="text-xs tracking-tight text-content-muted">Jours</p>
                     <p className="mt-1 text-xs text-content">{visitDaysLabel(data.rules.visitDays)}</p>
                   </div>
-                  <div className="rounded-xl border border-line bg-surface-raised p-3">
-                    <p className="text-xs uppercase tracking-wide text-content-muted">Horaires</p>
+                  <div className="rounded-2xl border border-line/70 bg-surface/70 p-3">
+                    <p className="text-xs tracking-tight text-content-muted">Horaires</p>
                     <p className="mt-1 font-mono text-xs text-content">
                       {data.rules.openTime} - {data.rules.closeTime}
                     </p>

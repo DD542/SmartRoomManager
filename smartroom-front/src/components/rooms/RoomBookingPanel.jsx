@@ -13,7 +13,7 @@ export function RoomBookingPanel({ room, nextSlot, onBook }) {
     <Card className="lg:sticky lg:top-4">
       <CardHeader title="Réserver" icon={CalendarPlus} />
       <div className="flex flex-col gap-3 px-4 pb-4">
-        <div className="rounded-xl border border-accent/40 bg-accent-soft p-3">
+        <div className="rounded-2xl border border-transparent bg-accent-soft p-3">
           <p className="flex items-center gap-1.5 text-xs text-accent">
             <Zap size={12} aria-hidden="true" />
             Prochain créneau libre

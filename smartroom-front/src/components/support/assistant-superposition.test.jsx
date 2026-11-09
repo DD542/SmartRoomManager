@@ -72,8 +72,10 @@ describe('Assistant', () => {
     // Sous la barre dans l'échelle des plans : un bouton flottant ne masque
     // pas une destination.
     expect(bulle.className).toContain('z-chatbubble');
-    // Et posée au-dessus d'elle à l'écran, marge du système comprise.
-    expect(bulle.className).toContain('bottom-[calc(env(safe-area-inset-bottom)+4.5rem)]');
+    // Et posée au-dessus d'elle à l'écran, marge du système comprise. La
+    // barre flotte désormais à 0,75 rem du bord et mesure 68 px : la bulle
+    // monte d'autant.
+    expect(bulle.className).toContain('bottom-[calc(env(safe-area-inset-bottom)+6.25rem)]');
   });
 
   it('occupe l’écran entier en mobile et redevient fenêtre au-delà', () => {

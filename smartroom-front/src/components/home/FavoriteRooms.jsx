@@ -34,7 +34,7 @@ export function FavoriteRooms({ rooms = [], isLoading }) {
             <Link
               key={room.id}
               to={`/app/salles/${room.id}`}
-              className="group overflow-hidden rounded-xl border border-line bg-surface-raised transition hover:border-line-strong"
+              className="group overflow-hidden rounded-2xl border border-line/70 bg-surface/70 transition hover:border-line-strong"
             >
               <img
                 src={room.photos?.[0]}

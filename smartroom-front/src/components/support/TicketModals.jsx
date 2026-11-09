@@ -24,7 +24,7 @@ export function TicketThreadModal({ ticket, onClose }) {
                 : 'border-line bg-surface-raised'
             }`}
           >
-            <p className="text-xs uppercase tracking-wide text-content-muted">
+            <p className="text-xs tracking-tight text-content-muted">
               {message.author === 'support' ? 'Support' : 'Vous'} • {fmtRelative(message.at)}
             </p>
             <p className="mt-1 text-sm leading-relaxed text-content">{message.body}</p>

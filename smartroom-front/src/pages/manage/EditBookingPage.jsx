@@ -15,7 +15,7 @@ import { ParticipantInput } from '../../components/bookings/ParticipantInput';
 import { ChangeSummary } from '../../components/bookings/ChangeSummary';
 
 const timeInput =
-  'h-10 w-full rounded-xl border border-line bg-surface-raised px-3 font-mono text-sm text-content focus:border-accent focus:outline-none';
+  'h-10 w-full rounded-2xl border border-line/70 bg-surface/70 px-3 font-mono text-sm text-content focus:border-accent focus:outline-none';
 
 /** U-10 — Modifier une réservation. Tout changement de créneau ou de salle
  * régénère le code d'accès, ce que l'écran annonce avant l'enregistrement. */
