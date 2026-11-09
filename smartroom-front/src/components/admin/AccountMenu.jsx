@@ -78,15 +78,18 @@ export function AccountMenu({ onLogout }) {
           id={identifiant}
           role="menu"
           aria-label="Mon compte"
-          className="absolute right-0 top-full z-menu mt-2 w-64 animate-scale-in overflow-hidden rounded-2xl border border-line/70 bg-surface/80 shadow-carte shadow-xl"
+          // Fond plein, jamais translucide : un menu se lit par-dessus des
+          // chiffres et des graphiques, qui transparaissaient au travers et
+          // brouillaient les libellés.
+          className="absolute right-0 top-full z-menu mt-2 w-72 origin-top-right animate-scale-in overflow-hidden rounded-2xl border border-line bg-surface p-1.5 shadow-haute"
         >
-          <div className="flex items-center gap-3 border-b border-line px-3 py-3">
+          <div className="flex items-center gap-3 rounded-xl bg-surface-raised px-3 py-3">
             <Avatar name={nom} src={admin?.avatarUrl} size="lg" />
             <span className="min-w-0">
-              <span className="block truncate text-sm font-medium text-content">{nom}</span>
+              <span className="block truncate text-sm font-semibold text-content">{nom}</span>
               <span className="block truncate text-xs text-content-muted">{admin?.email}</span>
               {admin?.isOwner && (
-                <span className="mt-1 inline-flex items-center gap-1 text-[11px] text-accent-bright">
+                <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-semibold text-accent-bright">
                   <ShieldCheck size={11} aria-hidden="true" />
                   Propriétaire
                 </span>
@@ -94,7 +97,7 @@ export function AccountMenu({ onLogout }) {
             </span>
           </div>
 
-          <div className="py-1">
+          <div className="mt-1.5 flex flex-col gap-0.5">
             <Entree icon={UserCog} onClick={() => aller('/admin/profil')}>
               Mon profil et ma photo
             </Entree>
@@ -103,7 +106,7 @@ export function AccountMenu({ onLogout }) {
             </Entree>
           </div>
 
-          <div className="border-t border-line py-1">
+          <div className="mt-1.5 border-t border-line pt-1.5">
             <Entree
               icon={LogOut}
               tone="danger"
@@ -128,13 +131,20 @@ function Entree({ icon: Icone, children, onClick, tone }) {
       role="menuitem"
       onClick={onClick}
       className={cn(
-        'flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition',
+        'group flex min-h-[44px] w-full items-center gap-3 rounded-xl px-2.5 text-left text-sm font-medium transition-colors',
         tone === 'danger'
-          ? 'text-content-muted hover:bg-danger-soft hover:text-danger'
-          : 'text-content-muted hover:bg-surface-raised hover:text-content',
+          ? 'text-danger hover:bg-danger-soft'
+          : 'text-content hover:bg-surface-raised',
       )}
     >
-      <Icone size={15} aria-hidden="true" />
+      <span
+        className={cn(
+          'flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors',
+          tone === 'danger' ? 'bg-danger-soft' : 'bg-accent-soft text-accent-bright',
+        )}
+      >
+        <Icone size={15} aria-hidden="true" />
+      </span>
       {children}
     </button>
   );
