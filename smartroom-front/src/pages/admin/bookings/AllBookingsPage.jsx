@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CalendarDays, CalendarPlus, CalendarX2, Rows3 } from 'lucide-react';
 import {
@@ -25,6 +25,7 @@ import { AdminBookingModal } from '../../../components/admin/bookings/AdminBooki
 import { toRow } from '../../../components/admin/bookings/BookingsTable';
 import { BookingsWorkspace } from '../../../components/admin/bookings/BookingsWorkspace';
 import { CancelBookingModal } from '../../../components/admin/bookings/CancelBookingModal';
+import { useRafraichissement } from '../../../hooks/useRafraichissement';
 
 const AFFICHAGES = [
   { value: 'table', label: 'Table', icon: Rows3 },
@@ -48,19 +49,36 @@ export default function AllBookingsPage() {
   // rien ne distinguait une recherche sans résultat d'une recherche jamais
   // faite. L'espace utilisateur, lui, lisait déjà son `q`.
   const [params, setParams] = useSearchParams();
-  const [recherche, setRecherche] = useState(() => params.get('q') ?? '');
+  const qAdresse = params.get('q') ?? '';
+  const [recherche, setRecherche] = useState(qAdresse);
   const requete = useDebouncedValue(recherche, 250);
 
-  // L'adresse suit la saisie : une recherche se partage, se met en favori et
-  // survit à un rechargement.
+  // Dernière valeur échangée entre le champ et l'adresse, dans un sens ou
+  // dans l'autre. Elle départage les deux synchronisations ci-dessous.
+  const echangee = useRef(qAdresse);
+  const paramsCourants = useRef(params);
+  paramsCourants.current = params;
+
+  // Adresse → champ. Une recherche lancée depuis la barre haute alors qu'on
+  // est déjà sur cet écran change l'adresse sans remonter la page : le champ
+  // gardait l'ancien terme, et la synchronisation inverse réécrivait aussitôt
+  // l'adresse avec lui — la recherche était annulée avant d'avoir eu lieu.
   useEffect(() => {
-    const actuel = params.get('q') ?? '';
-    if (actuel === requete) return;
-    const suivant = new URLSearchParams(params);
+    if (qAdresse === echangee.current) return;
+    echangee.current = qAdresse;
+    setRecherche(qAdresse);
+  }, [qAdresse]);
+
+  // Champ → adresse : une recherche se partage, se met en favori et survit à
+  // un rechargement. Ne réagit qu'à la saisie, jamais au changement d'adresse.
+  useEffect(() => {
+    if (requete === echangee.current) return;
+    echangee.current = requete;
+    const suivant = new URLSearchParams(paramsCourants.current);
     if (requete) suivant.set('q', requete);
     else suivant.delete('q');
     setParams(suivant, { replace: true });
-  }, [requete, params, setParams]);
+  }, [requete, setParams]);
 
   const referentiels = useAsync(listBookingFilters, []);
   const filtres = useSelectFilters(champsDeFiltre(referentiels.data));
@@ -73,6 +91,10 @@ export default function AllBookingsPage() {
     () => listAllBookings({ ...filtres.valeurs, query: requete }),
     [`${filtres.cle}|${requete}`],
   );
+  // Une réservation faite pendant que l'écran est ouvert y apparaît d'elle-
+  // même : la liste n'était lue qu'à l'ouverture. Une minute : la liste
+  // complète tient en plusieurs pages, inutile de la relire plus souvent.
+  useRafraichissement(reservations.refresh, { intervalle: 60_000 });
   const utilisateurs = useAsync(listBookableUsers, []);
 
   // `reservations.data` porte deux choses : les lignes chargées et le nombre

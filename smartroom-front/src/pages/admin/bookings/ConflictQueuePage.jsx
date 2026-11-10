@@ -14,6 +14,7 @@ import { ClaimantCompare } from '../../../components/admin/conflicts/ClaimantCom
 import { OverlapTimeline } from '../../../components/admin/conflicts/OverlapTimeline';
 import { QueueList } from '../../../components/admin/conflicts/QueueList';
 import { fmtDateLong, fmtRelative } from '../../../utils/dates';
+import { useRafraichissement } from '../../../hooks/useRafraichissement';
 
 /**
  * A-04 — File des conflits, demandes d'accès et validations.
@@ -31,6 +32,11 @@ export default function ConflictQueuePage() {
 
   const file = useAsync(() => listQueue(onglet), [onglet]);
   const compteurs = useAsync(countQueue, []);
+  // Une nouvelle demande arrive dans la file sans qu'on recharge l'écran.
+  useRafraichissement(() => {
+    file.refresh();
+    compteurs.refresh();
+  });
   const detail = useAsync(
     () => (selectionId ? getQueueItem(selectionId) : Promise.resolve(null)),
     [selectionId],

@@ -310,3 +310,73 @@ describe('pagination', () => {
     expect(tout.map((item) => item.id)).toEqual(['eq-1', 'eq-2', 'eq-3']);
   });
 });
+
+describe('réveil de l’API', () => {
+  // Sur l'hébergement de démonstration, l'API s'endort ; le relais rend alors
+  // des 502 à 504 le temps qu'elle se réveille. Juste après un déploiement,
+  // ces erreurs vidaient les écrans ou renvoyaient à la connexion.
+
+  it('retente une lecture interrompue par le réveil, une fois l’API là', async () => {
+    let appels = 0;
+    serveur.use(
+      http.get(`${BASE}/health`, () => HttpResponse.json({ status: 'ok' })),
+      http.get(`${BASE}/rooms/reveil`, () => {
+        appels += 1;
+        return appels === 1
+          ? new HttpResponse(null, { status: 503 })
+          : HttpResponse.json({ ok: true });
+      }),
+    );
+
+    await expect(get('/rooms/reveil')).resolves.toEqual({ ok: true });
+    expect(appels).toBe(2);
+  });
+
+  it('ne rejoue jamais une écriture', async () => {
+    // Une réservation rejouée serait une réservation doublée.
+    let appels = 0;
+    serveur.use(
+      http.get(`${BASE}/health`, () => HttpResponse.json({ status: 'ok' })),
+      http.post(`${BASE}/bookings/reveil`, () => {
+        appels += 1;
+        return new HttpResponse(null, { status: 503 });
+      }),
+    );
+
+    await expect(post('/bookings/reveil', {})).rejects.toBeInstanceOf(ApiError);
+    expect(appels).toBe(1);
+  });
+
+  it('attend que l’API réponde avant de reprendre la session', async () => {
+    const ordre = [];
+    let sante = 0;
+    serveur.use(
+      http.get(`${BASE}/health`, () => {
+        sante += 1;
+        ordre.push('sante');
+        return sante === 1
+          ? new HttpResponse(null, { status: 502 })
+          : HttpResponse.json({ status: 'ok' });
+      }),
+      http.post(`${BASE}/auth/refresh`, () => {
+        ordre.push('rotation');
+        return HttpResponse.json({ access_token: 'jeton-repris' });
+      }),
+    );
+
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      // Deux minutes sans réponse : l'API a pu se rendormir, la reprise
+      // doit vérifier avant de tenter la rotation.
+      vi.setSystemTime(Date.now() + 120_000);
+      const reprise = restoreSession();
+      await vi.advanceTimersByTimeAsync(1500);
+      await expect(reprise).resolves.toMatchObject({ access_token: 'jeton-repris' });
+    } finally {
+      vi.useRealTimers();
+    }
+    // La rotation ne part qu'après une réponse saine : envoyée au service
+    // endormi, elle aurait pu aboutir en retard et être rejouée.
+    expect(ordre).toEqual(['sante', 'sante', 'rotation']);
+  });
+});

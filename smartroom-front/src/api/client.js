@@ -85,6 +85,64 @@ const signalerExpiration = () => abonnes.forEach((callback) => callback());
 
 let refreshInFlight = null;
 
+/* -------------------------------------------------------------------------- */
+/* Réveil de l'API                                                             */
+/* -------------------------------------------------------------------------- */
+
+/** Réponses du relais quand l'API n'est pas encore là : elle se réveille. */
+const PASSAGERES = new Set([502, 503, 504]);
+const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+let derniereReponse = 0;
+let reveilEnCours = null;
+const FRAICHEUR_MS = 60_000;
+
+/**
+ * Attend que l'API réponde.
+ *
+ * Sur l'hébergement de démonstration, l'API s'endort après quelques minutes et
+ * met jusqu'à une minute à se réveiller — c'est aussi ce qui suit chaque
+ * déploiement. Le relais rend alors des 502 à 504. Sans cette attente, la
+ * reprise de session prenait ces erreurs pour une absence de session et
+ * renvoyait à l'écran de connexion ; pire, une rotation de jeton envoyée au
+ * service endormi pouvait aboutir après coup et être rejouée, ce que le
+ * serveur sanctionne en révoquant la session.
+ *
+ * Une réponse saine depuis moins d'une minute dispense de vérifier : l'API est
+ * réveillée. Au-delà, elle a pu se rendormir — un quart d'heure d'inactivité
+ * suffit —, et la reprise de session vérifie de nouveau.
+ *
+ * Les attentes s'allongent jusqu'à environ soixante-dix secondes au total.
+ * Seuls les 502 à 504 font attendre : toute autre réponse, ou une absence de
+ * réponse, n'est pas un réveil et ne bloque rien.
+ */
+function attendreServeur() {
+  if (Date.now() - derniereReponse < FRAICHEUR_MS) return Promise.resolve(true);
+  if (reveilEnCours) return reveilEnCours;
+  reveilEnCours = (async () => {
+    const attentes = [0, 1000, 2000, 4000, 6000, 8000, 10_000, 12_000, 12_000, 15_000];
+    for (const attente of attentes) {
+      if (attente) await pause(attente);
+      try {
+        const reponse = await fetch(`${API_BASE}/health`, { cache: 'no-store' });
+        if (reponse.ok || !PASSAGERES.has(reponse.status)) {
+          derniereReponse = Date.now();
+          return true;
+        }
+      } catch {
+        // Pas de réponse du tout : ce n'est pas un réveil — le relais, lui,
+        // répond par un 5xx. Poste hors ligne, ou API locale arrêtée : attendre
+        // une minute n'y changerait rien, l'erreur suit son cours.
+        return true;
+      }
+    }
+    return false;
+  })().finally(() => {
+    reveilEnCours = null;
+  });
+  return reveilEnCours;
+}
+
 /**
  * Renouvelle le jeton d'accès. Les appels concurrents partagent la même
  * promesse : dix requêtes qui reçoivent 401 en même temps ne doivent lancer
@@ -95,6 +153,7 @@ async function refreshAccessToken() {
 
   refreshInFlight = (async () => {
     try {
+      await attendreServeur();
       const response = await fetch(`${API_BASE}/auth/refresh`, {
         method: 'POST',
         credentials: 'include',
@@ -163,7 +222,11 @@ async function toApiError(response) {
   );
 }
 
-async function execute(method, path, { body, params, signal, retry = true, raw = false } = {}) {
+async function execute(
+  method,
+  path,
+  { body, params, signal, retry = true, raw = false, reveil = true } = {},
+) {
   const entetes = {};
   if (body !== undefined) entetes['Content-Type'] = 'application/json';
   if (accessToken) entetes.Authorization = `Bearer ${accessToken}`;
@@ -181,6 +244,12 @@ async function execute(method, path, { body, params, signal, retry = true, raw =
     });
   } catch (error) {
     if (error?.name === 'AbortError') throw new Cancelled();
+    // Une lecture interrompue par le réveil de l'API se retente une fois,
+    // l'API réveillée. Les écritures non : rejouer une réservation la
+    // doublerait si la première avait abouti.
+    if (method === 'GET' && reveil && (await attendreServeur())) {
+      return execute(method, path, { body, params, signal, retry, raw, reveil: false });
+    }
     throw new ApiError(
       'Serveur injoignable. Vérifiez votre connexion.',
       0,
@@ -188,16 +257,26 @@ async function execute(method, path, { body, params, signal, retry = true, raw =
     );
   }
 
+  if (method === 'GET' && reveil && PASSAGERES.has(response.status)) {
+    derniereReponse = 0;
+    if (await attendreServeur()) {
+      return execute(method, path, { body, params, signal, retry, raw, reveil: false });
+    }
+  }
+
   if (response.status === 401 && retry) {
     const renouvelle = await refreshAccessToken();
     if (renouvelle) {
       // Une seule reprise : `retry: false` empêche la boucle si le jeton
       // fraîchement émis est refusé à son tour.
-      return execute(method, path, { body, params, signal, retry: false, raw });
+      return execute(method, path, { body, params, signal, retry: false, raw, reveil });
     }
     setAccessToken(null);
     signalerExpiration();
   }
+
+  // Toute réponse hors 5xx passager prouve que l'API est éveillée.
+  if (!PASSAGERES.has(response.status)) derniereReponse = Date.now();
 
   if (!response.ok) throw await toApiError(response);
   if (response.status === 204) return null;

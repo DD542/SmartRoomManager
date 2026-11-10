@@ -15,6 +15,7 @@ import { AsyncBoundary, EmptyState, Skeleton } from '../../components/ui/States'
 import { Pagination, paginate } from '../../components/ui/Table';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { BookingTable } from '../../components/bookings/BookingTable';
+import { useRafraichissement } from '../../hooks/useRafraichissement';
 
 const PAGE_SIZE = 8;
 
@@ -40,6 +41,9 @@ export default function MyBookingsListPage() {
   }, []);
 
   const bookings = useAsync(() => listBookings({ ownerId: user.id }), [user.id]);
+  // Une annulation par l'administration ou une validation de présence s'y
+  // reflète sans recharger.
+  useRafraichissement(bookings.refresh);
 
   const counts = useMemo(() => {
     const all = bookings.data ?? [];

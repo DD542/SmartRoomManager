@@ -24,7 +24,7 @@ const SECTIONS = [
 
 /** U-21 — Profil et paramètres : informations, notifications, sécurité, préférences. */
 export default function ProfilePage() {
-  const { user, updateProfile, savePreferences } = useAuth();
+  const { user, updateProfile, savePreferences, replaceUser } = useAuth();
   const toast = useToast();
   const [section, setSection] = useState('profil');
   const [profile, setProfile] = useState(user);
@@ -35,12 +35,17 @@ export default function ProfilePage() {
   const sessions = useAsync(() => listSessions(), []);
   const [photoEnCours, setPhotoEnCours] = useState(false);
 
-  /** Dépôt et retrait de la photo, avec le profil local remis à jour. */
+  /**
+   * Dépôt et retrait de la photo : le profil local et la session partagée
+   * sont remis à jour ensemble, pour que la bulle de la barre haute change
+   * aussitôt.
+   */
   const changerPhoto = async (action, succes) => {
     setPhotoEnCours(true);
     try {
       const maj = await action();
       setProfile((courant) => ({ ...courant, avatarUrl: maj.avatarUrl }));
+      replaceUser?.({ ...user, avatarUrl: maj.avatarUrl });
       toast.success(succes);
     } finally {
       setPhotoEnCours(false);

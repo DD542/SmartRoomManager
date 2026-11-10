@@ -6,6 +6,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Card, Callout } from '../../components/ui/Card';
 import { Field, Input } from '../../components/ui/Form';
+import { destinationSure } from '../../utils/destination';
 
 /**
  * A-00 — Connexion à l'espace d'administration.
@@ -26,7 +27,7 @@ export default function AdminLoginPage() {
     document.title = 'Connexion administrateur — SmartRoom Manager';
   }, []);
 
-  const destination = location.state?.from ?? '/admin';
+  const destination = destinationSure(location.state?.from, '/admin');
   if (isAuthenticated) return <Navigate to={destination} replace />;
 
   const onSubmit = async (event) => {

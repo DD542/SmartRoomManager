@@ -65,7 +65,8 @@ export function AdminSessionProvider({ children }) {
 
   const logout = useCallback(async () => {
     setAdmin(null);
-    setStatus('deconnecte');
+    // Déconnexion voulue : voir `useAuth`, même raison.
+    setStatus('sortie');
     await sessionApi.logoutAdmin();
   }, []);
 

@@ -51,6 +51,26 @@ export function useAsync(fn, deps = [], options = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /**
+   * Relecture discrète : pas d'état « chargement », donc pas de squelette ni
+   * de clignotement, et les données affichées restent en place si la
+   * relecture échoue. Pour les rafraîchissements automatiques, que
+   * l'utilisateur n'a pas demandés et ne doit pas voir.
+   */
+  const refresh = useCallback(async (...args) => {
+    try {
+      const result = await callbackRef.current(...args);
+      if (mounted.current) {
+        setData(result);
+        setStatus('succes');
+        setError(null);
+      }
+      return result;
+    } catch {
+      return null;
+    }
+  }, []);
+
   useEffect(() => {
     if (immediate) run();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -65,5 +85,6 @@ export function useAsync(fn, deps = [], options = {}) {
     isError: status === 'erreur',
     isSuccess: status === 'succes',
     reload: run,
+    refresh,
   };
 }

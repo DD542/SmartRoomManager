@@ -87,7 +87,7 @@ function RepriseDeSession() {
  * l'application entière demanderait de simuler tout le reste.
  */
 export function RequireAuth({ children }) {
-  const { isAuthenticated, isRestoring, needsOnboarding } = useAuth();
+  const { isAuthenticated, isRestoring, needsOnboarding, status } = useAuth();
   const location = useLocation();
 
   // La reprise est en vol : rediriger maintenant enverrait à l'écran de
@@ -98,6 +98,10 @@ export function RequireAuth({ children }) {
   if (isRestoring) return <RepriseDeSession />;
 
   if (!isAuthenticated) {
+    // Après une déconnexion voulue, la page quittée n'est pas une destination :
+    // la retenir envoyait le compte suivant sur la dernière page du précédent
+    // (son profil, ses réservations). Seule une session expirée y ramène.
+    if (status === 'sortie') return <Navigate to="/connexion" replace />;
     // La chaîne de requête fait partie de la destination : sans elle, un lien
     // profond comme /app/aide?article=ha-11 perdrait son article après connexion.
     const from = `${location.pathname}${location.search}`;
@@ -112,12 +116,13 @@ export function RequireAuth({ children }) {
 
 /** Garde de l'espace d'administration : session distincte de celle de /app. */
 export function RequireAdmin({ children }) {
-  const { isAuthenticated, isRestoring } = useAdminSession();
+  const { isAuthenticated, isRestoring, status } = useAdminSession();
   const location = useLocation();
 
   if (isRestoring) return <RepriseDeSession />;
 
   if (!isAuthenticated) {
+    if (status === 'sortie') return <Navigate to="/admin/connexion" replace />;
     const from = `${location.pathname}${location.search}`;
     return <Navigate to="/admin/connexion" replace state={{ from }} />;
   }

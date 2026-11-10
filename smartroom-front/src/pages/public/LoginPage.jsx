@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { Checkbox, Field, Input } from '../../components/ui/Form';
 import { Card, Callout } from '../../components/ui/Card';
 import { BoutonGoogle } from '../../components/auth/BoutonGoogle';
+import { destinationSure } from '../../utils/destination';
 
 /**
  * P-02 — Connexion.
@@ -28,7 +29,7 @@ export default function LoginPage() {
     document.title = 'Connexion — SmartRoom Manager';
   }, []);
 
-  const target = location.state?.from ?? '/app';
+  const target = destinationSure(location.state?.from, '/app');
   if (isAuthenticated) return <Navigate to={target} replace />;
 
   const set = (key) => (event) => {

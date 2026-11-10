@@ -13,8 +13,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { act, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { ToastProvider } from '../../../hooks/useToast';
 
 vi.mock('../../../hooks/usePermission', () => ({
@@ -48,6 +48,13 @@ beforeEach(() => {
 
 afterEach(() => vi.clearAllMocks());
 
+/** Expose la navigation, comme le fait la barre haute qui reste montée. */
+let naviguer = null;
+function Pilote() {
+  naviguer = useNavigate();
+  return null;
+}
+
 const monter = (adresse) =>
   render(
     <ToastProvider>
@@ -55,6 +62,7 @@ const monter = (adresse) =>
         initialEntries={[adresse]}
         future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
       >
+        <Pilote />
         <Routes>
           <Route path="/admin/reservations" element={<AllBookingsPage />} />
         </Routes>
@@ -87,6 +95,23 @@ describe('Arrivée depuis la barre haute', () => {
     expect(champ.value).toBe('');
     await waitFor(() =>
       expect(listAllBookings).toHaveBeenCalledWith(expect.objectContaining({ query: '' })),
+    );
+  });
+});
+
+describe('Nouvelle recherche depuis la barre haute, déjà sur l’écran', () => {
+  it('remplace le terme au lieu d’être annulée', async () => {
+    // La page ne se remonte pas : elle gardait l'ancien terme et réécrivait
+    // l'adresse avec lui, annulant la recherche qu'on venait de lancer.
+    monter('/admin/reservations?q=salle%20curie');
+    const champ = await screen.findByPlaceholderText(/Objet, salle, organisateur/);
+    expect(champ.value).toBe('salle curie');
+
+    act(() => naviguer('/admin/reservations?q=joule'));
+
+    await waitFor(() => expect(champ.value).toBe('joule'));
+    await waitFor(() =>
+      expect(listAllBookings).toHaveBeenLastCalledWith(expect.objectContaining({ query: 'joule' })),
     );
   });
 });

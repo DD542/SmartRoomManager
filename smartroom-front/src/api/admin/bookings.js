@@ -44,15 +44,43 @@ export async function listAllBookings(filters = {}) {
   // ajouter une recherche plein texte sur un titre saisi libre n'apporterait
   // rien qu'un filtre côté écran ne fasse aussi bien sur deux cents lignes.
   return {
-    reservations: q
-      ? reservations.filter((item) =>
-          `${item.title} ${item.roomName ?? ''} ${item.owner?.firstName ?? ''}`
-            .toLowerCase()
-            .includes(q),
-        )
-      : reservations,
+    reservations: q ? reservations.filter((item) => correspond(item, q)) : reservations,
     reste,
   };
+}
+
+/** Sans accents ni casse : « Ampere » trouve « Ampère », « JOULE » trouve « Joule ». */
+const plat = (texte) =>
+  String(texte ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+/**
+ * Une réservation répond-elle à la recherche ?
+ *
+ * La barre annonce « réservation, salle, utilisateur » : on cherche donc dans
+ * l'objet, la salle, le bâtiment, le nom complet du demandeur et la référence.
+ * Seuls le titre, la salle et le prénom étaient lus — un nom de famille ou un
+ * bâtiment ne trouvait rien. Chaque mot doit apparaître quelque part, dans
+ * n'importe quel ordre : « dupont joule » trouve la réservation de Jean Dupont
+ * en salle Joule.
+ */
+function correspond(item, requete) {
+  const champ = plat(
+    [
+      item.title,
+      item.roomName,
+      item.room?.building?.name,
+      item.owner?.firstName,
+      item.owner?.lastName,
+      item.id,
+    ].join(' '),
+  );
+  return plat(requete)
+    .split(/\s+/)
+    .filter(Boolean)
+    .every((mot) => champ.includes(mot));
 }
 
 export async function getAdminBooking(id, { signal } = {}) {

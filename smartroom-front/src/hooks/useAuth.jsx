@@ -27,7 +27,10 @@ export function AuthProvider({ children }) {
     setUser(null);
     setPermissions([]);
     setNeedsOnboarding(false);
-    setStatus('deconnecte');
+    // « sortie » et non « deconnecte » : une déconnexion voulue. Le garde des
+    // pages ne retient alors pas la page quittée, et le compte suivant ouvre
+    // son propre accueil au lieu de la dernière page du précédent.
+    setStatus('sortie');
     await authApi.logout();
   }, []);
 
@@ -111,6 +114,15 @@ export function AuthProvider({ children }) {
     return modifie;
   }, []);
 
+  /**
+   * Remplace le compte affiché par celui que vient de rendre le serveur.
+   *
+   * Pour les écritures qui ne passent pas par `updateProfile` — la photo de
+   * profil se dépose à part. Sans cela, la bulle de la barre haute gardait
+   * les initiales jusqu'à l'enregistrement du formulaire, ou au rechargement.
+   */
+  const replaceUser = useCallback((courant) => setUser(courant), []);
+
   /** Relit la session côté serveur : c'est là qu'une révocation se constate. */
   const refreshSession = useCallback(async () => {
     const { user: courant, permissions: droits } = await authApi.session();
@@ -133,6 +145,7 @@ export function AuthProvider({ children }) {
       updateProfile,
       savePreferences,
       refreshSession,
+      replaceUser,
       completeOnboarding: () => setNeedsOnboarding(false),
     }),
     [
@@ -146,6 +159,7 @@ export function AuthProvider({ children }) {
       updateProfile,
       savePreferences,
       refreshSession,
+      replaceUser,
     ],
   );
 

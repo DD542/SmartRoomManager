@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { BarChart3, CalendarRange, GaugeCircle, ShieldAlert, UserX } from 'lucide-react';
 import { getOverview } from '../../../api/admin/reports';
 import { useAsync } from '../../../hooks/useAsync';
+import { useRafraichissement } from '../../../hooks/useRafraichissement';
 import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
 import { PageHeader } from '../../../components/layout/PageHeader';
 import { Button } from '../../../components/ui/Button';
@@ -32,7 +33,8 @@ const FENETRES = [
 export default function OccupancyDashboardPage() {
   useDocumentTitle('Tableau de bord');
   const [jours, setJours] = useState(7);
-  const { data, status, error, reload } = useAsync(() => getOverview(jours), [jours]);
+  const { data, status, error, reload, refresh } = useAsync(() => getOverview(jours), [jours]);
+  useRafraichissement(refresh, { intervalle: 60_000 });
 
   return (
     <div className="flex flex-col gap-5">

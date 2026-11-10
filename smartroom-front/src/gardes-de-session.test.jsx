@@ -15,7 +15,7 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 
 const session = { isAuthenticated: false, isRestoring: true, needsOnboarding: false };
 const sessionAdmin = { isAuthenticated: false, isRestoring: true };
@@ -32,6 +32,17 @@ vi.mock('./hooks/useAdminSession', () => ({
 
 const { RequireAuth, RequireAdmin } = await import('./router');
 
+/** Écran de connexion factice : il affiche la destination retenue. */
+function Connexion({ titre }) {
+  const location = useLocation();
+  return (
+    <p>
+      {titre}
+      <span data-testid="retour">{location.state?.from ?? ''}</span>
+    </p>
+  );
+}
+
 const monter = (Garde, depart) =>
   render(
     <MemoryRouter
@@ -47,8 +58,8 @@ const monter = (Garde, depart) =>
             </Garde>
           }
         />
-        <Route path="/connexion" element={<p>écran de connexion</p>} />
-        <Route path="/admin/connexion" element={<p>connexion administration</p>} />
+        <Route path="/connexion" element={<Connexion titre="écran de connexion" />} />
+        <Route path="/admin/connexion" element={<Connexion titre="connexion administration" />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -93,5 +104,32 @@ describe('Une fois la reprise terminée', () => {
     monter(RequireAuth, '/app/reservations');
 
     expect(screen.getByText('écran de connexion')).toBeTruthy();
+  });
+});
+
+describe('Après une déconnexion voulue', () => {
+  it('ne retient pas la page quittée : le compte suivant ouvre son accueil', () => {
+    // Retenir `/app/profil` envoyait le compte qui se connectait ensuite sur
+    // le profil de son prédécesseur au lieu de son propre accueil.
+    Object.assign(session, { isAuthenticated: false, isRestoring: false, status: 'sortie' });
+    monter(RequireAuth, '/app/profil');
+
+    expect(screen.getByText('écran de connexion')).toBeTruthy();
+    expect(screen.getByTestId('retour').textContent).toBe('');
+  });
+
+  it('retient la page après une expiration, pour y revenir', () => {
+    Object.assign(session, { isAuthenticated: false, isRestoring: false, status: 'deconnecte' });
+    monter(RequireAuth, '/app/aide');
+
+    expect(screen.getByTestId('retour').textContent).toBe('/app/aide');
+  });
+
+  it('vaut aussi pour l’administration', () => {
+    Object.assign(sessionAdmin, { isAuthenticated: false, isRestoring: false, status: 'sortie' });
+    monter(RequireAdmin, '/admin/rapports');
+
+    expect(screen.getByText('connexion administration')).toBeTruthy();
+    expect(screen.getByTestId('retour').textContent).toBe('');
   });
 });

@@ -14,6 +14,7 @@ import { NextBookingCard } from '../../components/home/NextBookingCard';
 import { QuickSearchCard } from '../../components/home/QuickSearchCard';
 import { UpcomingSlots } from '../../components/home/UpcomingSlots';
 import { FavoriteRooms } from '../../components/home/FavoriteRooms';
+import { useRafraichissement } from '../../hooks/useRafraichissement';
 
 /**
  * U-01 — Dashboard d'accueil.
@@ -33,6 +34,14 @@ export default function DashboardPage() {
     [user.id],
   );
   const favorites = useAsync(() => listFavoriteRooms(user.id), [user.id]);
+
+  // L'accueil reste ouvert longtemps : la prochaine réservation et les
+  // créneaux à venir se tiennent à jour d'eux-mêmes.
+  useRafraichissement(() => {
+    next.refresh();
+    upcoming.refresh();
+    stats.refresh();
+  }, { intervalle: 60_000 });
 
   const nextId = next.data?.id;
   const otherSlots = (upcoming.data ?? []).filter((booking) => booking.id !== nextId).slice(0, 3);
