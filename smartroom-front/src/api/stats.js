@@ -85,6 +85,9 @@ export async function getMyStats(period = 'trimestre', _ownerId, { signal } = {}
     byRoom,
     bySlot,
     observation: observation(byRoom, bySlot),
+    // La liste elle-même, pour le rapport PDF : il la reprend en tableau, en
+    // ordre chronologique.
+    reservations: [...reservations].sort((a, b) => a.start - b.start),
   };
 }
 
@@ -117,10 +120,10 @@ export async function getPublicStats({ signal } = {}) {
 }
 
 /**
- * Export de mes réservations.
+ * Export CSV de mes réservations, formaté par le serveur.
  *
- * CSV et non PDF : le serveur formate le fichier en SQL, et fabriquer un PDF
- * demanderait une dépendance de rendu pour un contenu qui reste tabulaire.
+ * Le rapport PDF, lui, se fabrique dans le navigateur à partir des chiffres
+ * affichés : voir `utils/rapportPdf.js`.
  */
 export async function exportStats(period) {
   const csv = await getText('/stats/me/export');

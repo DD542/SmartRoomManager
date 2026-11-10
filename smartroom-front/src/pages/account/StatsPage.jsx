@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { CalendarCheck, Clock, Download, Lightbulb, UserCheck, XCircle } from 'lucide-react';
+import { CalendarCheck, Clock, FileSpreadsheet, FileText, Lightbulb, UserCheck, XCircle } from 'lucide-react';
 import { exportStats, getMyStats } from '../../api/stats';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
+import { fullName } from '../../utils/format';
+import { telechargerRapportStats } from '../../utils/rapportPdf';
 import { fmtPercent } from '../../utils/format';
 import { Button } from '../../components/ui/Button';
 import { Callout } from '../../components/ui/Card';
@@ -24,7 +26,9 @@ export default function StatsPage() {
   const { user } = useAuth();
   const toast = useToast();
   const [period, setPeriod] = useState('trimestre');
-  const [exporting, setExporting] = useState(false);
+  // Le format en cours d'export : le bouton concerné montre son attente,
+  // l'autre reste disponible.
+  const [exporting, setExporting] = useState(null);
 
   useEffect(() => {
     document.title = 'Mes statistiques — SmartRoom Manager';
@@ -32,13 +36,34 @@ export default function StatsPage() {
 
   const stats = useAsync(() => getMyStats(period, user.id), [period, user.id]);
 
+  /**
+   * Un vrai PDF, cette fois. Le bouton s'appelait « Exporter en PDF » et
+   * téléchargeait un CSV : le fichier ouvert n'était pas celui annoncé.
+   */
   const exportPdf = async () => {
-    setExporting(true);
+    if (!stats.data) return;
+    setExporting('pdf');
+    try {
+      const fichier = await telechargerRapportStats(stats.data, {
+        nom: fullName(user),
+        periode: PERIODS.find((p) => p.value === period)?.label ?? period,
+        cle: period,
+      });
+      toast.success('Rapport prêt', `Le fichier ${fichier} a été téléchargé.`);
+    } catch {
+      toast.error('Export impossible', 'Le rapport PDF n’a pas pu être généré. Réessayez.');
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const exportCsv = async () => {
+    setExporting('csv');
     try {
       const result = await exportStats(period);
-      toast.success('Export prêt', `Le rapport ${result.filename} a été généré.`);
+      toast.success('Export prêt', `Le fichier ${result.filename} a été téléchargé.`);
     } finally {
-      setExporting(false);
+      setExporting(null);
     }
   };
 
@@ -49,7 +74,21 @@ export default function StatsPage() {
         actions={
           <>
             <SegmentedControl label="Période" options={PERIODS} value={period} onChange={setPeriod} />
-            <Button icon={Download} loading={exporting} onClick={exportPdf}>
+            <Button
+              variant="secondary"
+              icon={FileSpreadsheet}
+              loading={exporting === 'csv'}
+              disabled={exporting === 'pdf'}
+              onClick={exportCsv}
+            >
+              CSV
+            </Button>
+            <Button
+              icon={FileText}
+              loading={exporting === 'pdf'}
+              disabled={!stats.data || exporting === 'csv'}
+              onClick={exportPdf}
+            >
               Exporter en PDF
             </Button>
           </>
