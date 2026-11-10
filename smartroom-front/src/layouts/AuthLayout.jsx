@@ -15,12 +15,20 @@ export default function AuthLayout() {
       {/* Monogramme et nom centrés, comme l'écran d'accueil de l'application
           mobile de la maquette. Il descend en faisant le point. */}
       <header className="mb-8 flex animate-fade-in-up flex-col items-center gap-3 text-center">
-        <span className="text-content">
-          <LogoMark size={52} />
-        </span>
-        <p className="font-display text-3xl font-semibold leading-tight tracking-tight text-content">
-          SmartRoom Manager
-        </p>
+        {/* Le logo ramène à la présentation, comme sur les autres pages
+            publiques : sans lien, l'écran de connexion était un cul-de-sac. */}
+        <Link
+          to="/presentation"
+          aria-label="SmartRoom Manager, retour à la présentation"
+          className="pression flex flex-col items-center gap-3 rounded-2xl"
+        >
+          <span className="text-content">
+            <LogoMark size={52} />
+          </span>
+          <span className="font-display text-3xl font-semibold leading-tight tracking-tight text-content">
+            SmartRoom Manager
+          </span>
+        </Link>
         <p className="text-sm text-content-muted">Réservez. Gérez. Collaborez.</p>
       </header>
 

@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react';
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { BasculeTheme } from '../components/layout/BasculeTheme';
 import { Logo } from '../components/brand/Logo';
 import { cn } from '../utils/cn';
 
+/** Page d'accueil publique : celle du logo, et celle qui porte les sections. */
+export const PRESENTATION = '/presentation';
+
 const LINKS = [
-  { href: '#demo', label: 'Démo' },
-  { href: '#fonctionnalites', label: 'Fonctionnalités' },
-  { href: '#fonctionnement', label: 'Comment ça marche' },
-  { href: '#faq', label: 'FAQ' },
+  { ancre: 'demo', label: 'Démo' },
+  { ancre: 'fonctionnalites', label: 'Fonctionnalités' },
+  { ancre: 'fonctionnement', label: 'Comment ça marche' },
+  { ancre: 'faq', label: 'FAQ' },
 ];
 
 /**
@@ -41,6 +44,10 @@ function useDefilee(seuil = 8) {
 /** Cadre des pages publiques : en-tête de site, contenu, pied de page. */
 export default function PublicLayout() {
   const defilee = useDefilee();
+  const { pathname } = useLocation();
+  // Sur la présentation, une ancre suffit ; ailleurs (mentions légales), elle
+  // ne menait nulle part : le lien rejoint la section sur la présentation.
+  const surPresentation = pathname === PRESENTATION;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -62,19 +69,32 @@ export default function PublicLayout() {
               : 'max-w-6xl shadow-[0_10px_30px_-18px_rgb(12_21_71/0.5)]',
           )}
         >
-          <Link to="/" aria-label="SmartRoom Manager, accueil" className="pression flex items-center gap-2 pl-1">
+          {/* La présentation et non `/` : la racine renvoie à l'écran de
+              connexion quiconque n'a pas de session, et le logo des mentions
+              légales y menait au lieu de ramener à l'accueil du site. */}
+          <Link to={PRESENTATION} aria-label="SmartRoom Manager, accueil" className="pression flex items-center gap-2 pl-1">
             <Logo inverse size={26} className="[&>span]:text-[13px]" />
           </Link>
           <nav aria-label="Navigation du site" className="hidden items-center gap-1 md:flex">
-            {LINKS.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className="pression rounded-full px-3.5 py-1.5 text-sm font-semibold text-white/85 transition-colors hover:bg-white/10 hover:text-white"
-              >
-                {link.label}
-              </a>
-            ))}
+            {LINKS.map((link) =>
+              surPresentation ? (
+                <a
+                  key={link.ancre}
+                  href={`#${link.ancre}`}
+                  className="pression rounded-full px-3.5 py-1.5 text-sm font-semibold text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+                >
+                  {link.label}
+                </a>
+              ) : (
+                <Link
+                  key={link.ancre}
+                  to={`${PRESENTATION}#${link.ancre}`}
+                  className="pression rounded-full px-3.5 py-1.5 text-sm font-semibold text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+                >
+                  {link.label}
+                </Link>
+              ),
+            )}
           </nav>
           <div className="flex items-center gap-1.5">
             <BasculeTheme variant="ghost-marine" />
@@ -101,9 +121,21 @@ export default function PublicLayout() {
           <div>
             <p className="font-medium tracking-tight text-white">Produit</p>
             <ul className="mt-2 space-y-1.5">
-              <li>Fonctionnalités</li>
-              <li>Calendrier</li>
-              <li>Statistiques</li>
+              <li>
+                <Link to={`${PRESENTATION}#fonctionnalites`} className="transition hover:text-white">
+                  Fonctionnalités
+                </Link>
+              </li>
+              <li>
+                <Link to={`${PRESENTATION}#demo`} className="transition hover:text-white">
+                  Démonstration
+                </Link>
+              </li>
+              <li>
+                <Link to={`${PRESENTATION}#faq`} className="transition hover:text-white">
+                  Questions fréquentes
+                </Link>
+              </li>
             </ul>
           </div>
           <div>

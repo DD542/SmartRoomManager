@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { LandingHero } from '../../components/public/LandingHero';
 import { LandingProblems } from '../../components/public/LandingProblems';
 import { LandingDemo } from '../../components/public/LandingDemo';
@@ -17,9 +18,20 @@ import { LandingCta } from '../../components/public/LandingCta';
  * vue que par ceux qui étaient déjà convaincus.
  */
 export default function LandingPage() {
+  const { hash } = useLocation();
+
   useEffect(() => {
     document.title = 'SmartRoom Manager — Réservation intelligente des salles';
   }, []);
+
+  // Arrivée depuis une autre page publique avec une ancre (« FAQ » cliqué
+  // depuis les mentions légales) : le routeur ne fait pas défiler seul vers
+  // une section rendue après lui.
+  useEffect(() => {
+    if (!hash) return;
+    const cible = document.getElementById(decodeURIComponent(hash.slice(1)));
+    cible?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [hash]);
 
   return (
     <>
