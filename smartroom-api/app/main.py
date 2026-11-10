@@ -24,6 +24,7 @@ from app.api.context import RequestContextMiddleware
 from app.api.errors import register_exception_handlers
 from app.api.v1.router import v1_router
 from app.core.config import get_settings
+from app.api import documentation
 from app.core.limiter import limiter
 from app.core.logging import configurer as configurer_journal
 from app.core.storage import racine as racine_media
@@ -38,24 +39,38 @@ configurer_journal(niveau=settings.log_level, json_actif=settings.log_json)
 logger = logging.getLogger(__name__)
 
 DESCRIPTION = """
-API du **Système de réservation intelligente des salles**.
+API du **système de réservation intelligente des salles** : trouver la bonne
+salle, la réserver, y entrer, et arbitrer les conflits.
 
-Deux moteurs en portent la valeur : la **disponibilité**, qui répond « ce
-créneau est-il réservable, et sinon pourquoi », et la **recommandation**, qui
-classe les salles et justifie son classement. La contrainte
-`ex_bookings_no_overlap` reste le dernier rempart : la double réservation est
-impossible au niveau base, indépendamment du code applicatif.
+## Démarrer en trois étapes
 
-**Erreurs** — toutes les réponses ≥ 400 partagent la forme
-`{"error": {"code", "message", "fields?"}}`. Le `message` est en français et
-destiné à l'affichage direct ; le `code` est stable et machinable.
+1. **Se connecter** — `POST /api/v1/auth/login` avec `email` et `password`
+   (`/auth/admin/login` pour l'administration). La réponse porte un
+   `access_token`, valable 15 minutes.
+2. **S'autoriser** — bouton **Authorize** en haut de cette page : collez le
+   jeton, il accompagne ensuite chaque essai.
+3. **Essayer** — dépliez une route, **Try it out**, puis **Execute**.
 
-**Pagination** — toutes les collections rendent
-`{"items", "total", "pagination"}`.
+## Ce qui porte la valeur
 
-**Authentification** — jeton d'accès de 15 minutes porté par
-`Authorization: Bearer`, jeton de rafraîchissement en cookie `httpOnly` avec
-rotation à chaque renouvellement.
+| Moteur | Rôle |
+|---|---|
+| **Disponibilité** | Dit si un créneau est réservable, et sinon pourquoi. |
+| **Recommandation** | Classe les salles selon le besoin, et justifie le classement. |
+| **Contrainte d'exclusion** | `ex_bookings_no_overlap` rend la double réservation impossible en base. |
+
+## Conventions
+
+- **Erreurs** — toute réponse ≥ 400 a la forme
+  `{"error": {"code", "message", "fields?"}}`. Le `message` est en français,
+  prêt à afficher ; le `code` est stable, à tester dans le code.
+- **Pagination** — toute collection rend `{"items", "total", "pagination"}`,
+  avec `page` et `size` en paramètres.
+- **Dates** — ISO 8601 avec fuseau ; un créneau sans fuseau est refusé.
+- **Sessions** — jeton d'accès en `Authorization: Bearer`, jeton de
+  rafraîchissement en cookie `httpOnly`, renouvelé à chaque usage.
+- **Limites** — 5 essais de connexion par minute et par adresse, et un compte
+  se ferme un quart d'heure après 10 échecs : la réponse est alors un `429`.
 """
 
 TAGS = [
@@ -139,6 +154,9 @@ app = FastAPI(
     description=DESCRIPTION,
     openapi_tags=TAGS,
     lifespan=lifespan,
+    # La documentation par défaut est remplacée par la version habillée de
+    # `app.api.documentation`, installée plus bas.
+    docs_url=None,
 )
 
 app.state.limiter = limiter
@@ -181,6 +199,7 @@ async def entetes_de_securite(request, call_next):
 
 register_exception_handlers(app)
 app.include_router(v1_router)
+documentation.installer(app)
 
 # Les fichiers téléversés sont servis par l'application elle-même : le parc tient
 # dans quelques mégaoctets, et un service de stockage séparé sortirait de la
