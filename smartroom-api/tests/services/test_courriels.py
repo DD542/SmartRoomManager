@@ -391,7 +391,9 @@ class TestTransport:
         try:
             await mail_service.send(
                 mail_service.Message(
-                    to="d.menga@smartroom.app", subject="Confirmée", body="Code : E-7412"
+                    to="d.menga@smartroom.app",
+                    subject="Confirmée",
+                    body="Code : E-7412",
                 )
             )
         finally:

@@ -255,7 +255,8 @@ class TestAnonymisation:
         masque = anonymiseur(
             [
                 Message(
-                    role=RoleMessage.UTILISATEUR, contenu="Écris à jean.dupont@smartroom.app"
+                    role=RoleMessage.UTILISATEUR,
+                    contenu="Écris à jean.dupont@smartroom.app",
                 )
             ]
         )[0].contenu

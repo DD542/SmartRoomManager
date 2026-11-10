@@ -183,7 +183,7 @@ def _remplacer_visuel(
             "Format refusé : déposez une image PNG, JPEG ou WebP.",
             code="format_invalide",
         )
-    extension = storage.verifier(content_type, len(contenu))
+    extension = storage.verifier(content_type, len(contenu), contenu)
     url = storage.enregistrer(dossier, contenu, extension)
     if ancienne:
         storage.supprimer(ancienne)
@@ -448,7 +448,7 @@ def replace_floor_plan(
     laisserait s'accumuler des plans que plus rien ne référence.
     """
     get_floor(session, floor_id)
-    extension = storage.verifier(content_type, len(contenu))
+    extension = storage.verifier(content_type, len(contenu), contenu)
     url = storage.enregistrer("plans", contenu, extension)
 
     plan = session.scalars(
@@ -1044,7 +1044,7 @@ def add_photo(
     l'obligerait à connaître un état qu'il vient à peine de lire.
     """
     get_room(session, room_id)
-    extension = storage.verifier(content_type, len(contenu))
+    extension = storage.verifier(content_type, len(contenu), contenu)
     if extension == ".pdf":
         raise RuleViolationError(
             "Une photo de salle doit être une image.", code="format_invalide"

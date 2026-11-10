@@ -89,6 +89,10 @@ class Settings(BaseSettings):
 
     #: Rend le bourrage d'identifiants impraticable sans gêner un humain.
     rate_limit_login: str = "5/minute"
+    #: Relais placés devant l'API (répartiteur de l'hébergeur, proxy inverse).
+    #: Sert à lire `X-Forwarded-For` par la droite : seule l'adresse ajoutée
+    #: par le dernier relais de confiance est crue, le reste vient du client.
+    proxies_de_confiance: int = 1
     rate_limit_reset: str = "3/hour"
 
     # ------------------------------------------------------------------ CORS

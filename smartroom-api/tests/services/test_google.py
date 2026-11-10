@@ -16,7 +16,8 @@ import time
 
 import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
-from jose import jwk, jwt
+import jwt
+from jwt.algorithms import RSAAlgorithm
 from sqlalchemy import select
 
 from app.core.errors import AuthenticationError, PermissionError_, RuleViolationError
@@ -31,7 +32,7 @@ CLIENT = "test-client.apps.googleusercontent.com"
 def paire():
     """Clé RSA du test, et le JWKS que le service croira venir de Google."""
     privee = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-    publique = jwk.construct(privee.public_key(), algorithm="RS256").to_dict()
+    publique = RSAAlgorithm.to_jwk(privee.public_key(), as_dict=True)
     publique["kid"] = "test"
     publique["use"] = "sig"
     publique["alg"] = "RS256"
@@ -61,12 +62,7 @@ def forger(paire, **remplacements) -> str:
         "exp": int(time.time()) + 600,
     }
     charge.update(remplacements)
-    return jwt.encode(
-        charge,
-        jwk.construct(privee, algorithm="RS256").to_dict(),
-        algorithm="RS256",
-        headers={"kid": "test"},
-    )
+    return jwt.encode(charge, privee, algorithm="RS256", headers={"kid": "test"})
 
 
 class TestVerification:
@@ -111,7 +107,7 @@ class TestVerification:
                 "email_verified": True,
                 "exp": int(time.time()) + 600,
             },
-            jwk.construct(autre, algorithm="RS256").to_dict(),
+            autre,
             algorithm="RS256",
             headers={"kid": "test"},
         )
@@ -139,7 +135,9 @@ class TestVerification:
 
     def test_le_domaine_autorise_passe(self, paire, monkeypatch):
         monkeypatch.setattr(
-            google_service.get_settings(), "google_allowed_domains", "gmail.com, smartroom.app"
+            google_service.get_settings(),
+            "google_allowed_domains",
+            "gmail.com, smartroom.app",
         )
 
         assert google_service.verifier(forger(paire)).email.endswith("@gmail.com")

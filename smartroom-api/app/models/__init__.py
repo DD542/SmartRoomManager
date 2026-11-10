@@ -15,6 +15,7 @@ from app.models.comptes import (
     Permission,
     PermissionGroup,
     User,
+    UserAvatar,
     UserPreference,
 )
 from app.models.parc import (
@@ -72,6 +73,7 @@ __all__ = [
     "RoomPhoto",
     # Comptes
     "User",
+    "UserAvatar",
     "UserPreference",
     "AdminAccount",
     "PermissionGroup",

@@ -156,6 +156,29 @@ app.add_middleware(
 )
 app.add_middleware(RequestContextMiddleware)
 
+#: Fichiers déposés et photos : servis depuis le domaine de l'application,
+#: ils ne doivent rien pouvoir y exécuter. Un SVG accepte du script ; ouvert
+#: directement, il tournerait avec les droits du site, et pourrait demander un
+#: jeton avec le cookie de session. `sandbox` coupe le script, `nosniff`
+#: empêche le navigateur de deviner un autre type que celui annoncé.
+CSP_FICHIERS = (
+    "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox"
+)
+
+
+@app.middleware("http")
+async def entetes_de_securite(request, call_next):
+    """En-têtes de durcissement, sur chaque réponse de l'API."""
+    reponse = await call_next(request)
+    reponse.headers.setdefault("X-Content-Type-Options", "nosniff")
+    reponse.headers.setdefault("X-Frame-Options", "DENY")
+    reponse.headers.setdefault("Referrer-Policy", "no-referrer")
+    chemin = request.url.path
+    if chemin.startswith(f"{settings.media_url}/") or chemin.endswith("/avatar"):
+        reponse.headers["Content-Security-Policy"] = CSP_FICHIERS
+    return reponse
+
+
 register_exception_handlers(app)
 app.include_router(v1_router)
 
@@ -180,6 +203,23 @@ app.mount(settings.media_url, StaticFiles(directory=racine_media()), name="media
 )
 def health() -> dict[str, str]:
     return {"status": "ok", "environment": settings.environment}
+
+
+@app.get(
+    "/api/v1/health",
+    tags=["technique"],
+    summary="L'API répond-elle ? (accessible depuis le front)",
+    description=(
+        "Même sonde que `/health`, servie sous le préfixe de l'API pour passer "
+        "par le relais du front. Le client l'interroge avant de reprendre une "
+        "session : sur l'hébergement de démonstration, l'API s'endort et met "
+        "une minute à se réveiller, et une rotation de jeton envoyée à un "
+        "service endormi pouvait être rejouée — ce que le serveur sanctionne "
+        "en révoquant la session. Ne dit rien de l'environnement."
+    ),
+)
+def health_publique() -> dict[str, str]:
+    return {"status": "ok"}
 
 
 @app.get(

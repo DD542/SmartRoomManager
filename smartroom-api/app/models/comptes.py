@@ -23,6 +23,7 @@ from sqlalchemy import (
     CheckConstraint,
     ForeignKey,
     Index,
+    LargeBinary,
     SmallInteger,
     String,
     Text,
@@ -114,10 +115,10 @@ class User(TimestampMixin, SoftDeleteMixin, Base):
     promotion: Mapped[str | None] = mapped_column(String(60), default=None)
     department: Mapped[str | None] = mapped_column(String(60), default=None)
     badge_number: Mapped[str | None] = mapped_column(String(20), default=None)
-    #: Adresse du fichier servi, pas le fichier. Ranger l'image en base ferait
-    #: payer son poids à chaque lecture de l'annuaire, qui n'en a pas besoin :
-    #: la liste des comptes affiche des initiales, la fiche seule montre la
-    #: photo. `NULL` est l'état normal d'un compte sans photo.
+    #: Adresse de la photo, pas la photo. Les octets vivent dans
+    #: `user_avatars`, table à part : les ranger ici ferait payer leur poids à
+    #: chaque lecture de l'annuaire, qui affiche des initiales. `NULL` est
+    #: l'état normal d'un compte sans photo.
     avatar_url: Mapped[str | None] = mapped_column(String(255), default=None)
     status: Mapped[UserStatus] = mapped_column(
         pg_enum(UserStatus, "user_status"),
@@ -503,3 +504,31 @@ class AdminInvitationPermission(TimestampMixin, Base):
         back_populates="permission_grants"
     )
     permission: Mapped["Permission"] = relationship(lazy="joined")
+
+
+class UserAvatar(TimestampMixin, Base):
+    """Photo de profil, rangée en base et non sur le disque.
+
+    Le disque d'un hébergeur gratuit est effacé à chaque redémarrage du
+    service : une photo déposée disparaissait au premier réveil après une mise
+    en veille, alors que le compte gardait son adresse. La base, elle, persiste.
+
+    Une ligne par compte au plus : la clé primaire est celle du compte, et la
+    suppression du compte emporte sa photo.
+    """
+
+    __tablename__ = "user_avatars"
+    __table_args__ = (
+        CheckConstraint(
+            "content_type IN ('image/png', 'image/jpeg', 'image/webp')",
+            name="content_type",
+        ),
+        CheckConstraint("octet_length(content) > 0", name="content_non_vide"),
+    )
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE", name="fk_user_avatars_user"),
+        primary_key=True,
+    )
+    content_type: Mapped[str] = mapped_column(String(32))
+    content: Mapped[bytes] = mapped_column(LargeBinary)

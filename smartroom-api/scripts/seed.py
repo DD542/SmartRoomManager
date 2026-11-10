@@ -371,7 +371,14 @@ UTILISATEURS_NOMMES = [
         "20841",
     ),
     ("Jean", "Dupont", "jean.dupont@smartroom.app", "Data & IA", "Ingénierie", "20718"),
-    ("Alice", "Leroy", "alice.leroy@smartroom.app", "Cybersécurité", "Ingénierie", "20903"),
+    (
+        "Alice",
+        "Leroy",
+        "alice.leroy@smartroom.app",
+        "Cybersécurité",
+        "Ingénierie",
+        "20903",
+    ),
     ("Marie", "Laurent", "marie.laurent@smartroom.app", None, "Pédagogie", "10422"),
     ("Amadou", "Diallo", "a.diallo@smartroom.app", None, "Pédagogie", "10318"),
 ]
@@ -848,6 +855,23 @@ def creer_parc(
     return batiments, salles, equipements
 
 
+#: Un numéro par compte. Le jeu les donnait tous au « 06 12 34 56 78 » :
+#: chaque profil affichait le même téléphone, et les comptes paraissaient être
+#: une seule personne sous plusieurs noms.
+TELEPHONES = {
+    "dylan.menga@smartroom.app": "06 41 27 83 12",
+    "jean.dupont@smartroom.app": "06 72 18 45 09",
+    "alice.leroy@smartroom.app": "07 63 91 24 58",
+    "marie.laurent@smartroom.app": "06 25 84 37 61",
+    "a.diallo@smartroom.app": "07 18 52 96 40",
+    "d.menga@smartroom.app": "01 84 25 63 10",
+    "s.boukehila@smartroom.app": "01 84 25 63 11",
+    "c.nkoulou@smartroom.app": "01 84 25 63 12",
+    "a.ferreira@smartroom.app": "01 84 25 63 13",
+    "t.haddad@smartroom.app": "01 84 25 63 14",
+}
+
+
 def creer_comptes(
     session: Session, batiments: dict[str, Building]
 ) -> tuple[list[User], dict[str, AdminAccount]]:
@@ -860,7 +884,7 @@ def creer_comptes(
             password_hash=empreinte,
             first_name=prenom,
             last_name=nom,
-            phone="06 12 34 56 78",
+            phone=TELEPHONES.get(email),
             promotion=promotion,
             department=departement,
             badge_number=badge,
@@ -895,6 +919,7 @@ def creer_comptes(
             password_hash=empreinte,
             first_name=prenom,
             last_name=nom,
+            phone=TELEPHONES.get(email),
             department="Direction",
         )
         session.add(personne)

@@ -251,7 +251,10 @@ class TestInvitations:
         invitation = client.post(
             "/api/v1/admin/invitations",
             headers=entetes,
-            json={"email": "futur.admin@smartroom.app", "permissions": ["support.handle"]},
+            json={
+                "email": "futur.admin@smartroom.app",
+                "permissions": ["support.handle"],
+            },
         )
         assert invitation.status_code == 201, invitation.text
         corps = invitation.json()
@@ -259,7 +262,9 @@ class TestInvitations:
         assert "token" not in corps
 
         ligne = session.scalars(
-            select(AdminInvitation).where(AdminInvitation.email == "futur.admin@smartroom.app")
+            select(AdminInvitation).where(
+                AdminInvitation.email == "futur.admin@smartroom.app"
+            )
         ).one()
         assert len(ligne.token_hash) == 64
 

@@ -15,10 +15,10 @@ import uuid
 import zlib
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.core import storage
-from app.models import RefreshToken, User
+from app.models import RefreshToken, User, UserAvatar
 from tests.services.conftest import connecter
 
 pytestmark = pytest.mark.integration
@@ -65,38 +65,63 @@ class TestPhotoDeProfil:
     ):
         compte = creer_compte("Awa")
         entetes = connecter(client, compte.email)
+        contenu = _png()
 
         reponse = client.put(
-            "/api/v1/users/me/avatar", headers=entetes, json=_corps(_png())
+            "/api/v1/users/me/avatar", headers=entetes, json=_corps(contenu)
         )
 
         assert reponse.status_code == 200, reponse.text
         adresse = reponse.json()["avatar_url"]
-        assert adresse and adresse.endswith(".png")
-        # Le fichier existe vraiment : rendre une adresse sans l'ecrire
-        # produirait une image cassee a l'ecran, et rien ici ne le dirait.
-        assert (storage.racine() / adresse.split("/media/", 1)[1]).exists()
+        assert adresse.startswith(f"/api/v1/users/{compte.id}/avatar")
+        # L'adresse sert vraiment l'image deposee : rendre une adresse sans
+        # l'image produirait un cadre casse a l'ecran, et rien ici ne le dirait.
+        image = client.get(adresse)
+        assert image.status_code == 200
+        assert image.headers["content-type"] == "image/png"
+        assert image.content == contenu
 
-    def test_un_second_depot_efface_le_fichier_precedent(
-        self, client, session, creer_compte
-    ):
-        """Sans cela, chaque changement de photo laisse un fichier que plus rien
-        ne reference — un volume qui grossit sans que personne ne le voie."""
+    def test_la_photo_survit_a_un_disque_efface(self, client, creer_compte):
+        """L'hebergement de demonstration efface son disque a chaque reveil :
+        la photo vit en base, et le profil la retrouve sans rien sur le disque."""
+        entetes = connecter(client, creer_compte("Ines").email)
+        adresse = client.put(
+            "/api/v1/users/me/avatar", headers=entetes, json=_corps(_png())
+        ).json()["avatar_url"]
+
+        for fichier in (storage.racine() / "avatars").glob("*"):
+            fichier.unlink()
+
+        assert (
+            client.get("/api/v1/users/me", headers=entetes).json()["avatar_url"]
+            == adresse
+        )
+        assert client.get(adresse).status_code == 200
+
+    def test_un_second_depot_remplace_le_premier(self, client, session, creer_compte):
+        """Une seule photo par compte : la nouvelle remplace l'ancienne, et
+        l'adresse change pour que le navigateur ne serve pas la copie en cache."""
         compte = creer_compte("Bilal")
         entetes = connecter(client, compte.email)
 
         premiere = client.put(
             "/api/v1/users/me/avatar", headers=entetes, json=_corps(_png())
         ).json()["avatar_url"]
-        chemin_premier = storage.racine() / premiere.split("/media/", 1)[1]
-        assert chemin_premier.exists()
-
+        seconde_image = _png(2, 2)
         seconde = client.put(
-            "/api/v1/users/me/avatar", headers=entetes, json=_corps(_png(2, 2))
+            "/api/v1/users/me/avatar", headers=entetes, json=_corps(seconde_image)
         ).json()["avatar_url"]
 
         assert seconde != premiere
-        assert not chemin_premier.exists()
+        assert client.get(seconde).content == seconde_image
+        assert (
+            session.scalar(
+                select(func.count())
+                .select_from(UserAvatar)
+                .where(UserAvatar.user_id == compte.id)
+            )
+            == 1
+        )
 
     def test_le_retrait_rend_le_compte_a_ses_initiales(
         self, client, session, creer_compte
@@ -111,7 +136,7 @@ class TestPhotoDeProfil:
 
         assert reponse.status_code == 200, reponse.text
         assert reponse.json()["avatar_url"] is None
-        assert not (storage.racine() / depose.split("/media/", 1)[1]).exists()
+        assert client.get(depose).status_code == 404
 
     def test_le_retrait_sans_photo_ne_proteste_pas(self, client, creer_compte):
         """Retirer ce qui n'existe pas laisse le compte dans l'etat voulu :
@@ -165,17 +190,16 @@ class TestPhotoDeProfil:
 
         assert profil["avatar_url"] is not None
 
-    def test_une_photo_dont_le_fichier_a_disparu_n_est_plus_annoncee(
-        self, client, creer_compte
+    def test_une_ancienne_adresse_sur_disque_disparu_n_est_plus_annoncee(
+        self, client, session, creer_compte
     ):
-        # Le disque d'un hebergeur gratuit est efface a chaque redeploiement :
-        # la base garde l'adresse, le fichier n'existe plus. L'annoncer quand
-        # meme produisait un 404 a chaque affichage du profil.
-        entetes = connecter(client, creer_compte("Noor").email)
-        adresse = client.put(
-            "/api/v1/users/me/avatar", headers=entetes, json=_corps(_png())
-        ).json()["avatar_url"]
-        (storage.racine() / adresse.split("/media/", 1)[1]).unlink()
+        # Les comptes d'avant le passage en base pointent vers `/media/avatars/`,
+        # dont le fichier a disparu avec le disque. L'annoncer quand meme
+        # produisait un 404 a chaque affichage du profil.
+        compte = creer_compte("Noor")
+        compte.avatar_url = "/media/avatars/disparu.png"
+        session.commit()
+        entetes = connecter(client, compte.email)
 
         profil = client.get("/api/v1/users/me", headers=entetes).json()
 

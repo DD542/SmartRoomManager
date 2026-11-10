@@ -15,7 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 from app.api.deps import CurrentPrincipal, SessionDep
 from app.core.config import get_settings
-from app.core.errors import DomainError
+from app.core.errors import AuthenticationError, DomainError, PermissionError_
 from app.core.limiter import limiter
 from app.schemas.comptes import AdminAccountRead, UserRead
 from app.services import auth_service
@@ -29,7 +29,9 @@ COOKIE = settings.refresh_cookie_name
 class LoginIn(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
-    email: Annotated[str, Field(max_length=255, examples=["camille.durand@smartroom.app"])]
+    email: Annotated[
+        str, Field(max_length=255, examples=["camille.durand@smartroom.app"])
+    ]
     password: SecretStr
 
 
@@ -151,12 +153,30 @@ def _sortie(resultat: auth_service.Session_) -> TokenOut:
 def login(
     request: Request, response: Response, payload: LoginIn, session: SessionDep
 ) -> TokenOut:
-    resultat = auth_service.login(
-        session, email=payload.email, password=payload.password.get_secret_value()
-    )
+    resultat = _connecter(session, payload, admin=False)
     session.commit()
     _poser_cookie(response, resultat.refresh_token)
     return _sortie(resultat)
+
+
+def _connecter(session, payload: LoginIn, *, admin: bool):
+    """Connexion, avec l'échec gardé au journal.
+
+    Le refus est une exception, et l'exception annule la transaction : la
+    trace de l'échec partait avec elle. Le journal ne comptait donc aucun
+    échec, et la détection du bourrage, qui les compte, ne voyait rien. On
+    valide la trace avant de laisser le refus remonter.
+    """
+    try:
+        return auth_service.login(
+            session,
+            email=payload.email,
+            password=payload.password.get_secret_value(),
+            admin=admin,
+        )
+    except (AuthenticationError, PermissionError_):
+        session.commit()
+        raise
 
 
 @router.post(
@@ -177,12 +197,7 @@ def login(
 def admin_login(
     request: Request, response: Response, payload: LoginIn, session: SessionDep
 ) -> TokenOut:
-    resultat = auth_service.login(
-        session,
-        email=payload.email,
-        password=payload.password.get_secret_value(),
-        admin=True,
-    )
+    resultat = _connecter(session, payload, admin=True)
     session.commit()
     _poser_cookie(response, resultat.refresh_token)
     return _sortie(resultat)

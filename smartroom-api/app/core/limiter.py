@@ -11,13 +11,28 @@ from __future__ import annotations
 from slowapi import Limiter
 from starlette.requests import Request
 
+from app.core.config import get_settings
+
 
 def cle_client(request: Request) -> str:
-    """Adresse du client. Seule la première valeur de `X-Forwarded-For` est crue :
-    les suivantes sont ajoutées par les intermédiaires."""
+    """Adresse du client, telle que l'a vue le dernier relais de confiance.
+
+    `X-Forwarded-For` se lit **par la droite**. Chaque relais ajoute à la fin
+    l'adresse de qui lui a parlé ; tout ce qui précède a pu être écrit par le
+    client lui-même. Croire la première valeur, comme avant, laissait un
+    attaquant choisir sa clé de limitation : une adresse inventée par requête,
+    et la limite de cinq essais par minute ne s'appliquait jamais.
+
+    `PROXIES_DE_CONFIANCE` dit combien de relais se tiennent devant l'API (un
+    sur l'hébergement de démonstration). Sans en-tête, ou sans relais déclaré,
+    c'est l'adresse de la connexion qui compte.
+    """
+    relais = get_settings().proxies_de_confiance
     transmise = request.headers.get("X-Forwarded-For")
-    if transmise:
-        return transmise.split(",")[0].strip()
+    if transmise and relais > 0:
+        adresses = [a.strip() for a in transmise.split(",") if a.strip()]
+        if adresses:
+            return adresses[-min(relais, len(adresses))]
     return request.client.host if request.client else "inconnu"
 
 

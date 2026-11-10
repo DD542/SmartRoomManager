@@ -26,7 +26,9 @@ class TestDomainesConfigures:
         produire un domaine vide qui rendrait tout le monde interne.
         """
         monkeypatch.setattr(
-            get_settings(), "organisation_domains", "smartroom.app, EQUIPE.SMARTROOM.APP ,,"
+            get_settings(),
+            "organisation_domains",
+            "smartroom.app, EQUIPE.SMARTROOM.APP ,,",
         )
 
         assert domaines_de_l_organisation() == {"smartroom.app", "equipe.smartroom.app"}
@@ -39,18 +41,24 @@ class TestDomainesConfigures:
 
 class TestEstExterne:
     def test_une_adresse_de_l_etablissement_est_interne(self, monkeypatch):
-        monkeypatch.setattr(get_settings(), "organisation_domains", "smartroom.app,equipe.smartroom.app")
+        monkeypatch.setattr(
+            get_settings(), "organisation_domains", "smartroom.app,equipe.smartroom.app"
+        )
 
         assert est_externe("alice.leroy@equipe.smartroom.app") is False
         assert est_externe("marie.laurent@smartroom.app") is False
 
     def test_une_adresse_personnelle_est_externe(self, monkeypatch):
-        monkeypatch.setattr(get_settings(), "organisation_domains", "smartroom.app,equipe.smartroom.app")
+        monkeypatch.setattr(
+            get_settings(), "organisation_domains", "smartroom.app,equipe.smartroom.app"
+        )
 
         assert est_externe("dylanmenga05@gmail.com") is True
 
     def test_la_casse_ne_change_rien(self, monkeypatch):
-        monkeypatch.setattr(get_settings(), "organisation_domains", "smartroom.app,equipe.smartroom.app")
+        monkeypatch.setattr(
+            get_settings(), "organisation_domains", "smartroom.app,equipe.smartroom.app"
+        )
 
         assert est_externe("Alice.Leroy@EQUIPE.SMARTROOM.APP") is False
 

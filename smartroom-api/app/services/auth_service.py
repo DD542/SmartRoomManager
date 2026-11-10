@@ -11,13 +11,18 @@ from __future__ import annotations
 import secrets
 import uuid
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session, selectinload
 
 from app.api.context import current_context
-from app.core.errors import AuthenticationError, NotFoundError, PermissionError_
+from app.core.errors import (
+    AuthenticationError,
+    NotFoundError,
+    PermissionError_,
+    RateLimitError,
+)
 from app.core.security import (
     create_access_token,
     fingerprint,
@@ -28,12 +33,44 @@ from app.core.security import (
     verify_password,
 )
 from app.db.enums import AuditAction, UserStatus
-from app.models import AdminAccount, PasswordResetToken, RefreshToken, User
+from app.models import AdminAccount, AuditLog, PasswordResetToken, RefreshToken, User
 from app.services import audit_service, google_service
 
 #: Message unique quel que soit le motif : distinguer « compte inconnu » de
 #: « mot de passe faux » transformerait la connexion en énumérateur d'adresses.
 REFUS = "Adresse e-mail ou mot de passe incorrect."
+
+#: Échecs tolérés sur une même adresse avant le refus temporaire, et la
+#: fenêtre où on les compte. La limite par adresse IP ne suffit pas : l'IP se
+#: change, l'adresse visée non. Dix essais en un quart d'heure laissent à un
+#: humain distrait toute la marge voulue, et rendent le bourrage impraticable.
+ECHECS_TOLERES = 10
+FENETRE_ECHECS = timedelta(minutes=15)
+
+
+def _verifier_bourrage(session: Session, email: str) -> None:
+    """Refuse temporairement une adresse visée par trop d'échecs récents.
+
+    Compté sur le journal d'audit, qui garde chaque tentative : rien à
+    ajouter au schéma. La réponse est la même que l'adresse existe ou non —
+    elle ne doit pas servir à découvrir les comptes.
+    """
+    depuis = datetime.now(UTC) - FENETRE_ECHECS
+    echecs = session.scalar(
+        select(func.count())
+        .select_from(AuditLog)
+        .where(
+            AuditLog.action == AuditAction.CONNEXION,
+            func.lower(AuditLog.target_label) == email.strip().lower(),
+            AuditLog.diff_after["success"].astext == "false",
+            AuditLog.occurred_at >= depuis,
+        )
+    )
+    if echecs >= ECHECS_TOLERES:
+        raise RateLimitError(
+            "Trop de tentatives sur ce compte. Réessayez dans un quart d'heure, "
+            "ou réinitialisez votre mot de passe."
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -96,6 +133,7 @@ def login(
     portée `user` : le back-office lui restera fermé jusqu'à ce qu'il s'y
     connecte explicitement.
     """
+    _verifier_bourrage(session, email)
     compte = _charger(session, email)
 
     if compte is None or not verify_password(password, compte.password_hash):

@@ -43,8 +43,34 @@ def racine() -> Path:
     return chemin
 
 
-def verifier(content_type: str | None, taille: int) -> str:
-    """Valide le type et le poids, et rend l'extension à utiliser."""
+def _signature_conforme(extension: str, contenu: bytes) -> bool:
+    """Les premiers octets correspondent-ils au type annoncé ?
+
+    Le type déclaré vient du client : sans ce contrôle, une page HTML déclarée
+    « image/png » était acceptée et servie depuis le domaine de l'application.
+    """
+    debut = contenu[:16]
+    if extension == ".png":
+        return debut.startswith(b"\x89PNG\r\n\x1a\n")
+    if extension == ".jpg":
+        return debut.startswith(b"\xff\xd8\xff")
+    if extension == ".webp":
+        return debut[:4] == b"RIFF" and debut[8:12] == b"WEBP"
+    if extension == ".pdf":
+        return debut.startswith(b"%PDF-")
+    if extension == ".svg":
+        texte = contenu[:1024].lstrip(b"\xef\xbb\xbf \t\r\n").lower()
+        return texte.startswith(b"<") and b"<svg" in contenu[:4096].lower()
+    return False
+
+
+def verifier(
+    content_type: str | None, taille: int, contenu: bytes | None = None
+) -> str:
+    """Valide le type, le poids et — si le contenu est fourni — sa signature.
+
+    Rend l'extension à utiliser.
+    """
     extension = TYPES_ACCEPTES.get((content_type or "").split(";")[0].strip().lower())
     if extension is None:
         raise RuleViolationError(
@@ -57,6 +83,11 @@ def verifier(content_type: str | None, taille: int) -> str:
         raise RuleViolationError(
             f"Fichier trop lourd : {TAILLE_MAX // (1024 * 1024)} Mo au maximum.",
             code="trop_lourd",
+        )
+    if contenu is not None and not _signature_conforme(extension, contenu):
+        raise RuleViolationError(
+            "Le fichier ne correspond pas au format annoncé.",
+            code="format_invalide",
         )
     return extension
 

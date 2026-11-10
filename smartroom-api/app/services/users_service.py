@@ -7,6 +7,7 @@ la garde de permission qui les sépare, pas un paramètre.
 
 from __future__ import annotations
 
+import hashlib
 import uuid
 from datetime import UTC, datetime, timedelta
 from collections.abc import Sequence
@@ -30,6 +31,7 @@ from app.models import (
     PermissionGroup,
     RefreshToken,
     User,
+    UserAvatar,
     UserPreference,
 )
 from app.services import audit_service, auth_service, booking_service, mail_service
@@ -113,13 +115,24 @@ def update_profile(session: Session, user_id: uuid.UUID, payload: Any) -> User:
 TYPES_AVATAR = frozenset({"image/png", "image/jpeg", "image/webp"})
 
 
+def adresse_avatar(user_id: uuid.UUID, contenu: bytes) -> str:
+    """Adresse publique de la photo, versionnée par son contenu.
+
+    Le suffixe change à chaque dépôt : le navigateur, qui garde l'image en
+    cache, recharge la nouvelle au lieu de montrer l'ancienne.
+    """
+    version = hashlib.sha256(contenu).hexdigest()[:12]
+    return f"/api/v1/users/{user_id}/avatar?v={version}"
+
+
 def set_avatar(
     session: Session, user_id: uuid.UUID, *, contenu: bytes, content_type: str
 ) -> User:
-    """Remplace la photo de profil, et efface la précédente.
+    """Remplace la photo de profil.
 
-    L'ancienne est retirée du disque : la conserver accumulerait un fichier par
-    changement, sans que rien ne les référence plus jamais.
+    Les octets vont en base, dans `user_avatars`, et non plus sur le disque :
+    celui de l'hébergement de démonstration est effacé à chaque réveil du
+    service, et la photo disparaissait au bout de quelques minutes.
     """
     if content_type not in TYPES_AVATAR:
         raise RuleViolationError(
@@ -128,22 +141,43 @@ def set_avatar(
         )
 
     compte = _charger(session, user_id)
-    extension = storage.verifier(content_type, len(contenu))
-    ancienne = compte.avatar_url
-    compte.avatar_url = storage.enregistrer("avatars", contenu, extension)
-    if ancienne:
-        storage.supprimer(ancienne)
+    storage.verifier(content_type, len(contenu), contenu)
+
+    photo = session.get(UserAvatar, compte.id)
+    if photo is None:
+        session.add(
+            UserAvatar(user_id=compte.id, content_type=content_type, content=contenu)
+        )
+    else:
+        photo.content_type = content_type
+        photo.content = contenu
+
+    # Une ancienne photo encore sur le disque, d'avant le passage en base.
+    if compte.avatar_url:
+        storage.supprimer(compte.avatar_url)
+    compte.avatar_url = adresse_avatar(compte.id, contenu)
     session.flush()
     return compte
+
+
+def get_avatar(session: Session, user_id: uuid.UUID) -> UserAvatar:
+    """La photo d'un compte, ou `NotFoundError` s'il n'en a pas."""
+    photo = session.get(UserAvatar, user_id)
+    if photo is None:
+        raise NotFoundError("Aucune photo pour ce compte.")
+    return photo
 
 
 def remove_avatar(session: Session, user_id: uuid.UUID) -> User:
     """Retire la photo. L'écran retombe sur les initiales, son état par défaut."""
     compte = _charger(session, user_id)
+    photo = session.get(UserAvatar, compte.id)
+    if photo is not None:
+        session.delete(photo)
     if compte.avatar_url:
         storage.supprimer(compte.avatar_url)
         compte.avatar_url = None
-        session.flush()
+    session.flush()
     return compte
 
 
@@ -566,6 +600,9 @@ def anonymiser(
 
     if compte.avatar_url:
         storage.supprimer(compte.avatar_url)
+    photo = session.get(UserAvatar, compte.id)
+    if photo is not None:
+        session.delete(photo)
 
     avant = {"email": compte.email, "nom": f"{compte.first_name} {compte.last_name}"}
 

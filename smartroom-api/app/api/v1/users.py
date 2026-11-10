@@ -135,7 +135,7 @@ def update_my_profile(
         "PNG, JPEG ou WebP, 5 Mo au maximum. Le SVG est refusé bien que le "
         "magasin de médias l'accepte pour les plans : il porte du script, et "
         "servi depuis le domaine de l'application il s'exécuterait avec ses "
-        "droits. La photo précédente est effacée du disque. Le contenu voyage "
+        "droits. La photo est rangée en base, et remplace la précédente. Le contenu voyage "
         "encodé en base64 dans le corps JSON, le multipart demandant une "
         "dépendance de plus."
     ),
@@ -164,6 +164,30 @@ def delete_my_avatar(session: SessionDep, principal: CurrentPrincipal) -> UserOu
     compte = service.remove_avatar(session, principal.user.id)
     session.commit()
     return _utilisateur(compte)
+
+
+@router.get(
+    "/users/{user_id}/avatar",
+    response_class=Response,
+    summary="Photo de profil d'un compte",
+    description=(
+        "Sert les octets de la photo, rangée en base. Sans authentification : "
+        "une balise `<img>` n'envoie pas de jeton, et l'adresse n'est connue "
+        "que des écrans qui affichent déjà ce compte. Mise en cache longue : "
+        "l'adresse change à chaque nouveau dépôt."
+    ),
+    responses={
+        200: {"content": {"image/png": {}, "image/jpeg": {}, "image/webp": {}}},
+        404: {"description": "Ce compte n'a pas de photo."},
+    },
+)
+def read_avatar(user_id: uuid.UUID, session: SessionDep) -> Response:
+    photo = service.get_avatar(session, user_id)
+    return Response(
+        content=photo.content,
+        media_type=photo.content_type,
+        headers={"Cache-Control": "public, max-age=31536000, immutable"},
+    )
 
 
 @router.get(

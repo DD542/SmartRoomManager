@@ -20,7 +20,7 @@ Quatre contrôles, et aucun n'est facultatif :
 
 L'expiration est vérifiée par la bibliothèque, avec le reste de l'enveloppe.
 
-Aucune dépendance nouvelle : `httpx` pour les clés, `python-jose` pour la
+Aucune dépendance nouvelle : `httpx` pour les clés, `PyJWT` pour la
 signature — les deux sont déjà là.
 """
 
@@ -31,7 +31,9 @@ from dataclasses import dataclass
 from typing import Any
 
 import httpx
-from jose import JWTError, jwt
+import jwt
+from jwt import PyJWKSet
+from jwt import PyJWTError as JWTError
 
 from app.core.config import get_settings
 from app.core.errors import AuthenticationError, RuleViolationError
@@ -109,13 +111,15 @@ def verifier(jeton: str) -> IdentiteGoogle:
         )
 
     def _decoder(cles: dict[str, Any]) -> dict[str, Any]:
-        return jwt.decode(
-            jeton,
-            cles,
-            algorithms=["RS256"],
-            audience=client,
-            options={"verify_at_hash": False},
-        )
+        # La clé est choisie par son identifiant (`kid`) dans le jeu publié par
+        # Google, et l'algorithme est imposé : un jeton qui annoncerait autre
+        # chose que RS256 est refusé avant toute vérification.
+        try:
+            entete = jwt.get_unverified_header(jeton)
+            cle = PyJWKSet.from_dict(cles)[entete.get("kid", "")].key
+        except (KeyError, ValueError) as erreur:
+            raise JWTError(str(erreur)) from erreur
+        return jwt.decode(jeton, cle, algorithms=["RS256"], audience=client)
 
     try:
         charge = _decoder(_obtenir_cles())
