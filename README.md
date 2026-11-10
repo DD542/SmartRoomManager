@@ -116,6 +116,15 @@ Les tests d'intégration exigent une base PostgreSQL : ils exercent les
 contraintes d'exclusion, les index partiels et les requêtes de disponibilité,
 qu'aucun double ne reproduit fidèlement.
 
+### Avant de commiter
+
+Un hook rejoue les contrôles de formatage de la CI (`ruff`, version 0.14.0)
+avant chaque commit qui touche l'API. À activer une fois par clone :
+
+```bash
+git config core.hooksPath .githooks
+```
+
 Plusieurs vérifications portent sur la **source** plutôt que sur le rendu —
 cibles tactiles, coupure des textes longs, permissions des grilles. Elles
 existent parce que jsdom ne fait pas de mise en page : le défaut ne se lit qu'à

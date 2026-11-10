@@ -1,0 +1,41 @@
+#!/usr/bin/env sh
+# Contrôles de la CI rejoués avant chaque commit qui touche l'API.
+#
+# La CI échouait après le push sur `ruff format --check` : un fichier non
+# formaté ne se voyait que sur GitHub, une fois le commit parti. Ce hook lance
+# les mêmes vérifications, avec la même version de ruff, et bloque le commit
+# tant qu'elles échouent.
+#
+# Activation, une fois par clone :   git config core.hooksPath .githooks
+# Contournement ponctuel :           git commit --no-verify
+
+if ! git diff --cached --name-only --diff-filter=ACMR | grep -q '^smartroom-api/.*\.py$'; then
+  exit 0
+fi
+
+racine=$(git rev-parse --show-toplevel)
+if [ -x "$racine/.venv/Scripts/python.exe" ]; then
+  python="$racine/.venv/Scripts/python.exe"
+elif [ -x "$racine/.venv/bin/python" ]; then
+  python="$racine/.venv/bin/python"
+else
+  python=python
+fi
+
+if ! "$python" -m ruff --version 2>/dev/null | grep -q '0.14.0'; then
+  echo "pre-commit : ruff 0.14.0 introuvable (celui de la CI). Installez-le :"
+  echo "  $python -m pip install ruff==0.14.0"
+  exit 1
+fi
+
+cd "$racine/smartroom-api" || exit 1
+if ! "$python" -m ruff check app tests scripts; then
+  echo "pre-commit : ruff check échoue — corrigez avant de commiter."
+  exit 1
+fi
+if ! "$python" -m ruff format --check app tests scripts >/dev/null; then
+  echo "pre-commit : des fichiers ne sont pas formatés. Lancez :"
+  echo "  cd smartroom-api && $python -m ruff format app tests scripts"
+  echo "puis ajoutez les fichiers reformatés au commit."
+  exit 1
+fi

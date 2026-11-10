@@ -21,3 +21,5 @@ testcontainers[postgres]==4.13.0
 # les noms générés entrent dans des colonnes contraintes en longueur.
 factory-boy==3.3.3
 Faker==37.8.0
+# Même version que la CI (.github/workflows/ci.yml) et le hook .githooks/pre-commit.
+ruff==0.14.0

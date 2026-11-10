@@ -288,17 +288,19 @@ class TestChangementDHeure:
         self, session, salle, compte
     ):
         """Une réservation posée avant le basculement bloque bien celle qui le
-        franchit : la comparaison se fait sur des instants, pas sur des cadrans."""
+        franchit : la comparaison se fait sur des instants, pas sur des cadrans.
+
+        L'horloge est placée la veille, comme dans les tests voisins. Ce test
+        l'oubliait : il réservait à l'heure réelle, et a cessé de passer le
+        lendemain du 25 octobre 2026 — la journée était écoulée.
+        """
         _ouvrir_en_continu(session, salle)
-        _poser(
-            session,
-            salle,
-            compte,
-            TimeSlot(
-                start=local(1, 0, jour=PASSAGE_HIVER),
-                end=local(4, 0, jour=PASSAGE_HIVER),
-            ),
+        premier = TimeSlot(
+            start=local(1, 0, jour=PASSAGE_HIVER),
+            end=local(4, 0, jour=PASSAGE_HIVER),
         )
+        veille = _veille_de(premier)
+        _poser(session, salle, compte, premier, maintenant=veille)
 
         with pytest.raises(SlotConflictError):
             booking.create_booking(
@@ -312,6 +314,7 @@ class TestChangementDHeure:
                 title="Franchit le basculement",
                 attendees=2,
                 ignore_rules=True,
+                now=veille,
             )
 
 
